@@ -451,11 +451,12 @@ def test_dandiset_rest_create(api_client):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_create_with_identifier(api_client, admin_user):
-    admin_user.first_name = 'John'
-    admin_user.last_name = 'Doe'
-    admin_user.save()
-    api_client.force_authenticate(user=admin_user)
+def test_dandiset_rest_create_with_identifier(api_client):
+    user = UserFactory.create(is_superuser=True)
+    user.first_name = 'John'
+    user.last_name = 'Doe'
+    user.save()
+    api_client.force_authenticate(user=user)
     name = 'Test Dandiset'
     identifier = '123456'
     metadata = {'foo': 'bar', 'identifier': f'DANDI:{identifier}'}
@@ -485,7 +486,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
     # Creating a Dandiset has side affects.
     # Verify that the user is the only owner.
     dandiset = Dandiset.objects.get(id=identifier)
-    assert list(get_dandiset_owners(dandiset).all()) == [admin_user]
+    assert list(get_dandiset_owners(dandiset).all()) == [user]
 
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
@@ -509,7 +510,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': (
-            f'{admin_user.last_name}, {admin_user.first_name} ({year}) {name} '
+            f'{user.last_name}, {user.first_name} ({year}) {name} '
             f'(Version draft) [Data set]. DANDI Archive. {url}'
         ),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
@@ -520,7 +521,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         'contributor': [
             {
                 'name': 'Doe, John',
-                'email': admin_user.email,
+                'email': user.email,
                 'roleName': ['dcite:ContactPerson'],
                 'schemaKey': 'Person',
                 'affiliation': [],
@@ -536,17 +537,18 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_create_with_contributor(api_client, admin_user):
-    admin_user.first_name = 'John'
-    admin_user.last_name = 'Doe'
-    admin_user.save()
-    api_client.force_authenticate(user=admin_user)
+def test_dandiset_rest_create_with_contributor(api_client):
+    user = UserFactory.create(is_superuser=True)
+    user.first_name = 'John'
+    user.last_name = 'Doe'
+    user.save()
+    api_client.force_authenticate(user=user)
     name = 'Test Dandiset'
     identifier = '123456'
     metadata = {
         'foo': 'bar',
         'identifier': f'DANDI:{identifier}',
-        # This contributor is different from the admin_user
+        # This contributor is different from the user
         'contributor': [
             {
                 'name': 'Jane Doe',
@@ -584,7 +586,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
     # Creating a Dandiset has side affects.
     # Verify that the user is the only owner.
     dandiset = Dandiset.objects.get(id=identifier)
-    assert list(get_dandiset_owners(dandiset).all()) == [admin_user]
+    assert list(get_dandiset_owners(dandiset).all()) == [user]
 
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
@@ -856,9 +858,10 @@ def test_dandiset_rest_create_embargoed_award_no_funding(api_client: APIClient):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_create_with_duplicate_identifier(api_client, admin_user):
+def test_dandiset_rest_create_with_duplicate_identifier(api_client):
+    user = UserFactory.create(is_superuser=True)
     dandiset = DandisetFactory.create()
-    api_client.force_authenticate(user=admin_user)
+    api_client.force_authenticate(user=user)
     name = 'Test Dandiset'
     identifier = dandiset.identifier
     metadata = {'foo': 'bar', 'identifier': f'DANDI:{identifier}'}
@@ -869,8 +872,9 @@ def test_dandiset_rest_create_with_duplicate_identifier(api_client, admin_user):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_create_with_invalid_identifier(api_client, admin_user):
-    api_client.force_authenticate(user=admin_user)
+def test_dandiset_rest_create_with_invalid_identifier(api_client):
+    user = UserFactory.create(is_superuser=True)
+    api_client.force_authenticate(user=user)
     name = 'Test Dandiset'
     identifier = 'abc123'
     metadata = {'foo': 'bar', 'identifier': identifier}
@@ -953,8 +957,9 @@ def test_dandiset_rest_delete_published(api_client, published_version):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_delete_published_admin(api_client, published_version, admin_user):
-    api_client.force_authenticate(user=admin_user)
+def test_dandiset_rest_delete_published_admin(api_client, published_version):
+    user = UserFactory.create(is_superuser=True)
+    api_client.force_authenticate(user=user)
 
     response = api_client.delete(f'/api/dandisets/{published_version.dandiset.identifier}/')
     assert response.status_code == 403
