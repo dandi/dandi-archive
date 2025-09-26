@@ -53,6 +53,8 @@ class DandiS3Storage(S3Storage):
 
     def __init__(self, **settings):
         super().__init__(
+            # The default for "file_overwrite" is True, but it's essential that it stays this way
+            file_overwrite=True,
             client_config=Config(
                 signature_version='s3v4',
                 # These settings are not available in upstream S3Storage

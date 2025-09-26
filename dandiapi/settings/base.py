@@ -107,10 +107,6 @@ STORAGES = {
 DANDI_DANDISETS_BUCKET_NAME: str
 DANDI_DANDISETS_BUCKET_PREFIX: str = env.str('DJANGO_DANDI_DANDISETS_BUCKET_PREFIX', default='')
 
-# Allow overwriting files in S3/Minio
-# Revert/refactor if https://github.com/kitware-resonant/cookiecutter-resonant/pull/375 is merged
-AWS_S3_FILE_OVERWRITE = True
-
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Django staticfiles auto-creates any intermediate directories, but do so here to prevent warnings.
 STATIC_ROOT.mkdir(exist_ok=True)
