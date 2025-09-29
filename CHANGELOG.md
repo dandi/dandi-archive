@@ -1,3 +1,35 @@
+# v0.15.5 (Mon Sep 29 2025)
+
+#### 🐛 Bug Fix
+
+- Add management command to delete extra manifest files [#2552](https://github.com/dandi/dandi-archive/pull/2552) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Fix a drf-yasg warning [#2564](https://github.com/dandi/dandi-archive/pull/2564) ([@brianhelba](https://github.com/brianhelba))
+- Don't retry _delete_object_tags [#2551](https://github.com/dandi/dandi-archive/pull/2551) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Ensure that genotype and species search return deterministic orderings [#2563](https://github.com/dandi/dandi-archive/pull/2563) ([@brianhelba](https://github.com/brianhelba))
+- Objects in test are uploaded directly, not via multipart [#2557](https://github.com/dandi/dandi-archive/pull/2557) ([@brianhelba](https://github.com/brianhelba))
+- Inline production storage settings [#2553](https://github.com/dandi/dandi-archive/pull/2553) ([@brianhelba](https://github.com/brianhelba))
+- Don't retry _delete_zarr_object_tags [#2555](https://github.com/dandi/dandi-archive/pull/2555) ([@brianhelba](https://github.com/brianhelba))
+- Remove deprecated dandischema / Pydantic API usage [#2556](https://github.com/dandi/dandi-archive/pull/2556) ([@brianhelba](https://github.com/brianhelba))
+- Add rudimentary mailmap file [#2550](https://github.com/dandi/dandi-archive/pull/2550) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 🧪 Tests
+
+- Do not even bother specifying login/token for DOCKER while building/testing dandi-cli [#2558](https://github.com/dandi/dandi-archive/pull/2558) ([@yarikoptic](https://github.com/yarikoptic))
+- Improve Zarr upload tests [#2560](https://github.com/dandi/dandi-archive/pull/2560) ([@brianhelba](https://github.com/brianhelba))
+- Remove use of dandiset* test fixtures [#2559](https://github.com/dandi/dandi-archive/pull/2559) ([@brianhelba](https://github.com/brianhelba))
+- Clean up factories [#2545](https://github.com/dandi/dandi-archive/pull/2545) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 3
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.15.4 (Wed Sep 24 2025)
 
 #### 🐛 Bug Fix
