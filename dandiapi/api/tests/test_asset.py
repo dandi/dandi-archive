@@ -25,7 +25,7 @@ from dandiapi.api.tests.factories import (
 )
 from dandiapi.zarr.models import ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
-from dandiapi.zarr.tests.factories import ZarrArchiveFactory
+from dandiapi.zarr.tests.factories import EmbargoedZarrArchiveFactory, ZarrArchiveFactory
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
 
@@ -233,15 +233,13 @@ def test_asset_full_metadata_zarr(draft_asset_factory):
 
 
 @pytest.mark.django_db
-def test_asset_full_metadata_access(
-    draft_asset_factory, asset_blob_factory, embargoed_zarr_archive_factory
-):
+def test_asset_full_metadata_access(draft_asset_factory, asset_blob_factory):
     raw_metadata = {
         'foo': 'bar',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
     }
     embargoed_zarr_asset: Asset = draft_asset_factory(
-        metadata=raw_metadata, blob=None, zarr=embargoed_zarr_archive_factory()
+        metadata=raw_metadata, blob=None, zarr=EmbargoedZarrArchiveFactory.create()
     )
     open_zarr_asset: Asset = draft_asset_factory(
         metadata=raw_metadata, blob=None, zarr=ZarrArchiveFactory.create()

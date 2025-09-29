@@ -12,7 +12,7 @@ from dandiapi.api.tests.factories import DandisetFactory, UserFactory
 from dandiapi.api.tests.fuzzy import UUID_RE
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
-from dandiapi.zarr.tests.factories import ZarrArchiveFactory
+from dandiapi.zarr.tests.factories import EmbargoedZarrArchiveFactory, ZarrArchiveFactory
 
 
 @pytest.mark.django_db
@@ -154,11 +154,11 @@ def test_zarr_rest_get(api_client, zarr_file_factory):
 
 
 @pytest.mark.django_db
-def test_zarr_rest_get_embargoed(api_client, embargoed_zarr_archive_factory):
+def test_zarr_rest_get_embargoed(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
     dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    embargoed_zarr_archive = embargoed_zarr_archive_factory(dandiset=dandiset)
+    embargoed_zarr_archive = EmbargoedZarrArchiveFactory.create(dandiset=dandiset)
     assert user not in get_dandiset_owners(embargoed_zarr_archive.dandiset)
 
     resp = api_client.get(f'/api/zarr/{embargoed_zarr_archive.zarr_id}/')

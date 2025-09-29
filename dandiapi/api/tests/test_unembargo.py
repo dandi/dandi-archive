@@ -29,7 +29,7 @@ from dandiapi.api.tasks import unembargo_dandiset_task, write_manifest_files
 from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
-from dandiapi.zarr.tests.factories import ZarrArchiveFactory
+from dandiapi.zarr.tests.factories import EmbargoedZarrArchiveFactory, ZarrArchiveFactory
 
 if TYPE_CHECKING:
     from zarr_checksum.generators import ZarrArchiveFile
@@ -227,7 +227,6 @@ def test_remove_dandiset_manifest_tags():
 def test_unembargo_dandiset(
     asset_factory,
     embargoed_asset_blob_factory,
-    embargoed_zarr_archive_factory,
     zarr_file_factory,
     mailoutbox,
 ):
@@ -242,7 +241,7 @@ def test_unembargo_dandiset(
     blob_asset = asset_factory(blob=embargoed_blob, status=Asset.Status.VALID)
     draft_version.assets.add(blob_asset)
 
-    zarr_archive: ZarrArchive = embargoed_zarr_archive_factory(
+    zarr_archive: ZarrArchive = EmbargoedZarrArchiveFactory.create(
         dandiset=dandiset, status=ZarrArchiveStatus.UPLOADED
     )
     zarr_files: list[ZarrArchiveFile] = [
