@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from django.core.files.storage import default_storage
 import djclick as click
@@ -11,10 +12,13 @@ from dandiapi.api.models import Version
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.tasks import write_manifest_files
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
 logger = logging.getLogger(__name__)
 
 
-def list_files_in_manifest_directory(version: Version) -> list[str]:
+def list_files_in_manifest_directory(version: Version) -> Iterator[str]:
     """List all files in the manifest directory for a version."""
     manifest_dir = _manifests_path(version)
     client = get_boto_client()
@@ -25,7 +29,10 @@ def list_files_in_manifest_directory(version: Version) -> list[str]:
         Bucket=default_storage.bucket_name, Prefix=manifest_dir + '/', Delimiter='/'
     )
 
-    return [obj.get('Key', '') for page in pages for obj in page.get('Contents', [])]
+    for page in pages:
+        for obj in page.get('Contents', []):
+            if 'Key' in obj:
+                yield obj['Key']
 
 
 @click.command()
@@ -71,12 +78,11 @@ def delete_malformed_manifests(dandisets: tuple[int, ...], *, include_all: bool,
         # Get expected manifest file paths
         expected_manifest_paths = set(all_manifest_filepaths(version_obj))
 
-        # List all files in the manifest directory
-        all_files = list_files_in_manifest_directory(version_obj)
-
         # Identify extra files
         extra_files = [
-            file_path for file_path in all_files if file_path not in expected_manifest_paths
+            file_path
+            for file_path in list_files_in_manifest_directory(version_obj)
+            if file_path not in expected_manifest_paths
         ]
 
         if extra_files:
