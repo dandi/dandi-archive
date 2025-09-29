@@ -36,9 +36,11 @@ class GenotypeSearchSerializer(SearchSerializer):
         # Filter out empty string genotype
         qs = qs.exclude(asset_metadata__wasAttributedTo__0__genotype__exact='')
 
-        return qs.values_list('asset_metadata__wasAttributedTo__0__genotype', flat=True).distinct()[
-            :10
-        ]
+        return (
+            qs.order_by('asset_metadata__wasAttributedTo__0__genotype')
+            .values_list('asset_metadata__wasAttributedTo__0__genotype', flat=True)
+            .distinct()[:10]
+        )
 
 
 @swagger_auto_schema(methods=['GET'], auto_schema=None)
@@ -64,7 +66,7 @@ class SpeciesSearchSerializer(SearchSerializer):
         # Filter out empty string species
         qs = qs.exclude(species__exact='')
 
-        return qs.values_list('species', flat=True).distinct()
+        return qs.order_by('species').values_list('species', flat=True).distinct()
 
 
 @swagger_auto_schema(methods=['GET'], auto_schema=None)
