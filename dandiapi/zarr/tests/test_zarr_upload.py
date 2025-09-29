@@ -15,12 +15,11 @@ from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 @pytest.mark.parametrize('embargoed', [False, True])
 def test_zarr_rest_upload_start(
     api_client,
-    zarr_archive_factory,
     embargoed: bool,  # noqa: FBT001
 ):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    zarr_archive = zarr_archive_factory(
+    zarr_archive = ZarrArchiveFactory.create(
         dandiset__owners=[user],
         dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
         if embargoed

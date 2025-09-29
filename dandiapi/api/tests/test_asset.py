@@ -19,7 +19,6 @@ from dandiapi.api.services.asset.exceptions import AssetPathConflictError
 from dandiapi.api.services.publish import publish_asset
 from dandiapi.api.tasks.scheduled import validate_pending_asset_metadata
 from dandiapi.api.tests.factories import (
-    DandisetFactory,
     DraftVersionFactory,
     PublishedVersionFactory,
     UserFactory,
@@ -146,7 +145,7 @@ def test_publish_asset(draft_asset: Asset):
 
 
 @pytest.mark.django_db
-def test_asset_total_size(asset_factory, asset_blob_factory, zarr_archive_factory):
+def test_asset_total_size(asset_factory, asset_blob_factory):
     # This asset blob should only be counted once,
     # despite belonging to multiple assets and multiple versions.
     asset_blob = asset_blob_factory()
@@ -165,10 +164,7 @@ def test_asset_total_size(asset_factory, asset_blob_factory, zarr_archive_factor
 
     assert Asset.total_size() == asset_blob.size
 
-    zarr_archive = zarr_archive_factory()
-    # give it some size
-    zarr_archive.size = 100
-    zarr_archive.save()  # save adjusted .size into DB
+    zarr_archive = ZarrArchiveFactory.create(size=100)
 
     # adding of an asset with zarr should be reflected
     asset3 = asset_factory(zarr=zarr_archive, blob=None)
@@ -238,7 +234,7 @@ def test_asset_full_metadata_zarr(draft_asset_factory):
 
 @pytest.mark.django_db
 def test_asset_full_metadata_access(
-    draft_asset_factory, asset_blob_factory, zarr_archive_factory, embargoed_zarr_archive_factory
+    draft_asset_factory, asset_blob_factory, embargoed_zarr_archive_factory
 ):
     raw_metadata = {
         'foo': 'bar',
@@ -248,7 +244,7 @@ def test_asset_full_metadata_access(
         metadata=raw_metadata, blob=None, zarr=embargoed_zarr_archive_factory()
     )
     open_zarr_asset: Asset = draft_asset_factory(
-        metadata=raw_metadata, blob=None, zarr=zarr_archive_factory()
+        metadata=raw_metadata, blob=None, zarr=ZarrArchiveFactory.create()
     )
 
     embargoed_blob_asset: Asset = draft_asset_factory(
@@ -327,11 +323,11 @@ def test_asset_rest_list_include_metadata(api_client, version, asset, asset_fact
 
 
 @pytest.mark.django_db
-def test_asset_rest_list_zarr_only(api_client, draft_asset_factory, zarr_archive_factory):
+def test_asset_rest_list_zarr_only(api_client, draft_asset_factory):
     draft_version = DraftVersionFactory.create()
     # Create two blob assets and one zarr asset
     zarr_asset = draft_asset_factory(
-        blob=None, zarr=zarr_archive_factory(dandiset=draft_version.dandiset)
+        blob=None, zarr=ZarrArchiveFactory.create(dandiset=draft_version.dandiset)
     )
     draft_version.assets.add(zarr_asset)
     draft_version.assets.add(draft_asset_factory())
@@ -1047,13 +1043,11 @@ def test_asset_create_zarr_validated(api_client, zarr_file_factory):
 
 
 @pytest.mark.django_db
-def test_asset_create_zarr_wrong_dandiset(api_client, zarr_archive_factory):
+def test_asset_create_zarr_wrong_dandiset(api_client):
     user = UserFactory.create()
     draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     api_client.force_authenticate(user=user)
-
-    zarr_dandiset = DandisetFactory.create()
-    zarr_archive = zarr_archive_factory(dandiset=zarr_dandiset)
+    zarr_archive = ZarrArchiveFactory.create()
 
     path = 'test/create/asset.txt'
     metadata = {
@@ -1630,7 +1624,6 @@ def test_asset_rest_delete_zarr(
 @pytest.mark.django_db
 def test_asset_rest_delete_zarr_modified(
     api_client,
-    zarr_archive_factory,
     zarr_file_factory,
 ):
     """Ensure that a zarr can be associated to an asset, modified, then the asset deleted."""
@@ -1639,7 +1632,7 @@ def test_asset_rest_delete_zarr_modified(
     api_client.force_authenticate(user=user)
 
     # Ensure zarr is ingested
-    zarr_archive = zarr_archive_factory(
+    zarr_archive = ZarrArchiveFactory.create(
         status=ZarrArchiveStatus.UPLOADED, dandiset=draft_version.dandiset
     )
     zarr_file_factory(zarr_archive=zarr_archive, size=100)

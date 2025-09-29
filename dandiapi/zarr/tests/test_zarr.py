@@ -5,7 +5,6 @@ from zarr_checksum.checksum import EMPTY_CHECKSUM
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.permissions.dandiset import (
-    add_dandiset_owner,
     get_dandiset_owners,
     replace_dandiset_owners,
 )
@@ -133,8 +132,8 @@ def test_zarr_rest_create_unembargoing(api_client):
 
 
 @pytest.mark.django_db
-def test_zarr_rest_get(api_client, zarr_archive_factory, zarr_file_factory):
-    zarr_archive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
+def test_zarr_rest_get(api_client, zarr_file_factory):
+    zarr_archive = ZarrArchiveFactory.create(status=ZarrArchiveStatus.UPLOADED)
     zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
 
     # Ingest
@@ -171,15 +170,15 @@ def test_zarr_rest_get_embargoed(api_client, embargoed_zarr_archive_factory):
 
 
 @pytest.mark.django_db
-def test_zarr_rest_list_embargoed(api_client, zarr_archive_factory):
+def test_zarr_rest_list_embargoed(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
     open_dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.OPEN)
     embargoed_dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
 
     # Create some embargoed and some open zarrs
-    open_zarrs = [zarr_archive_factory(dandiset=open_dandiset) for _ in range(3)]
-    embargoed_zarrs = [zarr_archive_factory(dandiset=embargoed_dandiset) for _ in range(3)]
+    open_zarrs = [ZarrArchiveFactory.create(dandiset=open_dandiset) for _ in range(3)]
+    embargoed_zarrs = [ZarrArchiveFactory.create(dandiset=embargoed_dandiset) for _ in range(3)]
 
     # Assert only open zarrs are returned
     zarrs = api_client.get('/api/zarr/').json()['results']
@@ -195,15 +194,15 @@ def test_zarr_rest_list_embargoed(api_client, zarr_archive_factory):
 
 
 @pytest.mark.django_db
-def test_zarr_rest_list_filter(api_client, zarr_archive_factory):
+def test_zarr_rest_list_filter(api_client):
     # Create dandisets and zarrs
     dandiset_a: Dandiset = DandisetFactory.create()
-    zarr_archive_a_a: ZarrArchive = zarr_archive_factory(dandiset=dandiset_a, name='test')
-    zarr_archive_a_b: ZarrArchive = zarr_archive_factory(dandiset=dandiset_a, name='unique')
+    zarr_archive_a_a: ZarrArchive = ZarrArchiveFactory.create(dandiset=dandiset_a, name='test')
+    zarr_archive_a_b: ZarrArchive = ZarrArchiveFactory.create(dandiset=dandiset_a, name='unique')
 
     dandiset_b: Dandiset = DandisetFactory.create()
-    zarr_archive_b_a: ZarrArchive = zarr_archive_factory(dandiset=dandiset_b, name='test')
-    zarr_archive_b_b: ZarrArchive = zarr_archive_factory(dandiset=dandiset_b, name='unique2')
+    zarr_archive_b_a: ZarrArchive = ZarrArchiveFactory.create(dandiset=dandiset_b, name='test')
+    zarr_archive_b_b: ZarrArchive = ZarrArchiveFactory.create(dandiset=dandiset_b, name='unique2')
 
     # Test dandiset filter with dandiset a
     resp = api_client.get('/api/zarr/', {'dandiset': dandiset_a.identifier})
@@ -238,10 +237,10 @@ def test_zarr_rest_list_filter(api_client, zarr_archive_factory):
 
 
 @pytest.mark.django_db
-def test_zarr_rest_get_very_big(api_client, zarr_archive_factory):
+def test_zarr_rest_get_very_big(api_client):
     ten_quadrillion = 10**16
     ten_petabytes = 10**16
-    zarr_archive = zarr_archive_factory(file_count=ten_quadrillion, size=ten_petabytes)
+    zarr_archive = ZarrArchiveFactory.create(file_count=ten_quadrillion, size=ten_petabytes)
     assert zarr_archive.file_count == ten_quadrillion
     assert zarr_archive.size == ten_petabytes
 
@@ -278,14 +277,14 @@ def test_zarr_rest_get_empty(api_client):
 @pytest.mark.django_db
 def test_zarr_rest_delete_file(
     api_client,
-    zarr_archive_factory,
     zarr_file_factory,
 ):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
     # Create zarr and assign user perms
-    zarr_archive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
-    add_dandiset_owner(zarr_archive.dandiset, user)
+    zarr_archive = ZarrArchiveFactory.create(
+        status=ZarrArchiveStatus.UPLOADED, dandiset__owners=[user]
+    )
 
     # Upload file and ingest
     zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
@@ -324,14 +323,14 @@ def test_zarr_rest_delete_file(
 @pytest.mark.django_db
 def test_zarr_rest_delete_file_asset_metadata(
     api_client,
-    zarr_archive_factory,
     zarr_file_factory,
     asset_factory,
 ):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    zarr_archive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
-    add_dandiset_owner(zarr_archive.dandiset, user)
+    zarr_archive = ZarrArchiveFactory.create(
+        status=ZarrArchiveStatus.UPLOADED, dandiset__owners=[user]
+    )
 
     asset = asset_factory(zarr=zarr_archive, blob=None)
 
