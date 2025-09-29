@@ -46,6 +46,24 @@
             </div>
           </template>
           <span>Open the Dandiset in Neurosift</span>
+          <template #activator="{ props }">
+            <div v-bind="props">
+              <v-list-item
+                :href="brainlifeURL"
+                target="_blank"
+              >
+                <v-icon
+                  color="primary"
+                  start
+                  size="small"
+                >
+                  mdi-web
+                </v-icon>
+                Brainlife
+              </v-list-item>
+            </div>
+          </template>
+          <span>Open the Dandiset in Brainlife</span>
         </v-tooltip>
       </v-list>
     </v-card>
@@ -78,6 +96,27 @@ const neurosiftURL = computed(() => {
   const stagingParam = metadata.url!.startsWith('https://sandbox.dandiarchive.org/') ? '&staging=1' : '';
 
   return `https://neurosift.app/dandiset/${dandisetId}?dandisetVersion=${dandisetVersion}${stagingParam}`;
+});
+
+const brainlifeURL = computed(() => {
+  if (!currentDandiset.value) {
+    throw new Error('Dandiset is undefined');
+  }
+
+  if (!currentDandiset.value.metadata) {
+    throw new Error('Dandiset metadata is undefined');
+  }
+
+  if (!currentDandiset.value.metadata.url) {
+    throw new Error('Dandiset metadata.url is undefined');
+  }
+
+  const metadata = currentDandiset.value.metadata;
+  const dandisetId = currentDandiset.value.dandiset.identifier;
+  const dandisetVersion = metadata.version;
+  const stagingParam = metadata.url!.startsWith('https://sandbox.dandiarchive.org/') ? 'dandi-staging/' : '';
+
+  return `https://brainlife.io/dandiarchive/${stagingParam}${dandisetId}/${dandisetVersion}`;
 });
 
 </script>
