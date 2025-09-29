@@ -154,6 +154,7 @@ REST_FRAMEWORK_EXTENSIONS = {'DEFAULT_PARENT_LOOKUP_KWARG_NAME_PREFIX': ''}
 # the spot, which is quite useful.
 SWAGGER_SETTINGS = {
     'DEFAULT_AUTO_SCHEMA_CLASS': 'dandiapi.swagger.DANDISwaggerAutoSchema',
+    'USE_COMPAT_RENDERERS': False,
 }
 
 
