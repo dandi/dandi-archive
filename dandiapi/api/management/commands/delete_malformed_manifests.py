@@ -59,7 +59,6 @@ def delete_malformed_manifests(dandisets: tuple[int, ...], *, include_all: bool,
     if bool(dandisets) == include_all:
         raise click.ClickException("Must specify exactly one of 'dandisets' or --all")
 
-    # Build query for versions
     version_qs = Version.objects.filter(version='draft').select_related('dandiset')
     if dandisets:
         version_qs = version_qs.filter(dandiset_id__in=dandisets)
@@ -67,7 +66,6 @@ def delete_malformed_manifests(dandisets: tuple[int, ...], *, include_all: bool,
     total_versions = version_qs.count()
     click.echo('Scanning dandisets for extra manifest files...')
 
-    # First pass: identify versions with extra files
     versions_with_extra_files = []
     for version_obj in tqdm(version_qs.iterator(), total=total_versions):
         # Get expected manifest file paths
