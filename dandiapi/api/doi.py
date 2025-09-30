@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 # All of the required DOI configuration settings
 DANDI_DOI_SETTINGS = [
     (settings.DANDI_DOI_API_URL, 'DANDI_DOI_API_URL'),
-    (settings.DANDI_DOI_API_URL, 'DANDI_DOI_API_USER'),
+    (settings.DANDI_DOI_API_USER, 'DANDI_DOI_API_USER'),
     (settings.DANDI_DOI_API_PASSWORD, 'DANDI_DOI_API_PASSWORD'),
     (settings.DANDI_DOI_API_PREFIX, 'DANDI_DOI_API_PREFIX'),
 ]
