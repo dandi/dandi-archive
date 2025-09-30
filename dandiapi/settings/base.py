@@ -105,7 +105,6 @@ STORAGES = {
     },
 }
 DANDI_DANDISETS_BUCKET_NAME: str
-DANDI_DANDISETS_BUCKET_PREFIX: str = env.str('DJANGO_DANDI_DANDISETS_BUCKET_PREFIX', default='')
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Django staticfiles auto-creates any intermediate directories, but do so here to prevent warnings.

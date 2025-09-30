@@ -3,13 +3,11 @@ from __future__ import annotations
 from uuid import uuid4
 
 from dandischema.digests.dandietag import DandiETag
-from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import CreationDateTimeField
 
 from dandiapi.api.multipart import DandiS3MultipartManager
-from dandiapi.api.storage import get_storage_prefix
 
 from .asset import AssetBlob
 from .dandiset import Dandiset
@@ -22,7 +20,7 @@ class Upload(models.Model):  # noqa: DJ008
 
     dandiset = models.ForeignKey(Dandiset, related_name='uploads', on_delete=models.CASCADE)
 
-    blob = models.FileField(blank=True, upload_to=get_storage_prefix)
+    blob = models.FileField(blank=True)
     embargoed = models.BooleanField(default=False)
 
     # This is the key used to generate the object key, and the primary identifier for the upload.
@@ -46,10 +44,7 @@ class Upload(models.Model):  # noqa: DJ008
     @staticmethod
     def object_key(upload_id):
         upload_id = str(upload_id)
-        return (
-            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-            f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
-        )
+        return f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
 
     @classmethod
     def initialize_multipart_upload(cls, etag, size, dandiset: Dandiset):

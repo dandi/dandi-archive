@@ -399,9 +399,7 @@ def test_zarr_rest_delete_missing_file(
         ],
     )
     assert resp.status_code == 400
-    assert resp.json() == [
-        f'File test-prefix/test-zarr/{zarr_archive.zarr_id}/does/not/exist does not exist.'
-    ]
+    assert resp.json() == [f'File test-zarr/{zarr_archive.zarr_id}/does/not/exist does not exist.']
     assert zarr_archive.storage.exists(zarr_archive.s3_path(str(zarr_file.path)))
 
     # Ingest
@@ -463,9 +461,7 @@ def test_zarr_file_list(api_client, zarr_archive: ZarrArchive, zarr_file_factory
         {'prefix': 'foo/bar/a.txt', 'download': True},
     )
     assert resp.status_code == 302
-    assert (
-        f'/test-prefix/test-zarr/{zarr_archive.zarr_id}/foo/bar/a.txt?' in resp.headers['Location']
-    )
+    assert f'/test-zarr/{zarr_archive.zarr_id}/foo/bar/a.txt?' in resp.headers['Location']
 
 
 @pytest.mark.django_db
@@ -473,4 +469,4 @@ def test_zarr_explore_head(api_client, zarr_archive: ZarrArchive):
     filepath = 'foo/bar.txt'
     resp = api_client.head(f'/api/zarr/{zarr_archive.zarr_id}/files/', {'prefix': filepath})
     assert resp.status_code == 302
-    assert f'/test-prefix/test-zarr/{zarr_archive.zarr_id}/{filepath}?' in resp.headers['Location']
+    assert f'/test-zarr/{zarr_archive.zarr_id}/{filepath}?' in resp.headers['Location']

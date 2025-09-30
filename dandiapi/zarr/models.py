@@ -21,10 +21,7 @@ logger = logging.getLogger(name=__name__)
 
 # TODO: Move this somewhere better?
 def zarr_s3_path(zarr_id: str, zarr_path: str = ''):
-    return (
-        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/'
-        f'{zarr_id}/{zarr_path}'
-    )
+    return f'{settings.DANDI_ZARR_PREFIX_NAME}/{zarr_id}/{zarr_path}'
 
 
 # The status of the zarr ingestion (checksums, size, file count)

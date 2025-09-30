@@ -26,10 +26,7 @@ def _s3_url(path: str) -> str:
 
 
 def _manifests_path(version: Version) -> str:
-    return (
-        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-        f'dandisets/{version.dandiset.identifier}/{version.version}'
-    )
+    return f'dandisets/{version.dandiset.identifier}/{version.version}'
 
 
 def manifest_location(version: Version) -> list[str]:

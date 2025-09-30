@@ -98,7 +98,7 @@ def test_upload_initialize(api_client, user, embargoed):
     assert upload.embargoed == embargoed
 
     upload_id = str(upload.upload_id)
-    assert upload.blob.name == f'test-prefix/blobs/{upload_id[:3]}/{upload_id[3:6]}/{upload_id}'
+    assert upload.blob.name == f'blobs/{upload_id[:3]}/{upload_id[3:6]}/{upload_id}'
 
 
 @pytest.mark.django_db
@@ -385,7 +385,7 @@ def test_upload_initialize_and_complete_embargo(api_client, user, content_size):
     # Verify object was uploaded
     upload = Upload.objects.get(upload_id=upload_id)
     assert upload.blob.storage.exists(upload.blob.name)
-    assert upload.blob.name.startswith('test-prefix/blobs/')
+    assert upload.blob.name.startswith('blobs/')
 
 
 @pytest.mark.django_db(transaction=True)
