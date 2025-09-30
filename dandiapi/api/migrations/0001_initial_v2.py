@@ -11,7 +11,6 @@ import django_extensions.db.fields
 
 import dandiapi.api.models.asset
 import dandiapi.api.models.metadata
-import dandiapi.api.storage
 
 
 class Migration(migrations.Migration):

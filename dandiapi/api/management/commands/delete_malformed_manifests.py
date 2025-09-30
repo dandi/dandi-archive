@@ -9,7 +9,6 @@ from tqdm import tqdm
 
 from dandiapi.api.manifests import _manifests_path, all_manifest_filepaths
 from dandiapi.api.models import Version
-from dandiapi.api.storage import get_boto_client
 from dandiapi.api.tasks import write_manifest_files
 
 if TYPE_CHECKING:
@@ -21,10 +20,9 @@ logger = logging.getLogger(__name__)
 def list_files_in_manifest_directory(version: Version) -> Iterator[str]:
     """List all files in the manifest directory for a version."""
     manifest_dir = _manifests_path(version)
-    client = get_boto_client()
 
     # List objects with the manifest directory prefix
-    paginator = client.get_paginator('list_objects_v2')
+    paginator = default_storage.s3_client.get_paginator('list_objects_v2')
     pages = paginator.paginate(
         Bucket=default_storage.bucket_name, Prefix=manifest_dir + '/', Delimiter='/'
     )
