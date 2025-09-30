@@ -347,7 +347,7 @@ def test_audit_upload_zarr_chunks(api_client, user, draft_version, zarr_archive_
 @pytest.mark.django_db
 def test_audit_finalize_zarr(authenticated_api_client, user, zarr_archive, zarr_file_factory):
     add_dandiset_owner(zarr_archive.dandiset, user)
-    zarr_file_factory(zarr_archive)
+    zarr_file_factory(zarr_archive=zarr_archive)
 
     # Finalize the zarr.
     resp = authenticated_api_client.post(

@@ -195,7 +195,7 @@ def test_delete_zarr_object_tags(zarr_archive, zarr_file_factory, mocker):
     )
 
     # Create files
-    files = [zarr_file_factory(zarr_archive) for _ in range(10)]
+    files = [zarr_file_factory(zarr_archive=zarr_archive) for _ in range(10)]
 
     # This should call the mocked function for each file
     _delete_zarr_object_tags(client=get_boto_client(), zarr=zarr_archive.zarr_id)
@@ -250,7 +250,9 @@ def test_unembargo_dandiset(
     zarr_archive: ZarrArchive = embargoed_zarr_archive_factory(
         dandiset=ds, status=ZarrArchiveStatus.UPLOADED
     )
-    zarr_files: list[ZarrArchiveFile] = [zarr_file_factory(zarr_archive) for _ in range(5)]
+    zarr_files: list[ZarrArchiveFile] = [
+        zarr_file_factory(zarr_archive=zarr_archive) for _ in range(5)
+    ]
     ingest_zarr_archive(zarr_id=zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
     zarr_asset = asset_factory(zarr=zarr_archive, blob=None, status=Asset.Status.VALID)
