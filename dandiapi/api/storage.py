@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import boto3
-from django.conf import settings
 from django.core.files.storage import Storage, default_storage
 
 if TYPE_CHECKING:
@@ -31,7 +30,3 @@ def get_storage_params(storage: Storage):
         'access_key': storage.access_key,
         'secret_key': storage.secret_key,
     }
-
-
-def get_storage_prefix(instance: Any, filename: str) -> str:
-    return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{filename}'

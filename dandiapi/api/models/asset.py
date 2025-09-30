@@ -18,7 +18,6 @@ from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.models.metadata import PublishableMetadataMixin
-from dandiapi.api.storage import get_storage_prefix
 
 from .version import Version
 
@@ -62,7 +61,7 @@ class AssetBlob(TimeStampedModel):
     ETAG_REGEX = DandiETag.REGEX
 
     embargoed = models.BooleanField(default=False)
-    blob = models.FileField(blank=True, upload_to=get_storage_prefix)
+    blob = models.FileField(blank=True)
     blob_id = models.UUIDField(unique=True)
     sha256 = models.CharField(  # noqa: DJ001
         null=True,

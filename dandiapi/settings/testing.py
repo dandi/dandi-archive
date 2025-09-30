@@ -19,7 +19,6 @@ STORAGES['default'] = {
     },
 }
 DANDI_DANDISETS_BUCKET_NAME = 'test-django-storage'
-DANDI_DANDISETS_BUCKET_PREFIX = 'test-prefix/'
 
 # Testing will set EMAIL_BACKEND to use the memory backend
 
