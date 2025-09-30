@@ -14,7 +14,7 @@ from rest_framework.exceptions import ValidationError
 from dandiapi.api.models import Dandiset
 
 if TYPE_CHECKING:
-    from dandiapi.api.storage import DandiS3Storage
+    from dandiapi.storage import DandiS3Storage
 
 logger = logging.getLogger(name=__name__)
 

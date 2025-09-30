@@ -18,7 +18,6 @@ from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services import audit
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
-from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
@@ -238,8 +237,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             return HttpResponseRedirect(zarr_archive.storage.url(zarr_archive.s3_path(raw_prefix)))
 
         # Retrieve file listing
-        client = get_boto_client()
-        listing = client.list_objects_v2(
+        listing = zarr_archive.storage.s3_client.list_objects_v2(
             Bucket=zarr_archive.storage.bucket_name,
             Prefix=full_prefix,
             StartAfter=after,

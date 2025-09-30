@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor
 import logging
 from typing import TYPE_CHECKING
 
-from botocore.config import Config
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db.models import Q
@@ -12,14 +11,11 @@ from more_itertools import chunked
 
 from dandiapi.api.manifests import all_manifest_filepaths
 from dandiapi.api.models.asset import Asset
-from dandiapi.api.storage import get_boto_client
-from dandiapi.zarr.models import zarr_s3_path
+from dandiapi.zarr.models import ZarrArchive, zarr_s3_path
 
 from .exceptions import AssetTagRemovalError
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3Client
-
     from dandiapi.api.models.dandiset import Dandiset
 
 
@@ -33,8 +29,8 @@ def _delete_object_tags(blob: str):
     default_storage.put_tags(blob, filtered_tags)
 
 
-def _delete_zarr_object_tags(client: S3Client, zarr: str):
-    paginator = client.get_paginator('list_objects_v2')
+def _delete_zarr_object_tags(zarr: str):
+    paginator = ZarrArchive.storage.s3_client.get_paginator('list_objects_v2')
     pages = paginator.paginate(
         Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Prefix=zarr_s3_path(zarr_id=zarr)
     )
@@ -68,8 +64,6 @@ def _remove_dandiset_manifest_tags(dandiset: Dandiset):
 
 
 def remove_dandiset_embargo_tags(dandiset: Dandiset):
-    client = get_boto_client(config=Config(max_pool_connections=100))
-
     _remove_dandiset_manifest_tags(dandiset=dandiset)
 
     embargoed_assets = (
@@ -92,7 +86,7 @@ def remove_dandiset_embargo_tags(dandiset: Dandiset):
                 if blob is not None:
                     futures.append(e.submit(_delete_object_tags, blob=blob))
                 if zarr is not None:
-                    futures.append(e.submit(_delete_zarr_object_tags, client=client, zarr=zarr))
+                    futures.append(e.submit(_delete_zarr_object_tags, zarr=zarr))
 
         # Check if any failed and raise exception if so
         failed = [blob for i, blob in enumerate(chunk) if futures[i].exception() is not None]

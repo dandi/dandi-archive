@@ -26,7 +26,6 @@ from dandiapi.api.services.embargo.utils import (
 )
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
-from dandiapi.api.storage import get_boto_client
 from dandiapi.api.tasks import unembargo_dandiset_task, write_manifest_files
 from dandiapi.api.tests.factories import DandisetFactory
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
@@ -198,7 +197,7 @@ def test_delete_zarr_object_tags(zarr_archive, zarr_file_factory, mocker):
     files = [zarr_file_factory(zarr_archive=zarr_archive) for _ in range(10)]
 
     # This should call the mocked function for each file
-    _delete_zarr_object_tags(client=get_boto_client(), zarr=zarr_archive.zarr_id)
+    _delete_zarr_object_tags(zarr=zarr_archive.zarr_id)
 
     assert mocked_delete_object_tags.call_count == len(files)
 
