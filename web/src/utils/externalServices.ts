@@ -71,6 +71,14 @@ const EXTERNAL_SERVICES: ExternalService[] = [
     regex: /\.nii(\.gz)?$|\.zarr$/,
     maxsize: Infinity,
     endpoint: redirectNeuroglancerUrl,
+  },
+
+  {
+    name: "NeuroGlass",
+    regex: /\.nii(\.gz)?$|\.(ome|nii)\.zarr$/,
+    maxsize: Infinity,
+    endpoint:
+      "https://www.neuroglass.io/new?resource=$asset_dandi_url$",
   }
 ];
 
