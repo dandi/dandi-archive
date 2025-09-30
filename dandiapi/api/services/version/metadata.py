@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dandischema.models import Dandiset as PydanticDandiset
 from django.conf import settings
 
 from dandiapi.api.models.version import Version
@@ -17,7 +16,7 @@ def _normalize_version_metadata(raw_version_metadata: dict, name: str, email: st
 
     # Only inject a schemaVersion and default contributor field if they are
     # not specified in the version_metadata
-    version_metadata = {
+    return {
         'schemaKey': 'Dandiset',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'contributor': [
@@ -32,8 +31,3 @@ def _normalize_version_metadata(raw_version_metadata: dict, name: str, email: st
         ],
         **version_metadata,
     }
-    # Run the version_metadata through the pydantic model to automatically include any boilerplate
-    # like the access or repository fields
-    return PydanticDandiset.model_construct(**version_metadata).model_dump(
-        mode='json', exclude_none=True
-    )
