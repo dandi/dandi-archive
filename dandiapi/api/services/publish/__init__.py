@@ -11,6 +11,7 @@ from more_itertools import ichunked
 from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import Asset, Dandiset, Version
 from dandiapi.api.services import audit
+from dandiapi.api.services.doi.utils import format_doi
 from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.api.services.publish.exceptions import (
@@ -21,7 +22,7 @@ from dandiapi.api.services.publish.exceptions import (
     DandisetNotLockedError,
     DandisetValidationPendingError,
 )
-from dandiapi.api.tasks import handle_publication_dois_task, write_manifest_files
+from dandiapi.api.tasks import create_published_version_doi_task, write_manifest_files
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -179,6 +180,10 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         old_version.save()
 
         # Inject a dummy DOI so the metadata is valid
+        # TODO: Just insert the DOI here from format_doi, no reason to use a dummy
+        # new_version.metadata['doi'] = format_doi(
+        #     new_version.dandiset.identifier, new_version.version
+        # )
         new_version.metadata['doi'] = '10.80507/dandi.123456/0.123456.1234'
 
         validate(new_version.metadata, schema_key='PublishedDandiset', json_validation=True)
@@ -186,7 +191,7 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         # Write updated manifest files and create DOI after
         # published version has been committed to DB.
         transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
-        transaction.on_commit(lambda: handle_publication_dois_task.delay(new_version.id))
+        transaction.on_commit(lambda: create_published_version_doi_task.delay(new_version.id))
 
         user = User.objects.get(id=user_id)
         audit.publish_dandiset(

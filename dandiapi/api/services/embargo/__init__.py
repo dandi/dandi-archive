@@ -14,7 +14,7 @@ from dandiapi.api.services.embargo.utils import remove_dandiset_embargo_tags
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.metadata import validate_version_metadata
 from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
-from dandiapi.api.tasks import create_dandiset_draft_doi_task, unembargo_dandiset_task
+from dandiapi.api.tasks import create_dandiset_doi_task, unembargo_dandiset_task
 
 from .exceptions import (
     AssetBlobEmbargoedError,
@@ -80,7 +80,7 @@ def unembargo_dandiset(ds: Dandiset, user: User):
     logger.info('...Done')
 
     audit.unembargo_dandiset(dandiset=ds, user=user)
-    transaction.on_commit(lambda: create_dandiset_draft_doi_task.delay(v.id))
+    transaction.on_commit(lambda: create_dandiset_doi_task.delay(ds.id))
 
 
 def remove_asset_blob_embargoed_tag(asset_blob: AssetBlob) -> None:

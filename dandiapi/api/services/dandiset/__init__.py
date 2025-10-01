@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 from django.db import transaction
 
+from dandiapi.api.services.doi.utils import format_doi
+
 if TYPE_CHECKING:
     from datetime import datetime
 
@@ -11,7 +13,6 @@ if TYPE_CHECKING:
 
 from dandischema.models import AccessRequirements, AccessType, Organization, RoleType
 
-from dandiapi.api import doi
 from dandiapi.api.models.dandiset import Dandiset, DandisetStar
 from dandiapi.api.models.version import Version
 from dandiapi.api.services import audit
@@ -24,7 +25,7 @@ from dandiapi.api.services.exceptions import (
 )
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, is_dandiset_owner
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
-from dandiapi.api.tasks import create_dandiset_draft_doi_task
+from dandiapi.api.tasks import create_dandiset_doi_task, delete_dandiset_doi_task
 
 
 def _create_dandiset(
@@ -79,7 +80,14 @@ def create_open_dandiset(
             version_metadata=version_metadata,
         )
 
-        transaction.on_commit(lambda: create_dandiset_draft_doi_task.delay(draft_version.id))
+        # TODO: Set the dandiset DOI on the draft version metadata here.
+        # No need to wait on datacite to inject that value.
+        # draft_version.doi = format_doi(
+        #     dandiset_id=dandiset.identifier, version_str=draft_version.version
+        # )
+        # draft_version.save()
+
+        transaction.on_commit(lambda: create_dandiset_doi_task.delay(dandiset.id))
 
         audit.create_dandiset(dandiset=dandiset, user=user, metadata=draft_version.metadata)
 
@@ -157,12 +165,10 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
         # chance to grab the Dandiset information before it is destroyed.
         audit.delete_dandiset(dandiset=dandiset, user=user)
 
-        # Dandisets with published versions cannot be deleted
-        # so only the Dandiset DOI needs to be deleted.
-        draft_version = dandiset.versions.filter(version='draft').first()
-        if draft_version and draft_version.doi is not None:
-            # Call DOI deletion prior to delete so if this raises, we do not proceed
-            doi.delete_or_hide_doi(draft_version.doi)
+        # Record dandiset DOI while it still exists
+        dandiset_doi = dandiset.draft_version.doi
+        transaction.on_commit(lambda: delete_dandiset_doi_task.delay(dandiset_doi))
+
         dandiset.versions.all().delete()
         dandiset.delete()
 
