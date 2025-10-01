@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-card
-      v-if="currentDandiset && otherVersions"
+      v-if="currentDandiset"
       class="rounded-0 elevation-0"
     >
       <v-dialog
@@ -155,7 +155,7 @@
     <v-divider />
     <v-card class="rounded-0 elevation-0">
       <v-card-title>
-        This Version
+        Draft Version
       </v-card-title>
       <v-card-text>
         <v-list class="pa-0">
@@ -164,13 +164,21 @@
               <v-icon color="green">
                 mdi-check-bold
               </v-icon>
+              <v-btn
+                v-if="draftVersion"
+                size="x-small"
+                variant="outlined"
+                icon="mdi-source-branch"
+                class="rounded"
+                @click="setVersion(draftVersion)"
+              />
             </template>
             <div class="d-flex align-center justify-space-between">
               <v-list-item-title>
-                <strong>{{ currentVersion?.toUpperCase() }}</strong>
+                <strong>{{ draftVersion?.version.toUpperCase() || '' }}</strong>
               </v-list-item-title>
               <v-list-item-subtitle class="text-caption">
-                {{ currentDandiset ? formatDate(currentDandiset.modified) : '' }}
+                {{ draftVersion ? formatDate(draftVersion.modified) : '' }}
               </v-list-item-subtitle>
             </div>
           </v-list-item>
@@ -180,11 +188,11 @@
     <v-divider />
     <v-card class="rounded-0 elevation-0">
       <v-card-title>
-        Other Versions
+        Published Versions
       </v-card-title>
       <v-card-text>
         <v-empty-state
-          v-if="!otherVersions?.length"
+          v-if="!publishedVersions?.length"
           text="This is the only version. When other versions get published, they'll appear here."
         />
         <v-list
@@ -192,7 +200,7 @@
           class="border border-b-0 rounded pa-0"
         >
           <v-list-item
-            v-for="(version, i) in otherVersions"
+            v-for="(version, i) in publishedVersions"
             :key="i"
             class="border-b pl-2"
           >
@@ -264,7 +272,7 @@ import { dandiRest, loggedIn as loggedInFunc, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import router from '@/router';
 import type { User, Version } from '@/types';
-import { draftVersion } from '@/utils/constants';
+import { draftVersion as draftVersionName } from '@/utils/constants';
 import DandisetValidationErrors from './DandisetValidationErrors.vue';
 
 
@@ -281,7 +289,7 @@ const PUBLISH_CHECKLIST = [
 // The DRAFT version is always the first element when present.
 function sortVersions(v1: Version, v2: Version): number {
   // Always put draft first
-  if (v1.version === draftVersion || v1.modified > v2.modified) {
+  if (v1.version === draftVersionName || v1.modified > v2.modified) {
     return -1;
   }
   if (v1.modified < v2.modified) {
@@ -300,13 +308,9 @@ const route = useRoute();
 const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
-const currentVersion = computed(() => store.dandiset?.version);
 
-const otherVersions: ComputedRef<Version[]|undefined> = computed(
-  () => store.versions?.filter(
-    (version: Version) => version.version !== currentVersion.value,
-  ).sort(sortVersions),
-);
+const draftVersion = computed(() => store.draftVersion);
+const publishedVersions = computed(() => store.publishedVersions?.toSorted(sortVersions));
 
 const loggedIn: ComputedRef<boolean> = computed(loggedInFunc);
 
@@ -343,7 +347,7 @@ const publishDisabledMessage: ComputedRef<string> = computed(() => {
   if (!loggedIn.value) {
     return 'You must be logged in to edit.';
   }
-  if ((isOwner.value || user.value?.admin) && currentVersion.value !== draftVersion) {
+  if ((isOwner.value || user.value?.admin) && store.dandiset?.version !== draftVersionName) {
     return 'Only draft versions can be published.';
   }
   if (!props.userCanModifyDandiset && !user.value?.admin) {
@@ -384,7 +388,7 @@ onMounted(() => {
         await store.fetchDandiset({ identifier, version });
         await store.fetchDandisetVersions({ identifier });
 
-        publishedVersion.value = otherVersions.value![0].version;
+        publishedVersion.value = publishedVersions.value![0].version;
 
         publishing.value = false;
       }
@@ -433,9 +437,7 @@ function formatDate(date: string): string {
   return moment(date).format('ll');
 }
 
-function setVersion({ version: newVersion }: any) {
-  const version = newVersion || draftVersion;
-
+function setVersion({ version }: Version) {
   const identifier = currentDandiset.value?.dandiset.identifier;
 
   if (!identifier) {
@@ -453,7 +455,7 @@ function setVersion({ version: newVersion }: any) {
 
     store.fetchDandiset({
       identifier: currentDandiset.value?.dandiset.identifier,
-      version: newVersion,
+      version,
     });
   }
 }
