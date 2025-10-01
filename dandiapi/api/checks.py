@@ -3,13 +3,12 @@ from __future__ import annotations
 from django.conf import settings
 from django.core.checks import Error, register
 
-from dandiapi.api.doi import DANDI_DOI_SETTINGS
+from dandiapi.api.doi import DANDI_DOI_SETTINGS, doi_configured
 
 
 @register()
 def check_doi_settings(app_configs, **kwargs):
-    any_doi_setting = any(setting is not None for setting, _ in DANDI_DOI_SETTINGS)
-    if not any_doi_setting:
+    if not doi_configured():
         # If no DOI settings are defined, DOIs will not be created on publish.
         return []
     errors = []
