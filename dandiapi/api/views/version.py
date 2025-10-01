@@ -21,7 +21,7 @@ from dandiapi.api.services.permissions.dandiset import (
     require_dandiset_owner_or_403,
 )
 from dandiapi.api.services.publish import publish_dandiset
-from dandiapi.api.tasks import delete_doi_task, update_draft_version_doi_task
+from dandiapi.api.tasks import delete_dandiset_doi_task, update_dandiset_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
@@ -135,17 +135,10 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                     metadata=locked_version.metadata,
                 )
 
-                # For unpublished dandisets, update or create the draft DOI
-                # to keep it in sync with the latest metadata
-                if not locked_version.dandiset.embargoed:
-                    transaction.on_commit(
-                        lambda: update_draft_version_doi_task.delay(locked_version.id)
-                    )
-                else:
-                    logger.debug(
-                        'Skipping DOI update for embargoed Dandiset %s.',
-                        locked_version.dandiset.identifier,
-                    )
+                # Only update the dandiset DOI metadata for unpublished, OPEN dandisets
+                ds = locked_version.dandiset
+                if not ds.embargoed and ds.most_recent_published_version is None:
+                    transaction.on_commit(lambda: update_dandiset_doi_task.delay(ds.id))
 
         serializer = VersionDetailSerializer(instance=locked_version)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -190,6 +183,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
             )
         doi = version.doi
         version.delete()
-        if doi is not None:
-            delete_doi_task.delay(doi)
+
+        delete_dandiset_doi_task.delay(doi)
+
         return Response(None, status=status.HTTP_204_NO_CONTENT)

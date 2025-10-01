@@ -7,7 +7,6 @@ from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
 
-from dandiapi.api.doi import delete_or_hide_doi
 from dandiapi.api.mail import send_dandiset_unembargo_failed_message
 from dandiapi.api.manifests import (
     write_assets_jsonld,
@@ -18,6 +17,12 @@ from dandiapi.api.manifests import (
 )
 from dandiapi.api.models import Asset, AssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.services.doi import (
+    create_dandiset_doi,
+    create_published_version_doi,
+    delete_dandiset_doi,
+    update_dandiset_doi,
+)
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -82,8 +87,8 @@ def validate_version_metadata_task(version_id: int) -> None:
 
 
 @shared_task
-def delete_doi_task(doi: str) -> None:
-    delete_or_hide_doi(doi)
+def delete_dandiset_doi_task(doi: str) -> None:
+    delete_dandiset_doi(doi)
 
 
 @shared_task
@@ -109,31 +114,18 @@ def unembargo_dandiset_task(dandiset_id: int, user_id: int):
 
 
 @shared_task(soft_time_limit=60)
-def handle_publication_dois_task(version_id: int) -> None:
-    from dandiapi.api.doi import _handle_publication_dois
-
-    _handle_publication_dois(version_id)
+def create_published_version_doi_task(version_id: int) -> None:
+    version = Version.objects.get(id=version_id)
+    create_published_version_doi(version)
 
 
 @shared_task(soft_time_limit=60)
-def create_dandiset_draft_doi_task(version_id: int) -> None:
-    from dandiapi.api.doi import _create_dandiset_draft_doi
-
-    version = Version.objects.get(id=version_id)
-    try:
-        _create_dandiset_draft_doi(version)
-    except Exception:
-        # Log error but allow dandiset creation to proceed
-        logger.exception('Failed to create Draft DOI for dandiset %s', version.dandiset.identifier)
+def create_dandiset_doi_task(dandiset_id: int) -> None:
+    dandiset = Dandiset.objects.get(id=dandiset_id)
+    create_dandiset_doi(dandiset)
 
 
 @shared_task(soft_time_limit=60)
-def update_draft_version_doi_task(version_id: int) -> None:
-    from dandiapi.api.doi import _update_draft_version_doi
-
-    version = Version.objects.get(id=version_id)
-    try:
-        _update_draft_version_doi(version)
-    except Exception:
-        # Log error but allow version update to proceed
-        logger.exception('Failed to update Draft DOI for dandiset %s', version.dandiset.identifier)
+def update_dandiset_doi_task(dandiset_id: int) -> None:
+    dandiset = Dandiset.objects.get(id=dandiset_id)
+    update_dandiset_doi(dandiset)
