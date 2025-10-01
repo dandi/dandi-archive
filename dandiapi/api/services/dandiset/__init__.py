@@ -80,12 +80,11 @@ def create_open_dandiset(
             version_metadata=version_metadata,
         )
 
-        # TODO: Set the dandiset DOI on the draft version metadata here.
-        # No need to wait on datacite to inject that value.
-        # draft_version.doi = format_doi(
-        #     dandiset_id=dandiset.identifier, version_str=draft_version.version
-        # )
-        # draft_version.save()
+        # Set DOI value now, since it'll be created after the call to datacite anyway
+        draft_version.doi = format_doi(
+            dandiset_id=dandiset.identifier, version_str=draft_version.version
+        )
+        draft_version.save()
 
         transaction.on_commit(lambda: create_dandiset_doi_task.delay(dandiset.id))
 
