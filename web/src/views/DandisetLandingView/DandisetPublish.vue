@@ -130,7 +130,7 @@
                         Publish
                         <v-spacer />
                         <v-progress-circular
-                          v-if="publishing"
+                          v-if="isPublishing"
                           indeterminate
                         />
                         <v-icon v-else>
@@ -237,7 +237,7 @@
     <v-snackbar :model-value="!!alreadyBeingPublishedError">
       This dandiset is already being published. Please wait for publishing to complete.
     </v-snackbar>
-    <v-snackbar :model-value="!!publishedVersion">
+    <v-snackbar :model-value="!!newlyPublishedVersion">
       Publish complete.
       <template #actions>
         <v-btn
@@ -322,9 +322,9 @@ const isOwner: ComputedRef<boolean> = computed(
 
 // true if the dandiset is being published due to the user
 // clicking the publish button on this page
-const publishing = ref(false);
+const isPublishing = ref(false);
 // The version that resulted from the recent publish, if applicable
-const publishedVersion = ref('');
+const newlyPublishedVersion = ref('');
 
 const alreadyBeingPublishedError = ref(false);
 
@@ -365,7 +365,7 @@ const publishDisabledMessage: ComputedRef<string> = computed(() => {
   if (currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING') {
     return 'This dandiset is being unembargoed, please wait.';
   }
-  if (publishing.value) {
+  if (isPublishing.value) {
     return 'This dandiset is being published, please wait.';
   }
   if (containsZarr.value) {
@@ -378,7 +378,7 @@ let timer: number | undefined;
 onMounted(() => {
   timer = window.setInterval(async () => {
   // When a dandiset is being published, poll the server to check if it's finished
-    if (publishing.value && currentDandiset.value) {
+    if (isPublishing.value && currentDandiset.value) {
       const { identifier } = currentDandiset.value.dandiset!;
       const { version } = currentDandiset.value;
       const dandiset = await dandiRest.specificVersion(identifier, version);
@@ -388,9 +388,9 @@ onMounted(() => {
         await store.fetchDandiset({ identifier, version });
         await store.fetchDandisetVersions({ identifier });
 
-        publishedVersion.value = publishedVersions.value![0].version;
+        newlyPublishedVersion.value = publishedVersions.value![0].version;
 
-        publishing.value = false;
+        isPublishing.value = false;
       }
     }
   }, 2000);
@@ -471,10 +471,10 @@ async function publish() {
     showPublishChecklistDialog.value = false;
     showPublishWarningDialog.value = false;
 
-    publishing.value = true;
+    isPublishing.value = true;
     try {
       const { version } = await dandiRest.publish(currentDandiset.value.dandiset.identifier);
-      publishedVersion.value = version;
+      newlyPublishedVersion.value = version;
     } catch (e) {
       // A 423: Locked error means that the dandiset is currently undergoing publishing.
       // If that happens, display an error.
@@ -489,11 +489,11 @@ async function publish() {
 
 function navigateToPublishedVersion() {
   const { identifier } = currentDandiset.value!.dandiset;
-  const version = publishedVersion.value;
+  const version = newlyPublishedVersion.value;
 
   // reset these for the new version
-  publishing.value = false;
-  publishedVersion.value = '';
+  isPublishing.value = false;
+  newlyPublishedVersion.value = '';
 
   // navigate to the newly published version
   router.push({
