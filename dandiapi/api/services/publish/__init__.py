@@ -166,6 +166,10 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         new_version.metadata['assetsSummary'] = aggregate_assets_summary(
             new_version.assets.values_list('metadata', flat=True).iterator()
         )
+        # Set the DOI now, it will be created eventually in datacite
+        new_version.metadata['doi'] = format_doi(
+            new_version.dandiset.identifier, new_version.version
+        )
         new_version.save()
 
         # Add asset paths with new version
@@ -178,13 +182,6 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         # being modified and revalidated
         old_version.status = Version.Status.PUBLISHED
         old_version.save()
-
-        # Inject a dummy DOI so the metadata is valid
-        # TODO: Just insert the DOI here from format_doi, no reason to use a dummy
-        # new_version.metadata['doi'] = format_doi(
-        #     new_version.dandiset.identifier, new_version.version
-        # )
-        new_version.metadata['doi'] = '10.80507/dandi.123456/0.123456.1234'
 
         validate(new_version.metadata, schema_key='PublishedDandiset', json_validation=True)
 
