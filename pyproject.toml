@@ -11,9 +11,9 @@ classifiers = ["Private :: Do Not Upload"]
 dependencies = [
   "boto3",
   "celery",
-  "dandi",  # minimal version is also provided in API /info
+  "dandi", # minimal version is also provided in API /info
   # Pin dandischema to exact version to make explicit which schema version is being used
-  "dandischema",  # schema version 0.6.10
+  "dandischema", # schema version 0.6.10
   "django[argon2]",
   # Pin to version where this bug is fixed
   # https://codeberg.org/allauth/django-allauth/issues/4072
@@ -50,6 +50,7 @@ dependencies = [
   "sentry-sdk[celery,django,pure_eval]",
   # Development-only, but required
   "tqdm",
+  "types-requests>=2.32.4.20250611",
 ]
 dynamic = ["version"]
 
