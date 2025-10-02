@@ -9,10 +9,10 @@ from dandiapi.api.doi import _create_dandiset_draft_doi, _update_draft_version_d
 def test__create_dandiset_draft_doi(draft_version, mocker):
     """Test the _create_dandiset_draft_doi function directly."""
     # Set up mocks
-    mock_generate_doi = mocker.patch('dandiapi.api.doi.datacite_client.generate_doi_data')
+    mock_generate_doi = mocker.patch('dandiapi.api.services.doi.utils.generate_doi_data')
     mock_generate_doi.return_value = ('10.48324/dandi.000123', {'data': {'attributes': {}}})
 
-    mock_create_doi = mocker.patch('dandiapi.api.doi.datacite_client.create_or_update_doi')
+    mock_create_doi = mocker.patch('dandiapi.api.services.doi.create_dandiset_doi')
     mock_create_doi.return_value = '10.48324/dandi.000123'
 
     # Call the function directly
@@ -34,10 +34,10 @@ def test__create_dandiset_draft_doi(draft_version, mocker):
 def test_update_draft_version_doi_no_previous_doi(draft_version, mocker):
     """Test updating a draft DOI when none exists yet."""
     # Set up mocks
-    mock_generate_doi = mocker.patch('dandiapi.api.doi.datacite_client.generate_doi_data')
+    mock_generate_doi = mocker.patch('dandiapi.api.services.doi.utils.generate_doi_data')
     mock_generate_doi.return_value = ('10.48324/dandi.000123', {'data': {'attributes': {}}})
 
-    mock_create_doi = mocker.patch('dandiapi.api.doi.datacite_client.create_or_update_doi')
+    mock_create_doi = mocker.patch('dandiapi.api.services.doi.update_dandiset_doi')
     mock_create_doi.return_value = '10.48324/dandi.000123'
 
     _update_draft_version_doi(draft_version)
@@ -58,10 +58,10 @@ def test_update_draft_version_doi_existing_doi(draft_version, mocker):
     draft_version.save()
 
     # Set up mocks
-    mock_generate_doi = mocker.patch('dandiapi.api.doi.datacite_client.generate_doi_data')
+    mock_generate_doi = mocker.patch('dandiapi.api.services.doi.utils.generate_doi_data')
     mock_generate_doi.return_value = ('10.48324/dandi.000123', {'data': {'attributes': {}}})
 
-    mock_create_doi = mocker.patch('dandiapi.api.doi.datacite_client.create_or_update_doi')
+    mock_create_doi = mocker.patch('dandiapi.api.services.doi.update_dandiset_doi')
     mock_create_doi.return_value = '10.48324/dandi.000123'
 
     _update_draft_version_doi(draft_version)
@@ -78,8 +78,8 @@ def test_update_draft_version_doi_existing_doi(draft_version, mocker):
 def test_update_draft_version_doi_published_version(draft_version, published_version, mocker):
     """Test that update_draft_version_doi is a no-op for dandisets with published versions."""
     # Set up mocks
-    mock_generate_doi = mocker.patch('dandiapi.api.doi.datacite_client.generate_doi_data')
-    mock_create_doi = mocker.patch('dandiapi.api.doi.datacite_client.create_or_update_doi')
+    mock_generate_doi = mocker.patch('dandiapi.api.services.doi.utils.generate_doi_data')
+    mock_create_doi = mocker.patch('dandiapi.api.services.doi.update_dandiset_doi')
 
     _update_draft_version_doi(draft_version)
 
