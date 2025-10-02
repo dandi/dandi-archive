@@ -346,7 +346,9 @@ def test_publish_task(
     django_capture_on_commit_callbacks,
     mocker,
 ):
-    mock_handle_dois = mocker.patch('dandiapi.api.services.publish.handle_publication_dois_task')
+    mock_handle_dois = mocker.patch(
+        'dandiapi.api.services.publish.create_published_version_doi_task'
+    )
     # Create a draft_version in PUBLISHING state
     draft_version: Version = draft_version_factory(status=Version.Status.PUBLISHING)
 

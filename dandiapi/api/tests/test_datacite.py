@@ -4,7 +4,7 @@ from django.conf import settings
 import pytest
 from requests.exceptions import HTTPError
 
-from dandiapi.api.datacite import DataCiteClient
+from dandiapi.api.services.doi.utils import generate_doi_data
 
 
 @pytest.fixture(autouse=True)
@@ -89,7 +89,9 @@ def test_generate_doi_data(datacite_client, published_version, draft_version_fac
     draft_version_factory(dandiset=published_version.dandiset)
 
     # Test Version DOI
-    doi_string, payload = datacite_client.generate_doi_data(published_version, version_doi=True)
+    doi_string, payload = generate_doi_data(
+        published_version.dandiset, version=published_version, publish=True
+    )
     dandiset_id = published_version.dandiset.identifier
     version_id = published_version.version
     expected_doi = f'{datacite_client.api_prefix}/dandi.{dandiset_id}/{version_id}'
@@ -97,7 +99,9 @@ def test_generate_doi_data(datacite_client, published_version, draft_version_fac
     assert 'doi' in published_version.metadata
     # Make sure metadata is copied, not modified
     assert id(published_version.metadata) != id(
-        datacite_client.generate_doi_data(published_version)[1]
+        generate_doi_data(
+            dandiset=published_version.dandiset, version=published_version, publish=True
+        )[1]
     )
 
     # Test Dandiset DOI
