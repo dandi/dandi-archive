@@ -242,3 +242,6 @@ filterwarnings = [
   # https://github.com/celery/kombu/issues/1339
   "ignore:SelectableGroups dict interface is deprecated:DeprecationWarning:kombu",
 ]
+
+[tool.uv.sources]
+dandischema = { git = "https://github.com/asmacdo/dandi-schema", branch = "enh-dandiset-dois" }
