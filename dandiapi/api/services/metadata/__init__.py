@@ -116,7 +116,8 @@ def validate_version_metadata(*, version: Version) -> None:
         metadata_for_validation = publishable_version.metadata
 
         metadata_for_validation['id'] = (
-            f'DANDI:{publishable_version.dandiset.identifier}/{publishable_version.version}'
+            f'{settings.DANDI_SCHEMA_INSTANCE_CONFIG.instance_name}:'
+            f'{publishable_version.dandiset.identifier}/{publishable_version.version}'
         )
         metadata_for_validation['url'] = (
             f'{settings.DANDI_WEB_APP_URL}/dandiset/'
