@@ -237,9 +237,14 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             ),
             'manifestLocation': manifest_location(self),
             'name': self.name,
-            'identifier': f'DANDI:{self.dandiset.identifier}',
+            'identifier': (
+                f'{settings.DANDI_SCHEMA_INSTANCE_CONFIG.instance_name}:{self.dandiset.identifier}'
+            ),
             'version': self.version,
-            'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
+            'id': (
+                f'{settings.DANDI_SCHEMA_INSTANCE_CONFIG.instance_name}:'
+                f'{self.dandiset.identifier}/{self.version}'
+            ),
             'repository': settings.DANDI_WEB_APP_URL,
             'url': (
                 f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}'
