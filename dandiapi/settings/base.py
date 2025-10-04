@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, cast
 from urllib.parse import urlunparse
 
 from corsheaders.defaults import default_headers
+from dandischema.conf import get_instance_config as get_schema_instance_config
 from dandischema.consts import DANDI_SCHEMA_VERSION as _DEFAULT_DANDI_SCHEMA_VERSION
 import django_stubs_ext
 from environ import Env
@@ -172,6 +173,8 @@ logging.getLogger('dandiapi').setLevel(_dandi_log_level)
 DANDI_SCHEMA_VERSION: str = env.str(
     'DJANGO_DANDI_SCHEMA_VERSION', default=_DEFAULT_DANDI_SCHEMA_VERSION
 )
+
+DANDI_SCHEMA_INSTANCE_CONFIG = get_schema_instance_config()
 
 DANDI_ZARR_PREFIX_NAME: str = env.str('DJANGO_DANDI_ZARR_PREFIX_NAME', default='zarr')
 
