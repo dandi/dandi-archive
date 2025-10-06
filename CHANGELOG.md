@@ -1,3 +1,32 @@
+# v0.16.0 (Mon Oct 06 2025)
+
+#### 🚀 Enhancement
+
+- Add support to open NIfTI and Zarr assets in NeuroGlass ephemeral mode [#2572](https://github.com/dandi/dandi-archive/pull/2572) ([@kabilar](https://github.com/kabilar))
+
+#### 🐛 Bug Fix
+
+- Fix bug resulting from typo and small refactor [#2575](https://github.com/dandi/dandi-archive/pull/2575) ([@candleindark](https://github.com/candleindark))
+- Fix `ValidationError` error handling [#2569](https://github.com/dandi/dandi-archive/pull/2569) ([@brianhelba](https://github.com/brianhelba))
+- Directly add metadata instead of using `.model_construct` [#2571](https://github.com/dandi/dandi-archive/pull/2571) ([@brianhelba](https://github.com/brianhelba))
+
+#### 🏠 Internal
+
+- Remove `get_boto_client` and `get_storage_params` helpers [#2568](https://github.com/dandi/dandi-archive/pull/2568) ([@brianhelba](https://github.com/brianhelba))
+- Remove the `DJANGO_DANDI_DANDISETS_BUCKET_PREFIX` setting [#2566](https://github.com/dandi/dandi-archive/pull/2566) ([@brianhelba](https://github.com/brianhelba))
+
+#### 🧪 Tests
+
+- Create a `ZarrFileFactory` [#2562](https://github.com/dandi/dandi-archive/pull/2562) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 3
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v0.15.5 (Mon Sep 29 2025)
 
 #### 🐛 Bug Fix
