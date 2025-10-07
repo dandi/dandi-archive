@@ -9,6 +9,11 @@
     "service": "django",
     "overrideCommand": true,
     "workspaceFolder": "/home/vscode/dandi",
+    "containerEnv": {
+        // TODO: forwardPorts should instead be used, but it appears to be broken
+        // on linux and not macos.
+        "VITE_HOST": "0.0.0.0"
+    },
     "features": {
         "ghcr.io/robbert229/devcontainer-features/postgresql-client:1": {
             "version": 17
@@ -48,9 +53,6 @@
             }
         }
     },
-    "forwardPorts": [
-        8085
-    ],
     "portsAttributes": {
         "8000": {
             "name": "Django",
