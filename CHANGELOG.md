@@ -1,3 +1,18 @@
+# v0.16.1 (Tue Oct 07 2025)
+
+#### 🐛 Bug Fix
+
+- Local runtime schema serialization endpoints [#2386](https://github.com/dandi/dandi-archive/pull/2386) ([@yarikoptic](https://github.com/yarikoptic) [@mvandenburgh](https://github.com/mvandenburgh) [@candleindark](https://github.com/candleindark) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 4
+
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.16.0 (Mon Oct 06 2025)
 
 #### 🚀 Enhancement
