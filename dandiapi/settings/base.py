@@ -84,9 +84,6 @@ MIDDLEWARE = [
 
 # Internal datetimes are timezone-aware, so this only affects rendering and form input
 TIME_ZONE = 'UTC'
-# https://docs.djangoproject.com/en/4.2/ref/settings/#std-setting-USE_TZ
-# TODO: this defaults to True starting with Django 5. Remove this when we upgrade
-USE_TZ = True
 
 DATABASES = {
     'default': {
