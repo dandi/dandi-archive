@@ -57,12 +57,12 @@ def test_zarr_rest_dandiset_malformed(authenticated_api_client, user):
 
 
 @pytest.mark.django_db
-def test_zarr_rest_create_not_an_owner(authenticated_api_client, zarr_archive):
+def test_zarr_rest_create_not_an_owner(authenticated_api_client, dandiset):
     resp = authenticated_api_client.post(
         '/api/zarr/',
         {
-            'name': zarr_archive.name,
-            'dandiset': zarr_archive.dandiset.identifier,
+            'name': 'New Zarr',
+            'dandiset': dandiset.identifier,
         },
     )
     assert resp.status_code == 403
@@ -79,7 +79,9 @@ def test_zarr_rest_create_duplicate(authenticated_api_client, user, zarr_archive
         },
     )
     assert resp.status_code == 400
-    assert resp.json() == ['Zarr already exists']
+    assert resp.json() == {
+        'non_field_errors': ['The fields dandiset, name must make a unique set.']
+    }
 
 
 @pytest.mark.django_db
