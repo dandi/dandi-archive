@@ -79,6 +79,13 @@ export interface Paginated<T> {
 }
 
 export interface Info {
+  instance_config: {
+    instance_name: string;
+    instance_identifier: string | null;
+    instance_url: string | null;
+    doi_prefix: string | null;
+    licenses: string[];
+  };
   schema_url: string;
   schema_version: string;
 }
