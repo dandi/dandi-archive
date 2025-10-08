@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
+from django.conf import settings
+
 if TYPE_CHECKING:
     import datetime
 
@@ -10,6 +12,8 @@ if TYPE_CHECKING:
 class PublishableMetadataMixin:
     @classmethod
     def published_by(cls, now: datetime.datetime):
+        instance_identifier = settings.DANDI_SCHEMA_INSTANCE_CONFIG.instance_identifier
+
         return {
             'id': uuid4().urn,
             'name': 'DANDI publish',
@@ -20,7 +24,7 @@ class PublishableMetadataMixin:
             'wasAssociatedWith': [
                 {
                     'id': uuid4().urn,
-                    'identifier': 'RRID:SCR_017571',
+                    **({'identifier': instance_identifier} if instance_identifier else {}),
                     'name': 'DANDI API',
                     # TODO: version the API
                     'version': '0.1.0',
