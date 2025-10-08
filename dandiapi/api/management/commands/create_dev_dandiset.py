@@ -30,9 +30,18 @@ from dandiapi.api.tasks import calculate_sha256
 def create_dev_dandiset(*, name: str, email: str, num_extra_owners: int):
     owner = User.objects.get(email=email)
 
+    supported_licenses = [
+        license_.value for license_ in settings.DANDI_SCHEMA_INSTANCE_CONFIG.licenses
+    ]
+    supported_licenses.sort()
+
+    license_to_use = (
+        'spdx:CC0-1.0' if 'spdx:CC0-1.0' in supported_licenses else supported_licenses[0]
+    )
+
     version_metadata = {
         'description': 'An informative description',
-        'license': ['spdx:CC0-1.0'],
+        'license': [license_to_use],
     }
     dandiset, draft_version = create_open_dandiset(
         user=owner, version_name=name, version_metadata=version_metadata
