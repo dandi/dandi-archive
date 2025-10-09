@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from uuid import uuid4
 
+from dandischema.conf import get_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
 from django.db.utils import IntegrityError
@@ -10,6 +11,7 @@ from django.urls import reverse
 import pytest
 import requests
 
+from dandiapi import __version__
 from dandiapi.api.asset_paths import add_asset_paths, extract_paths
 from dandiapi.api.models import Asset, Version
 from dandiapi.api.models.asset_paths import AssetPath
@@ -24,6 +26,8 @@ from dandiapi.zarr.models import ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
+
+_SCHEMA_INSTANCE_CONFIG = get_instance_config()
 
 # Model tests
 
@@ -112,6 +116,9 @@ def test_publish_asset(draft_asset: Asset):
     published_asset = draft_asset
     published_asset.refresh_from_db()
 
+    instance_name = _SCHEMA_INSTANCE_CONFIG.instance_name
+    instance_identifier = _SCHEMA_INSTANCE_CONFIG.instance_identifier
+
     assert published_asset.blob == draft_blob
     assert published_asset.full_metadata == {
         **draft_metadata,
@@ -124,10 +131,10 @@ def test_publish_asset(draft_asset: Asset):
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,
-                    'identifier': 'RRID:SCR_017571',
-                    'name': 'DANDI API',
+                    **({'identifier': instance_identifier} if instance_identifier else {}),
+                    'name': f'{instance_name} API Server',
                     # TODO: version the API
-                    'version': '0.1.0',
+                    'version': __version__,
                     'schemaKey': 'Software',
                 }
             ],

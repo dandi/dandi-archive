@@ -4,11 +4,13 @@ import datetime
 from time import sleep
 from typing import TYPE_CHECKING
 
+from dandischema.conf import get_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
 from freezegun import freeze_time
 import pytest
 
+from dandiapi import __version__
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
@@ -26,6 +28,8 @@ from dandiapi.api.services.publish import _build_publishable_version_from_draft
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
+
+_SCHEMA_INSTANCE_CONFIG = get_instance_config()
 
 
 @freeze_time()
@@ -291,6 +295,9 @@ def test_version_publish_version(draft_version, asset):
     publish_version.doi = fake_doi
     publish_version.save()
 
+    instance_name = _SCHEMA_INSTANCE_CONFIG.instance_name
+    instance_identifier = _SCHEMA_INSTANCE_CONFIG.instance_identifier
+
     assert publish_version.dandiset == draft_version.dandiset
     assert publish_version.metadata == {
         **draft_version.metadata,
@@ -302,10 +309,10 @@ def test_version_publish_version(draft_version, asset):
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,
-                    'identifier': 'RRID:SCR_017571',
-                    'name': 'DANDI API',
+                    **({'identifier': instance_identifier} if instance_identifier else {}),
+                    'name': f'{instance_name} API Server',
                     # TODO: version the API
-                    'version': '0.1.0',
+                    'version': __version__,
                     'schemaKey': 'Software',
                 }
             ],
