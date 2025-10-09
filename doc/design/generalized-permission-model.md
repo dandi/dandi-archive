@@ -58,7 +58,7 @@ there’s more.
 With embargo, the permissions model meets NIH’s requirements. But certain
 quality of life improvements become impossible. For example, owners of an
 embargoed Dandiset may wish to share read-only access to a selected set of
-colleagues. This is only possibility in the existing model by granting full
+colleagues. This is only possible in the existing model by granting full
 ownership; instead, it would be helpful to assign them as *viewers*.
 
 A similar role could be useful in a blind review workflow: a *reviewer* who has
