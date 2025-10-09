@@ -3,12 +3,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
+from django.conf import settings
+
+from dandiapi import __version__
+
 if TYPE_CHECKING:
     import datetime
 
 
 class PublishableMetadataMixin:
     def published_by(self, now: datetime.datetime):
+        instance_name = settings.DANDI_SCHEMA_INSTANCE_CONFIG.instance_name
+        instance_identifier = settings.DANDI_SCHEMA_INSTANCE_CONFIG.instance_identifier
+
         return {
             'id': uuid4().urn,
             'name': 'DANDI publish',
@@ -19,10 +26,10 @@ class PublishableMetadataMixin:
             'wasAssociatedWith': [
                 {
                     'id': uuid4().urn,
-                    'identifier': 'RRID:SCR_017571',
-                    'name': 'DANDI API',
+                    **({'identifier': instance_identifier} if instance_identifier else {}),
+                    'name': f'{instance_name} API Server',
                     # TODO: version the API
-                    'version': '0.1.0',
+                    'version': __version__,
                     'schemaKey': 'Software',
                 }
             ],
