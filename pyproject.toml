@@ -3,12 +3,13 @@ requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
-name = "dandiapi"
+name = "dandi-archive"
 requires-python = ">=3.13"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 classifiers = ["Private :: Do Not Upload"]
 dependencies = [
+  # Runtime dependencies, always needed
   "boto3",
   "celery",
   "dandi",  # minimal version is also provided in API /info
@@ -66,7 +67,7 @@ dev = [
   # Additional developer tools
   # The "dev" dependency group is installed by default,
   # so use this to install "development" extras by default too
-  "dandiapi[development]",
+  "dandi-archive[development]",
   "pre-commit",
   "tox",
   "tox-uv",

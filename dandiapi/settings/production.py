@@ -48,7 +48,7 @@ DANDI_DEV_EMAIL: str = env.str('DJANGO_DANDI_DEV_EMAIL')
 DANDI_ADMIN_EMAIL: str = env.str('DJANGO_DANDI_ADMIN_EMAIL')
 
 # sentry_sdk is able to directly use environment variables like 'SENTRY_DSN', but prefix them
-# with 'DJANGO_' to avoid avoiding conflicts with other Sentry-using services.
+# with 'DJANGO_' to avoid conflicts with other Sentry-using services.
 sentry_sdk.init(
     dsn=env.str('DJANGO_SENTRY_DSN', default=None),
     environment=env.str('DJANGO_SENTRY_ENVIRONMENT', default=None),
