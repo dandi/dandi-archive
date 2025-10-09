@@ -5,6 +5,8 @@ from uuid import uuid4
 
 from django.conf import settings
 
+from dandiapi import __version__
+
 if TYPE_CHECKING:
     import datetime
 
@@ -27,7 +29,7 @@ class PublishableMetadataMixin:
                     **({'identifier': instance_identifier} if instance_identifier else {}),
                     'name': 'DANDI API',
                     # TODO: version the API
-                    'version': '0.1.0',
+                    'version': __version__,
                     'schemaKey': 'Software',
                 }
             ],
