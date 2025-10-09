@@ -19,6 +19,7 @@ from resonant_settings.oauth_toolkit import *
 from resonant_settings.rest_framework import *
 
 if TYPE_CHECKING:
+    from typing import Any
     from urllib.parse import ParseResult
 
 django_stubs_ext.monkeypatch()
@@ -31,7 +32,7 @@ ROOT_URLCONF = 'dandiapi.urls'
 
 INSTALLED_APPS = [
     # Install local apps first, to ensure any overridden resources are found first
-    'dandiapi.api.apps.PublishConfig',
+    'dandiapi.api.apps.ApiConfig',
     'dandiapi.search.apps.SearchConfig',
     'dandiapi.zarr.apps.ZarrConfig',
     # Apps with overrides
@@ -93,7 +94,7 @@ DATABASES = {
 }
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STORAGES = {
+STORAGES: dict[str, dict[str, Any]] = {
     # Inject the "default" storage in particular run configurations
     'staticfiles': {
         # CompressedManifestStaticFilesStorage does not work properly with drf-
