@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 class PublishableMetadataMixin:
     def published_by(self, now: datetime.datetime):
+        instance_name = settings.DANDI_SCHEMA_INSTANCE_CONFIG.instance_name
         instance_identifier = settings.DANDI_SCHEMA_INSTANCE_CONFIG.instance_identifier
 
         return {
@@ -26,7 +27,7 @@ class PublishableMetadataMixin:
                 {
                     'id': uuid4().urn,
                     **({'identifier': instance_identifier} if instance_identifier else {}),
-                    'name': 'DANDI API',
+                    'name': f'{instance_name} API Server',
                     # TODO: version the API
                     'version': __version__,
                     'schemaKey': 'Software',
