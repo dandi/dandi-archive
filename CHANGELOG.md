@@ -1,3 +1,25 @@
+# v0.16.2 (Fri Oct 10 2025)
+
+#### 🐛 Bug Fix
+
+- Add devcontainers support [#2547](https://github.com/dandi/dandi-archive/pull/2547) ([@danlamanna](https://github.com/danlamanna) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Remove `sentry_sdk.capture_message` call [#2594](https://github.com/dandi/dandi-archive/pull/2594) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🧪 Tests
+
+- Flag all warnings as test failures [#2574](https://github.com/dandi/dandi-archive/pull/2574) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 3
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.16.1 (Tue Oct 07 2025)
 
 #### 🐛 Bug Fix
