@@ -18,6 +18,7 @@ from dandiapi.api.models import (
     UserMetadata,
     Version,
 )
+from dandiapi.api.services.dandiset import star_dandiset
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 
 
@@ -82,6 +83,15 @@ class DandisetFactory(factory.django.DjangoModelFactory):
             extracted = []
         for user in extracted:
             add_dandiset_owner(dandiset=self, user=user)
+
+    @factory.post_generation
+    def starred_by(self, create: bool, extracted: list[User] | None) -> None:  # noqa: FBT001
+        if not create:
+            return
+        if extracted is None:
+            extracted = []
+        for user in extracted:
+            star_dandiset(user=user, dandiset=self)
 
 
 class BaseVersionFactory(factory.django.DjangoModelFactory):

@@ -9,18 +9,13 @@ from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 import pytest
 
-if TYPE_CHECKING:
-    from rest_framework.test import APIClient
-
 from dandiapi.api.asset_paths import add_asset_paths, add_version_asset_paths
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services.permissions.dandiset import (
-    add_dandiset_owner,
     get_dandiset_owners,
     get_visible_dandisets,
-    replace_dandiset_owners,
 )
-from dandiapi.api.tests.factories import DandisetFactory, SocialAccountFactory, UserFactory
+from dandiapi.api.tests.factories import DandisetFactory, UserFactory
 
 from .fuzzy import (
     DANDISET_ID_RE,
@@ -29,6 +24,9 @@ from .fuzzy import (
     TIMESTAMP_RE,
     UTC_ISO_TIMESTAMP_RE,
 )
+
+if TYPE_CHECKING:
+    from rest_framework.test import APIClient
 
 
 @pytest.mark.django_db
@@ -56,30 +54,51 @@ def test_dandiset_published_count(draft_version_factory, published_version_facto
 
 
 @pytest.mark.parametrize(
-    ('embargo_status', 'user_status', 'visible'),
+    ('embargo_status', 'visible'),
     [
-        ('OPEN', 'owner', True),
-        ('OPEN', 'anonymous', True),
-        ('OPEN', 'not-owner', True),
-        ('EMBARGOED', 'owner', True),
-        ('EMBARGOED', 'anonymous', False),
-        ('EMBARGOED', 'not-owner', False),
-        ('UNEMBARGOING', 'owner', True),
-        ('UNEMBARGOING', 'anonymous', False),
-        ('UNEMBARGOING', 'not-owner', False),
+        ('OPEN', True),
+        ('EMBARGOED', False),
+        ('UNEMBARGOING', False),
     ],
 )
 @pytest.mark.django_db
-def test_dandiset_get_visible_dandisets(embargo_status, user_status, visible):
+def test_dandiset_get_visible_dandisets_anonymous(embargo_status: str, visible: bool):  # noqa: FBT001
+    user = AnonymousUser()
     dandiset = DandisetFactory.create(embargo_status=embargo_status)
-    if user_status == 'anonymous':
-        user = AnonymousUser()
-    else:
-        user = UserFactory.create()
-        if user_status == 'owner':
-            add_dandiset_owner(dandiset, user)
 
     assert list(get_visible_dandisets(user)) == ([dandiset] if visible else [])
+
+
+@pytest.mark.parametrize(
+    ('embargo_status', 'visible'),
+    [
+        ('OPEN', True),
+        ('EMBARGOED', False),
+        ('UNEMBARGOING', False),
+    ],
+)
+@pytest.mark.django_db
+def test_dandiset_get_visible_dandisets_nonowner(embargo_status: str, visible: bool):  # noqa: FBT001
+    user = UserFactory.create()
+    dandiset = DandisetFactory.create(embargo_status=embargo_status)
+
+    assert list(get_visible_dandisets(user)) == ([dandiset] if visible else [])
+
+
+@pytest.mark.parametrize(
+    'embargo_status',
+    [
+        'OPEN',
+        'EMBARGOED',
+        'UNEMBARGOING',
+    ],
+)
+@pytest.mark.django_db
+def test_dandiset_get_visible_dandisets_owner(embargo_status: str):
+    user = UserFactory.create()
+    dandiset = DandisetFactory.create(embargo_status=embargo_status, owners=[user])
+
+    assert list(get_visible_dandisets(user)) == [dandiset]
 
 
 @pytest.mark.django_db
@@ -270,17 +289,31 @@ def test_dandiset_rest_retrieve(api_client):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_retrieve_embargoed(api_client):
-    user = UserFactory.create()
+def test_dandiset_rest_retrieve_embargoed_anonymous(api_client):
     dandiset: Dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
     assert resp.status_code == 401
 
+
+@pytest.mark.django_db
+def test_dandiset_rest_retrieve_embargoed_nonowner(api_client):
+    user = UserFactory.create()
     api_client.force_authenticate(user=user)
+    dandiset: Dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
     assert resp.status_code == 403
 
-    replace_dandiset_owners(dandiset, [user])
+
+@pytest.mark.django_db
+def test_dandiset_rest_retrieve_embargoed_owner(api_client):
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    dandiset: Dandiset = DandisetFactory.create(
+        embargo_status=Dandiset.EmbargoStatus.EMBARGOED, owners=[user]
+    )
+
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
     assert resp.status_code == 200
 
@@ -366,10 +399,7 @@ def test_dandiset_rest_embargo_access(api_client, embargo_status: str):
 
 @pytest.mark.django_db
 def test_dandiset_rest_create(api_client):
-    user = UserFactory.create()
-    user.first_name = 'John'
-    user.last_name = 'Doe'
-    user.save()
+    user = UserFactory.create(first_name='John', last_name='Doe')
     api_client.force_authenticate(user=user)
     name = 'Test Dandiset'
     metadata = {'foo': 'bar'}
@@ -452,10 +482,7 @@ def test_dandiset_rest_create(api_client):
 
 @pytest.mark.django_db
 def test_dandiset_rest_create_with_identifier(api_client):
-    user = UserFactory.create(is_superuser=True)
-    user.first_name = 'John'
-    user.last_name = 'Doe'
-    user.save()
+    user = UserFactory.create(first_name='John', last_name='Doe', is_superuser=True)
     api_client.force_authenticate(user=user)
     name = 'Test Dandiset'
     identifier = '123456'
@@ -538,10 +565,7 @@ def test_dandiset_rest_create_with_identifier(api_client):
 
 @pytest.mark.django_db
 def test_dandiset_rest_create_with_contributor(api_client):
-    user = UserFactory.create(is_superuser=True)
-    user.first_name = 'John'
-    user.last_name = 'Doe'
-    user.save()
+    user = UserFactory.create(first_name='John', last_name='Doe', is_superuser=True)
     api_client.force_authenticate(user=user)
     name = 'Test Dandiset'
     identifier = '123456'
@@ -635,10 +659,7 @@ def test_dandiset_rest_create_with_contributor(api_client):
 
 @pytest.mark.django_db
 def test_dandiset_rest_create_embargoed(api_client):
-    user = UserFactory.create()
-    user.first_name = 'John'
-    user.last_name = 'Doe'
-    user.save()
+    user = UserFactory.create(first_name='John', last_name='Doe')
     api_client.force_authenticate(user=user)
     name = 'Test Dandiset'
     metadata = {'foo': 'bar'}
@@ -898,8 +919,9 @@ def test_dandiset_rest_delete(api_client, draft_version_factory, embargo_status,
     api_client.force_authenticate(user=user)
 
     # Ensure that open or embargoed dandisets can be deleted
-    draft_version = draft_version_factory(dandiset__embargo_status=embargo_status)
-    add_dandiset_owner(draft_version.dandiset, user)
+    draft_version = draft_version_factory(
+        dandiset__embargo_status=embargo_status, dandiset__owners=[user]
+    )
     response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
 
     if success:
@@ -913,13 +935,13 @@ def test_dandiset_rest_delete(api_client, draft_version_factory, embargo_status,
 @pytest.mark.django_db
 def test_dandiset_rest_delete_with_zarrs(
     api_client,
-    draft_version,
+    draft_version_factory,
     zarr_archive_factory,
     draft_asset_factory,
 ):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    add_dandiset_owner(draft_version.dandiset, user)
+    draft_version = draft_version_factory(dandiset__owners=[user])
     zarr = zarr_archive_factory(dandiset=draft_version.dandiset)
     asset = draft_asset_factory(blob=None, zarr=zarr)
 
@@ -944,10 +966,10 @@ def test_dandiset_rest_delete_not_an_owner(api_client, draft_version):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_delete_published(api_client, published_version):
+def test_dandiset_rest_delete_published(api_client, published_version_factory):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    add_dandiset_owner(published_version.dandiset, user)
+    published_version = published_version_factory(dandiset__owners=[user])
 
     response = api_client.delete(f'/api/dandisets/{published_version.dandiset.identifier}/')
     assert response.status_code == 403
@@ -970,23 +992,6 @@ def test_dandiset_rest_delete_published_admin(api_client, published_version):
 
 @pytest.mark.django_db
 def test_dandiset_rest_get_owners(api_client):
-    social_account = SocialAccountFactory.create()
-    dandiset = DandisetFactory.create(owners=[social_account.user])
-
-    resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/users/')
-
-    assert resp.status_code == 200
-    assert resp.data == [
-        {
-            'username': social_account.extra_data['login'],
-            'name': social_account.extra_data['name'],
-            'email': None,
-        }
-    ]
-
-
-@pytest.mark.django_db
-def test_dandiset_rest_get_owners_no_social_account(api_client):
     user = UserFactory.create()
     dandiset = DandisetFactory.create(owners=[user])
 
@@ -995,8 +1000,8 @@ def test_dandiset_rest_get_owners_no_social_account(api_client):
     assert resp.status_code == 200
     assert resp.data == [
         {
-            'username': user.username,
-            'name': f'{user.first_name} {user.last_name}',
+            'username': user.socialaccount_set.get().extra_data['login'],
+            'name': user.socialaccount_set.get().extra_data['name'],
             'email': None,
         }
     ]
@@ -1013,25 +1018,25 @@ def test_dandiset_rest_change_owner(
     mailoutbox,
     embargo_status,
 ):
-    draft_version = draft_version_factory(dandiset__embargo_status=embargo_status)
-    dandiset = draft_version.dandiset
     user1 = UserFactory.create()
-    user2 = UserFactory.create()
-    social_account2 = SocialAccountFactory.create(user=user2)
-    add_dandiset_owner(dandiset, user1)
+    draft_version = draft_version_factory(
+        dandiset__embargo_status=embargo_status, dandiset__owners=[user1]
+    )
+    dandiset = draft_version.dandiset
     api_client.force_authenticate(user=user1)
 
+    user2 = UserFactory.create()
     resp = api_client.put(
         f'/api/dandisets/{dandiset.identifier}/users/',
-        [{'username': social_account2.extra_data['login']}],
+        [{'username': user2.socialaccount_set.get().extra_data['login']}],
     )
 
     assert resp.status_code == 200
     assert resp.data == [
         {
-            'username': social_account2.extra_data['login'],
-            'name': social_account2.extra_data['name'],
-            'email': social_account2.extra_data['email'],
+            'username': user2.socialaccount_set.get().extra_data['login'],
+            'name': user2.socialaccount_set.get().extra_data['name'],
+            'email': user2.socialaccount_set.get().extra_data['email'],
         }
     ]
     assert list(get_dandiset_owners(dandiset)) == [user2]
@@ -1049,22 +1054,18 @@ def test_dandiset_rest_change_owners_unembargo_in_progress(
     draft_version_factory,
 ):
     """Test that a dandiset undergoing unembargo prevents user modification."""
-    draft_version = draft_version_factory(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
-    )
-    dandiset = draft_version.dandiset
     user1 = UserFactory.create()
-    user2 = UserFactory.create()
-    social_account1 = SocialAccountFactory.create(user=user1)
-    social_account2 = SocialAccountFactory.create(user=user2)
-    add_dandiset_owner(dandiset, user1)
+    draft_version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING, dandiset__owners=[user1]
+    )
     api_client.force_authenticate(user=user1)
 
+    user2 = UserFactory.create()
     resp = api_client.put(
-        f'/api/dandisets/{dandiset.identifier}/users/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/users/',
         [
-            {'username': social_account1.extra_data['login']},
-            {'username': social_account2.extra_data['login']},
+            {'username': user1.socialaccount_set.get().extra_data['login']},
+            {'username': user2.socialaccount_set.get().extra_data['login']},
         ],
     )
 
@@ -1074,36 +1075,34 @@ def test_dandiset_rest_change_owners_unembargo_in_progress(
 @pytest.mark.django_db
 def test_dandiset_rest_add_owner(
     api_client,
-    draft_version,
+    draft_version_factory,
     mailoutbox,
 ):
-    dandiset = draft_version.dandiset
     user1 = UserFactory.create()
-    user2 = UserFactory.create()
-    social_account1 = SocialAccountFactory.create(user=user1)
-    social_account2 = SocialAccountFactory.create(user=user2)
-    add_dandiset_owner(dandiset, user1)
+    draft_version = draft_version_factory(dandiset__owners=[user1])
+    dandiset = draft_version.dandiset
     api_client.force_authenticate(user=user1)
 
+    user2 = UserFactory.create()
     resp = api_client.put(
         f'/api/dandisets/{dandiset.identifier}/users/',
         [
-            {'username': social_account1.extra_data['login']},
-            {'username': social_account2.extra_data['login']},
+            {'username': user1.socialaccount_set.get().extra_data['login']},
+            {'username': user2.socialaccount_set.get().extra_data['login']},
         ],
     )
 
     assert resp.status_code == 200
     assert resp.data == [
         {
-            'username': social_account1.extra_data['login'],
-            'name': social_account1.extra_data['name'],
-            'email': social_account1.extra_data['email'],
+            'username': user1.socialaccount_set.get().extra_data['login'],
+            'name': user1.socialaccount_set.get().extra_data['name'],
+            'email': user1.socialaccount_set.get().extra_data['email'],
         },
         {
-            'username': social_account2.extra_data['login'],
-            'name': social_account2.extra_data['name'],
-            'email': social_account2.extra_data['email'],
+            'username': user2.socialaccount_set.get().extra_data['login'],
+            'name': user2.socialaccount_set.get().extra_data['name'],
+            'email': user2.socialaccount_set.get().extra_data['email'],
         },
     ]
     assert list(get_dandiset_owners(dandiset)) == [user1, user2]
@@ -1115,18 +1114,15 @@ def test_dandiset_rest_add_owner(
 
 @pytest.mark.django_db
 def test_dandiset_rest_add_owner_not_allowed(api_client, draft_version):
-    dandiset = draft_version.dandiset
     user1 = UserFactory.create()
     user2 = UserFactory.create()
-    social_account1 = SocialAccountFactory.create(user=user1)
-    social_account2 = SocialAccountFactory.create(user=user2)
     api_client.force_authenticate(user=user1)
 
     resp = api_client.put(
-        f'/api/dandisets/{dandiset.identifier}/users/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/users/',
         [
-            {'username': social_account1.extra_data['login']},
-            {'username': social_account2.extra_data['login']},
+            {'username': user1.socialaccount_set.get().extra_data['login']},
+            {'username': user2.socialaccount_set.get().extra_data['login']},
         ],
     )
     assert resp.status_code == 403
@@ -1135,28 +1131,26 @@ def test_dandiset_rest_add_owner_not_allowed(api_client, draft_version):
 @pytest.mark.django_db
 def test_dandiset_rest_remove_owner(
     api_client,
-    draft_version,
+    draft_version_factory,
     mailoutbox,
 ):
-    dandiset = draft_version.dandiset
     user1 = UserFactory.create()
     user2 = UserFactory.create()
-    social_account1 = SocialAccountFactory.create(user=user1)
-    add_dandiset_owner(dandiset, user1)
-    add_dandiset_owner(dandiset, user2)
+    draft_version = draft_version_factory(dandiset__owners=[user1, user2])
+    dandiset = draft_version.dandiset
     api_client.force_authenticate(user=user1)
 
     resp = api_client.put(
         f'/api/dandisets/{dandiset.identifier}/users/',
-        [{'username': social_account1.extra_data['login']}],
+        [{'username': user1.socialaccount_set.get().extra_data['login']}],
     )
 
     assert resp.status_code == 200
     assert resp.data == [
         {
-            'username': social_account1.extra_data['login'],
-            'name': social_account1.extra_data['name'],
-            'email': social_account1.extra_data['email'],
+            'username': user1.socialaccount_set.get().extra_data['login'],
+            'name': user1.socialaccount_set.get().extra_data['name'],
+            'email': user1.socialaccount_set.get().extra_data['email'],
         }
     ]
     assert list(get_dandiset_owners(dandiset)) == [user1]
@@ -1173,7 +1167,8 @@ def test_dandiset_rest_not_an_owner(api_client):
     api_client.force_authenticate(user=user)
 
     resp = api_client.put(
-        f'/api/dandisets/{dandiset.identifier}/users/', [{'username': user.username}]
+        f'/api/dandisets/{dandiset.identifier}/users/',
+        [{'username': user.socialaccount_set.get().extra_data['login']}],
     )
     assert resp.status_code == 403
 
@@ -1194,7 +1189,7 @@ def test_dandiset_rest_add_owner_does_not_exist(api_client):
     user = UserFactory.create()
     dandiset = DandisetFactory.create(owners=[user])
     api_client.force_authenticate(user=user)
-    fake_name = user.username + 'butnotreally'
+    fake_name = user.socialaccount_set.get().extra_data['login'] + 'butnotreally'
 
     resp = api_client.put(f'/api/dandisets/{dandiset.identifier}/users/', [{'username': fake_name}])
     assert resp.status_code == 400
@@ -1207,7 +1202,10 @@ def test_dandiset_rest_add_malformed(api_client):
     dandiset = DandisetFactory.create(owners=[user])
     api_client.force_authenticate(user=user)
 
-    resp = api_client.put(f'/api/dandisets/{dandiset.identifier}/users/', [{'email': user.email}])
+    resp = api_client.put(
+        f'/api/dandisets/{dandiset.identifier}/users/',
+        [{'email': user.socialaccount_set.get().extra_data['email']}],
+    )
     assert resp.status_code == 400
     assert resp.data == [{'username': ['This field is required.']}]
 
@@ -1239,9 +1237,9 @@ def test_dandiset_rest_search_identifier(api_client, draft_version):
 
 @pytest.mark.django_db
 def test_dandiset_rest_search_accented_characters(api_client, draft_version_factory):
-    dv = draft_version_factory()
-    dv.metadata['contributor'][0]['name'] = 'Buzsáki, György'
-    dv.save()
+    draft_version = draft_version_factory()
+    draft_version.metadata['contributor'][0]['name'] = 'Buzsáki, György'
+    draft_version.save()
 
     assert (
         api_client.get('/api/dandisets/', {'search': 'György'}).data['results']
@@ -1306,12 +1304,11 @@ def test_dandiset_rest_list_active_uploads_not_owner(api_client, embargoed):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_list_active_uploads(api_client, draft_version, upload_factory):
+def test_dandiset_rest_list_active_uploads(api_client, draft_version_factory, upload_factory):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
+    draft_version = draft_version_factory(dandiset__owners=[user])
     dandiset = draft_version.dandiset
-
-    add_dandiset_owner(dandiset, user)
     upload = upload_factory(dandiset=dandiset)
 
     response = api_client.get(f'/api/dandisets/{dandiset.identifier}/uploads/')
@@ -1326,33 +1323,32 @@ def test_dandiset_rest_list_active_uploads(api_client, draft_version, upload_fac
 @pytest.mark.parametrize('embargoed', [False, True])
 def test_dandiset_rest_clear_active_uploads_not_owner(api_client, upload_factory, embargoed):
     user = UserFactory.create()
-    ds = DandisetFactory.create(
+    dandiset = DandisetFactory.create(
         embargo_status=Dandiset.EmbargoStatus.EMBARGOED
         if embargoed
         else Dandiset.EmbargoStatus.OPEN
     )
 
-    upload_factory(dandiset=ds)
+    upload_factory(dandiset=dandiset)
 
     # Test unauthenticated
-    response = api_client.delete(f'/api/dandisets/{ds.identifier}/uploads/')
+    response = api_client.delete(f'/api/dandisets/{dandiset.identifier}/uploads/')
     assert response.status_code == 401
 
     # Test unauthorized
     api_client.force_authenticate(user=user)
-    response = api_client.delete(f'/api/dandisets/{ds.identifier}/uploads/')
+    response = api_client.delete(f'/api/dandisets/{dandiset.identifier}/uploads/')
     assert response.status_code == 403
 
-    assert ds.uploads.count() == 1
+    assert dandiset.uploads.count() == 1
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_clear_active_uploads(api_client, draft_version, upload_factory):
+def test_dandiset_rest_clear_active_uploads(api_client, draft_version_factory, upload_factory):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
+    draft_version = draft_version_factory(dandiset__owners=[user])
     dandiset = draft_version.dandiset
-
-    add_dandiset_owner(dandiset, user)
     upload_factory(dandiset=dandiset)
 
     response = api_client.get(f'/api/dandisets/{dandiset.identifier}/uploads/').json()
@@ -1371,8 +1367,9 @@ def test_dandiset_rest_clear_active_uploads(api_client, draft_version, upload_fa
 @pytest.mark.django_db
 def test_dandiset_star(api_client):
     user = UserFactory.create()
-    dandiset = DandisetFactory.create()
     api_client.force_authenticate(user=user)
+    dandiset = DandisetFactory.create()
+
     response = api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
     assert response.status_code == 200
     assert response.data == {'count': 1}
@@ -1383,13 +1380,9 @@ def test_dandiset_star(api_client):
 @pytest.mark.django_db
 def test_dandiset_unstar(api_client):
     user = UserFactory.create()
-    dandiset = DandisetFactory.create()
     api_client.force_authenticate(user=user)
-    # First star it
-    api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
-    assert dandiset.stars.count() == 1
+    dandiset = DandisetFactory.create(starred_by=[user])
 
-    # Then unstar it
     response = api_client.delete(f'/api/dandisets/{dandiset.identifier}/star/')
     assert response.status_code == 200
     assert response.data == {'count': 0}
@@ -1405,31 +1398,42 @@ def test_dandiset_star_unauthenticated(api_client):
 
 @pytest.mark.django_db
 def test_dandiset_star_count(api_client):
-    dandiset = DandisetFactory.create()
-    users = [UserFactory.create() for _ in range(3)]
-    for user in users:
-        api_client.force_authenticate(user=user)
-        api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
+    dandiset = DandisetFactory.create(
+        starred_by=[
+            UserFactory.create(),
+            UserFactory.create(),
+            UserFactory.create(),
+        ]
+    )
 
     response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
-    assert response.data['star_count'] == len(users)
+    assert response.data['star_count'] == 3
 
 
 @pytest.mark.django_db
-def test_dandiset_is_starred(api_client):
+def test_dandiset_is_starred_unauthenticated(api_client):
+    dandiset = DandisetFactory.create()
+
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
+    assert response.data['is_starred'] is False
+
+
+@pytest.mark.django_db
+def test_dandiset_is_starred_authenticated_unstarred(api_client):
     user = UserFactory.create()
     dandiset = DandisetFactory.create()
-    # Test unauthenticated
-    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
-    assert response.data['is_starred'] is False
-
-    # Test authenticated but not starred
     api_client.force_authenticate(user=user)
+
     response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
     assert response.data['is_starred'] is False
 
-    # Test after starring
-    api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
+
+@pytest.mark.django_db
+def test_dandiset_is_starred_authenticated_starred(api_client):
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    dandiset = DandisetFactory.create(starred_by=[user])
+
     response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
     assert response.data['is_starred'] is True
 
@@ -1438,11 +1442,12 @@ def test_dandiset_is_starred(api_client):
 def test_dandiset_list_starred(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    dandisets = [DandisetFactory.create() for _ in range(3)]
-
     # Star 2 out of 3 dandisets
-    api_client.post(f'/api/dandisets/{dandisets[0].identifier}/star/')
-    api_client.post(f'/api/dandisets/{dandisets[1].identifier}/star/')
+    dandisets = [
+        DandisetFactory.create(starred_by=[user]),
+        DandisetFactory.create(starred_by=[user]),
+        DandisetFactory.create(),
+    ]
 
     # List starred dandisets
     response = api_client.get('/api/dandisets/', {'starred': True})
