@@ -1,0 +1,76 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-docker-compose
+{
+    "name": "DANDI",
+    "dockerComposeFile": [
+        "../docker-compose.yml",
+        "../docker-compose.override.yml"
+    ],
+    "service": "django",
+    "overrideCommand": true,
+    "workspaceFolder": "/home/vscode/dandi",
+    "containerEnv": {
+        // TODO: forwardPorts should instead be used, but it appears to be broken
+        // on linux and not macos.
+        "VITE_HOST": "0.0.0.0"
+    },
+    "features": {
+        "ghcr.io/robbert229/devcontainer-features/postgresql-client:1": {
+            "version": 17
+        },
+        "ghcr.io/nils-geistmann/devcontainers-features/zsh:0": {},
+        "ghcr.io/devcontainers-extra/features/fish-apt-get:1": {},
+        "ghcr.io/devcontainers-extra/features/heroku-cli:1": {},
+        "ghcr.io/devcontainers/features/aws-cli:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "20"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                // this removes the extension the AWS feature adds, see https://github.com/devcontainers/features/issues/1228
+                "-AmazonWebServices.aws-toolkit-vscode",
+                "tamasfe.even-better-toml",
+                "matangover.mypy",
+                "ms-python.debugpy",
+                "charliermarsh.ruff",
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "Vue.volar"
+            ],
+            "settings": {
+                // disable pylance type checking in lieu of using the mypy extension since
+                // it will match CI/tox.
+                "python.analysis.typeCheckingMode": "off",
+                "python.defaultInterpreterPath": "/home/vscode/uv-env/bin/python",
+                "python.testing.pytestEnabled": true,
+                "python.analysis.autoImportCompletions": true,
+                "mypy.enabled": true,
+                "mypy.runUsingActiveInterpreter": true,
+                "ruff.importStrategy": "fromEnvironment"
+            }
+        }
+    },
+    "portsAttributes": {
+        "8000": {
+            "name": "Django",
+            "onAutoForward": "ignore"
+        },
+        "9000": {
+            "name": "MinIO",
+            "onAutoForward": "ignore"
+        },
+        "9001": {
+            "name": "MinIO Console",
+            "onAutoForward": "ignore"
+        }
+    },
+    "updateContentCommand": [
+        "uv",
+        "sync",
+        "--all-extras",
+        "--all-groups"
+    ]
+}
