@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.metadata
 from urllib.parse import ParseResult, urlencode, urlparse, urlunparse
 
 from django.conf import settings
@@ -8,8 +9,6 @@ from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
-from dandiapi import __version__
 
 
 def get_schema_url():
@@ -74,7 +73,7 @@ def info_view(request):
         data={
             'schema_version': settings.DANDI_SCHEMA_VERSION,
             'schema_url': get_schema_url(),
-            'version': __version__,
+            'version': importlib.metadata.version('dandiapi'),
             'cli-minimal-version': '0.60.0',
             'cli-bad-versions': [],
             'services': {
