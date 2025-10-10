@@ -5,7 +5,6 @@ from contextvars import ContextVar
 from django.utils.deprecation import MiddlewareMixin
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
-import sentry_sdk
 
 # Context variable for username
 _current_username: ContextVar[str] = ContextVar('current_username', default='AnonymousUser')
@@ -54,14 +53,12 @@ class GunicornUsernameMiddleware(MiddlewareMixin):
         # Try to get the username from context variable first (set by DRF)
         username = _current_username.get()
 
-        # Fallback to checking request.user if context variable wasn't set
-        # TODO: remove this fallback once we confirm that it is not needed
+        # Fallback to checking request.user if context variable wasn't set.
         if (
             username == 'AnonymousUser'
             and hasattr(request, 'user')
             and request.user.is_authenticated
         ):
-            sentry_sdk.capture_message('Username not set despite user being authenticated')
             username = request.user.username
             _current_username.set(username)
 
