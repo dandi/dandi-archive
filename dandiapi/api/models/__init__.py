@@ -5,7 +5,6 @@ from .asset_paths import AssetPath, AssetPathRelation
 from .audit import AuditRecord
 from .dandiset import Dandiset, DandisetStar
 from .garbage_collection import GarbageCollectionEvent, GarbageCollectionEventRecord
-from .oauth import StagingApplication
 from .stats import ApplicationStats
 from .upload import Upload
 from .user import UserMetadata
@@ -23,7 +22,6 @@ __all__ = [
     'DandisetStar',
     'GarbageCollectionEvent',
     'GarbageCollectionEventRecord',
-    'StagingApplication',
     'Upload',
     'UserMetadata',
     'Version',
