@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Check out this repository
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # fetch history for all branches and tags
 
       - name: Build Docker image
         run: |
