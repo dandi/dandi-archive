@@ -60,7 +60,7 @@ jobs:
         run: docker image load -i dandiarchive-api.tgz
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
 
       - name: Run dandi-api tests in dandi-cli
         if: matrix.dandi-version == 'release'
