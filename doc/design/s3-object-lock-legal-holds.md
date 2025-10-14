@@ -16,7 +16,7 @@ Currently, while our application logic prevents modification of published assets
 
 ## Proposed Solution
 
-AWS S3 Object Lock with legal holds provides exactly the protection we need. A legal hold is a flag that can be applied to an S3 object to prevent deletion or modification, regardless of any retention policies or IAM permissions. Unlike retention modes, legal holds have no expiration date and remain in effect until explicitly removed via the `s3:PutObjectLegalHold` S3 API.
+AWS S3 Object Lock with legal holds provides exactly the protection we need. A legal hold is a flag that can be applied to an S3 object to prevent deletion or modification, regardless of any retention policies or IAM permissions. Unlike retention modes, legal holds have no expiration date and remain in effect until explicitly removed via the `s3:PutObjectLegalHold` S3 API. See the [documentation for S3 legal holds](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html#object-lock-legal-holds) for more details.
 
 ### S3 Object Lock
 
