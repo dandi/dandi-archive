@@ -45,7 +45,9 @@ Legal holds do not interfere with garbage collection of unpublished assets, as o
 
 ## Rollout Plan
 
-1. Enable S3 Object Lock on the production bucket
+Note: this should be done on the sandbox deployment first, then the production deployment.
+
+1. Enable S3 Object Lock on the bucket
 2. Deploy code changes to apply legal holds during publish celery task
 3. Run a one-time script to apply legal holds to all existing published asset blobs
 
