@@ -13,10 +13,8 @@ dependencies = [
   "celery",
   "dandi",  # minimal version is also provided in API /info
   # Pin dandischema to exact version to make explicit which schema version is being used
-  "dandischema",  # schema version 0.6.10
+  "dandischema==0.11.1",  # schema version 0.6.10
   "django[argon2]",
-  # Pin to version where this bug is fixed
-  # https://codeberg.org/allauth/django-allauth/issues/4072
   "django-allauth",
   "django-auth-style",
   "django-click",
@@ -31,7 +29,7 @@ dependencies = [
   "django-stubs-ext",
   # TODO: pin djangorestframework until we figure out what the cause of
   # https://github.com/dandi/dandi-archive/issues/1896 is.
-  "djangorestframework",
+  "djangorestframework<3.15.0",
   "drf-extensions",
   "drf-yasg",
   "fsspec[http]",
