@@ -5,18 +5,10 @@ from django.db import migrations, models
 import django.db.models.deletion
 import oauth2_provider.generators
 
-# This migration is needed to support wildcards in OAuth redirect URIs in staging.
-# The model created here is only actually used in staging.
-
 
 class Migration(migrations.Migration):
     # This has no dependencies, but isn't considered "initial" by Django's definition
     initial = False
-
-    # This is creating a swappable model, so it needs to exist before the OAuth2 models are created
-    run_before = [
-        ('oauth2_provider', '0001_initial'),
-    ]
 
     operations = [
         migrations.CreateModel(
