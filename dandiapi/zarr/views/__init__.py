@@ -3,12 +3,12 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from django.http import HttpResponseRedirect
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.utils.urls import replace_query_param
@@ -151,16 +151,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
                 http_status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
-        with transaction.atomic():
-            # Use nested transaction block to prevent zarr creation race condition
-            try:
-                with transaction.atomic():
-                    zarr_archive.save()
-            except IntegrityError as e:
-                raise ValidationError('Zarr already exists') from e
+        zarr_archive: ZarrArchive = ZarrArchive.objects.create(name=name, dandiset=dandiset)
 
-            audit.create_zarr(dandiset=dandiset, user=request.user, zarr_archive=zarr_archive)
+        audit.create_zarr(dandiset=dandiset, user=request.user, zarr_archive=zarr_archive)
 
         serializer = ZarrSerializer(instance=zarr_archive)
         return Response(serializer.data, status=status.HTTP_200_OK)
