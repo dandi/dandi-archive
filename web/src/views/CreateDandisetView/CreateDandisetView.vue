@@ -13,7 +13,7 @@
               Embargo this Dandiset
               <v-tooltip
                 location="right"
-                max-width="25%"
+                max-width="400px"
               >
                 <template #activator="{ props }">
                   <div
