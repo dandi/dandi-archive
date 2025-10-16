@@ -20,14 +20,14 @@ Currently, while our application logic prevents modification of published assets
 
 ## Proposed Solution
 
-AWS S3 Object Lock with legal holds provides exactly the protection we need. A legal hold is a flag that can be applied to an S3 object to prevent deletion or modification, regardless of any retention policies or IAM permissions. Unlike retention modes, legal holds have no expiration date and remain in effect until explicitly removed via the `s3:PutObjectLegalHold` S3 API. See the [documentation for S3 legal holds](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html#object-lock-legal-holds) for more details.
+AWS S3 Object Lock with legal holds provides exactly the protection we need. A legal hold is a flag that can be applied to an S3 object version to prevent deletion or modification, regardless of any retention policies or IAM permissions. Unlike retention modes, legal holds have no expiration date and remain in effect until explicitly removed via the `s3:PutObjectLegalHold` S3 API. See the [documentation for S3 legal holds](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html#object-lock-legal-holds) for more details.
 
 ### S3 Object Lock
 
-S3 Object Lock is a feature that prevents objects from being deleted or overwritten for a specified period or indefinitely. It operates in three ways:
+S3 Object Lock is a feature that prevents object versions from being deleted or overwritten for a specified period or indefinitely. It operates in three ways:
 
-1. **Governance mode**: Prevents most users from deleting objects, but users with special permissions can override
-2. **Compliance mode**: No user can delete the object until the retention period expires, including the root account
+1. **Governance mode**: Prevents most users from deleting object versions, but users with special permissions can override
+2. **Compliance mode**: No user can delete the object version until the retention period expires, including the root account
 3. **Legal hold**: A separate flag independent of retention mode that prevents deletion until removed
 
 Goverence and compliance modes operate at the bucket level, while legal holds operate at the object level.
@@ -53,7 +53,7 @@ The following scenarios could theoretically interfere with garbage collection, b
    - Old manifest file versions
 
 **Why legal holds avoid these issues:**
-- Unpublished assets never receive legal holds, so they remain fully deletable while the deletion permissions remain intact for objects without legal holds
+- Unpublished assets never receive legal holds, so they remain fully deletable while the deletion permissions remain intact for object versions without legal holds
 - Legal holds are applied at the **object level**, only to specific published asset blobs. i.e., they are **object-level retention policies** instead of **bucket-wide retention policies**.
 
 ## Cost Considerations
