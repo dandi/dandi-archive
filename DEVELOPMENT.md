@@ -66,7 +66,9 @@ but allows developers to run Python code on their native system.
 1. Follow the steps for [setting up Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers#_installation) if necessary.
 1. From VSCode, use `Ctrl-Shift-p` and run the command `Dev Containers: Reopen in Container`.
 1. From the VSCode built-in terminal, run `./manage.py migrate`.
-1. From the VSCode built-in terminal, run `./manage.py createsuperuser`.
+1. From the VSCode built-in terminal, run `./manage.py createsuperuser --email $(git config user.email)` and follow the prompts.
+1. From the VSCode built-in terminal, run `./manage.py create_dev_dandiset --owner $(git config user.email)`
+   to create a dummy dandiset to start working with.
 
 ### Run Application
 1. Run `./manage.py runserver_plus 0.0.0.0:8000` from the VSCode built-in-terminal.

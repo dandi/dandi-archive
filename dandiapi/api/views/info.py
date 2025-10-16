@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.metadata
 from urllib.parse import ParseResult, urlencode, urlparse, urlunparse
 
 from dandischema.conf import get_instance_config
@@ -9,8 +10,6 @@ from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
-from dandiapi import __version__
 
 _INSTANCE_CONFIG = get_instance_config()
 
@@ -87,7 +86,7 @@ def info_view(request):
             ),
             'schema_version': settings.DANDI_SCHEMA_VERSION,
             'schema_url': get_schema_url(),
-            'version': __version__,
+            'version': importlib.metadata.version('dandiapi'),
             'cli-minimal-version': '0.60.0',
             'cli-bad-versions': [],
             'services': {

@@ -85,9 +85,6 @@ MIDDLEWARE = [
 
 # Internal datetimes are timezone-aware, so this only affects rendering and form input
 TIME_ZONE = 'UTC'
-# https://docs.djangoproject.com/en/4.2/ref/settings/#std-setting-USE_TZ
-# TODO: this defaults to True starting with Django 5. Remove this when we upgrade
-USE_TZ = True
 
 DATABASES = {
     'default': {
@@ -132,6 +129,11 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 # Don't require a POST request to initiate a GitHub login
 # https://github.com/pennersr/django-allauth/blob/HEAD/ChangeLog.rst#backwards-incompatible-changes-2
 SOCIALACCOUNT_LOGIN_ON_GET = True
+
+# Allow staging to support Netlify branch deploy previews
+OAUTH2_PROVIDER['ALLOW_URI_WILDCARDS'] = env.bool(
+    'DJANGO_OAUTH2_ALLOW_URI_WILDCARDS', default=False
+)
 
 AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
 
