@@ -9,10 +9,6 @@ import type { JSONSchema } from "@apidevtools/json-schema-ref-parser";
 export function fixSchema(schema: JSONSchema) {
   let deepCopySchema = JSON.parse(JSON.stringify(schema));
 
-  // TODO: Fix this upstream in the schema
-  deepCopySchema['properties']['identifier']['pattern'] = '^DANDI:\\d{6}$'
-  deepCopySchema['$defs']['Project']['properties']['wasAssociatedWith']['items']['oneOf'][2]['properties']['identifier']['pattern'] = '^RRID:.*'
-
   // vjsf renders < and > as HTML tags, which breaks rendering of the schema
   // in places like help text. For example, given this description for a field:
   //
