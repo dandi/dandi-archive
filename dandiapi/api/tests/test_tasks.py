@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+import importlib
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -16,7 +17,6 @@ from zarr_checksum import compute_zarr_checksum
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 from zarr_checksum.generators import ZarrArchiveFile
 
-from dandiapi import __version__
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
@@ -392,7 +392,7 @@ def test_publish_task(
                     **({'identifier': instance_identifier} if instance_identifier else {}),
                     'name': f'{instance_name} API Server',
                     # TODO: version the API
-                    'version': __version__,
+                    'version': importlib.metadata.version('dandiapi'),
                     'schemaKey': 'Software',
                 }
             ],
@@ -451,7 +451,7 @@ def test_publish_task(
                     'id': URN_RE,
                     **({'identifier': instance_identifier} if instance_identifier else {}),
                     'name': f'{instance_name} API Server',
-                    'version': __version__,
+                    'version': importlib.metadata.version('dandiapi'),
                     'schemaKey': 'Software',
                 }
             ],

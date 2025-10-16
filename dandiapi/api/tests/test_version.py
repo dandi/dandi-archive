@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import importlib
 from time import sleep
 from typing import TYPE_CHECKING
 
@@ -10,7 +11,6 @@ from django.conf import settings
 from freezegun import freeze_time
 import pytest
 
-from dandiapi import __version__
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
@@ -312,7 +312,7 @@ def test_version_publish_version(draft_version, asset):
                     **({'identifier': instance_identifier} if instance_identifier else {}),
                     'name': f'{instance_name} API Server',
                     # TODO: version the API
-                    'version': __version__,
+                    'version': importlib.metadata.version('dandiapi'),
                     'schemaKey': 'Software',
                 }
             ],

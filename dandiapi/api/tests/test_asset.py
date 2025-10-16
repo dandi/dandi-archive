@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import json
 from uuid import uuid4
 
@@ -11,7 +12,6 @@ from django.urls import reverse
 import pytest
 import requests
 
-from dandiapi import __version__
 from dandiapi.api.asset_paths import add_asset_paths, extract_paths
 from dandiapi.api.models import Asset, Version
 from dandiapi.api.models.asset_paths import AssetPath
@@ -134,7 +134,7 @@ def test_publish_asset(draft_asset: Asset):
                     **({'identifier': instance_identifier} if instance_identifier else {}),
                     'name': f'{instance_name} API Server',
                     # TODO: version the API
-                    'version': __version__,
+                    'version': importlib.metadata.version('dandiapi'),
                     'schemaKey': 'Software',
                 }
             ],
