@@ -1,6 +1,6 @@
 [build]
 publish = "dist"
-command = "git fetch --tags && yarn run build"
+command = "git fetch --tags && npm run build"
 ignore = "false"
 
 # Staging

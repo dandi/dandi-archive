@@ -3,17 +3,14 @@ The DANDI Archive web application (i.e. the dandi-archive frontend).
 
 ## Develop
 
-### Serve App in Development Server (requires [yarn](https://yarnpkg.com/))
+### Serve App in Development Server
 
 ```bash
 git clone https://github.com/dandi/dandi-archive
 cd dandi-archive/web
-yarn install
-yarn run dev
+npm install
+npm run dev
 ```
-
-**Note**: On Debian systems, the `yarn` command is from the unrelated `cmdtest` package.
-Instead, install and use `yarnpkg`.
 
 The web app will be served at `http://localhost:8085/`.
 
@@ -24,7 +21,7 @@ To be useful, this app requires a server component, which you can run locally; s
 To fix the code formatting and check for common errors, run:
 
 ```bash
-yarn run lint
+npm run lint
 ```
 
 ### Schema Migration
@@ -32,11 +29,11 @@ yarn run lint
 The web app uses TypeScript typings (src/types/schema.ts) that are automatically generated from the dandiset metadata's
 [JSON schema](https://github.com/dandi/schema).
 These typings are used only for linting, and not to drive any functionality.
-To change the schema version (and as a result, the types), use the `yarn migrate` command.
+To change the schema version (and as a result, the types), use the `npm run migrate` command.
 
 For example, to migrate to schema version 0.5.1, run:
 ```bash
-yarn migrate 0.5.1
+npm run migrate 0.5.1
 ```
 
 ### Environment Variables
