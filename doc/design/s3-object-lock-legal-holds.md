@@ -1,18 +1,22 @@
 # S3 Object Lock Legal Holds
 
+
+## Terminology
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt).
+
 ## Why make published blobs immutable?
 
-The DANDI Archive's core value proposition is hosting reliable, citable scientific data. Once a dandiset is published and assigned a DOI, the data it references must remain immutable to preserve the integrity of scientific citations and reproducibility. Users who cite a published dandiset expect that the data will remain exactly as it was at the time of publication.
+The DANDI Archive's core value proposition is hosting reliable, citable scientific data. Once a dandiset is published and assigned a DOI, the data it references MUST remain immutable to preserve the integrity of scientific citations and reproducibility. Users who cite a published dandiset expect that the data will remain exactly as it was at the time of publication.
 
 Currently, while our application logic prevents modification of published assets, there is no infrastructure-level enforcement.  Adding S3-level immutability provides stronger data safety.
 
 ## Requirements
 
-- Published asset blobs must be immutable at the S3 infrastructure level
-- The immutability mechanism should not interfere with the existing trailing delete functionality (S3 Bucket Versioning)
-- The solution should be compatible with future garbage collection features
-- The mechanism should be efficient when applied to large numbers of blobs during publication
-- There should be some sort of "backdoor" that allows deletion of published blobs if necessary, in case of extreme circumstances that warrant deletion of a published asset and/or dandiset
+- Published asset blobs MUST be immutable at the S3 infrastructure level
+- The immutability mechanism MUST not interfere with the existing trailing delete functionality (S3 Bucket Versioning)
+- The solution MUST be compatible with future garbage collection features
+- The mechanism MUST be efficient when applied to large numbers of blobs during publication
+- There MUST be some sort of "backdoor" that allows deletion of published blobs if necessary, in case of extreme circumstances that warrant deletion of a published asset and/or dandiset
 
 ## Proposed Solution
 
@@ -29,14 +33,14 @@ S3 Object Lock is a feature that prevents objects from being deleted or overwrit
 Goverence and compliance modes operate at the bucket level, while legal holds operate at the object level.
 
 For our use case, **legal holds** are the appropriate choice because:
-- We only want to prevent deletion of published assets, other objects in the bucket should remain deletable
-- Published assets should remain immutable permanently (no expiration)
-- We still want the ability to remove the hold if absolutely necessary
+- Only published assets need protection from deletion, other objects in the bucket MUST remain deletable
+- Published assets MUST remain immutable permanently (no expiration)
+- There MUST be the ability to remove the hold if absolutely necessary (per the "backdoor" requirement)
 - Legal holds are independent of retention policies and work alongside bucket versioning
 
 ## Interaction with Garbage Collection
 
-Legal holds do not interfere with garbage collection of unpublished assets, as only published asset blobs will have legal holds applied. The garbage collection processes for orphaned uploads, unreferenced AssetBlobs, and unpublished assets will continue to work as designed.
+Legal holds MUST NOT interfere with garbage collection of unpublished assets, as only published asset blobs SHALL have legal holds applied. The garbage collection processes for orphaned uploads, unreferenced AssetBlobs, and unpublished assets MUST continue to work as designed.
 
 ## Cost Considerations
 
@@ -45,7 +49,7 @@ Legal holds do not interfere with garbage collection of unpublished assets, as o
 
 ## Rollout Plan
 
-Note: this should be done on the sandbox deployment first, then the production deployment.
+Note: this SHOULD be done on the sandbox deployment first, then the production deployment.
 
 1. Enable S3 Object Lock on the bucket
 2. Deploy code changes to apply legal holds during publish celery task
@@ -55,7 +59,7 @@ Note: this should be done on the sandbox deployment first, then the production d
 
 ### Bucket Policy with Object Tagging
 
-An appealing approach might be to tag published blobs with a `published=true` tag and use a bucket policy to deny `s3:DeleteObject` for objects with that tag. This is similar to how we deny access (i.e. `s3:GetObject`) permissions to embargoed blobs (see Embargo Redesign doc for more info). However, this approach **does not work** due to an AWS limitation.
+An appealing approach might be to tag published blobs with a `published=true` tag and use a bucket policy to deny `s3:DeleteObject` for objects with that tag. This is similar to how we deny access (i.e. `s3:GetObject`) permissions to embargoed blobs (see Embargo Redesign doc for more info). However, this approach **cannot be used** due to an AWS limitation.
 
 The `s3:DeleteObject` action does not support the `s3:ExistingObjectTag/<tag_name>` condition key, according to [AWS documentation](https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazons3.html#amazons3-actions-as-permissions).
 
