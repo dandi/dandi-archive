@@ -42,6 +42,20 @@ For our use case, **legal holds** are the appropriate choice because:
 
 Legal holds MUST NOT interfere with garbage collection of unpublished assets, as only published asset blobs SHALL have legal holds applied. The garbage collection processes for orphaned uploads, unreferenced AssetBlobs, and unpublished assets MUST continue to work as designed.
 
+### Potential Interference Scenarios (and Why They Don't Occur)
+
+The following scenarios could theoretically interfere with garbage collection, but do NOT occur with this design:
+
+1. **Overly broad legal holds**: If legal holds were accidentally applied to unpublished blobs, those blobs could not be deleted by garbage collection processes until the holds were manually removed.
+1. **Bucket-wide retention policies**: If we used compliance or governance mode at the bucket level, ALL objects (including unpublished assets, orphaned uploads, and manifest files, etc.) would be protected from deletion for the retention period. This would prevent garbage collection processes from cleaning up:
+   - Abandoned multipart uploads
+   - Orphaned asset blobs
+   - Old manifest file versions
+
+**Why legal holds avoid these issues:**
+- Unpublished assets never receive legal holds, so they remain fully deletable while the deletion permissions remain intact for objects without legal holds
+- Legal holds are applied at the **object level**, only to specific published asset blobs. i.e., they are **object-level retention policies** instead of **bucket-wide retention policies**.
+
 ## Cost Considerations
 
 - S3 Object Lock has no additional per-request or storage costs
