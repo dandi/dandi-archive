@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+import importlib
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from django.conf import settings
-
-from dandiapi import __version__
 
 if TYPE_CHECKING:
     import datetime
@@ -30,7 +29,7 @@ class PublishableMetadataMixin:
                     **({'identifier': instance_identifier} if instance_identifier else {}),
                     'name': f'{instance_name} API Server',
                     # TODO: version the API
-                    'version': __version__,
+                    'version': importlib.metadata.version('dandiapi'),
                     'schemaKey': 'Software',
                 }
             ],
