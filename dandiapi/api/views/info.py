@@ -73,7 +73,7 @@ def info_view(request):
         data={
             'schema_version': settings.DANDI_SCHEMA_VERSION,
             'schema_url': get_schema_url(),
-            'version': importlib.metadata.version('dandiapi'),
+            'version': importlib.metadata.version('dandi-archive'),
             'cli-minimal-version': '0.60.0',
             'cli-bad-versions': [],
             'services': {
