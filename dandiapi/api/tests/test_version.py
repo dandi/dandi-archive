@@ -5,7 +5,7 @@ import importlib
 from time import sleep
 from typing import TYPE_CHECKING
 
-from dandischema.conf import get_instance_config
+from dandischema.conf import get_instance_config as get_schema_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
 from freezegun import freeze_time
@@ -29,7 +29,7 @@ from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
 
-_SCHEMA_INSTANCE_CONFIG = get_instance_config()
+_SCHEMA_INSTANCE_CONFIG = get_schema_instance_config()
 
 
 @freeze_time()

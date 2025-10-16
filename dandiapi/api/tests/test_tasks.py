@@ -6,7 +6,7 @@ import importlib
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from dandischema.conf import get_instance_config
+from dandischema.conf import get_instance_config as get_schema_instance_config
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.forms.models import model_to_dict
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from rest_framework.test import APIClient
 
 
-_SCHEMA_INSTANCE_CONFIG = get_instance_config()
+_SCHEMA_INSTANCE_CONFIG = get_schema_instance_config()
 
 
 @pytest.mark.django_db

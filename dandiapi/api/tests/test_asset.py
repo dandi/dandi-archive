@@ -4,7 +4,7 @@ import importlib
 import json
 from uuid import uuid4
 
-from dandischema.conf import get_instance_config
+from dandischema.conf import get_instance_config as get_schema_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
 from django.db.utils import IntegrityError
@@ -27,7 +27,7 @@ from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
 
-_SCHEMA_INSTANCE_CONFIG = get_instance_config()
+_SCHEMA_INSTANCE_CONFIG = get_schema_instance_config()
 
 # Model tests
 
