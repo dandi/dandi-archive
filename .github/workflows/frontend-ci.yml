@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # fetch history for all branches and tags
 
       - uses: actions/setup-node@v5
         with:
@@ -83,13 +85,15 @@ jobs:
       VITE_APP_OAUTH_CLIENT_ID: Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl
     steps:
     - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0 # fetch history for all branches and tags
 
     - uses: actions/setup-node@v5
       with:
         node-version: 20
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
 
     - name: Install web app
       run: yarn install --frozen-lockfile

@@ -5,8 +5,9 @@ from unittest.mock import ANY
 from dandischema.conf import Config, get_instance_config
 from django.conf import settings
 
-from dandiapi import __version__
 from dandiapi.api.views.info import get_schema_url
+
+from .fuzzy import Re
 
 
 def test_rest_info(api_client):
@@ -24,7 +25,8 @@ def test_rest_info(api_client):
         'instance_config': ANY,
         'schema_version': settings.DANDI_SCHEMA_VERSION,
         'schema_url': schema_url,
-        'version': __version__,
+        # Matches setuptools_scm's versioning scheme "no-guess-dev"
+        'version': Re(r'\d+\.\d+\.\d+(\.post1\.dev\d+\+g[0-9a-f]{7,}(\.d\d{8})?)?'),
         'cli-minimal-version': '0.60.0',
         'cli-bad-versions': [],
         'services': {
