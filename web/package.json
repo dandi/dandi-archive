@@ -2,10 +2,16 @@
   "name": "dandi-archive",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=20"
-  },
   "version": "0.0.0",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=20"
+    },
+    "packageManager": {
+      "name": "npm"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
