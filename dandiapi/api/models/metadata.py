@@ -1,15 +1,23 @@
 from __future__ import annotations
 
+import importlib
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
+from dandischema.conf import get_instance_config as get_schema_instance_config
+
 if TYPE_CHECKING:
     import datetime
+
+_SCHEMA_INSTANCE_CONFIG = get_schema_instance_config()
 
 
 class PublishableMetadataMixin:
     @classmethod
     def published_by(cls, now: datetime.datetime):
+        instance_name = _SCHEMA_INSTANCE_CONFIG.instance_name
+        instance_identifier = _SCHEMA_INSTANCE_CONFIG.instance_identifier
+
         return {
             'id': uuid4().urn,
             'name': 'DANDI publish',
@@ -20,10 +28,10 @@ class PublishableMetadataMixin:
             'wasAssociatedWith': [
                 {
                     'id': uuid4().urn,
-                    'identifier': 'RRID:SCR_017571',
-                    'name': 'DANDI API',
+                    **({'identifier': instance_identifier} if instance_identifier else {}),
+                    'name': f'{instance_name} API',
                     # TODO: version the API
-                    'version': '0.1.0',
+                    'version': importlib.metadata.version('dandiapi'),
                     'schemaKey': 'Software',
                 }
             ],

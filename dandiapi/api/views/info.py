@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib.metadata
 from urllib.parse import ParseResult, urlencode, urlparse, urlunparse
 
-from dandischema.conf import get_instance_config
+from dandischema.conf import get_instance_config as get_schema_instance_config
 from django.conf import settings
 from django.urls import reverse
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -11,7 +11,7 @@ from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-_INSTANCE_CONFIG = get_instance_config()
+_INSTANCE_CONFIG = get_schema_instance_config()
 
 
 def get_schema_url():
