@@ -29,7 +29,7 @@ class PublishableMetadataMixin:
                 {
                     'id': uuid4().urn,
                     **({'identifier': instance_identifier} if instance_identifier else {}),
-                    'name': f'{instance_name} API Server',
+                    'name': f'{instance_name} API',
                     # TODO: version the API
                     'version': importlib.metadata.version('dandiapi'),
                     'schemaKey': 'Software',

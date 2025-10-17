@@ -132,7 +132,7 @@ def test_publish_asset(draft_asset: Asset):
                 {
                     'id': URN_RE,
                     **({'identifier': instance_identifier} if instance_identifier else {}),
-                    'name': f'{instance_name} API Server',
+                    'name': f'{instance_name} API',
                     # TODO: version the API
                     'version': importlib.metadata.version('dandiapi'),
                     'schemaKey': 'Software',
