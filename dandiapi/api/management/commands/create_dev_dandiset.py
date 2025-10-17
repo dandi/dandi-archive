@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+from dandischema.conf import get_instance_config as get_schema_instance_config
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -30,9 +31,7 @@ from dandiapi.api.tasks import calculate_sha256
 def create_dev_dandiset(*, name: str, email: str, num_extra_owners: int):
     owner = User.objects.get(email=email)
 
-    supported_licenses = [
-        license_.value for license_ in settings.DANDI_SCHEMA_INSTANCE_CONFIG.licenses
-    ]
+    supported_licenses = [license_.value for license_ in get_schema_instance_config().licenses]
     supported_licenses.sort()
 
     license_to_use = (

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from celery.utils.log import get_task_logger
+from dandischema.conf import get_instance_config as get_schema_instance_config
 import dandischema.exceptions
 from dandischema.metadata import aggregate_assets_summary, validate
 from django.conf import settings
@@ -116,7 +117,7 @@ def validate_version_metadata(*, version: Version) -> None:
         metadata_for_validation = publishable_version.metadata
 
         metadata_for_validation['id'] = (
-            f'{settings.DANDI_SCHEMA_INSTANCE_CONFIG.instance_name}:'
+            f'{get_schema_instance_config().instance_name}:'
             f'{publishable_version.dandiset.identifier}/{publishable_version.version}'
         )
         metadata_for_validation['url'] = (

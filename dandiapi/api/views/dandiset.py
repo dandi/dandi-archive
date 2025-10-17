@@ -4,7 +4,7 @@ import typing
 from typing import TYPE_CHECKING
 
 from allauth.socialaccount.models import SocialAccount
-from django.conf import settings
+from dandischema.conf import get_instance_config as get_schema_instance_config
 from django.contrib.auth.models import User
 from django.contrib.postgres.lookups import Unaccent
 from django.db import transaction
@@ -426,9 +426,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         identifier = None
         if 'identifier' in serializer.validated_data['metadata']:
             identifier = serializer.validated_data['metadata']['identifier']
-            identifier = identifier.removeprefix(
-                f'{settings.DANDI_SCHEMA_INSTANCE_CONFIG.instance_name}:'
-            )
+            identifier = identifier.removeprefix(f'{get_schema_instance_config().instance_name}:')
 
             try:
                 identifier = int(identifier)

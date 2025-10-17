@@ -4,17 +4,19 @@ import importlib
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from django.conf import settings
+from dandischema.conf import get_instance_config as get_schema_instance_config
 
 if TYPE_CHECKING:
     import datetime
+
+_SCHEMA_INSTANCE_CONFIG = get_schema_instance_config()
 
 
 class PublishableMetadataMixin:
     @classmethod
     def published_by(cls, now: datetime.datetime):
-        instance_name = settings.DANDI_SCHEMA_INSTANCE_CONFIG.instance_name
-        instance_identifier = settings.DANDI_SCHEMA_INSTANCE_CONFIG.instance_identifier
+        instance_name = _SCHEMA_INSTANCE_CONFIG.instance_name
+        instance_identifier = _SCHEMA_INSTANCE_CONFIG.instance_identifier
 
         return {
             'id': uuid4().urn,
