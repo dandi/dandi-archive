@@ -87,7 +87,9 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  #
         draft_version.save()
 
 
-def _build_publishable_version_from_draft(draft_version: Version) -> Version:
+def _build_publishable_version_from_draft(
+    draft_version: Version, release_notes: str | None = None
+) -> Version:
     # Make a deep copy of the dict to avoid mutating the draft version's metadata.
     publishable_version_metadata = copy.deepcopy(draft_version.metadata)
 
@@ -100,6 +102,10 @@ def _build_publishable_version_from_draft(draft_version: Version) -> Version:
         }
     )
 
+    # Add releaseNotes if provided
+    if release_notes:
+        publishable_version_metadata['releaseNotes'] = release_notes
+
     return Version(
         dandiset=draft_version.dandiset,
         name=draft_version.name,
@@ -109,7 +115,7 @@ def _build_publishable_version_from_draft(draft_version: Version) -> Version:
     )
 
 
-def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
+def _publish_dandiset(dandiset_id: int, user_id: int, release_notes: str | None = None) -> None:
     """
     Publish a dandiset.
 
@@ -127,7 +133,7 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
                 'before this function.'
             )
 
-        new_version: Version = _build_publishable_version_from_draft(old_version)
+        new_version: Version = _build_publishable_version_from_draft(old_version, release_notes)
         new_version.save()
 
         # Bulk create the join table rows to optimize linking assets to new_version
@@ -207,9 +213,11 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         )
 
 
-def publish_dandiset(*, user: User, dandiset: Dandiset) -> None:
+def publish_dandiset(*, user: User, dandiset: Dandiset, release_notes: str | None = None) -> None:
     from dandiapi.api.tasks import publish_dandiset_task
 
     with transaction.atomic():
         _lock_dandiset_for_publishing(user=user, dandiset=dandiset)
-        transaction.on_commit(lambda: publish_dandiset_task.delay(dandiset.id, user.id))
+        transaction.on_commit(
+            lambda: publish_dandiset_task.delay(dandiset.id, user.id, release_notes)
+        )
