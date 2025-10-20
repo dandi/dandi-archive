@@ -13,7 +13,7 @@ dependencies = [
   "celery",
   "dandi",  # minimal version is also provided in API /info
   # Pin dandischema to exact version to make explicit which schema version is being used
-  "dandischema @ git+https://github.com/dandi/dandi-schema.git@devendorize",
+  "dandischema",  # schema version 0.6.10
   "django[argon2]",
   "django-allauth",
   "django-auth-style",
@@ -117,9 +117,6 @@ only-include = [
   "/Procfile",
   "/gunicorn.conf.py",
 ]
-
-[tool.hatch.metadata]
-allow-direct-references = true
 
 [tool.hatch.version]
 source = "vcs"
