@@ -59,13 +59,14 @@ def create_dev_dandiset(*, name: str, email: str, num_extra_owners: int):
     try:
         asset_blob = AssetBlob.objects.get(etag=etag)
     except AssetBlob.DoesNotExist:
-        asset_blob = AssetBlob(
+        asset_blob = AssetBlob.objects.create(
             blob_id=uuid4(),
             blob=uploaded_file,
             etag=etag,
             size=20,
         )
-        asset_blob.save()
+        calculate_sha256(blob_id=asset_blob.blob_id)
+        asset_blob.refresh_from_db()
     asset_metadata = {
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'text/plain',
@@ -76,6 +77,5 @@ def create_dev_dandiset(*, name: str, email: str, num_extra_owners: int):
         user=owner, version=draft_version, asset_blob=asset_blob, metadata=asset_metadata
     )
 
-    calculate_sha256(blob_id=asset_blob.blob_id)
     validate_asset_metadata(asset=asset)
     validate_version_metadata(version=draft_version)
