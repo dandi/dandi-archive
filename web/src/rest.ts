@@ -289,8 +289,10 @@ const dandiRest = {
     const { data } = await client.get('users/search/', { params: { username } });
     return data;
   },
-  async publish(identifier: string): Promise<Version> {
-    const { data } = await client.post(`dandisets/${identifier}/versions/draft/publish/`);
+  async publish(identifier: string, releaseNotes?: string): Promise<Version> {
+    const { data } = await client.post(`dandisets/${identifier}/versions/draft/publish/`, {
+      release_notes: releaseNotes,
+    });
     return data;
   },
   async unembargo(identifier: string): Promise<AxiosResponse> {

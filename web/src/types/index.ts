@@ -49,6 +49,7 @@ export interface Version {
   asset_validation_errors: ValidationError[],
   version_validation_errors: ValidationError[],
   contact_person?: string,
+  release_notes?: string | null,
 }
 
 export interface Asset {
