@@ -155,74 +155,53 @@
     <v-divider />
     <v-card class="rounded-0 elevation-0">
       <v-card-title>
-        Draft Version
+        Versions
       </v-card-title>
       <v-card-text>
-        <v-list class="pa-0">
-          <v-list-item class="border rounded">
-            <template #prepend>
-              <v-icon color="green">
-                mdi-check-bold
-              </v-icon>
-              <v-btn
-                v-if="draftVersion"
-                size="x-small"
-                variant="outlined"
-                icon="mdi-source-branch"
-                class="rounded"
-                @click="setVersion(draftVersion)"
-              />
-            </template>
+        <v-list class="border pa-0 rounded">
+          <v-list-item
+            v-for="(version, i) in allVersions"
+            :key="i"
+            :class="'opacity-100 ' + (i === (allVersions?.length || 0) - 1 ? 'border-b-0' : 'border-b')"
+            :disabled="version.version === currentDandiset?.version"
+            @click="setVersion(version)"
+          >
             <div class="d-flex align-center justify-space-between">
-              <v-list-item-title>
-                <strong>{{ draftVersion?.version.toUpperCase() || '' }}</strong>
+              <v-list-item-title class="d-flex align-center">
+                <v-icon
+                  v-if="version.version === currentDandiset?.version"
+                  class="mr-2"
+                  size="small"
+                  color="primary"
+                >
+                  mdi-arrow-right-thick
+                </v-icon>
+                <span :class="currentDandiset?.version === version.version ? 'font-weight-bold' : ''">{{ version?.version.toUpperCase() || '' }}</span>
               </v-list-item-title>
               <v-list-item-subtitle class="text-caption">
-                {{ draftVersion ? formatDate(draftVersion.modified) : '' }}
+                {{ version ? formatDate(version.modified) : '' }}
               </v-list-item-subtitle>
             </div>
           </v-list-item>
         </v-list>
-      </v-card-text>
-    </v-card>
-    <v-divider />
-    <v-card class="rounded-0 elevation-0">
-      <v-card-title>
-        Published Versions
-      </v-card-title>
-      <v-card-text>
         <v-empty-state
           v-if="!publishedVersions?.length"
-          text="This is the only version. When other versions get published, they'll appear here."
+          class="pa-8 ga-2 border border-dashed rounded my-4 text-grey"
+          text="There are no published versions. When a version gets published, it will appear here."
+          icon="mdi-information-slab-circle-outline"
+          color="grey-lighten-1"
+          size="24px"
         />
-        <v-list
+        <!-- <v-list
           v-else
-          class="border border-b-0 rounded pa-0"
+          class="border border-b-0 rounded pa-0 my-4"
         >
           <v-list-item
             v-for="(version, i) in publishedVersions"
             :key="i"
             class="border-b pl-2"
+            @click="setVersion(version)"
           >
-            <template #prepend>
-              <v-list-item-action>
-                <v-tooltip
-                  location="start"
-                  text="Check out this version"
-                >
-                  <template #activator="{ props: versionTooltip }">
-                    <v-btn
-                      v-bind="versionTooltip"
-                      size="x-small"
-                      variant="outlined"
-                      icon="mdi-source-branch"
-                      class="rounded"
-                      @click="setVersion(version)"
-                    />
-                  </template>
-                </v-tooltip>
-              </v-list-item-action>
-            </template>
             <div class="d-flex align-center justify-space-between pl-4">
               <v-list-item-title>{{ version.version.toUpperCase() }}</v-list-item-title>
               <v-list-item-subtitle class="text-caption">
@@ -230,7 +209,7 @@
               </v-list-item-subtitle>
             </div>
           </v-list-item>
-        </v-list>
+        </v-list> -->
       </v-card-text>
     </v-card>
 
@@ -290,10 +269,10 @@ const PUBLISH_CHECKLIST = [
 function sortVersions(v1: Version, v2: Version): number {
   // Always put draft first
   if (v1.version === draftVersionName || v1.modified > v2.modified) {
-    return -1;
+    return 1;
   }
   if (v1.modified < v2.modified) {
-    return 1;
+    return -1;
   }
   return 0;
 }
@@ -311,6 +290,7 @@ const currentDandiset = computed(() => store.dandiset);
 
 const draftVersion = computed(() => store.draftVersion);
 const publishedVersions = computed(() => store.publishedVersions?.toSorted(sortVersions));
+const allVersions = computed(() => store.versions?.toSorted(sortVersions));
 
 const loggedIn: ComputedRef<boolean> = computed(loggedInFunc);
 
