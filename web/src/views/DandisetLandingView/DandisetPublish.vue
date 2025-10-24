@@ -192,24 +192,6 @@
           color="grey-lighten-1"
           size="24px"
         />
-        <!-- <v-list
-          v-else
-          class="border border-b-0 rounded pa-0 my-4"
-        >
-          <v-list-item
-            v-for="(version, i) in publishedVersions"
-            :key="i"
-            class="border-b pl-2"
-            @click="setVersion(version)"
-          >
-            <div class="d-flex align-center justify-space-between pl-4">
-              <v-list-item-title>{{ version.version.toUpperCase() }}</v-list-item-title>
-              <v-list-item-subtitle class="text-caption">
-                {{ formatDate(version.modified) }}
-              </v-list-item-subtitle>
-            </div>
-          </v-list-item>
-        </v-list> -->
       </v-card-text>
     </v-card>
 
@@ -288,7 +270,6 @@ const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
 
-const draftVersion = computed(() => store.draftVersion);
 const publishedVersions = computed(() => store.publishedVersions?.toSorted(sortVersions));
 const allVersions = computed(() => store.versions?.toSorted(sortVersions));
 
