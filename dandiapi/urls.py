@@ -45,13 +45,13 @@ router = ExtendedSimpleRouter()
     .register(
         r'versions',
         VersionViewSet,
-        basename='version',
+        basename='dandiset-version',
         parents_query_lookups=[f'dandiset__{DandisetViewSet.lookup_field}'],
     )
     .register(
         r'assets',
         NestedAssetViewSet,
-        basename='asset',
+        basename='dandiset-version-asset',
         parents_query_lookups=[
             f'versions__dandiset__{DandisetViewSet.lookup_field}',
             f'versions__{VersionViewSet.lookup_field}',
