@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+import re
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
@@ -43,7 +44,27 @@ class UserDetailSerializer(serializers.Serializer):
     status = serializers.CharField()
 
 
+class DandisetIdentifierField(serializers.Field[int, str | int, str, Any]):
+    default_error_messages = {'invalid': 'A valid Dandiset identifier is required.'}
+
+    def to_internal_value(self, data):
+        if not isinstance(data, str | int):
+            self.fail('invalid')
+        if isinstance(data, str):
+            if not re.fullmatch(Dandiset.IDENTIFIER_REGEX, data):
+                self.fail('invalid')
+            try:
+                return int(data)
+            except (ValueError, TypeError):
+                self.fail('invalid')
+        return data
+
+    def to_representation(self, value):
+        return f'{value:06}'
+
+
 class DandisetSerializer(serializers.ModelSerializer):
+    identifier = DandisetIdentifierField()
     contact_person = serializers.SerializerMethodField(method_name='get_contact_person')
     star_count = serializers.SerializerMethodField()
     is_starred = serializers.SerializerMethodField()
