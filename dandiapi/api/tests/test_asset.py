@@ -26,6 +26,7 @@ from dandiapi.api.tests.factories import (
 )
 from dandiapi.zarr.models import ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
 
@@ -45,7 +46,8 @@ def test_asset_no_blob_zarr(draft_asset_factory):
 
 
 @pytest.mark.django_db
-def test_asset_blob_and_zarr(draft_asset, zarr_archive):
+def test_asset_blob_and_zarr(draft_asset):
+    zarr_archive = ZarrArchiveFactory.create()
     # An integrity error is thrown by the constraint that both blob and zarr cannot both be defined
     draft_asset.zarr = zarr_archive
     with pytest.raises(IntegrityError) as excinfo:
@@ -204,7 +206,8 @@ def test_asset_full_metadata(draft_asset_factory):
 
 
 @pytest.mark.django_db
-def test_asset_full_metadata_zarr(draft_asset_factory, zarr_archive):
+def test_asset_full_metadata_zarr(draft_asset_factory):
+    zarr_archive = ZarrArchiveFactory.create()
     raw_metadata = {
         'foo': 'bar',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
@@ -948,11 +951,10 @@ def test_asset_create_embargoed_asset_blob_open_dandiset(api_client, embargoed_a
 
 
 @pytest.mark.django_db
-def test_asset_create_zarr(api_client, zarr_archive):
+def test_asset_create_zarr(api_client):
     user = UserFactory.create()
     draft_version = DraftVersionFactory.create(dandiset__owners=[user])
-    zarr_archive.dandiset = draft_version.dandiset
-    zarr_archive.save()
+    zarr_archive = ZarrArchiveFactory.create(dandiset=draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
     path = 'test/create/asset.txt'
@@ -998,11 +1000,10 @@ def test_asset_create_zarr(api_client, zarr_archive):
 
 # Must use transaction=True to ensure `on_commit` funcs are called
 @pytest.mark.django_db(transaction=True)
-def test_asset_create_zarr_validated(api_client, zarr_archive, zarr_file_factory):
+def test_asset_create_zarr_validated(api_client, zarr_file_factory):
     user = UserFactory.create()
     draft_version = DraftVersionFactory.create(dandiset__owners=[user])
-    zarr_archive.dandiset = draft_version.dandiset
-    zarr_archive.save()
+    zarr_archive = ZarrArchiveFactory.create(dandiset=draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
     path = 'test/create/asset.txt'
@@ -1097,9 +1098,10 @@ def test_asset_create_no_blob_or_zarr(api_client):
 
 
 @pytest.mark.django_db
-def test_asset_create_blob_and_zarr(api_client, asset_blob, zarr_archive):
+def test_asset_create_blob_and_zarr(api_client, asset_blob):
     user = UserFactory.create()
     draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    zarr_archive = ZarrArchiveFactory.create()
     api_client.force_authenticate(user=user)
 
     path = 'test/create/asset.txt'
@@ -1414,13 +1416,12 @@ def test_asset_rest_update_unembargo_in_progress(api_client, asset, embargoed_as
 def test_asset_rest_update_zarr(
     api_client,
     draft_asset_factory,
-    zarr_archive,
     zarr_file_factory,
 ):
     user = UserFactory.create()
     draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     api_client.force_authenticate(user=user)
-
+    zarr_archive = ZarrArchiveFactory.create(dandiset=draft_version.dandiset)
     asset = draft_asset_factory(blob=None, zarr=zarr_archive)
     draft_version.assets.add(asset)
     add_asset_paths(asset=asset, version=draft_version)
@@ -1601,11 +1602,11 @@ def test_asset_rest_delete_unembargo_in_progress(api_client, asset):
 def test_asset_rest_delete_zarr(
     api_client,
     draft_asset_factory,
-    zarr_archive,
     zarr_file_factory,
 ):
     user = UserFactory.create()
     draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    zarr_archive = ZarrArchiveFactory.create(dandiset=draft_version.dandiset)
     asset = draft_asset_factory(blob=None, zarr=zarr_archive)
     draft_version.assets.add(asset)
 
@@ -1763,7 +1764,8 @@ def test_asset_download_embargo(
 
 
 @pytest.mark.django_db
-def test_asset_download_zarr(api_client, version, asset_factory, zarr_archive):
+def test_asset_download_zarr(api_client, version, asset_factory):
+    zarr_archive = ZarrArchiveFactory.create()
     asset = asset_factory(blob=None, zarr=zarr_archive)
     version.assets.add(asset)
 
@@ -1795,7 +1797,8 @@ def test_asset_direct_download(api_client, version, asset):
 
 
 @pytest.mark.django_db
-def test_asset_direct_download_zarr(api_client, version, asset_factory, zarr_archive):
+def test_asset_direct_download_zarr(api_client, version, asset_factory):
+    zarr_archive = ZarrArchiveFactory.create()
     asset = asset_factory(blob=None, zarr=zarr_archive)
     version.assets.add(asset)
 

@@ -29,6 +29,7 @@ from dandiapi.api.tasks import unembargo_dandiset_task, write_manifest_files
 from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
 if TYPE_CHECKING:
     from zarr_checksum.generators import ZarrArchiveFile
@@ -185,7 +186,8 @@ def test_remove_asset_blob_embargoed_tag_fails_on_embargoed(embargoed_asset_blob
 
 
 @pytest.mark.django_db
-def test_delete_zarr_object_tags(zarr_archive, zarr_file_factory, mocker):
+def test_delete_zarr_object_tags(zarr_file_factory, mocker):
+    zarr_archive = ZarrArchiveFactory.create()
     mocked_delete_object_tags = mocker.patch(
         'dandiapi.api.services.embargo.utils._delete_object_tags'
     )

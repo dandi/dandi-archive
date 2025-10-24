@@ -7,9 +7,9 @@ import pytest
 from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import AuditRecord, Dandiset
 from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
-from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
 from dandiapi.zarr.tasks import ingest_zarr_archive
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -333,10 +333,10 @@ def test_audit_upload_zarr_chunks(api_client, zarr_archive_factory):
 
 
 @pytest.mark.django_db
-def test_audit_finalize_zarr(api_client, zarr_archive, zarr_file_factory):
+def test_audit_finalize_zarr(api_client, zarr_file_factory):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    add_dandiset_owner(zarr_archive.dandiset, user)
+    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user])
     zarr_file_factory(zarr_archive=zarr_archive)
 
     # Finalize the zarr.

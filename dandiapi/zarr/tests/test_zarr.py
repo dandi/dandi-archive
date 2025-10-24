@@ -13,6 +13,7 @@ from dandiapi.api.tests.factories import DandisetFactory, UserFactory
 from dandiapi.api.tests.fuzzy import UUID_RE
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
 
 @pytest.mark.django_db
@@ -61,24 +62,25 @@ def test_zarr_rest_dandiset_malformed(api_client):
 
 
 @pytest.mark.django_db
-def test_zarr_rest_create_not_an_owner(api_client, zarr_archive):
+def test_zarr_rest_create_not_an_owner(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
+    dandiset = DandisetFactory.create()
     resp = api_client.post(
         '/api/zarr/',
         {
-            'name': zarr_archive.name,
-            'dandiset': zarr_archive.dandiset.identifier,
+            'name': 'New Zarr',
+            'dandiset': dandiset.identifier,
         },
     )
     assert resp.status_code == 403
 
 
 @pytest.mark.django_db
-def test_zarr_rest_create_duplicate(api_client, zarr_archive):
+def test_zarr_rest_create_duplicate(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    add_dandiset_owner(zarr_archive.dandiset, user)
+    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user])
     resp = api_client.post(
         '/api/zarr/',
         {
@@ -93,7 +95,6 @@ def test_zarr_rest_create_duplicate(api_client, zarr_archive):
 @pytest.mark.django_db
 def test_zarr_rest_create_embargoed_dandiset(
     api_client,
-    zarr_archive,
 ):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
@@ -103,7 +104,7 @@ def test_zarr_rest_create_embargoed_dandiset(
     resp = api_client.post(
         '/api/zarr/',
         {
-            'name': zarr_archive.name,
+            'name': 'New Zarr',
             'dandiset': dandiset.identifier,
         },
     )
@@ -115,7 +116,7 @@ def test_zarr_rest_create_embargoed_dandiset(
 
 
 @pytest.mark.django_db
-def test_zarr_rest_create_unembargoing(api_client, zarr_archive):
+def test_zarr_rest_create_unembargoing(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
     dandiset = DandisetFactory.create(
@@ -124,7 +125,7 @@ def test_zarr_rest_create_unembargoing(api_client, zarr_archive):
     resp = api_client.post(
         '/api/zarr/',
         {
-            'name': zarr_archive.name,
+            'name': 'New Zarr',
             'dandiset': dandiset.identifier,
         },
     )
@@ -259,7 +260,8 @@ def test_zarr_rest_get_very_big(api_client, zarr_archive_factory):
 
 
 @pytest.mark.django_db
-def test_zarr_rest_get_empty(api_client, zarr_archive: ZarrArchive):
+def test_zarr_rest_get_empty(api_client):
+    zarr_archive = ZarrArchiveFactory.create()
     resp = api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
     assert resp.status_code == 200
     assert resp.json() == {
@@ -359,11 +361,10 @@ def test_zarr_rest_delete_file_asset_metadata(
 
 
 @pytest.mark.django_db
-def test_zarr_rest_delete_file_not_an_owner(
-    api_client, zarr_archive: ZarrArchive, zarr_file_factory
-):
+def test_zarr_rest_delete_file_not_an_owner(api_client, zarr_file_factory):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create()
     zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
 
     resp = api_client.delete(
@@ -375,12 +376,11 @@ def test_zarr_rest_delete_file_not_an_owner(
 @pytest.mark.django_db
 def test_zarr_rest_delete_multiple_files(
     api_client,
-    zarr_archive: ZarrArchive,
     zarr_file_factory,
 ):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    add_dandiset_owner(zarr_archive.dandiset, user)
+    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user])
 
     # Create 10 files
     zarr_files = [zarr_file_factory(zarr_archive=zarr_archive) for _ in range(10)]
@@ -404,12 +404,11 @@ def test_zarr_rest_delete_multiple_files(
 @pytest.mark.django_db
 def test_zarr_rest_delete_missing_file(
     api_client,
-    zarr_archive: ZarrArchive,
     zarr_file_factory,
 ):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    add_dandiset_owner(zarr_archive.dandiset, user)
+    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user])
 
     zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
     resp = api_client.delete(
@@ -435,7 +434,8 @@ def test_zarr_rest_delete_missing_file(
 
 
 @pytest.mark.django_db
-def test_zarr_file_list(api_client, zarr_archive: ZarrArchive, zarr_file_factory):
+def test_zarr_file_list(api_client, zarr_file_factory):
+    zarr_archive = ZarrArchiveFactory.create()
     files = [
         'foo/bar/a.txt',
         'foo/bar/b.txt',
@@ -486,7 +486,8 @@ def test_zarr_file_list(api_client, zarr_archive: ZarrArchive, zarr_file_factory
 
 
 @pytest.mark.django_db
-def test_zarr_explore_head(api_client, zarr_archive: ZarrArchive):
+def test_zarr_explore_head(api_client):
+    zarr_archive = ZarrArchiveFactory.create()
     filepath = 'foo/bar.txt'
     resp = api_client.head(f'/api/zarr/{zarr_archive.zarr_id}/files/', {'prefix': filepath})
     assert resp.status_code == 302
