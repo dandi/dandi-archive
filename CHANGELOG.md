@@ -1,3 +1,18 @@
+# v0.17.2 (Fri Oct 24 2025)
+
+#### 🐛 Bug Fix
+
+- Add asset metadata URL to external services data [#2591](https://github.com/dandi/dandi-archive/pull/2591) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+- Remove use of `social_account` and `user` test fixtures [#2561](https://github.com/dandi/dandi-archive/pull/2561) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 3
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.17.1 (Fri Oct 24 2025)
 
 #### 🐛 Bug Fix
