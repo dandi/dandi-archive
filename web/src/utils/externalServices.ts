@@ -78,7 +78,7 @@ const EXTERNAL_SERVICES: ExternalService[] = [
     regex: /\.nii(\.gz)?$|\.(ome|nii)\.zarr$/,
     maxsize: Infinity,
     endpoint:
-      "https://www.neuroglass.io/new?resource=$asset_dandi_url_metadata$",
+      "https://www.neuroglass.io/new?resource=$asset_dandi_metadata_url$",
   }
 ];
 
@@ -88,7 +88,7 @@ interface ServiceUrlData {
   assetId: string,
   assetUrl: string,
   assetDandiUrl: string,
-  assetDandiUrlMetadata: string,
+  assetDandiMetadataUrl: string,
   assetS3Url: string,
 }
 
@@ -111,7 +111,7 @@ function serviceURL(endpoint: ExternalServiceEndpoint, data: ServiceUrlData): st
     .replaceAll('$dandiset_version$', data.dandisetVersion)
     .replaceAll('$asset_url$', data.assetUrl)
     .replaceAll('$asset_dandi_url$', data.assetDandiUrl)
-    .replaceAll('$asset_dandi_url_metadata$', data.assetDandiUrlMetadata)
+    .replaceAll('$asset_dandi_metadata_url$', data.assetDandiMetadataUrl)
     .replaceAll('$asset_s3_url$', data.assetS3Url);
 }
 
@@ -133,7 +133,7 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
   // object, and the DANDI URL that redirects to the S3 one.
   const baseApiUrl = import.meta.env.VITE_APP_DANDI_API_ROOT;
   const assetDandiUrl = `${baseApiUrl}assets/${path.asset?.asset_id}/download/`;
-  const assetDandiUrlMetadata = `${baseApiUrl}assets/${path.asset?.asset_id}/`;
+  const assetDandiMetadataUrl = `${baseApiUrl}assets/${path.asset?.asset_id}/`;
   const assetS3Url = trimEnd((path.asset as AssetFile).url, '/');
   const assetId = path.asset?.asset_id;
 
@@ -156,7 +156,7 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
         assetId,
         assetUrl,
         assetDandiUrl,
-        assetDandiUrlMetadata,
+        assetDandiMetadataUrl,
         assetS3Url,
       });
       return url ? [{ name: service.name, url }] : [];
