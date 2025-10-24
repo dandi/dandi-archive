@@ -28,9 +28,7 @@ dependencies = [
   "django-resonant-settings[allauth,celery]",
   "django-resonant-utils",
   "django-stubs-ext",
-  # TODO: pin djangorestframework until we figure out what the cause of
-  # https://github.com/dandi/dandi-archive/issues/1896 is.
-  "djangorestframework<3.15.0",
+  "djangorestframework",
   "drf-extensions",
   "drf-yasg",
   "fsspec[http]",

@@ -19,10 +19,12 @@ from dandiapi.api.services import audit
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.views.pagination import DandiPagination
+from dandiapi.api.views.serializers import DandisetIdentifierField
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 if TYPE_CHECKING:
+    from django.contrib.auth.models import AnonymousUser, User
     from django.db.models.query import QuerySet
 
 logger = logging.getLogger(__name__)
@@ -37,7 +39,7 @@ class ZarrDeleteFileRequestSerializer(serializers.Serializer):
     path = serializers.CharField()
 
 
-class ZarrSerializer(serializers.ModelSerializer):
+class ZarrArchiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = ZarrArchive
         read_only_fields = [
@@ -49,7 +51,35 @@ class ZarrSerializer(serializers.ModelSerializer):
         ]
         fields = ['name', 'dandiset', *read_only_fields]
 
-    dandiset = serializers.RegexField(f'^{Dandiset.IDENTIFIER_REGEX}$')
+    dandiset = serializers.PrimaryKeyRelatedField(
+        queryset=Dandiset.objects.all(),
+        pk_field=DandisetIdentifierField(),
+    )
+
+    def __init__(self, instance=None, data=serializers.empty, **kwargs):
+        super().__init__(instance=instance, data=data, **kwargs)
+
+        # If this was loaded via ".get_serializer", then the request is available in context
+        self.user: User | AnonymousUser | None = (
+            self._context['request'].user if 'request' in self._context else None
+        )
+
+        # A user is only necessary for validating input, but not to serialize output
+        if self.user is not None:
+            # Set the queryset here, before it's actually evaluated
+            self.fields['dandiset'].queryset = get_visible_dandisets(self.user)
+
+    def validate_dandiset(self, dandiset: Dandiset) -> Dandiset:
+        if self.user is None:
+            raise ValueError('Serializer user not set')
+        if not is_dandiset_owner(dandiset, self.user):
+            raise PermissionDenied
+        if dandiset.unembargo_in_progress:
+            raise DandiError(
+                message='Cannot add zarr to dandiset during unembargo',
+                http_status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        return dandiset
 
 
 class ZarrListSerializer(serializers.ModelSerializer):
@@ -91,7 +121,7 @@ class ZarrListQuerySerializer(serializers.Serializer):
 
 
 class ZarrViewSet(ReadOnlyModelViewSet):
-    serializer_class = ZarrSerializer
+    serializer_class = ZarrArchiveSerializer
     pagination_class = DandiPagination
 
     queryset = ZarrArchive.objects.select_related('dandiset').order_by('created').all()
@@ -127,42 +157,28 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         return self.get_paginated_response(serializer.data)
 
     @swagger_auto_schema(
-        request_body=ZarrSerializer,
-        responses={200: ZarrSerializer},
+        request_body=ZarrArchiveSerializer,
+        responses={200: ZarrArchiveSerializer},
         operation_summary='Create a new zarr archive.',
         operation_description='',
     )
     def create(self, request):
         """Create a new zarr archive."""
-        serializer = ZarrSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        name = serializer.validated_data['name']
-        dandiset = get_object_or_404(
-            get_visible_dandisets(request.user), id=serializer.validated_data['dandiset']
-        )
-        if not is_dandiset_owner(dandiset, request.user):
-            raise PermissionDenied
-
-        # Prevent addition to dandiset during unembargo
-        if dandiset.unembargo_in_progress:
-            raise DandiError(
-                message='Cannot add zarr to dandiset during unembargo',
-                http_status_code=status.HTTP_400_BAD_REQUEST,
-            )
-
-        zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         with transaction.atomic():
-            # Use nested transaction block to prevent zarr creation race condition
             try:
-                with transaction.atomic():
-                    zarr_archive.save()
+                zarr_archive: ZarrArchive = serializer.save()
             except IntegrityError as e:
                 raise ValidationError('Zarr already exists') from e
 
-            audit.create_zarr(dandiset=dandiset, user=request.user, zarr_archive=zarr_archive)
+            audit.create_zarr(
+                dandiset=serializer.validated_data['dandiset'],
+                user=request.user,
+                zarr_archive=zarr_archive,
+            )
 
-        serializer = ZarrSerializer(instance=zarr_archive)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -328,7 +344,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     @swagger_auto_schema(
         request_body=ZarrDeleteFileRequestSerializer(many=True),
         responses={
-            200: ZarrSerializer(many=True),
+            200: ZarrArchiveSerializer(many=True),
             400: ZarrArchive.INGEST_ERROR_MSG,
         },
         operation_summary='Delete files from a zarr archive.',
