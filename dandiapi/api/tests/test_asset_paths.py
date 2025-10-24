@@ -18,7 +18,6 @@ from dandiapi.api.models import Asset, AssetPath, Version
 from dandiapi.api.models.asset_paths import AssetPathRelation
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.asset.exceptions import AssetAlreadyExistsError
-from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.tasks import publish_dandiset_task
 from dandiapi.api.tests.factories import DraftVersionFactory, UserFactory
 
@@ -377,8 +376,7 @@ def test_asset_path_ordering(asset_blob):
     # should come before 'aa/z'. This is fixed by changing the collation of the path field, and as
     # such this test serves as a regression test.
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    add_dandiset_owner(dandiset=draft_version.dandiset, user=user)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     add_asset_to_version(
         user=user,
         version=draft_version,

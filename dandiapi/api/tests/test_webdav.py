@@ -5,15 +5,13 @@ import pytest
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.asset import add_asset_to_version
-from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
 
 
 @pytest.mark.django_db
 def test_asset_atpath_root_path(api_client, asset_blob):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    add_dandiset_owner(dandiset=draft_version.dandiset, user=user)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     add_asset_to_version(
         user=user,
         version=draft_version,
@@ -67,8 +65,7 @@ def test_asset_atpath_root_path(api_client, asset_blob):
 @pytest.mark.django_db
 def test_asset_atpath_asset(api_client, asset_blob):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    add_dandiset_owner(dandiset=draft_version.dandiset, user=user)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     path = 'foo.txt'
     asset = add_asset_to_version(
         user=user,
@@ -136,8 +133,7 @@ def test_asset_atpath_folder(api_client, asset_blob):
     #   bar.txt
     #   baz.txt
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    add_dandiset_owner(dandiset=draft_version.dandiset, user=user)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     add_asset_to_version(
         user=user,
         version=draft_version,
@@ -206,8 +202,7 @@ def test_asset_atpath_folder(api_client, asset_blob):
 @pytest.mark.django_db
 def test_asset_atpath_trailing_slash(api_client, asset_blob):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    add_dandiset_owner(dandiset=draft_version.dandiset, user=user)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     add_asset_to_version(
         user=user,
         version=draft_version,
@@ -235,8 +230,7 @@ def test_asset_atpath_trailing_slash(api_client, asset_blob):
 @pytest.mark.django_db
 def test_asset_atpath_path_missing(api_client, asset_blob):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    add_dandiset_owner(dandiset=draft_version.dandiset, user=user)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     add_asset_to_version(
         user=user,
         version=draft_version,
@@ -295,12 +289,13 @@ def test_asset_atpath_path_incorrect_version_id(api_client, asset_blob):
 
 
 @pytest.mark.django_db
-def test_asset_atpath_embargoed_access(api_client):
-    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    draft_version = DraftVersionFactory.create(dandiset=dandiset)
-
+def test_asset_atpath_embargoed_access_nonowner(api_client):
     user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
+    )
     api_client.force_authenticate(user=user)
+
     resp = api_client.get(
         '/api/webdav/assets/atpath/',
         {
@@ -312,7 +307,15 @@ def test_asset_atpath_embargoed_access(api_client):
     )
     assert resp.status_code == 403
 
-    add_dandiset_owner(dandiset, user)
+
+@pytest.mark.django_db
+def test_asset_atpath_embargoed_access_owner(api_client):
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED, dandiset__owners=[user]
+    )
+    api_client.force_authenticate(user=user)
+
     resp = api_client.get(
         '/api/webdav/assets/atpath/',
         {

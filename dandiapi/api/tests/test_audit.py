@@ -84,16 +84,13 @@ def test_audit_change_owners(api_client):
     alice = UserFactory.create()
     bob = UserFactory.create()
     charlie = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-
-    dandiset = draft_version.dandiset
-    add_dandiset_owner(dandiset, alice)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[alice])
 
     # Change the owners.
     new_owners = [bob, charlie]
     api_client.force_authenticate(user=alice)
     resp = api_client.put(
-        f'/api/dandisets/{dandiset.identifier}/users/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/users/',
         [{'username': u.username} for u in new_owners],
     )
     assert resp.status_code == 200
@@ -106,7 +103,7 @@ def test_audit_change_owners(api_client):
             'name': f'{u.first_name} {u.last_name}',
         }
 
-    rec = get_latest_audit_record(dandiset=dandiset, record_type='change_owners')
+    rec = get_latest_audit_record(dandiset=draft_version.dandiset, record_type='change_owners')
     verify_model_properties(rec, alice)
 
     assert sorted(rec.details['added_owners'], key=lambda x: x['username']) == sorted(
@@ -118,10 +115,7 @@ def test_audit_change_owners(api_client):
 @pytest.mark.django_db
 def test_audit_update_metadata(api_client):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    # Create a Dandiset.
-    dandiset = draft_version.dandiset
-    add_dandiset_owner(dandiset, user)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
 
     # Edit its metadata.
     metadata = draft_version.metadata
@@ -129,7 +123,7 @@ def test_audit_update_metadata(api_client):
 
     api_client.force_authenticate(user=user)
     resp = api_client.put(
-        f'/api/dandisets/{dandiset.identifier}/versions/draft/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/',
         {
             'name': 'baz',
             'metadata': metadata,
@@ -138,7 +132,7 @@ def test_audit_update_metadata(api_client):
     assert resp.status_code == 200
 
     # Verify the update_metadata audit record.
-    rec = get_latest_audit_record(dandiset=dandiset, record_type='update_metadata')
+    rec = get_latest_audit_record(dandiset=draft_version.dandiset, record_type='update_metadata')
     verify_model_properties(rec, user)
     metadata = rec.details['metadata']
     assert metadata['name'] == 'baz'
@@ -148,18 +142,15 @@ def test_audit_update_metadata(api_client):
 @pytest.mark.django_db
 def test_audit_delete_dandiset(api_client):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    # Create a Dandiset.
-    dandiset = draft_version.dandiset
-    add_dandiset_owner(dandiset, user)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
 
     # Delete the dandiset.
     api_client.force_authenticate(user=user)
-    resp = api_client.delete(f'/api/dandisets/{dandiset.identifier}/')
+    resp = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
     assert resp.status_code == 204
 
     # Verify the delete_dandiset audit record
-    rec = get_latest_audit_record(dandiset=dandiset, record_type='delete_dandiset')
+    rec = get_latest_audit_record(dandiset=draft_version.dandiset, record_type='delete_dandiset')
     verify_model_properties(rec, user)
     assert rec.details == {}
 
@@ -189,17 +180,14 @@ def test_audit_unembargo(api_client):
 @pytest.mark.django_db
 def test_audit_add_asset(api_client, asset_blob_factory):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    # Create a Dandiset.
-    dandiset = draft_version.dandiset
-    add_dandiset_owner(dandiset, user)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
 
     # Add a new asset.
     blob = asset_blob_factory()
     path = 'foo/bar.txt'
     api_client.force_authenticate(user=user)
     resp = api_client.post(
-        f'/api/dandisets/{dandiset.identifier}/versions/draft/assets/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/',
         {
             'blob_id': str(blob.blob_id),
             'metadata': {
@@ -210,7 +198,7 @@ def test_audit_add_asset(api_client, asset_blob_factory):
     assert resp.status_code == 200
 
     # Verify add_asset audit record.
-    rec = get_latest_audit_record(dandiset=dandiset, record_type='add_asset')
+    rec = get_latest_audit_record(dandiset=draft_version.dandiset, record_type='add_asset')
     verify_model_properties(rec, user)
     assert rec.details['path'] == path
     assert rec.details['asset_blob_id'] == blob.blob_id
@@ -219,11 +207,7 @@ def test_audit_add_asset(api_client, asset_blob_factory):
 @pytest.mark.django_db
 def test_audit_update_asset(api_client, asset_blob_factory, draft_asset_factory):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    # Create a Dandiset with an asset.
-    dandiset = draft_version.dandiset
-    add_dandiset_owner(dandiset, user)
-
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     path = 'foo/bar.txt'
     asset = draft_asset_factory(path=path)
     asset.versions.add(draft_version)
@@ -233,7 +217,7 @@ def test_audit_update_asset(api_client, asset_blob_factory, draft_asset_factory)
     blob = asset_blob_factory()
     api_client.force_authenticate(user=user)
     resp = api_client.put(
-        f'/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset_id}/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/{asset_id}/',
         {
             'blob_id': str(blob.blob_id),
             'metadata': {
@@ -244,7 +228,7 @@ def test_audit_update_asset(api_client, asset_blob_factory, draft_asset_factory)
     assert resp.status_code == 200
 
     # Verify update_asset audit record.
-    rec = get_latest_audit_record(dandiset=dandiset, record_type='update_asset')
+    rec = get_latest_audit_record(dandiset=draft_version.dandiset, record_type='update_asset')
     verify_model_properties(rec, user)
     assert rec.details['path'] == path
     assert rec.details['asset_blob_id'] == blob.blob_id
@@ -253,11 +237,7 @@ def test_audit_update_asset(api_client, asset_blob_factory, draft_asset_factory)
 @pytest.mark.django_db
 def test_audit_remove_asset(api_client, asset_blob_factory, draft_asset_factory):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    # Create a Dandiset with an asset.
-    dandiset = draft_version.dandiset
-    add_dandiset_owner(dandiset, user)
-
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     path = 'foo/bar.txt'
     asset = draft_asset_factory(path=path)
     asset.versions.add(draft_version)
@@ -266,12 +246,12 @@ def test_audit_remove_asset(api_client, asset_blob_factory, draft_asset_factory)
     asset_id = asset.asset_id
     api_client.force_authenticate(user=user)
     resp = api_client.delete(
-        f'/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset_id}/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/{asset_id}/',
     )
     assert resp.status_code == 204
 
     # Verify remove_asset audit record.
-    rec = get_latest_audit_record(dandiset=dandiset, record_type='remove_asset')
+    rec = get_latest_audit_record(dandiset=draft_version.dandiset, record_type='remove_asset')
     verify_model_properties(rec, user)
     assert rec.details['path'] == path
     assert rec.details['asset_id'] == str(asset_id)
@@ -308,10 +288,7 @@ def test_audit_publish_dandiset(api_client, draft_asset_factory):
 @pytest.mark.django_db
 def test_audit_zarr_create(api_client):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    # Create a Dandiset.
-    dandiset = draft_version.dandiset
-    add_dandiset_owner(dandiset, user)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
 
     # Create a Zarr archive.
     api_client.force_authenticate(user=user)
@@ -319,7 +296,7 @@ def test_audit_zarr_create(api_client):
         '/api/zarr/',
         {
             'name': 'Test Zarr',
-            'dandiset': dandiset.identifier,
+            'dandiset': draft_version.dandiset.identifier,
         },
     )
     assert resp.status_code == 200
@@ -327,7 +304,7 @@ def test_audit_zarr_create(api_client):
     # Verify the create_zarr audit record.
     zarr_id = resp.json()['zarr_id']
 
-    rec = get_latest_audit_record(dandiset=dandiset, record_type='create_zarr')
+    rec = get_latest_audit_record(dandiset=draft_version.dandiset, record_type='create_zarr')
     verify_model_properties(rec, user)
     assert rec.details['name'] == 'Test Zarr'
     assert rec.details['zarr_id'] == zarr_id
@@ -336,11 +313,8 @@ def test_audit_zarr_create(api_client):
 @pytest.mark.django_db
 def test_audit_upload_zarr_chunks(api_client, zarr_archive_factory):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    # Create a Dandiset and a Zarr archive.
-    dandiset = draft_version.dandiset
-    add_dandiset_owner(dandiset, user)
-    zarr_archive = zarr_archive_factory(dandiset=dandiset)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset)
 
     # Request some chunk uploads.
     paths = ['a.txt', 'b.txt', 'c.txt']
@@ -352,7 +326,7 @@ def test_audit_upload_zarr_chunks(api_client, zarr_archive_factory):
     assert resp.status_code == 200
 
     # Verify the upload_zarr_chunks audit record.
-    rec = get_latest_audit_record(dandiset=dandiset, record_type='upload_zarr_chunks')
+    rec = get_latest_audit_record(dandiset=draft_version.dandiset, record_type='upload_zarr_chunks')
     verify_model_properties(rec, user)
     assert rec.details['zarr_id'] == zarr_archive.zarr_id
     assert rec.details['paths'] == paths
@@ -380,11 +354,8 @@ def test_audit_finalize_zarr(api_client, zarr_archive, zarr_file_factory):
 @pytest.mark.django_db
 def test_audit_delete_zarr_chunks(api_client, zarr_archive_factory, zarr_file_factory):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create()
-    # Create a Dandiset and a Zarr archive.
-    dandiset = draft_version.dandiset
-    add_dandiset_owner(dandiset, user)
-    zarr_archive = zarr_archive_factory(dandiset=dandiset)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset)
     zarr_files = [zarr_file_factory(zarr_archive=zarr_archive) for i in range(2)]
     ingest_zarr_archive(zarr_archive.zarr_id)
 
@@ -397,7 +368,7 @@ def test_audit_delete_zarr_chunks(api_client, zarr_archive_factory, zarr_file_fa
     assert resp.status_code == 204
 
     # Verify the delete_zarr_chunks audit record.
-    rec = get_latest_audit_record(dandiset=dandiset, record_type='delete_zarr_chunks')
+    rec = get_latest_audit_record(dandiset=draft_version.dandiset, record_type='delete_zarr_chunks')
     verify_model_properties(rec, user)
     assert rec.details['zarr_id'] == zarr_archive.zarr_id
     assert rec.details['paths'] == [str(zarr_file.path) for zarr_file in zarr_files]
