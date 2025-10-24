@@ -47,13 +47,13 @@ def test_dandiset_identifer_missing():
 
 
 @pytest.mark.django_db
-def test_dandiset_published_count(published_version_factory):
+def test_dandiset_published_count():
     # empty dandiset
     DandisetFactory.create()
     # dandiset with draft version
     DraftVersionFactory.create(dandiset=DandisetFactory.create())
     # dandiset with published version
-    published_version_factory(dandiset=DandisetFactory.create())
+    PublishedVersionFactory.create(dandiset=DandisetFactory.create())
 
     assert Dandiset.published_count() == 1
 
@@ -162,7 +162,6 @@ def test_dandiset_rest_list(api_client):
 @pytest.mark.django_db
 def test_dandiset_versions(
     api_client,
-    published_version_factory,
     asset_factory,
     params,
     results,
@@ -185,14 +184,14 @@ def test_dandiset_versions(
     draft_version.assets.add(asset_factory())
     add_version_asset_paths(draft_version)
 
-    published_version = published_version_factory(dandiset=published_dandiset)
+    published_version = PublishedVersionFactory.create(dandiset=published_dandiset)
     published_version.assets.add(asset_factory())
     add_version_asset_paths(published_version)
 
     # Dandiset with published version and empty draft
     erased_dandiset = DandisetFactory.create()
     DraftVersionFactory.create(dandiset=erased_dandiset)
-    published_version = published_version_factory(dandiset=erased_dandiset)
+    published_version = PublishedVersionFactory.create(dandiset=erased_dandiset)
     published_version.assets.add(asset_factory())
     add_version_asset_paths(published_version)
 
@@ -970,10 +969,10 @@ def test_dandiset_rest_delete_not_an_owner(api_client):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_delete_published(api_client, published_version_factory):
+def test_dandiset_rest_delete_published(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    published_version = published_version_factory(dandiset__owners=[user])
+    published_version = PublishedVersionFactory.create(dandiset__owners=[user])
 
     response = api_client.delete(f'/api/dandisets/{published_version.dandiset.identifier}/')
     assert response.status_code == 403
@@ -1255,12 +1254,12 @@ def test_dandiset_rest_search_accented_characters(api_client):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_search_many_versions(api_client, published_version_factory, dandiset):
-    draft_version = DraftVersionFactory.create(dandiset=dandiset)
+def test_dandiset_rest_search_many_versions(api_client):
+    draft_version = DraftVersionFactory.create()
     draft_version.metadata['contributor'][0]['name'] = 'testname'
     draft_version.save()
 
-    published_version = published_version_factory(dandiset=dandiset)
+    published_version = PublishedVersionFactory.create(dandiset=draft_version.dandiset)
     published_version.metadata['contributor'][0]['name'] = 'testname'
     published_version.save()
 

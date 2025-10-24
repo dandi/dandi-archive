@@ -46,11 +46,11 @@ def test_version_next_published_version_simultaneous():
 
 @freeze_time()
 @pytest.mark.django_db
-def test_version_next_published_version_preexisting(published_version_factory):
+def test_version_next_published_version_preexisting():
     dandiset = DandisetFactory.create()
     # Given a saved Version at the current time, a different one should be allocated
     version_str_1 = Version.next_published_version(dandiset)
-    published_version_factory(dandiset=dandiset, version=version_str_1)
+    PublishedVersionFactory.create(dandiset=dandiset, version=version_str_1)
     version_str_2 = Version.next_published_version(dandiset)
 
     assert version_str_2 != version_str_1

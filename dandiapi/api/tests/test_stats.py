@@ -4,7 +4,7 @@ import pytest
 
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.tasks.scheduled import compute_application_stats
-from dandiapi.api.tests.factories import DandisetFactory, UserFactory
+from dandiapi.api.tests.factories import DandisetFactory, PublishedVersionFactory, UserFactory
 
 
 @pytest.mark.django_db
@@ -41,8 +41,8 @@ def test_stats_draft(api_client):
 
 
 @pytest.mark.django_db
-def test_stats_published(api_client, published_version_factory):
-    published_version_factory()
+def test_stats_published(api_client):
+    PublishedVersionFactory.create()
 
     compute_application_stats()
 
