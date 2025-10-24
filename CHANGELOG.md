@@ -1,3 +1,15 @@
+# v0.17.1 (Fri Oct 24 2025)
+
+#### 🐛 Bug Fix
+
+- Auto-approve people from academic institutions in the United Kingdom [#2609](https://github.com/dandi/dandi-archive/pull/2609) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v0.17.0 (Fri Oct 24 2025)
 
 #### 🚀 Enhancement
