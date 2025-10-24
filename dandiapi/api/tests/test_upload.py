@@ -7,7 +7,6 @@ import pytest
 import requests
 
 from dandiapi.api.models import AssetBlob, Dandiset, Upload
-from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.tests.factories import DandisetFactory, UserFactory
 
 from .fuzzy import HTTP_URL_RE, UUID_RE, Re
@@ -65,10 +64,10 @@ def test_upload_initialize(api_client, embargoed):
     dandiset = DandisetFactory.create(
         embargo_status=Dandiset.EmbargoStatus.EMBARGOED
         if embargoed
-        else Dandiset.EmbargoStatus.OPEN
+        else Dandiset.EmbargoStatus.OPEN,
+        owners=[user],
     )
     api_client.force_authenticate(user=user)
-    add_dandiset_owner(dandiset, user)
 
     content_size = 123
 
@@ -105,9 +104,10 @@ def test_upload_initialize(api_client, embargoed):
 @pytest.mark.django_db
 def test_upload_initialize_unembargo_in_progress(api_client):
     user = UserFactory.create()
-    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
+    dandiset = DandisetFactory.create(
+        embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING, owners=[user]
+    )
     api_client.force_authenticate(user=user)
-    add_dandiset_owner(dandiset, user)
 
     content_size = 123
     resp = api_client.post(
@@ -124,9 +124,8 @@ def test_upload_initialize_unembargo_in_progress(api_client):
 @pytest.mark.django_db
 def test_upload_initialize_existing_asset_blob(api_client, asset_blob):
     user = UserFactory.create()
-    dandiset = DandisetFactory.create()
+    dandiset = DandisetFactory.create(owners=[user])
     api_client.force_authenticate(user=user)
-    add_dandiset_owner(dandiset, user)
 
     resp = api_client.post(
         '/api/uploads/initialize/',
@@ -188,8 +187,9 @@ def test_upload_initialize_embargo_not_an_owner(api_client):
 def test_upload_initialize_embargo_existing_asset_blob(api_client, asset_blob):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(
+        embargo_status=Dandiset.EmbargoStatus.EMBARGOED, owners=[user]
+    )
 
     # Embargoed assets that are already uploaded publicly don't need to be private
     resp = api_client.post(
@@ -212,8 +212,9 @@ def test_upload_initialize_embargo_existing_embargoed_asset_blob(
 ):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(
+        embargo_status=Dandiset.EmbargoStatus.EMBARGOED, owners=[user]
+    )
     # This embargoed AssetBlob is in the same embargoed dandiset, so it should be deduplicated
     embargoed_asset_blob = embargoed_asset_blob_factory()
 
@@ -258,8 +259,9 @@ def test_upload_complete(api_client, upload):
 def test_upload_complete_embargo(api_client, embargoed_upload_factory):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(
+        embargo_status=Dandiset.EmbargoStatus.EMBARGOED, owners=[user]
+    )
     embargoed_upload = embargoed_upload_factory(dandiset=dandiset)
 
     content_size = 123
@@ -305,9 +307,8 @@ def test_upload_complete_unauthorized(api_client, upload):
 @pytest.mark.parametrize('content_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
 def test_upload_initialize_and_complete(api_client, content_size):
     user = UserFactory.create()
-    dandiset = DandisetFactory.create()
+    dandiset = DandisetFactory.create(owners=[user])
     api_client.force_authenticate(user=user)
-    add_dandiset_owner(dandiset, user)
 
     # Get the presigned upload URL
     initialization = api_client.post(
@@ -355,8 +356,9 @@ def test_upload_initialize_and_complete(api_client, content_size):
 def test_upload_initialize_and_complete_embargo(api_client, content_size):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(
+        embargo_status=Dandiset.EmbargoStatus.EMBARGOED, owners=[user]
+    )
 
     # Get the presigned upload URL
     initialization = api_client.post(
@@ -426,8 +428,9 @@ def test_upload_validate(api_client, upload):
 def test_upload_validate_embargo(api_client, embargoed_upload_factory):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(
+        embargo_status=Dandiset.EmbargoStatus.EMBARGOED, owners=[user]
+    )
     embargoed_upload = embargoed_upload_factory(dandiset=dandiset)
 
     resp = api_client.post(f'/api/uploads/{embargoed_upload.upload_id}/validate/')
@@ -516,8 +519,9 @@ def test_upload_validate_embargo_existing_assetblob(
 ):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(
+        embargo_status=Dandiset.EmbargoStatus.EMBARGOED, owners=[user]
+    )
     embargoed_upload = embargoed_upload_factory(dandiset=dandiset)
 
     # The upload should recognize this preexisting AssetBlob and use it instead
@@ -535,8 +539,9 @@ def test_upload_validate_embargo_existing_embargoed_assetblob(
 ):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(
+        embargo_status=Dandiset.EmbargoStatus.EMBARGOED, owners=[user]
+    )
     embargoed_upload = embargoed_upload_factory(dandiset=dandiset)
 
     # The upload should recognize this preexisting embargoed AssetBlob and use it instead

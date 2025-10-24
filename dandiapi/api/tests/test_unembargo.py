@@ -25,11 +25,11 @@ from dandiapi.api.services.embargo.utils import (
     remove_dandiset_embargo_tags,
 )
 from dandiapi.api.services.exceptions import DandiError
-from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.tasks import unembargo_dandiset_task, write_manifest_files
-from dandiapi.api.tests.factories import DandisetFactory, UserFactory
+from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
 if TYPE_CHECKING:
     from zarr_checksum.generators import ZarrArchiveFile
@@ -38,10 +38,10 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.django_db
-def test_kickoff_dandiset_unembargo_dandiset_not_embargoed(api_client, draft_version_factory):
+def test_kickoff_dandiset_unembargo_dandiset_not_embargoed(api_client):
     user = UserFactory.create()
     dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.OPEN, owners=[user])
-    draft_version_factory(dandiset=dandiset)
+    DraftVersionFactory.create(dandiset=dandiset)
     api_client.force_authenticate(user=user)
 
     resp = api_client.post(f'/api/dandisets/{dandiset.identifier}/unembargo/')
@@ -49,10 +49,10 @@ def test_kickoff_dandiset_unembargo_dandiset_not_embargoed(api_client, draft_ver
 
 
 @pytest.mark.django_db
-def test_kickoff_dandiset_unembargo_not_owner(api_client, draft_version_factory):
+def test_kickoff_dandiset_unembargo_not_owner(api_client):
     user = UserFactory.create()
     dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    draft_version_factory(dandiset=dandiset)
+    DraftVersionFactory.create(dandiset=dandiset)
     api_client.force_authenticate(user=user)
 
     resp = api_client.post(f'/api/dandisets/{dandiset.identifier}/unembargo/')
@@ -60,14 +60,12 @@ def test_kickoff_dandiset_unembargo_not_owner(api_client, draft_version_factory)
 
 
 @pytest.mark.django_db
-def test_kickoff_dandiset_unembargo_active_uploads(
-    api_client, draft_version_factory, upload_factory
-):
+def test_kickoff_dandiset_unembargo_active_uploads(api_client, upload_factory):
     user = UserFactory.create()
     dandiset = DandisetFactory.create(
         embargo_status=Dandiset.EmbargoStatus.EMBARGOED, owners=[user]
     )
-    draft_version_factory(dandiset=dandiset)
+    DraftVersionFactory.create(dandiset=dandiset)
     api_client.force_authenticate(user=user)
 
     # Test that active uploads prevent unembargp
@@ -78,60 +76,55 @@ def test_kickoff_dandiset_unembargo_active_uploads(
 
 # transaction=True required due to how `kickoff_dandiset_unembargo` calls `unembargo_dandiset_task`
 @pytest.mark.django_db(transaction=True)
-def test_kickoff_dandiset_unembargo(api_client, draft_version_factory, mailoutbox, mocker):
+def test_kickoff_dandiset_unembargo(api_client, mailoutbox, mocker):
     user = UserFactory.create()
-    draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    ds: Dandiset = draft_version.dandiset
-
-    add_dandiset_owner(ds, user)
+    draft_version = DraftVersionFactory.create(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED, dandiset__owners=[user]
+    )
+    dandiset: Dandiset = draft_version.dandiset
     api_client.force_authenticate(user=user)
 
     # mock this task to check if called
     patched_task = mocker.patch('dandiapi.api.services.embargo.unembargo_dandiset_task')
 
-    resp = api_client.post(f'/api/dandisets/{ds.identifier}/unembargo/')
+    resp = api_client.post(f'/api/dandisets/{dandiset.identifier}/unembargo/')
     assert resp.status_code == 200
 
-    ds.refresh_from_db()
-    assert ds.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING
+    dandiset.refresh_from_db()
+    assert dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING
 
     # Check that unembargo dandiset task was delayed
     assert len(patched_task.mock_calls) == 1
-    assert str(patched_task.mock_calls[0]) == f'call.delay({ds.pk}, {user.id})'
+    assert str(patched_task.mock_calls[0]) == f'call.delay({dandiset.pk}, {user.id})'
 
 
 @pytest.mark.django_db
-def test_unembargo_dandiset_not_unembargoing(draft_version_factory, api_client):
+def test_unembargo_dandiset_not_unembargoing(api_client):
     user = UserFactory.create()
-    draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    ds: Dandiset = draft_version.dandiset
-
-    add_dandiset_owner(ds, user)
+    draft_version = DraftVersionFactory.create(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED, dandiset__owners=[user]
+    )
     api_client.force_authenticate(user=user)
 
     with pytest.raises(DandiError):
-        unembargo_dandiset(ds, user)
+        unembargo_dandiset(draft_version.dandiset, user)
 
 
 @pytest.mark.django_db
-def test_unembargo_dandiset_uploads_exist(draft_version_factory, upload_factory, api_client):
+def test_unembargo_dandiset_uploads_exist(upload_factory, api_client):
     user = UserFactory.create()
-    draft_version = draft_version_factory(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+    draft_version = DraftVersionFactory.create(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING, dandiset__owners=[user]
     )
-    ds: Dandiset = draft_version.dandiset
-
-    add_dandiset_owner(ds, user)
     api_client.force_authenticate(user=user)
 
-    upload_factory(dandiset=ds)
+    upload_factory(dandiset=draft_version.dandiset)
     with pytest.raises(DandisetActiveUploadsError):
-        unembargo_dandiset(ds, user)
+        unembargo_dandiset(draft_version.dandiset, user)
 
 
 @pytest.mark.django_db
 def test_remove_dandiset_embargo_tags_chunks(
-    draft_version_factory,
     asset_factory,
     embargoed_asset_blob_factory,
     mocker,
@@ -141,7 +134,7 @@ def test_remove_dandiset_embargo_tags_chunks(
     )
     chunk_size = mocker.patch('dandiapi.api.services.embargo.utils.TAG_REMOVAL_CHUNK_SIZE', 2)
 
-    draft_version: Version = draft_version_factory(
+    draft_version: Version = DraftVersionFactory.create(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
     ds: Dandiset = draft_version.dandiset
@@ -158,7 +151,6 @@ def test_remove_dandiset_embargo_tags_chunks(
 
 @pytest.mark.django_db
 def test_remove_dandiset_embargo_tags_fails_remove_tags(
-    draft_version_factory,
     asset_factory,
     embargoed_asset_blob_factory,
     mocker,
@@ -167,7 +159,7 @@ def test_remove_dandiset_embargo_tags_fails_remove_tags(
     mocker.patch('dandiapi.api.services.embargo.utils._delete_object_tags', side_effect=ValueError)
 
     # Create dandiset/version and add assets
-    draft_version: Version = draft_version_factory(
+    draft_version: Version = DraftVersionFactory.create(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
     ds: Dandiset = draft_version.dandiset
@@ -194,7 +186,8 @@ def test_remove_asset_blob_embargoed_tag_fails_on_embargoed(embargoed_asset_blob
 
 
 @pytest.mark.django_db
-def test_delete_zarr_object_tags(zarr_archive, zarr_file_factory, mocker):
+def test_delete_zarr_object_tags(zarr_file_factory, mocker):
+    zarr_archive = ZarrArchiveFactory.create()
     mocked_delete_object_tags = mocker.patch(
         'dandiapi.api.services.embargo.utils._delete_object_tags'
     )
@@ -213,8 +206,8 @@ def test_delete_zarr_object_tags(zarr_archive, zarr_file_factory, mocker):
 
 
 @pytest.mark.django_db
-def test_remove_dandiset_manifest_tags(draft_version_factory):
-    draft_version: Version = draft_version_factory(
+def test_remove_dandiset_manifest_tags():
+    draft_version: Version = DraftVersionFactory.create(
         dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
     )
 
@@ -232,27 +225,25 @@ def test_remove_dandiset_manifest_tags(draft_version_factory):
 
 @pytest.mark.django_db
 def test_unembargo_dandiset(
-    draft_version_factory,
     asset_factory,
     embargoed_asset_blob_factory,
     embargoed_zarr_archive_factory,
     zarr_file_factory,
     mailoutbox,
 ):
-    draft_version: Version = draft_version_factory(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
-    )
-    ds: Dandiset = draft_version.dandiset
     owners = [UserFactory.create() for _ in range(5)]
-    for user in owners:
-        add_dandiset_owner(ds, user)
+    draft_version: Version = DraftVersionFactory.create(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING,
+        dandiset__owners=owners,
+    )
+    dandiset: Dandiset = draft_version.dandiset
 
     embargoed_blob: AssetBlob = embargoed_asset_blob_factory()
     blob_asset = asset_factory(blob=embargoed_blob, status=Asset.Status.VALID)
     draft_version.assets.add(blob_asset)
 
     zarr_archive: ZarrArchive = embargoed_zarr_archive_factory(
-        dandiset=ds, status=ZarrArchiveStatus.UPLOADED
+        dandiset=dandiset, status=ZarrArchiveStatus.UPLOADED
     )
     zarr_files: list[ZarrArchiveFile] = [
         zarr_file_factory(zarr_archive=zarr_archive) for _ in range(5)
@@ -267,7 +258,7 @@ def test_unembargo_dandiset(
     assert all(asset.is_embargoed for asset in draft_version.assets.all())
     assert all(asset.status == Asset.Status.VALID for asset in draft_version.assets.all())
 
-    unembargo_dandiset(ds, owners[0])
+    unembargo_dandiset(dandiset, owners[0])
 
     for zarr_file in zarr_files:
         zarr_file_s3_path = zarr_archive.s3_path(str(zarr_file.path))
@@ -278,9 +269,9 @@ def test_unembargo_dandiset(
     for manifest_path in all_manifest_filepaths(draft_version):
         assert default_storage.get_tags(manifest_path) == {}
 
-    ds.refresh_from_db()
+    dandiset.refresh_from_db()
     draft_version.refresh_from_db()
-    assert ds.embargo_status == Dandiset.EmbargoStatus.OPEN
+    assert dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN
     assert (
         draft_version.metadata['access'][0]['status']
         == dandischema.models.AccessType.OpenAccess.value
@@ -290,7 +281,7 @@ def test_unembargo_dandiset(
     assert mailoutbox
     assert 'has been unembargoed' in mailoutbox[0].subject
     payload = mailoutbox[0].message().get_payload()[0].get_payload()
-    assert ds.identifier in payload
+    assert dandiset.identifier in payload
     assert 'has been unembargoed' in payload
 
     # Check that the email was sent to all owners
@@ -300,25 +291,22 @@ def test_unembargo_dandiset(
 
 
 @pytest.mark.django_db
-def test_unembargo_dandiset_validate_version_metadata(draft_version_factory, asset_factory, mocker):
+def test_unembargo_dandiset_validate_version_metadata(asset_factory, mocker):
     from dandiapi.api.services import embargo as embargo_service
 
     user = UserFactory.create()
-    draft_version: Version = draft_version_factory(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+    draft_version: Version = DraftVersionFactory.create(
+        validation_errors=['error ajhh'],
+        status=Version.Status.INVALID,
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING,
+        dandiset__owners=[user],
     )
-    ds: Dandiset = draft_version.dandiset
-    add_dandiset_owner(ds, user)
-
-    draft_version.validation_errors = ['error ajhh']
-    draft_version.status = Version.Status.INVALID
-    draft_version.save()
     draft_version.assets.add(asset_factory())
 
     # Spy on the imported function in the embargo service
     validate_version_spy = mocker.spy(embargo_service, 'validate_version_metadata')
 
-    unembargo_dandiset(ds, user=user)
+    unembargo_dandiset(draft_version.dandiset, user=user)
 
     assert validate_version_spy.call_count == 1
     draft_version.refresh_from_db()
@@ -326,20 +314,19 @@ def test_unembargo_dandiset_validate_version_metadata(draft_version_factory, ass
 
 
 @pytest.mark.django_db
-def test_unembargo_dandiset_task_failure(draft_version_factory, mailoutbox, api_client):
+def test_unembargo_dandiset_task_failure(mailoutbox, api_client):
     user = UserFactory.create()
     # Intentionally set the status to embargoed so the task will fail
-    draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    ds: Dandiset = draft_version.dandiset
-
-    add_dandiset_owner(ds, user)
+    draft_version = DraftVersionFactory.create(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED, dandiset__owners=[user]
+    )
     api_client.force_authenticate(user=user)
 
     with pytest.raises(DandiError):
-        unembargo_dandiset_task.delay(ds.pk, user.id)
+        unembargo_dandiset_task.delay(draft_version.dandiset.pk, user.id)
 
     assert mailoutbox
     assert 'Unembargo failed' in mailoutbox[0].subject
     payload = mailoutbox[0].message().get_payload()[0].get_payload()
-    assert ds.identifier in payload
+    assert draft_version.dandiset.identifier in payload
     assert 'error during the unembargo' in payload
