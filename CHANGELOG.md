@@ -1,3 +1,21 @@
+# v0.17.0 (Fri Oct 24 2025)
+
+#### 🚀 Enhancement
+
+- Further improve sidebar sections on DLP [#2543](https://github.com/dandi/dandi-archive/pull/2543) ([@jtomeck](https://github.com/jtomeck) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🐛 Bug Fix
+
+- Auto-approve people with Cleveland Clinic email addresses [#2608](https://github.com/dandi/dandi-archive/pull/2608) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 3
+
+- Jared Tomeck ([@jtomeck](https://github.com/jtomeck))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.16.4 (Fri Oct 24 2025)
 
 #### 🐛 Bug Fix
