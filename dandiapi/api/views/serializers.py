@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+import re
 from typing import TYPE_CHECKING, Any
 
 from dandischema.consts import DANDI_SCHEMA_VERSION
@@ -43,7 +44,26 @@ class UserDetailSerializer(serializers.Serializer):
     status = serializers.CharField()
 
 
+class DandisetIdentifierField(serializers.Field[int, str | int, str, Any]):
+    default_error_messages = {'invalid': 'A valid Dandiset identifier is required.'}
+
+    def to_internal_value(self, data: Any) -> int:
+        if not isinstance(data, str | int):
+            self.fail('invalid')
+        if isinstance(data, str) and not re.fullmatch(Dandiset.IDENTIFIER_REGEX, data):
+            self.fail('invalid')
+        # Always coerce; since bool is a subtype of int
+        data = int(data)
+        if not 0 <= data <= 999_999:
+            self.fail('invalid')
+        return data
+
+    def to_representation(self, value: int) -> str:
+        return f'{value:06}'
+
+
 class DandisetSerializer(serializers.ModelSerializer):
+    identifier = DandisetIdentifierField()
     contact_person = serializers.SerializerMethodField(method_name='get_contact_person')
     star_count = serializers.SerializerMethodField()
     is_starred = serializers.SerializerMethodField()
