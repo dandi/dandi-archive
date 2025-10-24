@@ -15,7 +15,7 @@ from dandiapi.api.services.permissions.dandiset import (
     get_dandiset_owners,
     get_visible_dandisets,
 )
-from dandiapi.api.tests.factories import DandisetFactory, UserFactory
+from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
 
 from .fuzzy import (
     DANDISET_ID_RE,
@@ -955,8 +955,9 @@ def test_dandiset_rest_delete_with_zarrs(
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_delete_not_an_owner(api_client, draft_version):
+def test_dandiset_rest_delete_not_an_owner(api_client):
     user = UserFactory.create()
+    draft_version = DraftVersionFactory.create()
     api_client.force_authenticate(user=user)
 
     response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
@@ -1113,9 +1114,10 @@ def test_dandiset_rest_add_owner(
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_add_owner_not_allowed(api_client, draft_version):
+def test_dandiset_rest_add_owner_not_allowed(api_client):
     user1 = UserFactory.create()
     user2 = UserFactory.create()
+    draft_version = DraftVersionFactory.create()
     api_client.force_authenticate(user=user1)
 
     resp = api_client.put(
@@ -1221,7 +1223,8 @@ def test_dandiset_rest_search_empty_query(api_client):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_search_identifier(api_client, draft_version):
+def test_dandiset_rest_search_identifier(api_client):
+    draft_version = DraftVersionFactory.create()
     results = api_client.get(
         '/api/dandisets/',
         {'search': draft_version.dandiset.identifier, 'draft': 'true', 'empty': 'true'},
@@ -1272,7 +1275,8 @@ def test_dandiset_rest_search_many_versions(
     'contributors',
     [None, 'string', 1, [], {}],
 )
-def test_dandiset_contact_person_malformed_contributors(api_client, draft_version, contributors):
+def test_dandiset_contact_person_malformed_contributors(api_client, contributors):
+    draft_version = DraftVersionFactory.create()
     draft_version.metadata['contributor'] = contributors
     draft_version.save()
 

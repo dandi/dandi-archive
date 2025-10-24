@@ -20,7 +20,7 @@ from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.asset.exceptions import AssetAlreadyExistsError
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.tasks import publish_dandiset_task
-from dandiapi.api.tests.factories import UserFactory
+from dandiapi.api.tests.factories import DraftVersionFactory, UserFactory
 
 
 @pytest.fixture
@@ -371,7 +371,7 @@ def test_asset_path_get_root_paths_many(draft_version_factory, asset_factory):
 
 
 @pytest.mark.django_db
-def test_asset_path_ordering(draft_version, asset_blob):
+def test_asset_path_ordering(asset_blob):
     # The default collation will ignore special characters, including slashes, on the first pass. If
     # there are ties, it uses these characters to break ties. This means that in the below example,
     # removing the slashes leads to a comparison of 'az' and 'aaz', which would obviously sort the
@@ -379,6 +379,7 @@ def test_asset_path_ordering(draft_version, asset_blob):
     # should come before 'aa/z'. This is fixed by changing the collation of the path field, and as
     # such this test serves as a regression test.
     user = UserFactory.create()
+    draft_version = DraftVersionFactory.create()
     add_dandiset_owner(dandiset=draft_version.dandiset, user=user)
     add_asset_to_version(
         user=user,

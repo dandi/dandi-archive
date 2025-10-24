@@ -8,7 +8,7 @@ from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import AuditRecord, Dandiset
 from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
-from dandiapi.api.tests.factories import DandisetFactory, UserFactory
+from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 if TYPE_CHECKING:
@@ -78,12 +78,13 @@ def test_audit_create_dandiset(api_client):
 
 
 @pytest.mark.django_db
-def test_audit_change_owners(api_client, draft_version):
+def test_audit_change_owners(api_client):
     """Test the change_owners audit record."""
     # Create some users.
     alice = UserFactory.create()
     bob = UserFactory.create()
     charlie = UserFactory.create()
+    draft_version = DraftVersionFactory.create()
 
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, alice)
@@ -115,8 +116,9 @@ def test_audit_change_owners(api_client, draft_version):
 
 
 @pytest.mark.django_db
-def test_audit_update_metadata(api_client, draft_version):
+def test_audit_update_metadata(api_client):
     user = UserFactory.create()
+    draft_version = DraftVersionFactory.create()
     # Create a Dandiset.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
@@ -144,8 +146,9 @@ def test_audit_update_metadata(api_client, draft_version):
 
 
 @pytest.mark.django_db
-def test_audit_delete_dandiset(api_client, draft_version):
+def test_audit_delete_dandiset(api_client):
     user = UserFactory.create()
+    draft_version = DraftVersionFactory.create()
     # Create a Dandiset.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
@@ -184,8 +187,9 @@ def test_audit_unembargo(api_client):
 
 
 @pytest.mark.django_db
-def test_audit_add_asset(api_client, draft_version, asset_blob_factory):
+def test_audit_add_asset(api_client, asset_blob_factory):
     user = UserFactory.create()
+    draft_version = DraftVersionFactory.create()
     # Create a Dandiset.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
@@ -213,8 +217,9 @@ def test_audit_add_asset(api_client, draft_version, asset_blob_factory):
 
 
 @pytest.mark.django_db
-def test_audit_update_asset(api_client, draft_version, asset_blob_factory, draft_asset_factory):
+def test_audit_update_asset(api_client, asset_blob_factory, draft_asset_factory):
     user = UserFactory.create()
+    draft_version = DraftVersionFactory.create()
     # Create a Dandiset with an asset.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
@@ -246,8 +251,9 @@ def test_audit_update_asset(api_client, draft_version, asset_blob_factory, draft
 
 
 @pytest.mark.django_db
-def test_audit_remove_asset(api_client, draft_version, asset_blob_factory, draft_asset_factory):
+def test_audit_remove_asset(api_client, asset_blob_factory, draft_asset_factory):
     user = UserFactory.create()
+    draft_version = DraftVersionFactory.create()
     # Create a Dandiset with an asset.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
@@ -300,8 +306,9 @@ def test_audit_publish_dandiset(api_client, draft_version_factory, draft_asset_f
 
 
 @pytest.mark.django_db
-def test_audit_zarr_create(api_client, draft_version):
+def test_audit_zarr_create(api_client):
     user = UserFactory.create()
+    draft_version = DraftVersionFactory.create()
     # Create a Dandiset.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
@@ -327,8 +334,9 @@ def test_audit_zarr_create(api_client, draft_version):
 
 
 @pytest.mark.django_db
-def test_audit_upload_zarr_chunks(api_client, draft_version, zarr_archive_factory):
+def test_audit_upload_zarr_chunks(api_client, zarr_archive_factory):
     user = UserFactory.create()
+    draft_version = DraftVersionFactory.create()
     # Create a Dandiset and a Zarr archive.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
@@ -370,10 +378,9 @@ def test_audit_finalize_zarr(api_client, zarr_archive, zarr_file_factory):
 
 
 @pytest.mark.django_db
-def test_audit_delete_zarr_chunks(
-    api_client, draft_version, zarr_archive_factory, zarr_file_factory
-):
+def test_audit_delete_zarr_chunks(api_client, zarr_archive_factory, zarr_file_factory):
     user = UserFactory.create()
+    draft_version = DraftVersionFactory.create()
     # Create a Dandiset and a Zarr archive.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
