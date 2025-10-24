@@ -13,7 +13,12 @@ from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
-from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
+from dandiapi.api.tests.factories import (
+    DandisetFactory,
+    DraftVersionFactory,
+    PublishedVersionFactory,
+    UserFactory,
+)
 
 if TYPE_CHECKING:
     from rest_framework.test import APIClient
@@ -87,7 +92,8 @@ def test_draft_version_metadata_computed():
 
 
 @pytest.mark.django_db
-def test_published_version_metadata_computed(published_version: Version):
+def test_published_version_metadata_computed():
+    published_version = PublishedVersionFactory.create()
     original_metadata = {'schemaVersion': settings.DANDI_SCHEMA_VERSION}
     published_version.metadata = original_metadata
 
@@ -139,7 +145,8 @@ def test_version_metadata_citation_draft():
 
 
 @pytest.mark.django_db
-def test_version_metadata_citation_published(published_version):
+def test_version_metadata_citation_published():
+    published_version = PublishedVersionFactory.create()
     name = published_version.metadata['name'].rstrip('.')
     year = datetime.datetime.now(datetime.UTC).year
     url = f'https://doi.org/{published_version.doi}'
@@ -637,8 +644,9 @@ def test_version_rest_update_unembargo_in_progress(api_client):
 
 
 @pytest.mark.django_db
-def test_version_rest_update_published_version(api_client, published_version):
+def test_version_rest_update_published_version(api_client):
     user = UserFactory.create()
+    published_version = PublishedVersionFactory.create()
     add_dandiset_owner(published_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
@@ -879,8 +887,9 @@ def test_version_rest_publish_not_an_owner(api_client, version, asset):
 
 
 @pytest.mark.django_db
-def test_version_rest_publish_not_a_draft(api_client, published_version, asset):
+def test_version_rest_publish_not_a_draft(api_client, asset):
     user = UserFactory.create()
+    published_version = PublishedVersionFactory.create()
     add_dandiset_owner(published_version.dandiset, user)
     api_client.force_authenticate(user=user)
     published_version.assets.add(asset)
@@ -957,8 +966,9 @@ def test_version_rest_update_no_changed_metadata(api_client: APIClient):
 
 
 @pytest.mark.django_db
-def test_version_rest_delete_published_not_admin(api_client, published_version):
+def test_version_rest_delete_published_not_admin(api_client):
     user = UserFactory.create()
+    published_version = PublishedVersionFactory.create()
     add_dandiset_owner(published_version.dandiset, user)
     api_client.force_authenticate(user=user)
     response = api_client.delete(
@@ -971,8 +981,9 @@ def test_version_rest_delete_published_not_admin(api_client, published_version):
 
 
 @pytest.mark.django_db
-def test_version_rest_delete_published_admin(api_client, published_version):
+def test_version_rest_delete_published_admin(api_client):
     user = UserFactory.create(is_superuser=True)
+    published_version = PublishedVersionFactory.create()
     api_client.force_authenticate(user=user)
     response = api_client.delete(
         f'/api/dandisets/{published_version.dandiset.identifier}'

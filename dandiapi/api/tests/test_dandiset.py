@@ -15,7 +15,12 @@ from dandiapi.api.services.permissions.dandiset import (
     get_dandiset_owners,
     get_visible_dandisets,
 )
-from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
+from dandiapi.api.tests.factories import (
+    DandisetFactory,
+    DraftVersionFactory,
+    PublishedVersionFactory,
+    UserFactory,
+)
 
 from .fuzzy import (
     DANDISET_ID_RE,
@@ -978,8 +983,9 @@ def test_dandiset_rest_delete_published(api_client, published_version_factory):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_delete_published_admin(api_client, published_version):
+def test_dandiset_rest_delete_published_admin(api_client):
     user = UserFactory.create(is_superuser=True)
+    published_version = PublishedVersionFactory.create()
     api_client.force_authenticate(user=user)
 
     response = api_client.delete(f'/api/dandisets/{published_version.dandiset.identifier}/')

@@ -19,7 +19,12 @@ from dandiapi.api.services.asset.exceptions import AssetPathConflictError
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.services.publish import publish_asset
 from dandiapi.api.tasks.scheduled import validate_pending_asset_metadata
-from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
+from dandiapi.api.tests.factories import (
+    DandisetFactory,
+    DraftVersionFactory,
+    PublishedVersionFactory,
+    UserFactory,
+)
 from dandiapi.zarr.models import ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
@@ -1185,8 +1190,9 @@ def test_asset_create_not_an_owner(api_client, version):
 
 
 @pytest.mark.django_db
-def test_asset_create_published_version(api_client, published_version, asset):
+def test_asset_create_published_version(api_client, asset):
     user = UserFactory.create()
+    published_version = PublishedVersionFactory.create()
     add_dandiset_owner(published_version.dandiset, user)
     api_client.force_authenticate(user=user)
     published_version.assets.add(asset)
@@ -1536,8 +1542,9 @@ def test_asset_rest_update_not_an_owner(api_client, asset):
 
 
 @pytest.mark.django_db
-def test_asset_rest_update_published_version(api_client, published_version, asset):
+def test_asset_rest_update_published_version(api_client, asset):
     user = UserFactory.create()
+    published_version = PublishedVersionFactory.create()
     add_dandiset_owner(published_version.dandiset, user)
     api_client.force_authenticate(user=user)
     published_version.assets.add(asset)
@@ -1723,8 +1730,9 @@ def test_asset_rest_delete_not_an_owner(api_client, version, asset):
 
 
 @pytest.mark.django_db
-def test_asset_rest_delete_published_version(api_client, published_version, asset):
+def test_asset_rest_delete_published_version(api_client, asset):
     user = UserFactory.create()
+    published_version = PublishedVersionFactory.create()
     api_client.force_authenticate(user=user)
     add_dandiset_owner(published_version.dandiset, user)
     published_version.assets.add(asset)
