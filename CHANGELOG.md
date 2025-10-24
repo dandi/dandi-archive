@@ -1,3 +1,69 @@
+# v0.17.0 (Fri Oct 24 2025)
+
+#### 🚀 Enhancement
+
+- Further improve sidebar sections on DLP [#2543](https://github.com/dandi/dandi-archive/pull/2543) ([@jtomeck](https://github.com/jtomeck) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🐛 Bug Fix
+
+- Auto-approve people with Cleveland Clinic email addresses [#2608](https://github.com/dandi/dandi-archive/pull/2608) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 3
+
+- Jared Tomeck ([@jtomeck](https://github.com/jtomeck))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.16.4 (Fri Oct 24 2025)
+
+#### 🐛 Bug Fix
+
+- Update tooltip width so that it is readable [#2593](https://github.com/dandi/dandi-archive/pull/2593) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
+# v0.16.3 (Thu Oct 23 2025)
+
+#### 🐛 Bug Fix
+
+- Fix asset validation error in create_dev_dandiset [#2607](https://github.com/dandi/dandi-archive/pull/2607) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Don't suppress `IntegrityError` within a migration, as it's within a transaction [#2603](https://github.com/dandi/dandi-archive/pull/2603) ([@brianhelba](https://github.com/brianhelba))
+- Don't rely on `replaces` to avoid running migration 0028 [#2602](https://github.com/dandi/dandi-archive/pull/2602) ([@brianhelba](https://github.com/brianhelba))
+- Use new OAuth-Toolkit setting to support wildcard redirects [#2587](https://github.com/dandi/dandi-archive/pull/2587) ([@brianhelba](https://github.com/brianhelba))
+- Remove the `dandiapi.__version__` attribute [#2597](https://github.com/dandi/dandi-archive/pull/2597) ([@brianhelba](https://github.com/brianhelba))
+- Allow newer versions of Node to build the front-end [#2596](https://github.com/dandi/dandi-archive/pull/2596) ([@brianhelba](https://github.com/brianhelba))
+
+#### 🏠 Internal
+
+- Apply upstream changes from Resonant 0.41.0 [#2604](https://github.com/dandi/dandi-archive/pull/2604) ([@brianhelba](https://github.com/brianhelba))
+- Switch from Yarn to npm [#2605](https://github.com/dandi/dandi-archive/pull/2605) ([@brianhelba](https://github.com/brianhelba))
+
+#### 📝 Documentation
+
+- Improve devcontainer setup documentation [#2601](https://github.com/dandi/dandi-archive/pull/2601) ([@danlamanna](https://github.com/danlamanna))
+
+#### 🔩 Dependency Updates
+
+- Upgrade all dependencies [#2588](https://github.com/dandi/dandi-archive/pull/2588) ([@mvandenburgh](https://github.com/mvandenburgh) [@brianhelba](https://github.com/brianhelba))
+- Include pinned versions in pyproject.toml when necessary [#2598](https://github.com/dandi/dandi-archive/pull/2598) ([@mvandenburgh](https://github.com/mvandenburgh))
+- [gh-actions](deps): Bump astral-sh/setup-uv from 6 to 7 [#2599](https://github.com/dandi/dandi-archive/pull/2599) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 5
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.16.2 (Fri Oct 10 2025)
 
 #### 🐛 Bug Fix

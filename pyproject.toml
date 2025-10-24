@@ -9,6 +9,7 @@ license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 classifiers = ["Private :: Do Not Upload"]
 dependencies = [
+  # Runtime dependencies, always needed
   "boto3",
   "celery",
   "dandi",  # minimal version is also provided in API /info

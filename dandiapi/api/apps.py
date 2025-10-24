@@ -3,9 +3,9 @@ from __future__ import annotations
 from django.apps import AppConfig
 
 
-class PublishConfig(AppConfig):
+class ApiConfig(AppConfig):
     name = 'dandiapi.api'
-    verbose_name = 'DANDI: Publish'
+    verbose_name = 'DANDI Archive: API'
 
     def ready(self):
         # RUF100 is caused by https://github.com/astral-sh/ruff/issues/60
