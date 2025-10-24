@@ -150,11 +150,9 @@ def test_ingest_zarr_archive_modified(zarr_archive_factory, zarr_file_factory):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_sets_version_pending(
-    draft_version_factory, zarr_archive_factory, zarr_file_factory
-):
+def test_ingest_zarr_archive_sets_version_pending(zarr_archive_factory, zarr_file_factory):
     """Ensure that when a zarr is ingested, it sets the version back to PENDING."""
-    draft_version = draft_version_factory(status=Version.Status.VALID)
+    draft_version = DraftVersionFactory.create(status=Version.Status.VALID)
     assert draft_version.status == Version.Status.VALID
 
     # Ensure zarr has non-zero size

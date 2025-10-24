@@ -337,8 +337,8 @@ def test_version_publish_version(asset):
 
 
 @pytest.mark.django_db
-def test_version_aggregate_assets_summary(draft_version_factory, draft_asset_factory):
-    version = draft_version_factory(status=Version.Status.VALID)
+def test_version_aggregate_assets_summary(draft_asset_factory):
+    version = DraftVersionFactory.create(status=Version.Status.VALID)
     asset = draft_asset_factory(status=Asset.Status.VALID)
     version.assets.add(asset)
 
@@ -351,11 +351,9 @@ def test_version_aggregate_assets_summary(draft_version_factory, draft_asset_fac
 
 
 @pytest.mark.django_db
-def test_version_publish_updates_draft_version_assets_summary(
-    draft_version_factory, draft_asset_factory
-):
+def test_version_publish_updates_draft_version_assets_summary(draft_asset_factory):
     user = UserFactory.create()
-    version = draft_version_factory(status=Version.Status.PUBLISHING)
+    version = DraftVersionFactory.create(status=Version.Status.PUBLISHING)
     asset = draft_asset_factory(status=Asset.Status.VALID)
     version.assets.add(asset)
 
@@ -369,10 +367,8 @@ def test_version_publish_updates_draft_version_assets_summary(
 
 
 @pytest.mark.django_db
-def test_version_aggregate_assets_summary_metadata_modified(
-    draft_version_factory, draft_asset_factory
-):
-    version = draft_version_factory(status=Version.Status.VALID)
+def test_version_aggregate_assets_summary_metadata_modified(draft_asset_factory):
+    version = DraftVersionFactory.create(status=Version.Status.VALID)
     asset = draft_asset_factory(status=Asset.Status.VALID)
     version.assets.add(asset)
 
@@ -399,9 +395,9 @@ def test_version_size(
 
 
 @pytest.mark.django_db
-def test_version_rest_list(api_client, version, draft_version_factory):
+def test_version_rest_list(api_client, version):
     # Create an extra version so that there are multiple versions to filter down
-    draft_version_factory()
+    DraftVersionFactory.create()
 
     assert api_client.get(f'/api/dandisets/{version.dandiset.identifier}/versions/').data == {
         'count': 1,
@@ -432,9 +428,9 @@ def test_version_rest_list(api_client, version, draft_version_factory):
 
 
 @pytest.mark.django_db
-def test_version_rest_retrieve(api_client, version, draft_version_factory):
+def test_version_rest_retrieve(api_client, version):
     # Create an extra version so that there are multiple versions to filter down
-    draft_version_factory()
+    DraftVersionFactory.create()
 
     assert (
         api_client.get(
@@ -478,10 +474,8 @@ def test_version_rest_info(api_client, version):
     'asset_status',
     [Asset.Status.PENDING, Asset.Status.VALIDATING, Asset.Status.VALID, Asset.Status.INVALID],
 )
-def test_version_rest_info_with_asset(
-    api_client, draft_version_factory, draft_asset_factory, asset_status: Asset.Status
-):
-    version = draft_version_factory(status=Version.Status.VALID)
+def test_version_rest_info_with_asset(api_client, draft_asset_factory, asset_status: Asset.Status):
+    version = DraftVersionFactory.create(status=Version.Status.VALID)
     asset = draft_asset_factory(status=asset_status)
     version.assets.add(asset)
     add_version_asset_paths(version=version)
@@ -617,9 +611,9 @@ def test_version_rest_update(api_client):
 
 
 @pytest.mark.django_db
-def test_version_rest_update_unembargo_in_progress(api_client, draft_version_factory):
+def test_version_rest_update_unembargo_in_progress(api_client):
     user = UserFactory.create()
-    draft_version = draft_version_factory(
+    draft_version = DraftVersionFactory.create(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
     add_dandiset_owner(draft_version.dandiset, user)
@@ -803,9 +797,11 @@ def test_version_rest_publish(
 
 
 @pytest.mark.django_db
-def test_version_rest_publish_embargo(api_client: APIClient, draft_version_factory):
+def test_version_rest_publish_embargo(api_client: APIClient):
     user = UserFactory.create()
-    draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    draft_version = DraftVersionFactory.create(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
+    )
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
@@ -817,9 +813,9 @@ def test_version_rest_publish_embargo(api_client: APIClient, draft_version_facto
 
 
 @pytest.mark.django_db
-def test_version_rest_publish_unembargo_in_progress(api_client: APIClient, draft_version_factory):
+def test_version_rest_publish_unembargo_in_progress(api_client: APIClient):
     user = UserFactory.create()
-    draft_version = draft_version_factory(
+    draft_version = DraftVersionFactory.create(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
     add_dandiset_owner(draft_version.dandiset, user)

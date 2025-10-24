@@ -18,10 +18,9 @@ from zarr_checksum.generators import ZarrArchiveFile
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
-from dandiapi.api.tests.factories import DraftVersionFactory
+from dandiapi.api.tests.factories import DraftVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchiveStatus
 
-from .factories import UserFactory
 from .fuzzy import HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
 
 if TYPE_CHECKING:
@@ -346,12 +345,11 @@ def test_publish_task(
     api_client: APIClient,
     draft_asset_factory,
     published_asset_factory,
-    draft_version_factory,
     django_capture_on_commit_callbacks,
 ):
     user = UserFactory.create()
     # Create a draft_version in PUBLISHING state
-    draft_version: Version = draft_version_factory(status=Version.Status.PUBLISHING)
+    draft_version: Version = DraftVersionFactory.create(status=Version.Status.PUBLISHING)
 
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)

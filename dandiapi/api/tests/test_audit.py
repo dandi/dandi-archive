@@ -278,11 +278,11 @@ def test_audit_remove_asset(api_client, asset_blob_factory, draft_asset_factory)
 
 
 @pytest.mark.django_db(transaction=True)
-def test_audit_publish_dandiset(api_client, draft_version_factory, draft_asset_factory):
+def test_audit_publish_dandiset(api_client, draft_asset_factory):
     user = UserFactory.create()
     # Create a Dandiset whose draft version has one asset.
     dandiset = DandisetFactory.create(owners=[user])
-    draft_version = draft_version_factory(dandiset=dandiset)
+    draft_version = DraftVersionFactory.create(dandiset=dandiset)
     draft_asset = draft_asset_factory()
     draft_version.assets.add(draft_asset)
     add_version_asset_paths(draft_version)

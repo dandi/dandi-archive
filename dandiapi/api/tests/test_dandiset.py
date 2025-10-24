@@ -42,11 +42,11 @@ def test_dandiset_identifer_missing():
 
 
 @pytest.mark.django_db
-def test_dandiset_published_count(draft_version_factory, published_version_factory):
+def test_dandiset_published_count(published_version_factory):
     # empty dandiset
     DandisetFactory.create()
     # dandiset with draft version
-    draft_version_factory(dandiset=DandisetFactory.create())
+    DraftVersionFactory.create(dandiset=DandisetFactory.create())
     # dandiset with published version
     published_version_factory(dandiset=DandisetFactory.create())
 
@@ -157,7 +157,6 @@ def test_dandiset_rest_list(api_client):
 @pytest.mark.django_db
 def test_dandiset_versions(
     api_client,
-    draft_version_factory,
     published_version_factory,
     asset_factory,
     params,
@@ -167,17 +166,17 @@ def test_dandiset_versions(
     #
     # Dandiset with empty draft
     empty_dandiset = DandisetFactory.create()
-    draft_version_factory(dandiset=empty_dandiset)
+    DraftVersionFactory.create(dandiset=empty_dandiset)
 
     # Dandiset with populated draft
     draft_dandiset = DandisetFactory.create()
-    draft_version = draft_version_factory(dandiset=draft_dandiset)
+    draft_version = DraftVersionFactory.create(dandiset=draft_dandiset)
     draft_version.assets.add(asset_factory())
     add_version_asset_paths(draft_version)
 
     # Dandiset with published version
     published_dandiset = DandisetFactory.create()
-    draft_version = draft_version_factory(dandiset=published_dandiset)
+    draft_version = DraftVersionFactory.create(dandiset=published_dandiset)
     draft_version.assets.add(asset_factory())
     add_version_asset_paths(draft_version)
 
@@ -187,7 +186,7 @@ def test_dandiset_versions(
 
     # Dandiset with published version and empty draft
     erased_dandiset = DandisetFactory.create()
-    draft_version_factory(dandiset=erased_dandiset)
+    DraftVersionFactory.create(dandiset=erased_dandiset)
     published_version = published_version_factory(dandiset=erased_dandiset)
     published_version.assets.add(asset_factory())
     add_version_asset_paths(published_version)
@@ -914,12 +913,12 @@ def test_dandiset_rest_create_with_invalid_identifier(api_client):
         (Dandiset.EmbargoStatus.UNEMBARGOING, False),
     ],
 )
-def test_dandiset_rest_delete(api_client, draft_version_factory, embargo_status, success):
+def test_dandiset_rest_delete(api_client, embargo_status, success):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
 
     # Ensure that open or embargoed dandisets can be deleted
-    draft_version = draft_version_factory(
+    draft_version = DraftVersionFactory.create(
         dandiset__embargo_status=embargo_status, dandiset__owners=[user]
     )
     response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
@@ -935,13 +934,12 @@ def test_dandiset_rest_delete(api_client, draft_version_factory, embargo_status,
 @pytest.mark.django_db
 def test_dandiset_rest_delete_with_zarrs(
     api_client,
-    draft_version_factory,
     zarr_archive_factory,
     draft_asset_factory,
 ):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    draft_version = draft_version_factory(dandiset__owners=[user])
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     zarr = zarr_archive_factory(dandiset=draft_version.dandiset)
     asset = draft_asset_factory(blob=None, zarr=zarr)
 
@@ -1015,12 +1013,11 @@ def test_dandiset_rest_get_owners(api_client):
 @pytest.mark.django_db
 def test_dandiset_rest_change_owner(
     api_client,
-    draft_version_factory,
     mailoutbox,
     embargo_status,
 ):
     user1 = UserFactory.create()
-    draft_version = draft_version_factory(
+    draft_version = DraftVersionFactory.create(
         dandiset__embargo_status=embargo_status, dandiset__owners=[user1]
     )
     dandiset = draft_version.dandiset
@@ -1052,11 +1049,10 @@ def test_dandiset_rest_change_owner(
 @pytest.mark.django_db
 def test_dandiset_rest_change_owners_unembargo_in_progress(
     api_client,
-    draft_version_factory,
 ):
     """Test that a dandiset undergoing unembargo prevents user modification."""
     user1 = UserFactory.create()
-    draft_version = draft_version_factory(
+    draft_version = DraftVersionFactory.create(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING, dandiset__owners=[user1]
     )
     api_client.force_authenticate(user=user1)
@@ -1076,11 +1072,10 @@ def test_dandiset_rest_change_owners_unembargo_in_progress(
 @pytest.mark.django_db
 def test_dandiset_rest_add_owner(
     api_client,
-    draft_version_factory,
     mailoutbox,
 ):
     user1 = UserFactory.create()
-    draft_version = draft_version_factory(dandiset__owners=[user1])
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user1])
     dandiset = draft_version.dandiset
     api_client.force_authenticate(user=user1)
 
@@ -1133,12 +1128,11 @@ def test_dandiset_rest_add_owner_not_allowed(api_client):
 @pytest.mark.django_db
 def test_dandiset_rest_remove_owner(
     api_client,
-    draft_version_factory,
     mailoutbox,
 ):
     user1 = UserFactory.create()
     user2 = UserFactory.create()
-    draft_version = draft_version_factory(dandiset__owners=[user1, user2])
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user1, user2])
     dandiset = draft_version.dandiset
     api_client.force_authenticate(user=user1)
 
@@ -1239,8 +1233,8 @@ def test_dandiset_rest_search_identifier(api_client):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_search_accented_characters(api_client, draft_version_factory):
-    draft_version = draft_version_factory()
+def test_dandiset_rest_search_accented_characters(api_client):
+    draft_version = DraftVersionFactory.create()
     draft_version.metadata['contributor'][0]['name'] = 'Buzsáki, György'
     draft_version.save()
 
@@ -1255,10 +1249,8 @@ def test_dandiset_rest_search_accented_characters(api_client, draft_version_fact
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_search_many_versions(
-    api_client, draft_version_factory, published_version_factory, dandiset
-):
-    draft_version = draft_version_factory(dandiset=dandiset)
+def test_dandiset_rest_search_many_versions(api_client, published_version_factory, dandiset):
+    draft_version = DraftVersionFactory.create(dandiset=dandiset)
     draft_version.metadata['contributor'][0]['name'] = 'testname'
     draft_version.save()
 
@@ -1308,10 +1300,10 @@ def test_dandiset_rest_list_active_uploads_not_owner(api_client, embargoed):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_list_active_uploads(api_client, draft_version_factory, upload_factory):
+def test_dandiset_rest_list_active_uploads(api_client, upload_factory):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    draft_version = draft_version_factory(dandiset__owners=[user])
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     dandiset = draft_version.dandiset
     upload = upload_factory(dandiset=dandiset)
 
@@ -1348,10 +1340,10 @@ def test_dandiset_rest_clear_active_uploads_not_owner(api_client, upload_factory
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_clear_active_uploads(api_client, draft_version_factory, upload_factory):
+def test_dandiset_rest_clear_active_uploads(api_client, upload_factory):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    draft_version = draft_version_factory(dandiset__owners=[user])
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     dandiset = draft_version.dandiset
     upload_factory(dandiset=dandiset)
 
@@ -1464,10 +1456,10 @@ def test_dandiset_list_starred(api_client):
 
 
 @pytest.mark.django_db
-def test_dandiset_list_order_size(api_client, draft_version_factory, asset_factory):
+def test_dandiset_list_order_size(api_client, asset_factory):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    dandisets: list[Dandiset] = [draft_version_factory().dandiset for _ in range(3)]
+    dandisets: list[Dandiset] = [DraftVersionFactory.create().dandiset for _ in range(3)]
 
     # Create root asset path for each dandiset in varying size
     for i, ds in enumerate(dandisets):
