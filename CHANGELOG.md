@@ -1,3 +1,15 @@
+# v0.16.4 (Fri Oct 24 2025)
+
+#### 🐛 Bug Fix
+
+- Update tooltip width so that it is readable [#2593](https://github.com/dandi/dandi-archive/pull/2593) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v0.16.3 (Thu Oct 23 2025)
 
 #### 🐛 Bug Fix
