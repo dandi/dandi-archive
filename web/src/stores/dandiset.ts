@@ -33,6 +33,8 @@ export const useDandisetStore = defineStore('dandiset', {
   }),
   getters: {
     version: (state) => (state.dandiset ? state.dandiset.version : draftVersion),
+    draftVersion: (state) => state.versions?.find((v) => v.version === draftVersion),
+    publishedVersions: (state) => state.versions?.filter((v) => v.version !== draftVersion),
     schemaVersion: (state) => state.schema?.properties.schemaVersion.default,
     userCanModifyDandiset: (state) => {
       // published versions are never editable, and logged out users can never edit a dandiset

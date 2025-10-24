@@ -1,5 +1,5 @@
 <template>
-  <v-footer class="text-body-2">
+  <v-footer class="text-body-2 border-t">
     <v-container>
       <CookieBanner />
       <v-row>
