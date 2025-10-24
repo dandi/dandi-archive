@@ -160,19 +160,20 @@ def test_user_search_extra_data(api_client):
 @pytest.mark.parametrize(
     ('status', 'expected_status_code', 'expected_search_results_value'),
     [
-        (
+        pytest.param(
             UserMetadata.Status.APPROVED,
             200,
             [
                 {
                     'admin': False,
-                    'username': 'john.doe@dandi.test',
+                    'username': 'odysseus',
                     'name': 'John Doe',
                     'status': UserMetadata.Status.APPROVED,
                 }
             ],
+            id='approved',
         ),
-        (
+        pytest.param(
             UserMetadata.Status.PENDING,
             403,
             {
@@ -181,8 +182,9 @@ def test_user_search_extra_data(api_client):
                     code='permission_denied',
                 )
             },
+            id='pending',
         ),
-        (
+        pytest.param(
             UserMetadata.Status.INCOMPLETE,
             403,
             {
@@ -191,8 +193,9 @@ def test_user_search_extra_data(api_client):
                     code='permission_denied',
                 )
             },
+            id='incomplete',
         ),
-        (
+        pytest.param(
             UserMetadata.Status.REJECTED,
             403,
             {
@@ -201,6 +204,7 @@ def test_user_search_extra_data(api_client):
                     code='permission_denied',
                 )
             },
+            id='rejected',
         ),
     ],
 )
@@ -214,7 +218,7 @@ def test_user_status(
     user = UserFactory.create(
         first_name='John',
         last_name='Doe',
-        username='john.doe@dandi.test',
+        social_account__extra_data__login='odysseus',
         metadata__status=status,
     )
     api_client.force_authenticate(user=user)
