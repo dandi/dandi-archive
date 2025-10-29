@@ -178,13 +178,6 @@ class VersionSerializer(serializers.ModelSerializer):
         """Extract release notes from version metadata."""
         return version.metadata.get('releaseNotes')
 
-    def to_representation(self, instance):
-        """Remove release_notes from representation if it's None."""
-        representation = super().to_representation(instance)
-        if representation.get('release_notes') is None:
-            representation.pop('release_notes', None)
-        return representation
-
     def __init__(self, *args, child_context=False, **kwargs):
         if child_context:
             del self.fields['dandiset']

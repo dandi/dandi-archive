@@ -1133,21 +1133,6 @@ def test_version_serializer_includes_release_notes():
 
 
 @pytest.mark.django_db
-def test_version_serializer_omits_null_release_notes():
-    """Test that VersionSerializer omits release_notes when None."""
-    from dandiapi.api.views.serializers import VersionSerializer
-
-    # Create a version without release notes
-    version = PublishedVersionFactory()
-    # Ensure no releaseNotes in metadata
-    version.metadata.pop('releaseNotes', None)
-    version.save()
-
-    serializer = VersionSerializer(version)
-    assert 'release_notes' not in serializer.data
-
-
-@pytest.mark.django_db
 def test_version_rest_list_with_release_notes(api_client: APIClient):
     """Test that versions list endpoint includes release_notes when present."""
     # Create a published version with release notes
