@@ -311,10 +311,10 @@ def test_audit_zarr_create(api_client):
 
 
 @pytest.mark.django_db
-def test_audit_upload_zarr_chunks(api_client, zarr_archive_factory):
+def test_audit_upload_zarr_chunks(api_client):
     user = UserFactory.create()
     draft_version = DraftVersionFactory.create(dandiset__owners=[user])
-    zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset)
+    zarr_archive = ZarrArchiveFactory.create(dandiset=draft_version.dandiset)
 
     # Request some chunk uploads.
     paths = ['a.txt', 'b.txt', 'c.txt']
@@ -352,10 +352,10 @@ def test_audit_finalize_zarr(api_client, zarr_file_factory):
 
 
 @pytest.mark.django_db
-def test_audit_delete_zarr_chunks(api_client, zarr_archive_factory, zarr_file_factory):
+def test_audit_delete_zarr_chunks(api_client, zarr_file_factory):
     user = UserFactory.create()
     draft_version = DraftVersionFactory.create(dandiset__owners=[user])
-    zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset)
+    zarr_archive = ZarrArchiveFactory.create(dandiset=draft_version.dandiset)
     zarr_files = [zarr_file_factory(zarr_archive=zarr_archive) for i in range(2)]
     ingest_zarr_archive(zarr_archive.zarr_id)
 

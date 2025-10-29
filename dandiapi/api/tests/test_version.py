@@ -18,6 +18,7 @@ from dandiapi.api.tests.factories import (
     PublishedVersionFactory,
     UserFactory,
 )
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
 if TYPE_CHECKING:
     from rest_framework.test import APIClient
@@ -390,11 +391,10 @@ def test_version_size(
     asset_factory,
     asset_blob_factory,
     embargoed_asset_blob_factory,
-    zarr_archive_factory,
 ):
     version.assets.add(asset_factory(blob=asset_blob_factory(size=100)))
     version.assets.add(asset_factory(blob=embargoed_asset_blob_factory(size=200)))
-    version.assets.add(asset_factory(blob=None, zarr=zarr_archive_factory(size=400)))
+    version.assets.add(asset_factory(blob=None, zarr=ZarrArchiveFactory.create(size=400)))
     add_version_asset_paths(version=version)
 
     assert version.size == 700
@@ -830,7 +830,6 @@ def test_version_rest_publish_unembargo_in_progress(api_client: APIClient):
 def test_version_rest_publish_zarr(
     api_client,
     draft_asset_factory,
-    zarr_archive_factory,
     zarr_file_factory,
 ):
     user = UserFactory.create()
@@ -838,7 +837,7 @@ def test_version_rest_publish_zarr(
     api_client.force_authenticate(user=user)
 
     # create and ingest zarr archive
-    zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset, status='Uploaded')
+    zarr_archive = ZarrArchiveFactory.create(dandiset=draft_version.dandiset, status='Uploaded')
     zarr_file_factory(zarr_archive=zarr_archive)
     ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()

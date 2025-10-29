@@ -21,6 +21,7 @@ from dandiapi.api.tests.factories import (
     PublishedVersionFactory,
     UserFactory,
 )
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
 from .fuzzy import (
     DANDISET_ID_RE,
@@ -938,13 +939,12 @@ def test_dandiset_rest_delete(api_client, embargo_status, success):
 @pytest.mark.django_db
 def test_dandiset_rest_delete_with_zarrs(
     api_client,
-    zarr_archive_factory,
     draft_asset_factory,
 ):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
     draft_version = DraftVersionFactory.create(dandiset__owners=[user])
-    zarr = zarr_archive_factory(dandiset=draft_version.dandiset)
+    zarr = ZarrArchiveFactory.create(dandiset=draft_version.dandiset)
     asset = draft_asset_factory(blob=None, zarr=zarr)
 
     # Add paths

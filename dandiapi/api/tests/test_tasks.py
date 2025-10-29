@@ -19,6 +19,7 @@ from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
 from dandiapi.api.tests.factories import DraftVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchiveStatus
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
 from .fuzzy import HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
 
@@ -290,17 +291,20 @@ def test_validate_version_metadata_no_assets():
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_empty_zarr_asset(zarr_archive_factory, draft_asset_factory):
+def test_validate_version_metadata_empty_zarr_asset(draft_asset_factory):
     draft_version = DraftVersionFactory.create()
-    asset = draft_asset_factory(
+    draft_asset_factory(
         blob=None,
-        zarr=zarr_archive_factory(
-            status=ZarrArchiveStatus.COMPLETE, checksum=EMPTY_CHECKSUM, size=0, file_count=0
+        zarr=ZarrArchiveFactory.create(
+            dandiset=draft_version.dandiset,
+            status=ZarrArchiveStatus.COMPLETE,
+            checksum=EMPTY_CHECKSUM,
+            size=0,
+            file_count=0,
         ),
         status=Asset.Status.VALID,
+        versions=[draft_version],
     )
-    assert asset.size == 0
-    draft_version.assets.add(asset)
 
     # Since the zarr asset has zero size, a validation error should be produced
     tasks.validate_version_metadata_task(draft_version.id)
@@ -316,11 +320,12 @@ def test_validate_version_metadata_empty_zarr_asset(zarr_archive_factory, draft_
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_only_zarr_assets(zarr_archive_factory, draft_asset_factory):
+def test_validate_version_metadata_only_zarr_assets(draft_asset_factory):
     draft_version = DraftVersionFactory.create()
-    asset = draft_asset_factory(
+    draft_asset_factory(
         blob=None,
-        zarr=zarr_archive_factory(
+        zarr=ZarrArchiveFactory.create(
+            dandiset=draft_version.dandiset,
             status=ZarrArchiveStatus.COMPLETE,
             checksum=compute_zarr_checksum(
                 [ZarrArchiveFile(path=Path('foo/bar'), size=100, digest=hashlib.md5().hexdigest())]
@@ -329,9 +334,8 @@ def test_validate_version_metadata_only_zarr_assets(zarr_archive_factory, draft_
             file_count=1,
         ),
         status=Asset.Status.VALID,
+        versions=[draft_version],
     )
-    assert asset.size > 0
-    draft_version.assets.add(asset)
 
     tasks.validate_version_metadata_task(draft_version.id)
     draft_version.refresh_from_db()

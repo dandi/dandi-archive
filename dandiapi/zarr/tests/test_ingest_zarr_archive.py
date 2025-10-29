@@ -10,12 +10,13 @@ from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_dandiset_zarrs, ingest_zarr_archive
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive(zarr_archive_factory, zarr_file_factory):
+def test_ingest_zarr_archive(zarr_file_factory):
     # Create zarr with uploaded status so it can be ingested
-    zarr: ZarrArchive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
+    zarr: ZarrArchive = ZarrArchiveFactory.create(status=ZarrArchiveStatus.UPLOADED)
     files = [
         zarr_file_factory(zarr_archive=zarr, path='foo'),
         zarr_file_factory(zarr_archive=zarr, path='bar'),
@@ -42,8 +43,8 @@ def test_ingest_zarr_archive(zarr_archive_factory, zarr_file_factory):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_empty(zarr_archive_factory):
-    zarr: ZarrArchive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
+def test_ingest_zarr_archive_empty():
+    zarr: ZarrArchive = ZarrArchiveFactory.create(status=ZarrArchiveStatus.UPLOADED)
 
     # Compute checksum
     ingest_zarr_archive(str(zarr.zarr_id))
@@ -57,8 +58,8 @@ def test_ingest_zarr_archive_empty(zarr_archive_factory):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_force(zarr_archive_factory, zarr_file_factory):
-    zarr: ZarrArchive = zarr_archive_factory()
+def test_ingest_zarr_archive_force(zarr_file_factory):
+    zarr: ZarrArchive = ZarrArchiveFactory.create()
 
     # Perform initial ingest
     zarr_file_factory(zarr_archive=zarr)
@@ -84,9 +85,9 @@ def test_ingest_zarr_archive_force(zarr_archive_factory, zarr_file_factory):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_assets(zarr_archive_factory, zarr_file_factory, draft_asset_factory):
+def test_ingest_zarr_archive_assets(zarr_file_factory, draft_asset_factory):
     # Create zarr and asset
-    zarr: ZarrArchive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
+    zarr: ZarrArchive = ZarrArchiveFactory.create(status=ZarrArchiveStatus.UPLOADED)
     asset = draft_asset_factory(zarr=zarr, blob=None)
 
     # Assert asset size, metadata
@@ -107,13 +108,13 @@ def test_ingest_zarr_archive_assets(zarr_archive_factory, zarr_file_factory, dra
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_modified(zarr_archive_factory, zarr_file_factory):
+def test_ingest_zarr_archive_modified(zarr_file_factory):
     """Ensure that if the zarr associated to an asset is modified and then ingested, it succeeds."""
     user = UserFactory.create()
     draft_version = DraftVersionFactory.create(dandiset__owners=[user])
 
     # Ensure zarr is ingested with non-zero size
-    zarr_archive = zarr_archive_factory(
+    zarr_archive = ZarrArchiveFactory.create(
         dandiset=draft_version.dandiset, status=ZarrArchiveStatus.UPLOADED
     )
     zarr_file_factory(zarr_archive=zarr_archive, size=100)
@@ -148,13 +149,13 @@ def test_ingest_zarr_archive_modified(zarr_archive_factory, zarr_file_factory):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_sets_version_pending(zarr_archive_factory, zarr_file_factory):
+def test_ingest_zarr_archive_sets_version_pending(zarr_file_factory):
     """Ensure that when a zarr is ingested, it sets the version back to PENDING."""
     draft_version = DraftVersionFactory.create(status=Version.Status.VALID)
     assert draft_version.status == Version.Status.VALID
 
     # Ensure zarr has non-zero size
-    zarr_archive = zarr_archive_factory(
+    zarr_archive = ZarrArchiveFactory.create(
         dandiset=draft_version.dandiset, status=ZarrArchiveStatus.UPLOADED
     )
     zarr_file_factory(zarr_archive=zarr_archive, size=100)
@@ -169,12 +170,14 @@ def test_ingest_zarr_archive_sets_version_pending(zarr_archive_factory, zarr_fil
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_dandiset_zarrs(zarr_archive_factory, zarr_file_factory):
+def test_ingest_dandiset_zarrs(zarr_file_factory):
     dandiset = DandisetFactory.create()
     for _ in range(10):
         zarr_file_factory(
             path='foo/a',
-            zarr_archive=zarr_archive_factory(dandiset=dandiset, status=ZarrArchiveStatus.UPLOADED),
+            zarr_archive=ZarrArchiveFactory.create(
+                dandiset=dandiset, status=ZarrArchiveStatus.UPLOADED
+            ),
         )
 
     # Run ingest

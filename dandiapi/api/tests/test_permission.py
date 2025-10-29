@@ -3,7 +3,8 @@ from __future__ import annotations
 import pytest
 from rest_framework.permissions import SAFE_METHODS
 
-from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
+from dandiapi.api.tests.factories import DraftVersionFactory, UserFactory
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
 
 @pytest.mark.parametrize(
@@ -73,19 +74,17 @@ from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, U
 def test_approved_or_readonly(
     api_client,
     draft_asset_factory,
-    zarr_archive_factory,
     method,
     url_format,
     owner_required,
 ):
     user = UserFactory.create()
-    dandiset = DandisetFactory.create()
-    version = DraftVersionFactory.create(dandiset=dandiset)
-    zarr = zarr_archive_factory(dandiset=dandiset)
+    version = DraftVersionFactory.create()
+    zarr = ZarrArchiveFactory.create(dandiset=version.dandiset)
     asset = draft_asset_factory()
     version.assets.add(asset)
 
-    url = url_format.format(dandiset=dandiset, asset=asset, zarr=zarr)
+    url = url_format.format(dandiset=version.dandiset, asset=asset, zarr=zarr)
     response = getattr(api_client, method)(url)
 
     # Safe method, read only is okay
@@ -106,7 +105,7 @@ def test_approved_or_readonly(
     # denied after reading the request body
     if url == '/api/zarr/' and method == 'post':
         response = getattr(api_client, method)(
-            url, data={'name': 'test', 'dandiset': dandiset.identifier}
+            url, data={'name': 'test', 'dandiset': version.dandiset.identifier}
         )
     else:
         response = getattr(api_client, method)(url)
