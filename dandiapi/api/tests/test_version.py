@@ -11,23 +11,24 @@ from django.conf import settings
 from freezegun import freeze_time
 import pytest
 
+from dandiapi.api import tasks
+from dandiapi.api.asset_paths import add_version_asset_paths
+from dandiapi.api.models import Asset, Version
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.services.metadata import version_aggregate_assets_summary
+from dandiapi.api.services.metadata import (
+    validate_asset_metadata,
+    validate_version_metadata,
+    version_aggregate_assets_summary,
+)
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
+from dandiapi.api.services.publish import _build_publishable_version_from_draft, publish_dandiset
 from dandiapi.api.tests.factories import (
     DandisetFactory,
+    DraftAssetFactory,
     DraftVersionFactory,
     PublishedVersionFactory,
     UserFactory,
 )
-
-if TYPE_CHECKING:
-    from rest_framework.test import APIClient
-
-from dandiapi.api import tasks
-from dandiapi.api.asset_paths import add_version_asset_paths
-from dandiapi.api.models import Asset, Version
-from dandiapi.api.services.publish import _build_publishable_version_from_draft
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import (
@@ -38,6 +39,9 @@ from .fuzzy import (
     UTC_ISO_TIMESTAMP_RE,
     VERSION_ID_RE,
 )
+
+if TYPE_CHECKING:
+    from rest_framework.test import APIClient
 
 _SCHEMA_CONFIG = get_instance_config()
 
@@ -448,6 +452,7 @@ def test_version_rest_list(api_client, version):
                 'active_uploads': 0,
                 'size': 0,
                 'status': version.status,
+                'release_notes': '',
             }
         ],
     }
@@ -492,6 +497,7 @@ def test_version_rest_info(api_client, version):
         'asset_validation_errors': [],
         'version_validation_errors': [],
         'contact_person': version.metadata['contributor'][0]['name'],
+        'release_notes': '',
     }
 
 
@@ -543,6 +549,7 @@ def test_version_rest_info_with_asset(api_client, draft_asset_factory, asset_sta
         'asset_validation_errors': expected_validation_errors,
         'version_validation_errors': [],
         'contact_person': version.metadata['contributor'][0]['name'],
+        'release_notes': '',
     }
 
 
@@ -622,6 +629,7 @@ def test_version_rest_update(api_client):
         'asset_validation_errors': [],
         'version_validation_errors': [],
         'contact_person': 'Vargas, Getúlio',
+        'release_notes': '',
     }
 
     # The version modified date should be updated
@@ -1136,8 +1144,8 @@ def test_version_serializer_includes_release_notes():
     from dandiapi.api.views.serializers import VersionSerializer
 
     # Create a published version with release notes in metadata
-    version = PublishedVersionFactory()
-    version.metadata['releaseNotes'] = 'Test release notes'
+    version = PublishedVersionFactory(release_notes='Test release notes')
+    version.metadata['releaseNotes'] = version.release_notes
     version.save()
 
     serializer = VersionSerializer(version)
@@ -1145,31 +1153,38 @@ def test_version_serializer_includes_release_notes():
     assert serializer.data['release_notes'] == 'Test release notes'
 
 
-@pytest.mark.django_db
+# Set transaction=True so that transaction.on_commit() works in publish_dandiset
+@pytest.mark.django_db(transaction=True)
 def test_version_rest_list_with_release_notes(api_client: APIClient):
     """Test that versions list endpoint includes release_notes when present."""
-    # Create a published version with release notes
-    published_version: Version = PublishedVersionFactory.create()
-    published_version.metadata['releaseNotes'] = 'Important updates'
-    published_version.save()
+    # Create a publishable draft version
+    user = UserFactory.create()
+    draft_version: Version = DraftVersionFactory.create(dandiset__owners=[user])
+    asset: Asset = DraftAssetFactory()
+    draft_version.assets.add(asset)
+    validate_asset_metadata(asset=asset)
+    validate_version_metadata(version=draft_version)
 
-    # Create a draft version (no release notes)
-    DraftVersionFactory.create(dandiset=published_version.dandiset)
+    # Publish the draft w/ release notes
+    release_notes = 'Important updates'
+    publish_dandiset(user=user, dandiset=draft_version.dandiset, release_notes=release_notes)
 
-    response = api_client.get(f'/api/dandisets/{published_version.dandiset.identifier}/versions/')
+    # Ensure the version list endpoint contains the new release notes
+    response = api_client.get(f'/api/dandisets/{draft_version.dandiset.identifier}/versions/')
 
     assert response.status_code == 200
     results = response.data['results']
 
     # Find the published version in results
-    published_result = next((r for r in results if r['version'] == published_version.version), None)
+    published_result = next((r for r in results if r['version'] != draft_version.version), None)
     assert published_result is not None
-    assert published_result['release_notes'] == 'Important updates'
+    assert published_result['release_notes'] == release_notes
 
     # Find the draft version in results
     draft_result = next((r for r in results if r['version'] == 'draft'), None)
     assert draft_result is not None
-    assert 'release_notes' not in draft_result
+    # Ensure draft version contains release notes from latest published version
+    assert draft_result['release_notes'] == release_notes
 
 
 @pytest.mark.django_db

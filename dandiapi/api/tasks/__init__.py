@@ -87,10 +87,10 @@ def delete_doi_task(doi: str) -> None:
 
 
 @shared_task
-def publish_dandiset_task(dandiset_id: int, user_id: int, release_notes: str | None = None):
+def publish_dandiset_task(dandiset_id: int, user_id: int):
     from dandiapi.api.services.publish import _publish_dandiset
 
-    _publish_dandiset(dandiset_id=dandiset_id, user_id=user_id, release_notes=release_notes)
+    _publish_dandiset(dandiset_id=dandiset_id, user_id=user_id)
 
 
 @shared_task(soft_time_limit=1200)
