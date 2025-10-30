@@ -10,7 +10,7 @@
       :to="{
         name: 'dandisetLanding',
         params: { identifier: item.dandiset.identifier },
-        query: { ...$route.query, pos: getPos(index) },
+        query: { ...route.query, pos: getPos(index) },
       }"
       exact
     >
@@ -48,7 +48,7 @@
           <b>{{ item.dandiset.embargo_status }}</b>
         </v-chip>
 
-        DANDI:<b>{{ item.dandiset.identifier }}</b>
+        {{ archiveName }}:<b>{{ item.dandiset.identifier }}</b>
         ·
         Contact <b>{{ item.dandiset.contact_person }}</b>
         ·
@@ -79,11 +79,12 @@
 </template>
 
 <script setup lang="ts">
-import type { PropType } from 'vue';
+import { ref, onMounted, type PropType } from 'vue';
 import { useRoute } from 'vue-router';
 import moment from 'moment';
 import { filesize } from 'filesize';
 import StarButton from '@/components/StarButton.vue';
+import { dandiRest } from '@/rest';
 
 import type { Version } from '@/types';
 import { DANDISETS_PER_PAGE } from '@/utils/constants';
@@ -96,6 +97,12 @@ defineProps({
 });
 
 const route = useRoute();
+const archiveName = ref<string>('');
+
+onMounted(async () => {
+  const info = await dandiRest.info();
+  archiveName.value = info.instance_config.instance_name;
+});
 
 // current position in search result set = items on prev pages + position on current page
 function getPos(index: number) {

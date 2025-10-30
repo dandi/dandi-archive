@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+import importlib
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from dandischema.conf import get_instance_config as get_schema_instance_config
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.forms.models import model_to_dict
@@ -24,6 +26,9 @@ from .fuzzy import HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
 
 if TYPE_CHECKING:
     from rest_framework.test import APIClient
+
+
+_SCHEMA_INSTANCE_CONFIG = get_schema_instance_config()
 
 
 @pytest.mark.django_db
@@ -372,6 +377,9 @@ def test_publish_task(
 
     published_version = draft_version.dandiset.versions.latest('created')
 
+    instance_name = _SCHEMA_INSTANCE_CONFIG.instance_name
+    instance_identifier = _SCHEMA_INSTANCE_CONFIG.instance_identifier
+
     assert published_version.metadata == {
         **draft_version.metadata,
         'publishedBy': {
@@ -382,10 +390,10 @@ def test_publish_task(
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,
-                    'identifier': 'RRID:SCR_017571',
-                    'name': 'DANDI API',
+                    **({'identifier': instance_identifier} if instance_identifier else {}),
+                    'name': f'{instance_name} API',
                     # TODO: version the API
-                    'version': '0.1.0',
+                    'version': importlib.metadata.version('dandiapi'),
                     'schemaKey': 'Software',
                 }
             ],
@@ -442,9 +450,9 @@ def test_publish_task(
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,
-                    'identifier': 'RRID:SCR_017571',
-                    'name': 'DANDI API',
-                    'version': '0.1.0',
+                    **({'identifier': instance_identifier} if instance_identifier else {}),
+                    'name': f'{instance_name} API',
+                    'version': importlib.metadata.version('dandiapi'),
                     'schemaKey': 'Software',
                 }
             ],

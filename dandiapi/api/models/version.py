@@ -4,6 +4,7 @@ import datetime
 import logging
 from typing import TypedDict
 
+from dandischema.conf import get_instance_config as get_schema_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
@@ -18,6 +19,8 @@ from dandiapi.api.models.metadata import PublishableMetadataMixin
 from .dandiset import Dandiset
 
 logger = logging.getLogger(__name__)
+
+_SCHEMA_INSTANCE_CONFIG = get_schema_instance_config()
 
 
 class VersionAssetValidationError(TypedDict):
@@ -237,9 +240,11 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             ),
             'manifestLocation': manifest_location(self),
             'name': self.name,
-            'identifier': f'DANDI:{self.dandiset.identifier}',
+            'identifier': (f'{_SCHEMA_INSTANCE_CONFIG.instance_name}:{self.dandiset.identifier}'),
             'version': self.version,
-            'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
+            'id': (
+                f'{_SCHEMA_INSTANCE_CONFIG.instance_name}:{self.dandiset.identifier}/{self.version}'
+            ),
             'repository': settings.DANDI_WEB_APP_URL,
             'url': (
                 f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}'

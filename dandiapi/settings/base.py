@@ -175,7 +175,6 @@ logging.getLogger('dandiapi').setLevel(_dandi_log_level)
 DANDI_SCHEMA_VERSION: str = env.str(
     'DJANGO_DANDI_SCHEMA_VERSION', default=_DEFAULT_DANDI_SCHEMA_VERSION
 )
-
 DANDI_ZARR_PREFIX_NAME: str = env.str('DJANGO_DANDI_ZARR_PREFIX_NAME', default='zarr')
 
 # Required environment variables
