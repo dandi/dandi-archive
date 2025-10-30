@@ -17,6 +17,7 @@ def test_rest_info(api_client):
     assert resp.json() == {
         'schema_version': settings.DANDI_SCHEMA_VERSION,
         'schema_url': schema_url,
+        'allowed_schema_versions': settings.ALLOWED_DANDI_SCHEMA_VERSIONS,
         # Matches setuptools_scm's versioning scheme "no-guess-dev"
         'version': Re(r'\d+\.\d+\.\d+(\.post1\.dev\d+\+g[0-9a-f]{7,}(\.d\d{8})?)?'),
         'cli-minimal-version': '0.60.0',
