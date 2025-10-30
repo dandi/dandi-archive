@@ -53,6 +53,7 @@ class ApiInfoSerializer(serializers.Serializer):
     # Schema
     schema_version = serializers.CharField()
     schema_url = serializers.URLField()
+    allowed_schema_versions = serializers.ListField(child=serializers.CharField())
 
     # Versions
     version = serializers.CharField()
@@ -73,6 +74,7 @@ def info_view(request):
         data={
             'schema_version': settings.DANDI_SCHEMA_VERSION,
             'schema_url': get_schema_url(),
+            'allowed_schema_versions': settings.ALLOWED_DANDI_SCHEMA_VERSIONS,
             'version': importlib.metadata.version('dandiapi'),
             'cli-minimal-version': '0.60.0',
             'cli-bad-versions': [],
