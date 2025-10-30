@@ -9,7 +9,6 @@ services:
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "postgres"]
       start_period: 30s
-      start_interval: 2s
     ports:
       - 5432:5432
     volumes:
@@ -20,7 +19,6 @@ services:
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       start_period: 30s
-      start_interval: 2s
     ports:
       - 5672:5672
       - 15672:15672
@@ -40,7 +38,6 @@ services:
       # "mc ready" doesn't terminate on failure, so time it out
       timeout: 1s
       start_period: 30s
-      start_interval: 2s
     ports:
       - 9000:9000
       - 9001:9001
