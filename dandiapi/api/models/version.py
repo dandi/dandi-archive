@@ -4,7 +4,7 @@ import datetime
 import logging
 from typing import TypedDict
 
-from dandischema.conf import get_instance_config as get_schema_instance_config
+from dandischema.conf import get_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
@@ -20,7 +20,7 @@ from .dandiset import Dandiset
 
 logger = logging.getLogger(__name__)
 
-_SCHEMA_INSTANCE_CONFIG = get_schema_instance_config()
+_SCHEMA_INSTANCE_CONFIG = get_instance_config()
 
 
 class VersionAssetValidationError(TypedDict):

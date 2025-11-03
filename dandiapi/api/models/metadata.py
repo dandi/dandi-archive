@@ -4,12 +4,12 @@ import importlib
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from dandischema.conf import get_instance_config as get_schema_instance_config
+from dandischema.conf import get_instance_config
 
 if TYPE_CHECKING:
     import datetime
 
-_SCHEMA_INSTANCE_CONFIG = get_schema_instance_config()
+_SCHEMA_INSTANCE_CONFIG = get_instance_config()
 
 
 class PublishableMetadataMixin:

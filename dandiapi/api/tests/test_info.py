@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from unittest.mock import ANY
 
-from dandischema.conf import Config
-from dandischema.conf import get_instance_config as get_schema_instance_config
+from dandischema.conf import Config, get_instance_config
 from django.conf import settings
 
 from dandiapi.api.views.info import get_schema_url
@@ -12,7 +11,7 @@ from .fuzzy import Re
 
 
 def test_rest_info(api_client):
-    instance_config = get_schema_instance_config()
+    instance_config = get_instance_config()
 
     resp = api_client.get('/api/info/')
     assert resp.status_code == 200
