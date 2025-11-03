@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import datetime
-import importlib
 from time import sleep
 from typing import TYPE_CHECKING
 
-from dandischema.conf import get_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
 from freezegun import freeze_time
@@ -27,7 +25,14 @@ from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.publish import _build_publishable_version_from_draft
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
-from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
+from .fuzzy import (
+    DEFAULT_WAS_ASSOCIATED_WITH,
+    HTTP_URL_RE,
+    TIMESTAMP_RE,
+    URN_RE,
+    UTC_ISO_TIMESTAMP_RE,
+    VERSION_ID_RE,
+)
 
 
 @freeze_time()
@@ -293,10 +298,6 @@ def test_version_publish_version(draft_version, asset):
     publish_version.doi = fake_doi
     publish_version.save()
 
-    schema_config = get_instance_config()
-    instance_name = schema_config.instance_name
-    instance_identifier = schema_config.instance_identifier
-
     assert publish_version.dandiset == draft_version.dandiset
     assert publish_version.metadata == {
         **draft_version.metadata,
@@ -305,16 +306,7 @@ def test_version_publish_version(draft_version, asset):
             'name': 'DANDI publish',
             'startDate': UTC_ISO_TIMESTAMP_RE,
             'endDate': UTC_ISO_TIMESTAMP_RE,
-            'wasAssociatedWith': [
-                {
-                    'id': URN_RE,
-                    **({'identifier': instance_identifier} if instance_identifier else {}),
-                    'name': f'{instance_name} API',
-                    # TODO: version the API
-                    'version': importlib.metadata.version('dandiapi'),
-                    'schemaKey': 'Software',
-                }
-            ],
+            'wasAssociatedWith': [DEFAULT_WAS_ASSOCIATED_WITH],
             'schemaKey': 'PublishActivity',
         },
         'dateCreated': UTC_ISO_TIMESTAMP_RE,

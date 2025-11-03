@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import importlib.metadata
 import re
+
+from dandischema.conf import get_instance_config
 
 
 class Re:
@@ -32,3 +35,17 @@ VERSION_ID_RE = Re(r'0\.\d{6}\.\d{4}')
 HTTP_URL_RE = Re(r'http[s]?\://[^/]+(/[^/]+)*[/]?(&.+)?')
 UUID_RE = Re(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 URN_RE = Re(r'urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+
+schema_config = get_instance_config()
+DEFAULT_WAS_ASSOCIATED_WITH = {
+    'id': URN_RE,
+    # 'identifier': schema_config.instance_identifier,
+    **(
+        {'identifier': schema_config.instance_identifier}
+        if schema_config.instance_identifier
+        else {}
+    ),
+    'name': f'{schema_config.instance_name} API',
+    'version': importlib.metadata.version('dandiapi'),
+    'schemaKey': 'Software',
+}

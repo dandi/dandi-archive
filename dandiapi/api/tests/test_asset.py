@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import importlib
 import json
 from uuid import uuid4
 
-from dandischema.conf import get_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
 from django.db.utils import IntegrityError
@@ -25,7 +23,14 @@ from dandiapi.api.tests.factories import DandisetFactory
 from dandiapi.zarr.models import ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
-from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
+from .fuzzy import (
+    DEFAULT_WAS_ASSOCIATED_WITH,
+    HTTP_URL_RE,
+    TIMESTAMP_RE,
+    URN_RE,
+    UTC_ISO_TIMESTAMP_RE,
+    UUID_RE,
+)
 
 # Model tests
 
@@ -114,10 +119,6 @@ def test_publish_asset(draft_asset: Asset):
     published_asset = draft_asset
     published_asset.refresh_from_db()
 
-    schema_config = get_instance_config()
-    instance_name = schema_config.instance_name
-    instance_identifier = schema_config.instance_identifier
-
     assert published_asset.blob == draft_blob
     assert published_asset.full_metadata == {
         **draft_metadata,
@@ -127,16 +128,7 @@ def test_publish_asset(draft_asset: Asset):
             'name': 'DANDI publish',
             'startDate': UTC_ISO_TIMESTAMP_RE,
             'endDate': UTC_ISO_TIMESTAMP_RE,
-            'wasAssociatedWith': [
-                {
-                    'id': URN_RE,
-                    **({'identifier': instance_identifier} if instance_identifier else {}),
-                    'name': f'{instance_name} API',
-                    # TODO: version the API
-                    'version': importlib.metadata.version('dandiapi'),
-                    'schemaKey': 'Software',
-                }
-            ],
+            'wasAssociatedWith': [DEFAULT_WAS_ASSOCIATED_WITH],
             'schemaKey': 'PublishActivity',
         },
         'datePublished': UTC_ISO_TIMESTAMP_RE,

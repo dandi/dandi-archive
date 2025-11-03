@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import datetime
 import hashlib
-import importlib
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from dandischema.conf import get_instance_config
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.forms.models import model_to_dict
@@ -22,7 +20,7 @@ from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.zarr.models import ZarrArchiveStatus
 
-from .fuzzy import HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
+from .fuzzy import DEFAULT_WAS_ASSOCIATED_WITH, HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -373,10 +371,6 @@ def test_publish_task(
 
     published_version = draft_version.dandiset.versions.latest('created')
 
-    schema_config = get_instance_config()
-    instance_name = schema_config.instance_name
-    instance_identifier = schema_config.instance_identifier
-
     assert published_version.metadata == {
         **draft_version.metadata,
         'publishedBy': {
@@ -384,16 +378,7 @@ def test_publish_task(
             'name': 'DANDI publish',
             'startDate': UTC_ISO_TIMESTAMP_RE,
             'endDate': UTC_ISO_TIMESTAMP_RE,
-            'wasAssociatedWith': [
-                {
-                    'id': URN_RE,
-                    **({'identifier': instance_identifier} if instance_identifier else {}),
-                    'name': f'{instance_name} API',
-                    # TODO: version the API
-                    'version': importlib.metadata.version('dandiapi'),
-                    'schemaKey': 'Software',
-                }
-            ],
+            'wasAssociatedWith': [DEFAULT_WAS_ASSOCIATED_WITH],
             'schemaKey': 'PublishActivity',
         },
         'datePublished': UTC_ISO_TIMESTAMP_RE,
@@ -444,15 +429,7 @@ def test_publish_task(
             'startDate': UTC_ISO_TIMESTAMP_RE,
             # TODO: endDate needs to be defined before publish is complete
             'endDate': UTC_ISO_TIMESTAMP_RE,
-            'wasAssociatedWith': [
-                {
-                    'id': URN_RE,
-                    **({'identifier': instance_identifier} if instance_identifier else {}),
-                    'name': f'{instance_name} API',
-                    'version': importlib.metadata.version('dandiapi'),
-                    'schemaKey': 'Software',
-                }
-            ],
+            'wasAssociatedWith': [DEFAULT_WAS_ASSOCIATED_WITH],
             'schemaKey': 'PublishActivity',
         },
     }
