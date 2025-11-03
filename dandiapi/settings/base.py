@@ -181,6 +181,12 @@ DANDI_WEB_APP_URL = urlunparse(cast('ParseResult', env.url('DJANGO_DANDI_WEB_APP
 DANDI_API_URL = urlunparse(cast('ParseResult', env.url('DJANGO_DANDI_API_URL')))
 DANDI_JUPYTERHUB_URL = urlunparse(cast('ParseResult', env.url('DJANGO_DANDI_JUPYTERHUB_URL')))
 
+# These are not used by us directly, but are used by dandi-schema. Not including them would modify
+# the archive's behavior, so we require they be set.
+DANDI_INSTANCE_NAME = env.str('DJANGO_DANDI_INSTANCE_NAME')
+DANDI_INSTANCE_IDENTIFIER = env.str('DJANGO_DANDI_INSTANCE_IDENTIFIER')
+
+# Non-required environment variabless
 _dandi_doi_api_url = cast('ParseResult | None', env.url('DJANGO_DANDI_DOI_API_URL', default=None))
 DANDI_DOI_API_URL: str | None = urlunparse(_dandi_doi_api_url) if _dandi_doi_api_url else None
 DANDI_DOI_API_USER: str | None = env.str('DJANGO_DANDI_DOI_API_USER', default=None)

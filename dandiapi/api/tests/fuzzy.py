@@ -39,12 +39,7 @@ URN_RE = Re(r'urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 schema_config = get_instance_config()
 DEFAULT_WAS_ASSOCIATED_WITH = {
     'id': URN_RE,
-    # 'identifier': schema_config.instance_identifier,
-    **(
-        {'identifier': schema_config.instance_identifier}
-        if schema_config.instance_identifier
-        else {}
-    ),
+    'identifier': schema_config.instance_identifier,
     'name': f'{schema_config.instance_name} API',
     'version': importlib.metadata.version('dandiapi'),
     'schemaKey': 'Software',

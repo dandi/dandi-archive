@@ -14,8 +14,6 @@ class PublishableMetadataMixin:
     @classmethod
     def published_by(cls, now: datetime.datetime):
         schema_config = get_instance_config()
-        instance_name = schema_config.instance_name
-        instance_identifier = schema_config.instance_identifier
 
         return {
             'id': uuid4().urn,
@@ -27,8 +25,8 @@ class PublishableMetadataMixin:
             'wasAssociatedWith': [
                 {
                     'id': uuid4().urn,
-                    **({'identifier': instance_identifier} if instance_identifier else {}),
-                    'name': f'{instance_name} API',
+                    'identifier': schema_config.instance_identifier,
+                    'name': f'{schema_config.instance_name} API',
                     # TODO: version the API
                     'version': importlib.metadata.version('dandiapi'),
                     'schemaKey': 'Software',
