@@ -11,8 +11,6 @@ from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-_INSTANCE_CONFIG = get_instance_config()
-
 
 def get_schema_url():
     """Get the URL for the schema based on current server deployment."""
@@ -77,7 +75,7 @@ def info_view(request):
     api_url = f'{settings.DANDI_API_URL}/api'
     serializer = ApiInfoSerializer(
         data={
-            'instance_config': _INSTANCE_CONFIG.model_dump(
+            'instance_config': get_instance_config().model_dump(
                 # Not excluding any `None` value fields in this object because the `None` values are
                 # needed to reconstitute a `dandischema.conf.Config` instance properly  in any
                 # receiving client since a corresponding environment variable to a field is used to

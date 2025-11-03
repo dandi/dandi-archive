@@ -20,8 +20,6 @@ from .dandiset import Dandiset
 
 logger = logging.getLogger(__name__)
 
-_SCHEMA_INSTANCE_CONFIG = get_instance_config()
-
 
 class VersionAssetValidationError(TypedDict):
     field: str
@@ -232,6 +230,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     def _populate_metadata(self):
         from dandiapi.api.manifests import manifest_location
 
+        schema_config = get_instance_config()
         metadata = {
             **self.metadata,
             '@context': (
@@ -240,11 +239,9 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             ),
             'manifestLocation': manifest_location(self),
             'name': self.name,
-            'identifier': (f'{_SCHEMA_INSTANCE_CONFIG.instance_name}:{self.dandiset.identifier}'),
+            'identifier': (f'{schema_config.instance_name}:{self.dandiset.identifier}'),
             'version': self.version,
-            'id': (
-                f'{_SCHEMA_INSTANCE_CONFIG.instance_name}:{self.dandiset.identifier}/{self.version}'
-            ),
+            'id': (f'{schema_config.instance_name}:{self.dandiset.identifier}/{self.version}'),
             'repository': settings.DANDI_WEB_APP_URL,
             'url': (
                 f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}'

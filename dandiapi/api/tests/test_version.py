@@ -29,8 +29,6 @@ from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
 
-_SCHEMA_INSTANCE_CONFIG = get_instance_config()
-
 
 @freeze_time()
 @pytest.mark.django_db
@@ -295,8 +293,9 @@ def test_version_publish_version(draft_version, asset):
     publish_version.doi = fake_doi
     publish_version.save()
 
-    instance_name = _SCHEMA_INSTANCE_CONFIG.instance_name
-    instance_identifier = _SCHEMA_INSTANCE_CONFIG.instance_identifier
+    schema_config = get_instance_config()
+    instance_name = schema_config.instance_name
+    instance_identifier = schema_config.instance_identifier
 
     assert publish_version.dandiset == draft_version.dandiset
     assert publish_version.metadata == {

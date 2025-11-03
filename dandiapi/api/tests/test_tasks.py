@@ -29,9 +29,6 @@ if TYPE_CHECKING:
     from rest_framework.test import APIClient
 
 
-_SCHEMA_INSTANCE_CONFIG = get_instance_config()
-
-
 @pytest.mark.django_db
 def test_calculate_checksum_task(asset_blob_factory):
     asset_blob = asset_blob_factory(blob__data=b'known-content', size=13, sha256=None)
@@ -376,8 +373,9 @@ def test_publish_task(
 
     published_version = draft_version.dandiset.versions.latest('created')
 
-    instance_name = _SCHEMA_INSTANCE_CONFIG.instance_name
-    instance_identifier = _SCHEMA_INSTANCE_CONFIG.instance_identifier
+    schema_config = get_instance_config()
+    instance_name = schema_config.instance_name
+    instance_identifier = schema_config.instance_identifier
 
     assert published_version.metadata == {
         **draft_version.metadata,

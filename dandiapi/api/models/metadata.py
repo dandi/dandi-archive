@@ -9,14 +9,13 @@ from dandischema.conf import get_instance_config
 if TYPE_CHECKING:
     import datetime
 
-_SCHEMA_INSTANCE_CONFIG = get_instance_config()
-
 
 class PublishableMetadataMixin:
     @classmethod
     def published_by(cls, now: datetime.datetime):
-        instance_name = _SCHEMA_INSTANCE_CONFIG.instance_name
-        instance_identifier = _SCHEMA_INSTANCE_CONFIG.instance_identifier
+        schema_config = get_instance_config()
+        instance_name = schema_config.instance_name
+        instance_identifier = schema_config.instance_identifier
 
         return {
             'id': uuid4().urn,

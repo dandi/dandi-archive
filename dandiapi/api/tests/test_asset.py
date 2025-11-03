@@ -27,8 +27,6 @@ from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
 
-_SCHEMA_INSTANCE_CONFIG = get_instance_config()
-
 # Model tests
 
 
@@ -116,8 +114,9 @@ def test_publish_asset(draft_asset: Asset):
     published_asset = draft_asset
     published_asset.refresh_from_db()
 
-    instance_name = _SCHEMA_INSTANCE_CONFIG.instance_name
-    instance_identifier = _SCHEMA_INSTANCE_CONFIG.instance_identifier
+    schema_config = get_instance_config()
+    instance_name = schema_config.instance_name
+    instance_identifier = schema_config.instance_identifier
 
     assert published_asset.blob == draft_blob
     assert published_asset.full_metadata == {
