@@ -2,8 +2,8 @@
 
 ## Terms used
 
-- **Primary bucket**: The sponsored bucket that is currently used for storing DANDI data
-- **Backup bucket**: The separate bucket that stores the same data as the primary bucket, but in a different region with the Glacier Deep Archive storage class. Does not exist yet as of this writing.
+- **Primary bucket**: The sponsored bucket that is currently used for storing DANDI data. Located in us-east-2.
+- **Backup bucket**: The separate bucket that stores the same data as the primary bucket, but with the Glacier Deep Archive storage class. Located in us-east-2. Does not exist yet as of this writing.
 
 ## Why is backup necessary?
 
