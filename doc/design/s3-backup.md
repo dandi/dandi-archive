@@ -57,7 +57,7 @@ This backup solution serves a different purpose than the trailing delete mechani
 **Storage Costs** (backup bucket in us-east-2):
 
 - Glacier Deep Archive storage: ~$0.00099/GB/month
-    - 1 PB = 1,024 TB × $0.99/TB = **$1,014/month**
+    - 1 PB = 1,000 TB × $0.99/TB = **$990/month**
 
 **Data Transfer Costs**:
 
