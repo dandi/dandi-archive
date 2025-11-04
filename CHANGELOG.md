@@ -1,3 +1,34 @@
+# v0.18.0 (Tue Nov 04 2025)
+
+#### 🚀 Enhancement
+
+- feat: implement AND logic for multi-word dandiset search [#2630](https://github.com/dandi/dandi-archive/pull/2630) ([@bendichter](https://github.com/bendichter))
+
+#### 🐛 Bug Fix
+
+- Fix version sorting on DLP [#2632](https://github.com/dandi/dandi-archive/pull/2632) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove additional pytest-factoryboy fixtures [#2612](https://github.com/dandi/dandi-archive/pull/2612) ([@brianhelba](https://github.com/brianhelba))
+
+#### 🏠 Internal
+
+- Devcontainer enhancements [#2615](https://github.com/dandi/dandi-archive/pull/2615) ([@danlamanna](https://github.com/danlamanna))
+- Change docker volume path to accomodate postgres 18 [#2614](https://github.com/dandi/dandi-archive/pull/2614) ([@danlamanna](https://github.com/danlamanna))
+
+#### 🔩 Dependency Updates
+
+- [gh-actions](deps): Bump actions/upload-artifact from 4 to 5 [#2620](https://github.com/dandi/dandi-archive/pull/2620) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- [gh-actions](deps): Bump actions/download-artifact from 5 to 6 [#2619](https://github.com/dandi/dandi-archive/pull/2619) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 5
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.17.2 (Fri Oct 24 2025)
 
 #### 🐛 Bug Fix
