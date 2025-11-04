@@ -73,7 +73,7 @@ Imagining that the entire primary bucket was destroyed (which is not the
 expected scale of data loss, but useful as a worst-case analysis), then the cost
 to restore from backup would be
 
-$`1\ \rm{PB} \times \frac{1000 \ \rm{TB}}{\rm{PB}} \times \frac{1000 \ \rm{GB}}{\rm{TB}} \times \frac{\$0.0025/mo}{GB} = \$2500`$.
+$`1\ \rm{PB} \times \frac{1000 \ \rm{TB}}{\rm{PB}} \times \frac{1000 \ \rm{GB}}{\rm{TB}} \times \frac{\$0.0025/mo}{\rm{GB}} = \$2500`$.
 
 ### Future Costs
 
@@ -85,7 +85,7 @@ The worst-case disaster recovery cost would similarly scale up to a total of **~
 An open question is whether the AWS Open Data Sponsorship program would cover the marginal costs of backup. A quick estimate shows that once all 5 PB has been uploaded, the expected bucket cost for the primary bucket (i.e., what the AWS Open Data Sponsorship program covers already, excluding backup) will be:
 
 $$
-6\ \rm{PB} \times 1024\ \rm{TB}/\rm{PB} \times 1024\ \rm{GB}/\rm{TB} \times \$0.021/GB/mo \approxeq \$130000/mo
+6\ \rm{PB} \times \frac{1000\ \rm{TB}}{\rm{PB}} \times \frac{1000\ \rm{GB}}{\rm{TB}} \times \frac{\$0.021/mo}{\rm{GB}} \approxeq \$126000/mo
 $$
 
 while the associated backup costs would represent only $`\$31000 / \$660000 \approxeq 4.6\%`$ of the cost of the storage itself.
