@@ -67,7 +67,7 @@ This backup solution serves a different purpose than the trailing delete mechani
 
 - Glacier Deep Archive retrieval:
     - $0.02/GB (standard, 12-hour retrieval)
-    - $0.025/GB (bulk retrieval, can take up to 48 hours)
+    - $0.0025/GB (bulk retrieval, can take up to 48 hours)
 
 ### Future Costs
 
