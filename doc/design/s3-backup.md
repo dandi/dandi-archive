@@ -71,14 +71,14 @@ This backup solution serves a different purpose than the trailing delete mechani
 
 ### Future Costs
 
-The DANDI Archive is expecting a ramp-up in data volume of 6 PB of new data over each of the next five years, culminating in a total of 30PB.
+The DANDI Archive is expecting a ramp-up in data volume of 1 PB of new data over each of the next five years, culminating in a total of 6PB.
 
-Scaling up the previous analysis means that the monthly costs will be projected to rise to a total of **~$31,000/month** once all of that data is seated. While $1000/month may be a feasible ongoing cost, $30000/month is not.
+Scaling up the previous analysis means that the monthly costs will be projected to rise to a total of **~$6,100/month** once all of that data is seated.
 
-An open question is whether the AWS Open Data Sponsorship program would cover the marginal costs of backup. A quick estimate shows that once all 30 PB has been uploaded, the expected bucket cost for the primary bucket (i.e., what the AWS Open Data Sponsorship program covers already, excluding backup) will be:
+An open question is whether the AWS Open Data Sponsorship program would cover the marginal costs of backup. A quick estimate shows that once all 5 PB has been uploaded, the expected bucket cost for the primary bucket (i.e., what the AWS Open Data Sponsorship program covers already, excluding backup) will be:
 
 $$
-30\ \rm{PB} \times 1024\ \rm{TB}/\rm{PB} \times 1024\ \rm{GB}/\rm{TB} \times \$0.021/GB/mo \approxeq \$660000/mo
+6\ \rm{PB} \times 1024\ \rm{TB}/\rm{PB} \times 1024\ \rm{GB}/\rm{TB} \times \$0.021/GB/mo \approxeq \$130000/mo
 $$
 
-while the associated backup costs would represent only $\$31000 / \$660000 \approxeq 4.7\%$ of the cost of the storage itself.
+while the associated backup costs would represent only $`\$31000 / \$660000 \approxeq 4.6\%`$ of the cost of the storage itself.
