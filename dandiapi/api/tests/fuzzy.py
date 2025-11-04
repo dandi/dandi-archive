@@ -41,6 +41,6 @@ DEFAULT_WAS_ASSOCIATED_WITH = {
     'id': URN_RE,
     'identifier': schema_config.instance_identifier,
     'name': f'{schema_config.instance_name} API',
-    'version': importlib.metadata.version('dandiapi'),
+    'version': '0.1.0',
     'schemaKey': 'Software',
 }
