@@ -72,7 +72,8 @@ This backup solution serves a different purpose than the trailing delete mechani
 Imagining that the entire primary bucket was destroyed (which is not the
 expected scale of data loss, but useful as a worst-case analysis), then the cost
 to restore from backup would be
-$`1\ \rm{PB} \times 1024\ \rm{TB}/\rm{PB} \times 1024\rm{GB}/\rm{TB} \times \$0.0025/GB/mo \approxeq \$2600`$.
+
+$`1\ \rm{PB} \times \frac{1000 \ \rm{TB}}{\rm{PB}} \times \frac{1000 \ \rm{GB}}{\rm{TB}} \times \frac{\$0.0025/mo}{GB} = \$2500`$.
 
 ### Future Costs
 
