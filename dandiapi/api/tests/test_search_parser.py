@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 from django.db.models import Q
 
 from dandiapi.api.views.dandiset import SearchParser

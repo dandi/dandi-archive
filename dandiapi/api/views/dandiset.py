@@ -133,9 +133,9 @@ class DandisetOrderingFilter(filters.OrderingFilter):
 
 
 class SearchParser:
-    """
-    Parser for boolean search queries supporting AND, OR, NOT operators,
-    quoted phrases, and parentheses for grouping.
+    """Parser for boolean search queries.
+
+    Supports AND, OR, NOT operators, quoted phrases, and parentheses for grouping.
     """
 
     def __init__(self, query_string):
@@ -218,7 +218,7 @@ class SearchParser:
         start = self.pos
         while self.pos < len(self.query) and self.query[self.pos] != '"':
             self.pos += 1
-        phrase = self.query[start:self.pos]
+        phrase = self.query[start : self.pos]
         if self.pos < len(self.query):
             self.pos += 1  # consume closing quote
 
@@ -233,7 +233,7 @@ class SearchParser:
         while self.pos < len(self.query) and self.query[self.pos] not in ' ()':
             self.pos += 1
 
-        word = self.query[start:self.pos]
+        word = self.query[start : self.pos]
 
         if not word or word in ('AND', 'OR', 'NOT'):
             return Q()
@@ -258,7 +258,7 @@ class SearchParser:
         while self.pos < len(self.query) and self.query[self.pos] not in ' ()':
             self.pos += 1
 
-        word = self.query[start:self.pos]
+        word = self.query[start : self.pos]
         self.pos = saved_pos
 
         if word in ('AND', 'OR', 'NOT'):
@@ -271,7 +271,7 @@ class SearchParser:
         start = self.pos
         while self.pos < len(self.query) and self.query[self.pos] not in ' ()':
             self.pos += 1
-        word = self.query[start:self.pos]
+        word = self.query[start : self.pos]
         if word != expected:
             raise ValueError(f"Expected '{expected}', got '{word}'")
 
@@ -298,7 +298,7 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
             # quoted phrases, and parentheses
             parser = SearchParser(search_term)
             q_filter = parser.parse()
-        except Exception:
+        except (ValueError, IndexError, AttributeError):
             # Fall back to simple word-based search if parsing fails
             search_words = search_term.split()
             q_filter = Q()
