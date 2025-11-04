@@ -144,11 +144,20 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
         if not search_term:
             return queryset
 
+        # Split search term into individual words and apply AND logic
+        # so that all words must be present (in any order)
+        search_words = search_term.split()
+
+        # Build a Q object that requires all words to be present
+        q_filter = Q()
+        for word in search_words:
+            q_filter &= Q(search_field__icontains=word)
+
         # We must formulate the filter using a separate query first, as otherwise
         # the generated SQL is incompatible previously generated clauses
         matching_dandiset_ids = (
             Version.objects.alias(search_field=Unaccent(Cast('metadata', TextField())))
-            .filter(search_field__icontains=search_term)
+            .filter(q_filter)
             .values_list('dandiset_id', flat=True)
             .distinct()
         )
