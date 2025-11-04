@@ -1268,6 +1268,26 @@ def test_dandiset_rest_search_many_versions(api_client):
 
 
 @pytest.mark.django_db
+def test_dandiset_rest_search_multiple_words_and_logic(api_client):
+    """Test that search splits words and applies AND logic."""
+    # Create a dandiset with specific metadata
+    draft_version = DraftVersionFactory.create()
+    draft_version.metadata['description'] = 'Study of neural activity in mouse cortex'
+    draft_version.save()
+
+    # Positive case: Both words present (in any order)
+    # Search "neural mouse" should find the dandiset
+    results = api_client.get('/api/dandisets/', {'search': 'neural mouse'}).data['results']
+    assert len(results) == 1
+    assert results[0]['identifier'] == draft_version.dandiset.identifier
+
+    # Negative case: One word missing
+    # Search "neural elephant" should NOT find the dandiset
+    results = api_client.get('/api/dandisets/', {'search': 'neural elephant'}).data['results']
+    assert len(results) == 0
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     'contributors',
     [None, 'string', 1, [], {}],
