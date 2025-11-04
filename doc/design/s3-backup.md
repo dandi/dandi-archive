@@ -69,11 +69,17 @@ This backup solution serves a different purpose than the trailing delete mechani
     - $0.02/GB (standard, 12-hour retrieval)
     - $0.0025/GB (bulk retrieval, can take up to 48 hours)
 
+Imagining that the entire primary bucket was destroyed (which is not the
+expected scale of data loss, but useful as a worst-case analysis), then the cost
+to restore from backup would be
+$`1\ \rm{PB} \times 1024\ \rm{TB}/\rm{PB} \times 1024\rm{GB}/\rm{TB} \times \$0.0025/GB/mo \approxeq \$2600`$.
+
 ### Future Costs
 
 The DANDI Archive is expecting a ramp-up in data volume of 1 PB of new data over each of the next five years, culminating in a total of 6PB.
 
 Scaling up the previous analysis means that the monthly costs will be projected to rise to a total of **~$6,100/month** once all of that data is seated.
+The worst-case disaster recovery cost would similarly scale up to a total of **~$16000**.
 
 An open question is whether the AWS Open Data Sponsorship program would cover the marginal costs of backup. A quick estimate shows that once all 5 PB has been uploaded, the expected bucket cost for the primary bucket (i.e., what the AWS Open Data Sponsorship program covers already, excluding backup) will be:
 
