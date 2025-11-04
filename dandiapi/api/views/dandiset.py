@@ -132,6 +132,146 @@ class DandisetOrderingFilter(filters.OrderingFilter):
         return queryset
 
 
+class SearchParser:
+    """
+    Parser for boolean search queries supporting AND, OR, NOT operators,
+    quoted phrases, and parentheses for grouping.
+    """
+
+    def __init__(self, query_string):
+        self.query = query_string
+        self.pos = 0
+
+    def parse(self):
+        """Parse the entire query and return a Q object."""
+        if not self.query.strip():
+            return Q()
+        return self.parse_expression()
+
+    def parse_expression(self):
+        """Parse an OR-separated expression."""
+        left = self.parse_term()
+
+        while self.peek_word() == 'OR':
+            self.consume_word('OR')
+            right = self.parse_term()
+            left = left | right
+
+        return left
+
+    def parse_term(self):
+        """Parse an AND-separated term (implicit AND between words)."""
+        left = self.parse_factor()
+
+        while True:
+            word = self.peek_word()
+            if word in ('OR', None) or self.pos >= len(self.query):
+                break
+            if word == 'AND':
+                self.consume_word('AND')
+            # Implicit AND - just continue parsing
+            right = self.parse_factor()
+            left = left & right
+
+        return left
+
+    def parse_factor(self):
+        """Parse a factor (NOT, parenthesized expression, or atom)."""
+        self.skip_whitespace()
+
+        if self.peek_word() == 'NOT':
+            self.consume_word('NOT')
+            factor = self.parse_factor()
+            return ~factor
+
+        if self.pos < len(self.query) and self.query[self.pos] == '(':
+            self.pos += 1  # consume '('
+            expr = self.parse_expression()
+            self.skip_whitespace()
+            if self.pos < len(self.query) and self.query[self.pos] == ')':
+                self.pos += 1  # consume ')'
+            return expr
+
+        return self.parse_atom()
+
+    def parse_atom(self):
+        """Parse a quoted phrase or a single word."""
+        self.skip_whitespace()
+
+        if self.pos < len(self.query) and self.query[self.pos] == '"':
+            return self.parse_quoted()
+
+        return self.parse_word()
+
+    def parse_quoted(self):
+        """Parse a quoted phrase."""
+        self.pos += 1  # consume opening quote
+        start = self.pos
+        while self.pos < len(self.query) and self.query[self.pos] != '"':
+            self.pos += 1
+        phrase = self.query[start:self.pos]
+        if self.pos < len(self.query):
+            self.pos += 1  # consume closing quote
+
+        # Search over search_field only
+        return Q(search_field__icontains=phrase)
+
+    def parse_word(self):
+        """Parse a single word."""
+        self.skip_whitespace()
+        start = self.pos
+
+        while self.pos < len(self.query) and self.query[self.pos] not in ' ()':
+            self.pos += 1
+
+        word = self.query[start:self.pos]
+
+        if not word or word in ('AND', 'OR', 'NOT'):
+            return Q()
+
+        # Search over search_field only
+        return Q(search_field__icontains=word)
+
+    def peek_word(self):
+        """Look ahead at the next word without consuming it."""
+        saved_pos = self.pos
+        self.skip_whitespace()
+
+        if self.pos >= len(self.query):
+            self.pos = saved_pos
+            return None
+
+        if self.query[self.pos] in '()':
+            self.pos = saved_pos
+            return None
+
+        start = self.pos
+        while self.pos < len(self.query) and self.query[self.pos] not in ' ()':
+            self.pos += 1
+
+        word = self.query[start:self.pos]
+        self.pos = saved_pos
+
+        if word in ('AND', 'OR', 'NOT'):
+            return word
+        return None
+
+    def consume_word(self, expected):
+        """Consume a specific word."""
+        self.skip_whitespace()
+        start = self.pos
+        while self.pos < len(self.query) and self.query[self.pos] not in ' ()':
+            self.pos += 1
+        word = self.query[start:self.pos]
+        if word != expected:
+            raise ValueError(f"Expected '{expected}', got '{word}'")
+
+    def skip_whitespace(self):
+        """Skip whitespace characters."""
+        while self.pos < len(self.query) and self.query[self.pos] == ' ':
+            self.pos += 1
+
+
 class DandisetSearchFilter(filters.BaseFilterBackend):
     search_param = drf_settings.SEARCH_PARAM
 
@@ -144,17 +284,20 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
         if not search_term:
             return queryset
 
-        # Split search term into individual words and apply AND logic
-        # so that all words must be present (in any order)
-        search_words = search_term.split()
-
-        # Build a Q object that requires all words to be present
-        q_filter = Q()
-        for word in search_words:
-            q_filter &= Q(search_field__icontains=word)
+        try:
+            # Use SearchParser to support boolean operators (AND, OR, NOT),
+            # quoted phrases, and parentheses
+            parser = SearchParser(search_term)
+            q_filter = parser.parse()
+        except Exception:
+            # Fall back to simple word-based search if parsing fails
+            search_words = search_term.split()
+            q_filter = Q()
+            for word in search_words:
+                q_filter &= Q(search_field__icontains=word)
 
         # We must formulate the filter using a separate query first, as otherwise
-        # the generated SQL is incompatible previously generated clauses
+        # the generated SQL is incompatible with previously generated clauses
         matching_dandiset_ids = (
             Version.objects.alias(search_field=Unaccent(Cast('metadata', TextField())))
             .filter(q_filter)
