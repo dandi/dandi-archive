@@ -251,10 +251,10 @@ const PUBLISH_CHECKLIST = [
 function sortVersions(v1: Version, v2: Version): number {
   // Always put draft first
   if (v1.version === draftVersionName || v1.version > v2.version) {
-    return 1;
+    return -1;
   }
   if (v1.version < v2.version) {
-    return -1;
+    return 1;
   }
   return 0;
 }
