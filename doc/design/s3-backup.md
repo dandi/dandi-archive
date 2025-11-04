@@ -79,7 +79,7 @@ $`1\ \rm{PB} \times \frac{1000 \ \rm{TB}}{\rm{PB}} \times \frac{1000 \ \rm{GB}}{
 
 The DANDI Archive is expecting a ramp-up in data volume of 1 PB of new data over each of the next five years, culminating in a total of 6PB.
 
-Scaling up the previous analysis means that the monthly costs will be projected to rise to a total of **~$6,100/month** once all of that data is seated.
+Scaling up the previous analysis means that the monthly costs will be projected to rise to a total of **~$5,900/month** once all of that data is seated.
 The worst-case disaster recovery cost would similarly scale up to a total of **~$16,000**.
 
 An open question is whether the AWS Open Data Sponsorship program would cover the marginal costs of backup. A quick estimate shows that once all 5 PB has been uploaded, the expected bucket cost for the primary bucket (i.e., what the AWS Open Data Sponsorship program covers already, excluding backup) will be:
@@ -88,4 +88,5 @@ $$
 6\ \rm{PB} \times \frac{1000\ \rm{TB}}{\rm{PB}} \times \frac{1000\ \rm{GB}}{\rm{TB}} \times \frac{\$0.021/mo}{\rm{GB}} \approxeq \$126000/mo
 $$
 
-while the associated backup costs would represent only $`\$31000 / \$660000 \approxeq 4.6\%`$ of the cost of the storage itself.
+while the associated backup costs would represent only an additional $`\$5900 / \$126000 \approxeq 4.6\%`$ of the cost of the storage itself.
+To help provide a significant level of safety to an important dataset, AWS may be willing to cover such a low marginal cost.
