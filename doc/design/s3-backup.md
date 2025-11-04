@@ -28,8 +28,8 @@ The solution leverages the following native S3 features to implement automatic r
 
 1. **S3 Replication** to copy objects from the primary bucket to a backup bucket.
 2. **Delete Marker Replication** to propagate soft deletions to the backup.
-3. **Bucket Versioning** on both buckets to create a history-based backup and support the replication and recovery mechanisms
-4. **Optional Lifecycle Policies** on the backup bucket to permanently delete objects after a retention period
+3. **Bucket Versioning** on both buckets to create a history-based backup and support the replication and recovery mechanisms.
+4. **Optional Lifecycle Policies** on the backup bucket to permanently delete objects after a retention period.
 
 ### How It Works
 
