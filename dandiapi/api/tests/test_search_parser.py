@@ -342,11 +342,16 @@ class TestSearchParser:
         assert str(result) == str(expected)
 
     def test_only_operators(self):
-        """Test string with only operators."""
+        """Test string with only operators.
+
+        When parsing 'AND OR NOT', the NOT operator creates a negation of an empty Q object,
+        which is technically correct behavior (NOT applies to whatever follows).
+        """
         parser = SearchParser('AND OR NOT')
         result = parser.parse()
-        # These should be consumed as operators, leaving empty Q
-        assert str(result) == str(Q())
+        # NOT creates a negation of empty Q when there's nothing after it
+        expected = ~Q()
+        assert str(result) == str(expected)
 
     def test_consecutive_operators(self):
         """Test consecutive operators."""

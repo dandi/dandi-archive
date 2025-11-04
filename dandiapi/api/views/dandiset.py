@@ -165,8 +165,17 @@ class SearchParser:
 
         while True:
             word = self.peek_word()
-            if word in ('OR', None) or self.pos >= len(self.query):
+            # Stop if we hit OR or end of input
+            if word == 'OR' or self.pos >= len(self.query):
                 break
+            # Check if there's more content ahead (not just operators)
+            saved_pos = self.pos
+            self.skip_whitespace()
+            if self.pos >= len(self.query) or self.query[self.pos] in ')':
+                self.pos = saved_pos
+                break
+            self.pos = saved_pos
+            # Consume explicit AND if present
             if word == 'AND':
                 self.consume_word('AND')
             # Implicit AND - just continue parsing
