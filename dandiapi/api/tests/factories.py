@@ -5,6 +5,7 @@ import hashlib
 from typing import Any
 
 from allauth.socialaccount.models import SocialAccount
+from dandischema.conf import get_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -156,7 +157,9 @@ class DraftVersionFactory(BaseVersionFactory):
 
 class PublishedVersionFactory(BaseVersionFactory):
     doi = factory.LazyAttribute(
-        lambda self: f'10.80507/dandi.{self.dandiset.identifier}/{self.version}'
+        lambda self: f'{get_instance_config().doi_prefix}/'
+        f'{get_instance_config().instance_name}.'
+        f'{self.dandiset.identifier}/{self.version}'
     )
     status = Version.Status.PUBLISHED
 

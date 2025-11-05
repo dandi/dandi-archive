@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import TYPE_CHECKING
 
+from dandischema.conf import get_instance_config
 from dandischema.metadata import aggregate_assets_summary, validate
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -180,7 +181,10 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         old_version.save()
 
         # Inject a dummy DOI so the metadata is valid
-        new_version.metadata['doi'] = '10.80507/dandi.123456/0.123456.1234'
+        schema_config = get_instance_config()
+        new_version.metadata['doi'] = (
+            f'{schema_config.doi_prefix}/{schema_config.instance_name.lower()}.123456/0.123456.1234'
+        )
 
         validate(new_version.metadata, schema_key='PublishedDandiset', json_validation=True)
 

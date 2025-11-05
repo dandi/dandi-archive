@@ -391,7 +391,7 @@ def test_publish_task(
             f'/{published_version.version}'
         ),
         'citation': published_version.citation(published_version.metadata),
-        'doi': f'10.80507/dandi.{draft_version.dandiset.identifier}/{published_version.version}',
+        'doi': published_version.doi,
         # Once the assets are linked, assetsSummary should be computed properly
         'assetsSummary': {
             'schemaKey': 'AssetsSummary',

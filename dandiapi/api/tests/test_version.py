@@ -4,6 +4,7 @@ import datetime
 from time import sleep
 from typing import TYPE_CHECKING
 
+from dandischema.conf import get_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
 from freezegun import freeze_time
@@ -33,6 +34,8 @@ from .fuzzy import (
     UTC_ISO_TIMESTAMP_RE,
     VERSION_ID_RE,
 )
+
+_SCHEMA_CONFIG = get_instance_config()
 
 
 @freeze_time()
@@ -109,7 +112,9 @@ def test_published_version_metadata_computed(published_version: Version):
         'version': published_version.version,
         'id': f'DANDI:{published_version.dandiset.identifier}/{published_version.version}',
         'doi': (
-            f'10.80507/dandi.{published_version.dandiset.identifier}/{published_version.version}'
+            f'{settings.DANDI_DOI_API_PREFIX}/'
+            f'{_SCHEMA_CONFIG.instance_name}.'
+            f'{published_version.dandiset.identifier}/{published_version.version}'
         ),
         'url': (
             f'{settings.DANDI_WEB_APP_URL}/dandiset/'
