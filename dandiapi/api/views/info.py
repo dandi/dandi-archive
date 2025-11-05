@@ -75,13 +75,9 @@ def info_view(request):
     api_url = f'{settings.DANDI_API_URL}/api'
     serializer = ApiInfoSerializer(
         data={
-            'instance_config': get_instance_config().model_dump(
-                # Not excluding any `None` value fields in this object because the `None` values are
-                # needed to reconstitute a `dandischema.conf.Config` instance properly  in any
-                # receiving client since a corresponding environment variable to a field is used to
-                # set the value of the field if the argument for a particular field is not provided.
-                mode='json'
-            ),
+            # Set exclude_none=False to prevent any fields set to `None` from being set to a
+            # different default value when the JSON is de-serialized into a Pydantic model.
+            'instance_config': get_instance_config().model_dump(mode='json', exclude_none=False),
             'schema_version': settings.DANDI_SCHEMA_VERSION,
             'schema_url': get_schema_url(),
             'version': importlib.metadata.version('dandiapi'),

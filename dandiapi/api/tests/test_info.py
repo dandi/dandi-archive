@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from unittest.mock import ANY
 
-from dandischema.conf import Config, get_instance_config
+from dandischema.conf import get_instance_config
 from django.conf import settings
 
 from dandiapi.api.views.info import get_schema_url
@@ -10,9 +10,20 @@ from dandiapi.api.views.info import get_schema_url
 from .fuzzy import Re
 
 
-def test_rest_info(api_client):
-    instance_config = get_instance_config()
+def test_rest_info_instance_config_include_none(api_client):
+    resp = api_client.get('/api/info/')
+    assert resp.status_code == 200
 
+    # Ensure that there is no difference in the keys being returned from the info endpoint. If the
+    # info endpoint were missing values, it would allow for default values to be creep in when
+    # de-serializing the JSON into a Pydantic model.
+    assert (
+        resp.json()['instance_config'].keys()
+        == get_instance_config().model_dump(mode='json', exclude_none=False).keys()
+    )
+
+
+def test_rest_info(api_client):
     resp = api_client.get('/api/info/')
     assert resp.status_code == 200
 
@@ -35,9 +46,3 @@ def test_rest_info(api_client):
             'jupyterhub': {'url': settings.DANDI_JUPYTERHUB_URL},
         },
     }
-
-    # Verify that the instance config can be reconstituted from the info published by the API
-    reconstituted_instance_config = Config.model_validate(resp_json['instance_config'])
-    assert reconstituted_instance_config == instance_config, (
-        "Instance config can't be reconstituted from API response that publishes it"
-    )
