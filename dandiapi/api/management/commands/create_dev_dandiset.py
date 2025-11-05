@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from dandischema.conf import get_instance_config
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -11,7 +10,11 @@ import djclick as click
 from dandiapi.api.models import AssetBlob
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.dandiset import create_open_dandiset
-from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
+from dandiapi.api.services.metadata import (
+    get_default_license,
+    validate_asset_metadata,
+    validate_version_metadata,
+)
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.tasks import calculate_sha256
 
@@ -31,12 +34,9 @@ from dandiapi.api.tasks import calculate_sha256
 def create_dev_dandiset(*, name: str, email: str, num_extra_owners: int):
     owner = User.objects.get(email=email)
 
-    # The licenses field is a set, sort values to ensure consistent behavior
-    licenses = sorted(x.value for x in get_instance_config().licenses)
-
     version_metadata = {
         'description': 'An informative description',
-        'license': licenses[0],
+        'license': get_default_license(),
     }
     dandiset, draft_version = create_open_dandiset(
         user=owner, version_name=name, version_metadata=version_metadata

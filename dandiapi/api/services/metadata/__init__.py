@@ -25,6 +25,10 @@ if TYPE_CHECKING:
 logger = get_task_logger(__name__)
 
 
+def get_default_license() -> str:
+    return sorted(x.value for x in get_instance_config().licenses)[0]
+
+
 def _encode_pydantic_error(error) -> dict[str, str]:
     return {'field': error['loc'][0], 'message': error['msg']}
 

@@ -9,6 +9,8 @@ from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 import pytest
 
+from dandiapi.api.services.metadata import get_default_license
+
 if TYPE_CHECKING:
     from rest_framework.test import APIClient
 
@@ -725,7 +727,11 @@ def test_dandiset_rest_create_embargoed(api_client, user):
 @pytest.mark.django_db
 def test_dandiset_rest_create_embargoed_with_award_info(authenticated_api_client: APIClient):
     name = 'Test Embargoed Dandiset'
-    metadata = {'name': name, 'description': 'Test embargoed dandiset', 'license': ['spdx:CC0-1.0']}
+    metadata = {
+        'name': name,
+        'description': 'Test embargoed dandiset',
+        'license': [get_default_license()],
+    }
 
     # Create embargoed dandiset with funding and award info
     embargo_end_date = (timezone.now().date() + datetime.timedelta(days=365)).isoformat()
@@ -771,7 +777,11 @@ def test_dandiset_rest_create_embargoed_with_award_info(authenticated_api_client
 def test_dandiset_rest_create_embargoed_no_funding_info(authenticated_api_client: APIClient):
     """Test creating embargoed dandiset with no funding source or award number (should succeed)."""
     name = 'Test Embargoed Dandiset - No Funding'
-    metadata = {'name': name, 'description': 'Test embargoed dandiset', 'license': ['spdx:CC0-1.0']}
+    metadata = {
+        'name': name,
+        'description': 'Test embargoed dandiset',
+        'license': [get_default_license()],
+    }
 
     # Create embargoed dandiset without funding info
     query_params = {'embargo': 'true'}
@@ -814,7 +824,11 @@ def test_dandiset_rest_create_embargoed_no_funding_info(authenticated_api_client
 def test_dandiset_rest_create_embargoed_funding_no_award(authenticated_api_client: APIClient):
     """Test creating embargoed dandiset with funding source but no award number (should fail)."""
     name = 'Test Embargoed Dandiset - Funding Only'
-    metadata = {'name': name, 'description': 'Test embargoed dandiset', 'license': ['spdx:CC0-1.0']}
+    metadata = {
+        'name': name,
+        'description': 'Test embargoed dandiset',
+        'license': [get_default_license()],
+    }
 
     # Create embargoed dandiset with funding source but no award number
     query_params = {
@@ -832,7 +846,11 @@ def test_dandiset_rest_create_embargoed_funding_no_award(authenticated_api_clien
 def test_dandiset_rest_create_embargoed_award_no_funding(authenticated_api_client: APIClient):
     """Test creating embargoed dandiset with award number but no funding source (should fail)."""
     name = 'Test Embargoed Dandiset - Award Only'
-    metadata = {'name': name, 'description': 'Test embargoed dandiset', 'license': ['spdx:CC0-1.0']}
+    metadata = {
+        'name': name,
+        'description': 'Test embargoed dandiset',
+        'license': [get_default_license()],
+    }
 
     # Create embargoed dandiset with award number but no funding source
     query_params = {

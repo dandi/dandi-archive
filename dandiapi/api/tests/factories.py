@@ -20,6 +20,7 @@ from dandiapi.api.models import (
     UserMetadata,
     Version,
 )
+from dandiapi.api.services.metadata import get_default_license
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 
 
@@ -129,7 +130,7 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
                     'schemaKey': 'Person',
                 }
             ],
-            'license': ['spdx:CC0-1.0'],
+            'license': [get_default_license()],
         }
         # Remove faked data that might conflict with the schema types
         for key in ['about']:
