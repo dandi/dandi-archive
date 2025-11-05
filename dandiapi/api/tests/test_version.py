@@ -74,9 +74,9 @@ def test_draft_version_metadata_computed(draft_version: Version):
         **original_metadata,
         'manifestLocation': [HTTP_URL_RE],
         'name': draft_version.name,
-        'identifier': f'DANDI:{draft_version.dandiset.identifier}',
+        'identifier': f'{_SCHEMA_CONFIG.instance_name}:{draft_version.dandiset.identifier}',
         'version': draft_version.version,
-        'id': f'DANDI:{draft_version.dandiset.identifier}/{draft_version.version}',
+        'id': f'{_SCHEMA_CONFIG.instance_name}:{draft_version.dandiset.identifier}/{draft_version.version}',
         'url': (
             f'{settings.DANDI_WEB_APP_URL}/dandiset/'
             f'{draft_version.dandiset.identifier}/{draft_version.version}'
@@ -108,9 +108,12 @@ def test_published_version_metadata_computed(published_version: Version):
         **original_metadata,
         'manifestLocation': [HTTP_URL_RE],
         'name': published_version.name,
-        'identifier': f'DANDI:{published_version.dandiset.identifier}',
+        'identifier': f'{_SCHEMA_CONFIG.instance_name}:{published_version.dandiset.identifier}',
         'version': published_version.version,
-        'id': f'DANDI:{published_version.dandiset.identifier}/{published_version.version}',
+        'id': (
+            f'{_SCHEMA_CONFIG.instance_name}:'
+            f'{published_version.dandiset.identifier}/{published_version.version}'
+        ),
         'doi': (
             f'{settings.DANDI_DOI_API_PREFIX}/'
             f'{_SCHEMA_CONFIG.instance_name}.'
@@ -317,9 +320,9 @@ def test_version_publish_version(draft_version, asset):
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [HTTP_URL_RE],
-        'identifier': f'DANDI:{publish_version.dandiset.identifier}',
+        'identifier': f'{_SCHEMA_CONFIG.instance_name}:{publish_version.dandiset.identifier}',
         'version': publish_version.version,
-        'id': f'DANDI:{publish_version.dandiset.identifier}/{publish_version.version}',
+        'id': f'{_SCHEMA_CONFIG.instance_name}:{publish_version.dandiset.identifier}/{publish_version.version}',
         'url': (
             f'{settings.DANDI_WEB_APP_URL}/dandiset/{publish_version.dandiset.identifier}'
             f'/{publish_version.version}'
@@ -560,8 +563,8 @@ def test_version_rest_update(api_client, user, draft_version):
             f'{settings.DANDI_API_URL}/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/'
         ],
         'name': new_name,
-        'identifier': f'DANDI:{draft_version.dandiset.identifier}',
-        'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
+        'identifier': f'{_SCHEMA_CONFIG.instance_name}:{draft_version.dandiset.identifier}',
+        'id': f'{_SCHEMA_CONFIG.instance_name}:{draft_version.dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
         'repository': settings.DANDI_WEB_APP_URL,

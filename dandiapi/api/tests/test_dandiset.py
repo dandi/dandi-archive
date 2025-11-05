@@ -12,6 +12,8 @@ import pytest
 if TYPE_CHECKING:
     from rest_framework.test import APIClient
 
+from dandischema.conf import get_instance_config
+
 from dandiapi.api.asset_paths import add_asset_paths, add_version_asset_paths
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services.permissions.dandiset import (
@@ -29,6 +31,8 @@ from .fuzzy import (
     TIMESTAMP_RE,
     UTC_ISO_TIMESTAMP_RE,
 )
+
+_SCHEMA_CONFIG = get_instance_config()
 
 
 @pytest.mark.django_db
@@ -415,7 +419,7 @@ def test_dandiset_rest_create(api_client, user):
         ],
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
-        'id': f'DANDI:{dandiset.identifier}/draft',
+        'id': f'{_SCHEMA_CONFIG.instance_name}:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
@@ -454,7 +458,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
     api_client.force_authenticate(user=admin_user)
     name = 'Test Dandiset'
     identifier = '123456'
-    metadata = {'foo': 'bar', 'identifier': f'DANDI:{identifier}'}
+    metadata = {'foo': 'bar', 'identifier': f'{_SCHEMA_CONFIG.instance_name}:{identifier}'}
 
     response = api_client.post('/api/dandisets/', {'name': name, 'metadata': metadata})
     assert response.data == {
@@ -499,8 +503,8 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
             f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'
         ],
         'name': name,
-        'identifier': f'DANDI:{identifier}',
-        'id': f'DANDI:{dandiset.identifier}/draft',
+        'identifier': f'{_SCHEMA_CONFIG.instance_name}:{identifier}',
+        'id': f'{_SCHEMA_CONFIG.instance_name}:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
@@ -541,7 +545,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
     identifier = '123456'
     metadata = {
         'foo': 'bar',
-        'identifier': f'DANDI:{identifier}',
+        'identifier': f'{_SCHEMA_CONFIG.instance_name}:{identifier}',
         # This contributor is different from the admin_user
         'contributor': [
             {
@@ -598,8 +602,8 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
             f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'
         ],
         'name': name,
-        'identifier': f'DANDI:{identifier}',
-        'id': f'DANDI:{dandiset.identifier}/draft',
+        'identifier': f'{_SCHEMA_CONFIG.instance_name}:{identifier}',
+        'id': f'{_SCHEMA_CONFIG.instance_name}:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
@@ -681,7 +685,7 @@ def test_dandiset_rest_create_embargoed(api_client, user):
         ],
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
-        'id': f'DANDI:{dandiset.identifier}/draft',
+        'id': f'{_SCHEMA_CONFIG.instance_name}:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
@@ -848,7 +852,7 @@ def test_dandiset_rest_create_with_duplicate_identifier(api_client, admin_user):
     api_client.force_authenticate(user=admin_user)
     name = 'Test Dandiset'
     identifier = dandiset.identifier
-    metadata = {'foo': 'bar', 'identifier': f'DANDI:{identifier}'}
+    metadata = {'foo': 'bar', 'identifier': f'{_SCHEMA_CONFIG.instance_name}:{identifier}'}
 
     response = api_client.post('/api/dandisets/', {'name': name, 'metadata': metadata})
     assert response.status_code == 400

@@ -5,6 +5,7 @@ import hashlib
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from dandischema.conf import get_instance_config
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.forms.models import model_to_dict
@@ -25,6 +26,9 @@ from .fuzzy import DEFAULT_WAS_ASSOCIATED_WITH, HTTP_URL_RE, URN_RE, UTC_ISO_TIM
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
     from rest_framework.test import APIClient
+
+
+_SCHEMA_CONFIG = get_instance_config()
 
 
 @pytest.mark.django_db
@@ -383,9 +387,9 @@ def test_publish_task(
         },
         'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [HTTP_URL_RE],
-        'identifier': f'DANDI:{draft_version.dandiset.identifier}',
+        'identifier': f'{_SCHEMA_CONFIG.instance_name}:{draft_version.dandiset.identifier}',
         'version': published_version.version,
-        'id': f'DANDI:{draft_version.dandiset.identifier}/{published_version.version}',
+        'id': f'{_SCHEMA_CONFIG.instance_name}:{draft_version.dandiset.identifier}/{published_version.version}',
         'url': (
             f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}'
             f'/{published_version.version}'
