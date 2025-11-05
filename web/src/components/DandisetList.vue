@@ -10,7 +10,7 @@
       :to="{
         name: 'dandisetLanding',
         params: { identifier: item.dandiset.identifier },
-        query: { ...route.query, pos: getPos(index) },
+        query: { ...$route.query, pos: getPos(index) },
       }"
       exact
     >
