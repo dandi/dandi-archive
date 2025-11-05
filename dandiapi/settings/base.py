@@ -185,13 +185,15 @@ DANDI_JUPYTERHUB_URL = urlunparse(cast('ParseResult', env.url('DJANGO_DANDI_JUPY
 # the archive's behavior, so we require they be set.
 DANDI_INSTANCE_NAME = env.str('DJANGO_DANDI_INSTANCE_NAME')
 DANDI_INSTANCE_IDENTIFIER = env.str('DJANGO_DANDI_INSTANCE_IDENTIFIER')
+DANDI_DOI_API_PREFIX = env.str(
+    'DJANGO_DANDI_DOI_API_PREFIX'
+)  # This is used by us directly, but not in all circumstances
 
 # Non-required environment variabless
 _dandi_doi_api_url = cast('ParseResult | None', env.url('DJANGO_DANDI_DOI_API_URL', default=None))
 DANDI_DOI_API_URL: str | None = urlunparse(_dandi_doi_api_url) if _dandi_doi_api_url else None
 DANDI_DOI_API_USER: str | None = env.str('DJANGO_DANDI_DOI_API_USER', default=None)
 DANDI_DOI_API_PASSWORD: str | None = env.str('DJANGO_DANDI_DOI_API_PASSWORD', default=None)
-DANDI_DOI_API_PREFIX: str | None = env.str('DJANGO_DANDI_DOI_API_PREFIX', default=None)
 DANDI_DOI_PUBLISH: bool = env.bool('DJANGO_DANDI_DOI_PUBLISH', default=False)
 
 DANDI_VALIDATION_JOB_INTERVAL: int = env.int('DJANGO_DANDI_VALIDATION_JOB_INTERVAL', default=60)
