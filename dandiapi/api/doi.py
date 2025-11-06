@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def doi_configured() -> bool:
-    return any(setting is not None for setting, _ in DANDI_DOI_SETTINGS)
+    return all(setting is not None for setting, _ in DANDI_DOI_SETTINGS)
 
 
 def _generate_doi_data(version: Version):
