@@ -1,5 +1,10 @@
 {
   "name": "dandi-playwright-test",
+  "devEngines": {
+    "packageManager": {
+      "name": "npm"
+    }
+  },
   "scripts": {},
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",

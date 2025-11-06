@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import hashlib
-from typing import Any
 
 from allauth.socialaccount.models import SocialAccount
 from dandischema.conf import get_instance_config
@@ -20,15 +19,9 @@ from dandiapi.api.models import (
     UserMetadata,
     Version,
 )
+from dandiapi.api.services.dandiset import star_dandiset
 from dandiapi.api.services.metadata import get_default_license
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
-
-
-class UserMetadataFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = UserMetadata
-
-    status = UserMetadata.Status.APPROVED.value
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -41,38 +34,42 @@ class UserFactory(factory.django.DjangoModelFactory):
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
 
-    metadata = factory.RelatedFactory(UserMetadataFactory, factory_related_name='user')
+    metadata = factory.RelatedFactory(
+        'dandiapi.api.tests.factories.UserMetadataFactory', factory_related_name='user'
+    )
+    social_account = factory.RelatedFactory(
+        'dandiapi.api.tests.factories.SocialAccountFactory', factory_related_name='user'
+    )
+
+
+class UserMetadataFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = UserMetadata
+
+    user = factory.SubFactory(UserFactory, metadata=None)
+    status = UserMetadata.Status.APPROVED.value
 
 
 class SocialAccountFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = SocialAccount
 
-    user = factory.SubFactory(UserFactory)
+    user = factory.SubFactory(UserFactory, social_account=None)
     uid = factory.Faker('sha1')
 
-    @factory.lazy_attribute
-    def extra_data(self) -> dict[str, Any]:
-        first_name = self.user.first_name
-        last_name = self.user.last_name
-        name = f'{first_name} {last_name}'
-
-        # Supply a fake created date at least 1 year before now
-        created = (
-            faker.Faker()
-            .date_time_between(
-                end_date=datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=365)
-            )
-            .isoformat()
-        )
-
-        # Supply different values from User object, since social account values maybe be different
-        return {
-            'login': faker.Faker().user_name(),
-            'name': name,
-            'email': faker.Faker().ascii_email(),
-            'created_at': created,
+    extra_data = factory.Dict(
+        {
+            'name': factory.LazyAttribute(
+                lambda self: (
+                    f'{self.factory_parent.user.first_name} {self.factory_parent.user.last_name}'
+                )
+            ),
+            # Supply a different value from User object, as social account values may be different
+            'login': factory.Faker('user_name'),
+            'email': factory.Faker('ascii_email'),
+            'created_at': factory.Faker('iso8601', end_datetime=datetime.timedelta(days=-365)),
         }
+    )
 
 
 class DandisetFactory(factory.django.DjangoModelFactory):
@@ -88,6 +85,15 @@ class DandisetFactory(factory.django.DjangoModelFactory):
             extracted = []
         for user in extracted:
             add_dandiset_owner(dandiset=self, user=user)
+
+    @factory.post_generation
+    def starred_by(self, create: bool, extracted: list[User] | None) -> None:  # noqa: FBT001
+        if not create:
+            return
+        if extracted is None:
+            extracted = []
+        for user in extracted:
+            star_dandiset(user=user, dandiset=self)
 
 
 class BaseVersionFactory(factory.django.DjangoModelFactory):

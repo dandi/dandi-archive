@@ -7,11 +7,12 @@ services:
       "./manage.py",
       "runserver_plus", "0.0.0.0:8000"
     ]
-    # Log printing via Rich is enhanced by a TTY
+    # Log printing is enhanced by a TTY
     tty: true
     environment:
       PYTHONDONTWRITEBYTECODE: 1
       PYTHONUNBUFFERED: 1
+      TOX_WORK_DIR: /home/vscode/tox
       UV_ENV_FILE: ./dev/.env.docker-compose
       UV_PROJECT_ENVIRONMENT: /home/vscode/uv-env
       UV_CACHE_DIR: /home/vscode/uv/cache
@@ -51,6 +52,7 @@ services:
     environment:
       PYTHONDONTWRITEBYTECODE: 1
       PYTHONUNBUFFERED: 1
+      TOX_WORK_DIR: /home/vscode/tox
       UV_ENV_FILE: ./dev/.env.docker-compose
       UV_PROJECT_ENVIRONMENT: /home/vscode/uv-env
       UV_CACHE_DIR: /home/vscode/uv/cache

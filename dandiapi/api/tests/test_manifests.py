@@ -18,6 +18,7 @@ from dandiapi.api.manifests import (
 )
 from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.tests.factories import DraftVersionFactory
 
 if TYPE_CHECKING:
     from dandiapi.api.models import Version
@@ -27,8 +28,8 @@ if TYPE_CHECKING:
     'embargo_status', [Dandiset.EmbargoStatus.OPEN, Dandiset.EmbargoStatus.EMBARGOED]
 )
 @pytest.mark.django_db
-def test_streaming_file_upload(draft_version_factory, embargo_status):
-    version: Version = draft_version_factory(dandiset__embargo_status=embargo_status)
+def test_streaming_file_upload(embargo_status):
+    version: Version = DraftVersionFactory.create(dandiset__embargo_status=embargo_status)
     embargoed = version.dandiset.embargoed
     path = 'foo/bar.txt'
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from rest_framework.permissions import SAFE_METHODS
 
-from dandiapi.api.tests.factories import DandisetFactory
+from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
 
 
 @pytest.mark.parametrize(
@@ -72,16 +72,15 @@ from dandiapi.api.tests.factories import DandisetFactory
 @pytest.mark.django_db
 def test_approved_or_readonly(
     api_client,
-    user,
-    draft_version_factory,
     draft_asset_factory,
     zarr_archive_factory,
     method,
     url_format,
     owner_required,
 ):
+    user = UserFactory.create()
     dandiset = DandisetFactory.create()
-    version = draft_version_factory(dandiset=dandiset)
+    version = DraftVersionFactory.create(dandiset=dandiset)
     zarr = zarr_archive_factory(dandiset=dandiset)
     asset = draft_asset_factory()
     version.assets.add(asset)

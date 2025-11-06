@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:latest
+    image: postgres:18
     command: postgres -c log_lock_waits=on -c log_min_duration_statement=100
     shm_size: 128mb
     environment:
@@ -9,18 +9,16 @@ services:
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "postgres"]
       start_period: 30s
-      start_interval: 2s
     ports:
       - 5432:5432
     volumes:
-      - postgres:/var/lib/postgresql/data
+      - postgres:/var/lib/postgresql
 
   rabbitmq:
     image: rabbitmq:management-alpine
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       start_period: 30s
-      start_interval: 2s
     ports:
       - 5672:5672
       - 15672:15672
@@ -40,7 +38,6 @@ services:
       # "mc ready" doesn't terminate on failure, so time it out
       timeout: 1s
       start_period: 30s
-      start_interval: 2s
     ports:
       - 9000:9000
       - 9001:9001

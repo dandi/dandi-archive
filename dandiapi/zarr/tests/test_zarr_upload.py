@@ -5,19 +5,21 @@ import requests
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
+from dandiapi.api.tests.factories import UserFactory
 from dandiapi.api.tests.fuzzy import HTTP_URL_RE
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('embargoed', [False, True])
 def test_zarr_rest_upload_start(
-    authenticated_api_client,
-    user,
+    api_client,
     zarr_archive_factory,
     embargoed: bool,  # noqa: FBT001
 ):
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
     zarr_archive = zarr_archive_factory(
         dandiset__owners=[user],
         dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
@@ -30,7 +32,7 @@ def test_zarr_rest_upload_start(
         size=100,
     )
 
-    resp = authenticated_api_client.post(
+    resp = api_client.post(
         f'/api/zarr/{zarr_archive.zarr_id}/files/',
         [{'path': 'foo/bar.txt', 'base64md5': 'DMF1ucDxtqgxw5niaXcmYQ=='}],
     )
@@ -65,8 +67,11 @@ def test_zarr_rest_upload_start(
 
 
 @pytest.mark.django_db
-def test_zarr_rest_upload_start_not_an_owner(authenticated_api_client, zarr_archive: ZarrArchive):
-    resp = authenticated_api_client.post(
+def test_zarr_rest_upload_start_not_an_owner(api_client):
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create()
+    resp = api_client.post(
         f'/api/zarr/{zarr_archive.zarr_id}/files/',
         [{'path': 'foo/bar.txt', 'base64md5': 'DMF1ucDxtqgxw5niaXcmYQ=='}],
     )
@@ -75,17 +80,17 @@ def test_zarr_rest_upload_start_not_an_owner(authenticated_api_client, zarr_arch
 
 @pytest.mark.django_db
 def test_zarr_rest_finalize(
-    authenticated_api_client,
-    user,
-    zarr_archive: ZarrArchive,
+    api_client,
     zarr_file_factory,
 ):
-    add_dandiset_owner(zarr_archive.dandiset, user)
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user])
 
     # Upload zarr file
     zarr_file_factory(zarr_archive=zarr_archive)
 
-    resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
+    resp = api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
     assert resp.status_code == 204
 
     # Check that zarr ingestion occurred
@@ -96,16 +101,19 @@ def test_zarr_rest_finalize(
 
 
 @pytest.mark.django_db
-def test_zarr_rest_finalize_not_an_owner(authenticated_api_client, zarr_archive: ZarrArchive):
-    resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
+def test_zarr_rest_finalize_not_an_owner(api_client):
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create()
+    resp = api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
     assert resp.status_code == 403
 
 
 @pytest.mark.django_db
-def test_zarr_rest_finalize_already_ingested(
-    authenticated_api_client, user, zarr_archive: ZarrArchive
-):
-    add_dandiset_owner(zarr_archive.dandiset, user)
-    authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
-    resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
+def test_zarr_rest_finalize_already_ingested(api_client):
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user])
+    api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
+    resp = api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
     assert resp.status_code == 400

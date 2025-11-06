@@ -4,7 +4,7 @@ import pytest
 
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.tasks.scheduled import compute_application_stats
-from dandiapi.api.tests.factories import DandisetFactory
+from dandiapi.api.tests.factories import DandisetFactory, PublishedVersionFactory, UserFactory
 
 
 @pytest.mark.django_db
@@ -41,8 +41,8 @@ def test_stats_draft(api_client):
 
 
 @pytest.mark.django_db
-def test_stats_published(api_client, published_version_factory):
-    published_version_factory()
+def test_stats_published(api_client):
+    PublishedVersionFactory.create()
 
     compute_application_stats()
 
@@ -53,12 +53,12 @@ def test_stats_published(api_client, published_version_factory):
 
 
 @pytest.mark.django_db
-def test_stats_user(api_client, user_factory):
+def test_stats_user(api_client):
     # Create multiple users with different statuses
     users_per_status = approved_user_count = 3
 
     for status in UserMetadata.Status.choices:
-        [user_factory(metadata__status=status[0]) for _ in range(users_per_status)]
+        [UserFactory.create(metadata__status=status[0]) for _ in range(users_per_status)]
 
     compute_application_stats()
 

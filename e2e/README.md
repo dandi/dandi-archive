@@ -9,7 +9,7 @@ First, follow the `web/README.md` instructions to install web app dependencies, 
 
 ```bash
 # Install e2e test dependencies
-cd ../e2e && yarn install --frozen-lockfile
+cd ../e2e && npm ci
 
 # Install Playwright browsers
 npx playwright install --with-deps

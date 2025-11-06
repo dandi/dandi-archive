@@ -18,13 +18,12 @@ from zarr_checksum.generators import ZarrArchiveFile
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
-from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
+from dandiapi.api.tests.factories import DraftVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchiveStatus
 
 from .fuzzy import DEFAULT_WAS_ASSOCIATED_WITH, HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
 
 if TYPE_CHECKING:
-    from django.contrib.auth.models import User
     from rest_framework.test import APIClient
 
 
@@ -143,7 +142,8 @@ def test_validate_asset_metadata_malformed_keywords(draft_asset: Asset):
 
 
 @pytest.mark.django_db
-def test_validate_asset_metadata_saves_version(draft_asset: Asset, draft_version: Version):
+def test_validate_asset_metadata_saves_version(draft_asset: Asset):
+    draft_version = DraftVersionFactory.create()
     draft_version.assets.add(draft_asset)
 
     # Update version with queryset so modified isn't auto incremented
@@ -159,7 +159,8 @@ def test_validate_asset_metadata_saves_version(draft_asset: Asset, draft_version
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata(draft_version: Version, asset: Asset):
+def test_validate_version_metadata(asset: Asset):
+    draft_version = DraftVersionFactory.create()
     draft_version.assets.add(asset)
 
     # Bypass .save to manually set an older timestamp
@@ -178,7 +179,8 @@ def test_validate_version_metadata(draft_version: Version, asset: Asset):
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_non_pending_version(draft_version: Version, asset: Asset):
+def test_validate_version_metadata_non_pending_version(asset: Asset):
+    draft_version = DraftVersionFactory.create()
     # Bypass .save to manually set an older timestamp, set status to INVALID
     old_modified = timezone.now() - datetime.timedelta(minutes=10)
     updated = Version.objects.filter(id=draft_version.id).update(
@@ -198,7 +200,8 @@ def test_validate_version_metadata_non_pending_version(draft_version: Version, a
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_no_side_effects(draft_version: Version, asset: Asset):
+def test_validate_version_metadata_no_side_effects(asset: Asset):
+    draft_version = DraftVersionFactory.create()
     draft_version.assets.add(asset)
 
     # Set the version `status` and `validation_errors` fields to something
@@ -220,7 +223,8 @@ def test_validate_version_metadata_no_side_effects(draft_version: Version, asset
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_malformed_schema_version(draft_version: Version, asset: Asset):
+def test_validate_version_metadata_malformed_schema_version(asset: Asset):
+    draft_version = DraftVersionFactory.create()
     draft_version.assets.add(asset)
 
     draft_version.metadata['schemaVersion'] = 'xxx'
@@ -238,7 +242,8 @@ def test_validate_version_metadata_malformed_schema_version(draft_version: Versi
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_no_description(draft_version: Version, asset: Asset):
+def test_validate_version_metadata_no_description(asset: Asset):
+    draft_version = DraftVersionFactory.create()
     draft_version.assets.add(asset)
 
     del draft_version.metadata['description']
@@ -255,7 +260,8 @@ def test_validate_version_metadata_no_description(draft_version: Version, asset:
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_malformed_license(draft_version: Version, asset: Asset):
+def test_validate_version_metadata_malformed_license(asset: Asset):
+    draft_version = DraftVersionFactory.create()
     draft_version.assets.add(asset)
 
     draft_version.metadata['license'] = 'foo'
@@ -272,9 +278,8 @@ def test_validate_version_metadata_malformed_license(draft_version: Version, ass
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_no_assets(
-    draft_version: Version,
-):
+def test_validate_version_metadata_no_assets():
+    draft_version = DraftVersionFactory.create()
     # Validate the metadata to mark version as `VALID`
     tasks.validate_version_metadata_task(draft_version.id)
     draft_version.refresh_from_db()
@@ -289,9 +294,8 @@ def test_validate_version_metadata_no_assets(
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_empty_zarr_asset(
-    draft_version: Version, zarr_archive_factory, draft_asset_factory
-):
+def test_validate_version_metadata_empty_zarr_asset(zarr_archive_factory, draft_asset_factory):
+    draft_version = DraftVersionFactory.create()
     asset = draft_asset_factory(
         blob=None,
         zarr=zarr_archive_factory(
@@ -316,9 +320,8 @@ def test_validate_version_metadata_empty_zarr_asset(
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_only_zarr_assets(
-    draft_version: Version, zarr_archive_factory, draft_asset_factory
-):
+def test_validate_version_metadata_only_zarr_assets(zarr_archive_factory, draft_asset_factory):
+    draft_version = DraftVersionFactory.create()
     asset = draft_asset_factory(
         blob=None,
         zarr=zarr_archive_factory(
@@ -343,16 +346,14 @@ def test_validate_version_metadata_only_zarr_assets(
 @pytest.mark.django_db
 def test_publish_task(
     api_client: APIClient,
-    user: User,
     draft_asset_factory,
     published_asset_factory,
-    draft_version_factory,
     django_capture_on_commit_callbacks,
 ):
-    # Create a draft_version in PUBLISHING state
-    draft_version: Version = draft_version_factory(status=Version.Status.PUBLISHING)
-
-    add_dandiset_owner(draft_version.dandiset, user)
+    user = UserFactory.create()
+    draft_version: Version = DraftVersionFactory.create(
+        status=Version.Status.PUBLISHING, dandiset__owners=[user]
+    )
     api_client.force_authenticate(user=user)
 
     old_draft_asset: Asset = draft_asset_factory(status=Asset.Status.VALID)

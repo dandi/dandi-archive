@@ -34,7 +34,7 @@ jobs:
           docker image save -o dandiarchive-api.tgz dandiarchive/dandiarchive-api
 
       - name: Upload Docker image tarball
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dandiarchive-api.tgz
           path: dandiarchive-api.tgz
@@ -54,7 +54,7 @@ jobs:
       DANDI_TESTS_PULL_DOCKER_COMPOSE: 0
     steps:
       - name: Download Docker image tarball
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: dandiarchive-api.tgz
 
