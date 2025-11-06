@@ -36,7 +36,7 @@ def create_dev_dandiset(*, name: str, email: str, num_extra_owners: int):
 
     version_metadata = {
         'description': 'An informative description',
-        'license': get_default_license(),
+        'license': [get_default_license()],
     }
     dandiset, draft_version = create_open_dandiset(
         user=owner, version_name=name, version_metadata=version_metadata
