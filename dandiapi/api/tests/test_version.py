@@ -80,7 +80,10 @@ def test_draft_version_metadata_computed():
         'name': draft_version.name,
         'identifier': f'{_SCHEMA_CONFIG.instance_name}:{draft_version.dandiset.identifier}',
         'version': draft_version.version,
-        'id': f'{_SCHEMA_CONFIG.instance_name}:{draft_version.dandiset.identifier}/{draft_version.version}',
+        'id': (
+            f'{_SCHEMA_CONFIG.instance_name}:'
+            f'{draft_version.dandiset.identifier}/{draft_version.version}'
+        ),
         'url': (
             f'{settings.DANDI_WEB_APP_URL}/dandiset/'
             f'{draft_version.dandiset.identifier}/{draft_version.version}'
@@ -331,7 +334,10 @@ def test_version_publish_version(asset):
         'manifestLocation': [HTTP_URL_RE],
         'identifier': f'{_SCHEMA_CONFIG.instance_name}:{publish_version.dandiset.identifier}',
         'version': publish_version.version,
-        'id': f'{_SCHEMA_CONFIG.instance_name}:{publish_version.dandiset.identifier}/{publish_version.version}',
+        'id': (
+            f'{_SCHEMA_CONFIG.instance_name}:'
+            f'{publish_version.dandiset.identifier}/{publish_version.version}'
+        ),
         'url': (
             f'{settings.DANDI_WEB_APP_URL}/dandiset/{publish_version.dandiset.identifier}'
             f'/{publish_version.version}'

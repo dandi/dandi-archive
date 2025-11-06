@@ -390,7 +390,10 @@ def test_publish_task(
         'manifestLocation': [HTTP_URL_RE],
         'identifier': f'{_SCHEMA_CONFIG.instance_name}:{draft_version.dandiset.identifier}',
         'version': published_version.version,
-        'id': f'{_SCHEMA_CONFIG.instance_name}:{draft_version.dandiset.identifier}/{published_version.version}',
+        'id': (
+            f'{_SCHEMA_CONFIG.instance_name}:'
+            f'{draft_version.dandiset.identifier}/{published_version.version}'
+        ),
         'url': (
             f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}'
             f'/{published_version.version}'

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import importlib.metadata
 import re
 
 from dandischema.conf import get_instance_config
