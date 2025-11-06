@@ -12,7 +12,6 @@ import pytest
 
 from dandiapi.api.asset_paths import add_asset_paths, add_version_asset_paths
 from dandiapi.api.models import Dandiset, Version
-from dandiapi.api.services.metadata import get_default_license
 from dandiapi.api.services.permissions.dandiset import (
     get_dandiset_owners,
     get_visible_dandisets,
@@ -23,6 +22,7 @@ from dandiapi.api.tests.factories import (
     PublishedVersionFactory,
     UserFactory,
 )
+from dandiapi.conftest import get_first_allowed_license
 
 from .fuzzy import (
     DANDISET_ID_RE,
@@ -762,7 +762,7 @@ def test_dandiset_rest_create_embargoed_with_award_info(api_client: APIClient):
     metadata = {
         'name': name,
         'description': 'Test embargoed dandiset',
-        'license': [get_default_license()],
+        'license': [get_first_allowed_license()],
     }
 
     # Create embargoed dandiset with funding and award info
@@ -814,7 +814,7 @@ def test_dandiset_rest_create_embargoed_no_funding_info(api_client: APIClient):
     metadata = {
         'name': name,
         'description': 'Test embargoed dandiset',
-        'license': [get_default_license()],
+        'license': [get_first_allowed_license()],
     }
 
     # Create embargoed dandiset without funding info
@@ -863,7 +863,7 @@ def test_dandiset_rest_create_embargoed_funding_no_award(api_client: APIClient):
     metadata = {
         'name': name,
         'description': 'Test embargoed dandiset',
-        'license': [get_default_license()],
+        'license': [get_first_allowed_license()],
     }
 
     # Create embargoed dandiset with funding source but no award number
@@ -887,7 +887,7 @@ def test_dandiset_rest_create_embargoed_award_no_funding(api_client: APIClient):
     metadata = {
         'name': name,
         'description': 'Test embargoed dandiset',
-        'license': [get_default_license()],
+        'license': [get_first_allowed_license()],
     }
 
     # Create embargoed dandiset with award number but no funding source

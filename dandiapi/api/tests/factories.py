@@ -20,7 +20,6 @@ from dandiapi.api.models import (
     Version,
 )
 from dandiapi.api.services.dandiset import star_dandiset
-from dandiapi.api.services.metadata import get_default_license
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 
 
@@ -115,6 +114,8 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
 
     @factory.lazy_attribute
     def metadata(self) -> dict:
+        from dandiapi.conftest import get_first_allowed_license
+
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
             'schemaVersion': settings.DANDI_SCHEMA_VERSION,
@@ -136,7 +137,7 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
                     'schemaKey': 'Person',
                 }
             ],
-            'license': [get_default_license()],
+            'license': [get_first_allowed_license()],
         }
         # Remove faked data that might conflict with the schema types
         for key in ['about']:
