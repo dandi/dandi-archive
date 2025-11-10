@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import datetime
 from typing import TYPE_CHECKING
 
@@ -86,24 +87,25 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  #
 
 
 def _build_publishable_version_from_draft(draft_version: Version) -> Version:
-    publishable_version = Version(
-        dandiset=draft_version.dandiset,
-        name=draft_version.name,
-        metadata=draft_version.metadata,
-        status=Version.Status.VALID,
-        version=Version.next_published_version(draft_version.dandiset),
-    )
+    # Make a deep copy of the dict to avoid mutating the draft version's metadata.
+    publishable_version_metadata = copy.deepcopy(draft_version.metadata)
 
     now = datetime.datetime.now(datetime.UTC)
     # inject the publishedBy and datePublished fields
-    publishable_version.metadata.update(
+    publishable_version_metadata.update(
         {
             'publishedBy': draft_version.published_by(now),
             'datePublished': now.isoformat(),
         }
     )
 
-    return publishable_version
+    return Version(
+        dandiset=draft_version.dandiset,
+        name=draft_version.name,
+        metadata=publishable_version_metadata,
+        status=Version.Status.VALID,
+        version=Version.next_published_version(draft_version.dandiset),
+    )
 
 
 def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
