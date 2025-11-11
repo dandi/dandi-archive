@@ -68,14 +68,15 @@ where units are converted for consitency with the [Deep Glacier design](https://
 
 ### Future Costs
 
-The DANDI Archive is expecting a ramp-up in data volume of 1 PB of new data over each of the next five years, culminating in a total of 6PB.
+The DANDI Archive is expecting a ramp-up in data volume of around 1 PB of new data over each of the next five years, culminating in a total nearing 6PB.
 
 The following table shows the initial, final, intermediate, and cumulative costs for both the NESE Tape approach as well as Deep Glacier.
 
-| Design | Year 1 (1 PB) | Year 2 (2.5 PB)[^1] | Cumulative Total<br>Over 5 years|
-| :-: | :-: | :-: | :-: |
-| NESE  | $4,000 / year | $10,000 / month | $14,000 |
-| Deep<br>Glacier| $11,880 / year | $29,700 / year | $41,580 |
+| Design | Year 0<br>(1 PB) | Year 1<br>(2.5 PB)[^1] | Year 2<br>(3.5 PB) | Year 3<br>(4.5 PB) | Year 4<br>(5.5 PB) | Year 5<br>(6.5 PB) | Cumulative Total<br>Over All Years|
+| :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| NESE  | $4,000 / year | $10,000 / year | $14,000 / year | $18,000 / year | $22,000 / year | $26,000 / year | $94,000 |
+| Deep<br>Glacier| $11,880 / year | $29,700 / year | $41,580 / year | $53,460 / year | $65,340 / year | $77,220 / year | $279,180 |
+| Deep Glacier<br>+<br>Full Restore[^2] | $14,380 / year | $35,950 / year | $50,330 / year | $64,710 / year | $79,090 / year | $93,470 / year  | max: $372,650 |
 
 [^1]: LINC is expected to make a one-time contribution of 0.5 PB.
-
+[^2]: In the event that a full restoration of the bucket is required once during the year indicated by the column, the Deep Glacier approach has additional costs to just the underlying storage.
