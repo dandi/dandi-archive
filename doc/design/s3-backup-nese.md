@@ -70,7 +70,12 @@ where units are converted for consitency with the [Deep Glacier design](https://
 
 The DANDI Archive is expecting a ramp-up in data volume of 1 PB of new data over each of the next five years, culminating in a total of 6PB.
 
-Scaling up the previous analysis means that the monthly costs will be projected to rise to a total of **~$5,900/month** once all of that data is seated.
-The worst-case disaster recovery cost would similarly scale up to a total of **~$16,000**.
+The following table shows the initial, final, intermediate, and cumulative costs for both the NESE Tape approach as well as Deep Glacier.
 
+| Design | Year 1 (1 PB) | Year 2 (2.5 PB)[^1] | Cumulative Total<br>Over 5 years|
+| :-: | :-: | :-: | :-: |
+| NESE  | $4,000 / year | $10,000 / month | $14,000 |
+| Deep<br>Glacier| $11,880 / year | $29,700 / year | $41,580 |
+
+[^1]: LINC is expected to make a one-time contribution of 0.5 PB.
 
