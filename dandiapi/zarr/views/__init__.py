@@ -358,3 +358,20 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             )
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        method='GET',
+        responses={
+            302: 'Redirect to an object in S3',
+            403: 'Permission Denied',
+        },
+    )
+    @action(methods=['GET'], detail=True, url_path=r'files/(?P<path>\w+)')
+    def redirect_file(self, request, zarr_id: str, path: str):
+        zarr_archive = get_object_or_404(ZarrArchive, zarr_id=zarr_id)
+
+        # Deny if the user doesn't have ownership permission
+        if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
+            raise PermissionDenied
+
+        return HttpResponseRedirect(zarr_archive.storage.url(zarr_archive.s3_path(path)))
