@@ -4,6 +4,7 @@ import datetime
 import logging
 from typing import TypedDict
 
+from dandischema.conf import get_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
@@ -229,6 +230,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     def _populate_metadata(self):
         from dandiapi.api.manifests import manifest_location
 
+        schema_config = get_instance_config()
         metadata = {
             **self.metadata,
             '@context': (
@@ -237,9 +239,9 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             ),
             'manifestLocation': manifest_location(self),
             'name': self.name,
-            'identifier': f'DANDI:{self.dandiset.identifier}',
+            'identifier': (f'{schema_config.instance_name}:{self.dandiset.identifier}'),
             'version': self.version,
-            'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
+            'id': (f'{schema_config.instance_name}:{self.dandiset.identifier}/{self.version}'),
             'repository': settings.DANDI_WEB_APP_URL,
             'url': (
                 f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}'

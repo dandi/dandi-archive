@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+from dandischema.conf import get_instance_config
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -32,7 +33,7 @@ def create_dev_dandiset(*, name: str, email: str, num_extra_owners: int):
 
     version_metadata = {
         'description': 'An informative description',
-        'license': ['spdx:CC0-1.0'],
+        'license': [sorted(x.value for x in get_instance_config().licenses)[0]],
     }
     dandiset, draft_version = create_open_dandiset(
         user=owner, version_name=name, version_metadata=version_metadata
