@@ -1,3 +1,25 @@
+# v0.18.1 (Wed Nov 12 2025)
+
+#### 🐛 Bug Fix
+
+- Fix bug in publishing process [#2636](https://github.com/dandi/dandi-archive/pull/2636) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Supply a default name in createsuperuser [#2616](https://github.com/dandi/dandi-archive/pull/2616) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Update how DOI settings are checked for configuration [#2634](https://github.com/dandi/dandi-archive/pull/2634) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🧪 Tests
+
+- Remove the `test_rest_info` test [#2635](https://github.com/dandi/dandi-archive/pull/2635) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.18.0 (Tue Nov 04 2025)
 
 #### 🚀 Enhancement
