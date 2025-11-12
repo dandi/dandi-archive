@@ -357,19 +357,26 @@ def test_version_aggregate_assets_summary(draft_asset_factory):
 
 
 @pytest.mark.django_db
-def test_version_publish_updates_draft_version_assets_summary(draft_asset_factory):
+def test_version_publish_draft_version_metadata_updates(draft_asset_factory):
     user = UserFactory.create()
     version = DraftVersionFactory.create(status=Version.Status.PUBLISHING)
     asset = draft_asset_factory(status=Asset.Status.VALID)
     version.assets.add(asset)
 
     tasks.publish_dandiset_task(version.dandiset.id, user.id)
+    published_version = Version.objects.latest('created')
 
+    # Ensure draft assets summary has been updated
     version.refresh_from_db()
     draft_asset_summary = version.metadata['assetsSummary']
-    published_asset_summary = Version.objects.latest('created').metadata['assetsSummary']
-
+    published_asset_summary = published_version.metadata['assetsSummary']
     assert published_asset_summary == draft_asset_summary
+
+    # Ensure published version contains expected new fields, and draft version does not
+    assert 'publishedBy' in published_version.metadata
+    assert 'datePublished' in published_version.metadata
+    assert 'publishedBy' not in version.metadata
+    assert 'datePublished' not in version.metadata
 
 
 @pytest.mark.django_db
