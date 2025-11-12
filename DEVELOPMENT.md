@@ -13,6 +13,10 @@ This is the simplest configuration for developers to start with.
 
 ### Initial Setup
 1. Follow the steps for [setting up Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers#_installation) if necessary.
+1. If you have previously used the "Develop with Docker" workflow described below, follow the below steps. Otherwise, skip to the next step.
+   1. Run `docker compose volumes`
+   1. If one of the listed volumes ends with `_uv_cache`, delete it by running `docker volume rm <volume_name>` (this operation is safe and simply deletes your cached `uv` dependencies to avoid potential permission issues between the devcontainer and "Develop with Docker" configurations).
+
 1. From VSCode, use `Ctrl-Shift-p` and run the command `Dev Containers: Reopen in Container`.
 1. From the VSCode built-in terminal, run `./manage.py migrate`.
 1. From the VSCode built-in terminal, run `./manage.py createsuperuser --email $(git config user.email)` and follow the prompts.
@@ -20,7 +24,7 @@ This is the simplest configuration for developers to start with.
    to create a dummy dandiset to start working with.
 
 ### Run Application
-1. Run the following commands in three seperate VSCode built-in-terminals:
+1. Run the following commands in three separate VSCode built-in-terminals:
    1. `./manage.py runserver_plus 0.0.0.0:8000`
    1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
    1. `cd web/ && npm install && npm run dev`
