@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.metadata
 from urllib.parse import ParseResult, urlencode, urlparse, urlunparse
 
+from dandischema.consts import ALLOWED_INPUT_SCHEMAS
 from django.conf import settings
 from django.urls import reverse
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -74,7 +75,7 @@ def info_view(request):
         data={
             'schema_version': settings.DANDI_SCHEMA_VERSION,
             'schema_url': get_schema_url(),
-            'allowed_schema_versions': settings.ALLOWED_DANDI_SCHEMA_VERSIONS,
+            'allowed_schema_versions': ALLOWED_INPUT_SCHEMAS,
             'version': importlib.metadata.version('dandiapi'),
             'cli-minimal-version': '0.60.0',
             'cli-bad-versions': [],
