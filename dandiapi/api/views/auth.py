@@ -128,14 +128,7 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
         ):
             should_auto_approve: bool = any(
                 request.user.email.endswith(suffix)
-                for suffix in [
-                    '.edu',
-                    '@alleninstitute.org',
-                    '@nih.gov',
-                    '@janelia.hhmi.org',
-                    '@ccf.org',
-                    '.ac.uk',
-                ]
+                for suffix in settings.AUTO_APPROVE_EMAIL_SUFFIXES
             )
 
             # auto-approve users with edu emails, otherwise require manual approval

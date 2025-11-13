@@ -130,6 +130,20 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 # https://github.com/pennersr/django-allauth/blob/HEAD/ChangeLog.rst#backwards-incompatible-changes-2
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
+# Emails ending in any of these suffixes will be auto-approved
+AUTO_APPROVE_EMAIL_SUFFIXES = env.list(
+    'DJANGO_DANDI_AUTO_APPROVE_EMAIL_SUFFIXES',
+    cast=str,
+    default=[
+        '.edu',
+        '@alleninstitute.org',
+        '@nih.gov',
+        '@janelia.hhmi.org',
+        '@ccf.org',
+        '.ac.uk',
+    ],
+)
+
 # Allow staging to support Netlify branch deploy previews
 OAUTH2_PROVIDER['ALLOW_URI_WILDCARDS'] = env.bool(
     'DJANGO_OAUTH2_ALLOW_URI_WILDCARDS', default=False
