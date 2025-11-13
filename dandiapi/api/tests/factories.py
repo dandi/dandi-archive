@@ -5,8 +5,8 @@ import hashlib
 
 from allauth.socialaccount.models import SocialAccount
 from dandischema.conf import get_instance_config
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from dandischema.models import AccessType
-from django.conf import settings
 from django.contrib.auth.models import User
 import factory
 import faker
@@ -118,7 +118,7 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
 
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
             'schemaKey': 'Dandiset',
             'description': faker.Faker().sentence(),
             'access': [
@@ -234,7 +234,7 @@ class DraftAssetFactory(factory.django.DjangoModelFactory):
     def metadata(self) -> dict:
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
             'encodingFormat': 'application/x-nwb',
             'schemaKey': 'Asset',
         }

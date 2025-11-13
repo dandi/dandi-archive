@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.conf import settings
+from dandischema.consts import DANDI_SCHEMA_VERSION
 
 from dandiapi.api.models.version import Version
 
@@ -18,7 +18,7 @@ def _normalize_version_metadata(raw_version_metadata: dict, name: str, email: st
     # not specified in the version_metadata
     return {
         'schemaKey': 'Dandiset',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'schemaVersion': DANDI_SCHEMA_VERSION,
         'contributor': [
             {
                 'name': name,
