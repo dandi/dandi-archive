@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any
 
-from django.conf import settings
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db.models.query_utils import Q
 from django.utils import timezone
@@ -145,7 +145,7 @@ class VersionMetadataSerializer(serializers.ModelSerializer):
         validators = []
 
     def validate(self, data):
-        data['metadata'].setdefault('schemaVersion', settings.DANDI_SCHEMA_VERSION)
+        data['metadata'].setdefault('schemaVersion', DANDI_SCHEMA_VERSION)
         return super().validate(data)
 
 

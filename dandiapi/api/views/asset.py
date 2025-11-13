@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, cast
 
-from django.conf import settings
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect
 from django_filters import rest_framework as filters
@@ -220,7 +220,7 @@ class AssetRequestSerializer(serializers.Serializer):
         # will be caught further up the stack and be converted to a DRF ValidationError
         validate_asset_path(data['metadata']['path'])
 
-        data['metadata'].setdefault('schemaVersion', settings.DANDI_SCHEMA_VERSION)
+        data['metadata'].setdefault('schemaVersion', DANDI_SCHEMA_VERSION)
         return data
 
 

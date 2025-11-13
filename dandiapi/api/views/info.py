@@ -4,6 +4,7 @@ import importlib.metadata
 from urllib.parse import ParseResult, urlencode, urlparse, urlunparse
 
 from dandischema.conf import get_instance_config
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.conf import settings
 from django.urls import reverse
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -78,7 +79,7 @@ def info_view(request):
             # Set exclude_none=False to prevent any fields set to `None` from being set to a
             # different default value when the JSON is de-serialized into a Pydantic model.
             'instance_config': get_instance_config().model_dump(mode='json', exclude_none=False),
-            'schema_version': settings.DANDI_SCHEMA_VERSION,
+            'schema_version': DANDI_SCHEMA_VERSION,
             'schema_url': get_schema_url(),
             'version': importlib.metadata.version('dandiapi'),
             'cli-minimal-version': '0.60.0',

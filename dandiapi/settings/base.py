@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, cast
 from urllib.parse import urlunparse
 
 from corsheaders.defaults import default_headers
-from dandischema.consts import DANDI_SCHEMA_VERSION as _DEFAULT_DANDI_SCHEMA_VERSION
 import django_stubs_ext
 from environ import Env
 from resonant_settings.allauth import *
@@ -169,12 +168,6 @@ _dandi_log_level: str = env.str('DJANGO_DANDI_LOG_LEVEL', default='INFO')
 # Configure the logging level on all DANDI loggers.
 logging.getLogger('dandiapi').setLevel(_dandi_log_level)
 
-# This is where the schema version should be set.
-# It can optionally be overwritten with the environment variable, but that should only be
-# considered a temporary fix.
-DANDI_SCHEMA_VERSION: str = env.str(
-    'DJANGO_DANDI_SCHEMA_VERSION', default=_DEFAULT_DANDI_SCHEMA_VERSION
-)
 DANDI_ZARR_PREFIX_NAME: str = env.str('DJANGO_DANDI_ZARR_PREFIX_NAME', default='zarr')
 
 # Required environment variables
