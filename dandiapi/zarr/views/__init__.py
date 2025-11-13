@@ -368,10 +368,18 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     )
     @action(methods=['GET'], detail=True, url_path=r'files/(?P<path>\w+)')
     def redirect_file(self, request, zarr_id: str, path: str):
-        zarr_archive = get_object_or_404(ZarrArchive, zarr_id=zarr_id)
+        zarr_archive = get_object_or_404(
+            ZarrArchive.objects.select_related('dandiset'), zarr_id=zarr_id
+        )
 
-        # Deny if the user doesn't have ownership permission
-        if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
+        if zarr_archive.dandiset.embargoed and not is_dandiset_owner(
+            zarr_archive.dandiset, self.request.user
+        ):
             raise PermissionDenied
 
-        return HttpResponseRedirect(zarr_archive.storage.url(zarr_archive.s3_path(path)))
+        return HttpResponseRedirect(
+            zarr_archive.storage.url(
+                zarr_archive.s3_path(path),
+                signed=zarr_archive.dandiset.embargoed,
+            )
+        )
