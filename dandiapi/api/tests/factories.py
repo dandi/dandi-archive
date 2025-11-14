@@ -220,6 +220,7 @@ class EmbargoedAssetBlobFactory(AssetBlobFactory):
 class DraftAssetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Asset
+        skip_postgeneration_save = True
 
     path = factory.Faker('file_path', absolute=False, extension='nwb')
     blob = factory.SubFactory(AssetBlobFactory)
@@ -237,6 +238,14 @@ class DraftAssetFactory(factory.django.DjangoModelFactory):
         for key in ['approach', 'about', 'name']:
             metadata.pop(key, None)
         return metadata
+
+    @factory.post_generation
+    def versions(self, create: bool, extracted: list[Version]) -> None:  # noqa: FBT001
+        if not create:
+            return
+        if extracted is None:
+            extracted = []
+        self.versions.add(*extracted)
 
 
 class PublishedAssetFactory(DraftAssetFactory):
