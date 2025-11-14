@@ -4,6 +4,11 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 RUN mv /root/.local/bin/uv /usr/local/bin/uv
 RUN mv /root/.local/bin/uvx /usr/local/bin/uvx
 
+# Install developer tools to make them available in devcontainers
+RUN apt-get update && apt-get install --yes --no-install-recommends \
+    gitk && \
+  rm -rf /var/lib/apt/lists/*
+
 # Make Python more friendly to running in containers
 ENV PYTHONDONTWRITEBYTECODE=1 \
   PYTHONUNBUFFERED=1
