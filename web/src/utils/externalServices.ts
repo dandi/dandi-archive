@@ -66,6 +66,14 @@ const EXTERNAL_SERVICES: ExternalService[] = [
       "https://v1.neurosift.app?p=/avi&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$",
   },
 
+  {
+    name: "Neurosift",
+    regex: /\.(mp4|mov|webm|ogv|m4v|mkv)$/,
+    maxsize: Infinity,
+    endpoint:
+      "https://neurosift.app/video?url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$",
+  },
+
    {
     name: 'Neuroglancer',
     regex: /\.nii(\.gz)?$|\.zarr$/,
