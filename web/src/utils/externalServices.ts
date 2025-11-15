@@ -202,3 +202,4 @@ function redirectNeuroglancerUrl(item: ServiceUrlData): string | null {
 
   return baseUrl + encodeURIComponent(JSON.stringify(jsonObject));
 }
+
