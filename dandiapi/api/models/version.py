@@ -45,6 +45,13 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         validators=[RegexValidator(f'^{VERSION_REGEX}$')],
     )
     doi = models.CharField(max_length=64, null=True, default=None, blank=True)  # noqa: DJ001
+    release_notes = models.CharField(
+        max_length=512,
+        default='',
+        blank=True,
+        help_text='The most recent release notes used for publishing.',
+    )
+
     """Track the validation status of this version, without considering assets"""
     status = models.CharField(
         max_length=10,

@@ -425,6 +425,7 @@ def test_dandiset_rest_create(api_client):
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
+            'release_notes': '',
         },
         'most_recent_published_version': None,
     }
@@ -506,6 +507,7 @@ def test_dandiset_rest_create_with_identifier(api_client):
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
+            'release_notes': '',
         },
         'contact_person': 'Doe, John',
         'embargo_status': 'OPEN',
@@ -603,6 +605,7 @@ def test_dandiset_rest_create_with_contributor(api_client):
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
+            'release_notes': '',
         },
         'contact_person': 'Jane Doe',
         'embargo_status': 'OPEN',
@@ -685,6 +688,7 @@ def test_dandiset_rest_create_embargoed(api_client):
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
+            'release_notes': '',
         },
         'most_recent_published_version': None,
     }
