@@ -23,6 +23,7 @@ services:
     volumes:
       - .:/home/vscode/dandi
       - uv_cache:/home/vscode/uv
+      - pre-commit_cache:/home/vscode/.cache/pre-commit
     ports:
       - 8000:8000
     depends_on:
@@ -64,6 +65,7 @@ services:
     volumes:
       - .:/home/vscode/dandi
       - uv_cache:/home/vscode/uv
+      - pre-commit_cache:/home/vscode/.cache/pre-commit
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,3 +76,4 @@ services:
 
 volumes:
   uv_cache:
+  pre-commit_cache:

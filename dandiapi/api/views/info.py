@@ -4,6 +4,7 @@ import importlib.metadata
 from urllib.parse import ParseResult, urlencode, urlparse, urlunparse
 
 from dandischema.conf import get_instance_config
+from dandischema.consts import ALLOWED_INPUT_SCHEMAS
 from django.conf import settings
 from django.urls import reverse
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -57,6 +58,7 @@ class ApiInfoSerializer(serializers.Serializer):
     # Schema
     schema_version = serializers.CharField()
     schema_url = serializers.URLField()
+    allowed_schema_versions = serializers.ListField(child=serializers.CharField())
 
     # Versions
     version = serializers.CharField()
@@ -80,6 +82,7 @@ def info_view(request):
             'instance_config': get_instance_config().model_dump(mode='json', exclude_none=False),
             'schema_version': settings.DANDI_SCHEMA_VERSION,
             'schema_url': get_schema_url(),
+            'allowed_schema_versions': ALLOWED_INPUT_SCHEMAS,
             'version': importlib.metadata.version('dandiapi'),
             'cli-minimal-version': '0.60.0',
             'cli-bad-versions': [],

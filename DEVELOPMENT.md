@@ -8,8 +8,31 @@ You would need a local clone of the `dandi-archive` repository to develop on it.
 1. Run `cd dandi-archive`
 1. Make sure your PostgreSQL port (5432) is available.
 
-## Develop with Docker (recommended quickstart)
+## Develop with VSCode Dev Containers (recommended quickstart)
 This is the simplest configuration for developers to start with.
+
+### Initial Setup
+1. Follow the steps for [setting up Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers#_installation) if necessary.
+1. If you have previously used the "Develop with Docker" workflow described below, follow the below steps. Otherwise, skip to the next step.
+   1. Run `docker compose volumes`
+   1. If one of the listed volumes ends with `_uv_cache`, delete it by running `docker volume rm <volume_name>` (this operation is safe and simply deletes your cached `uv` dependencies to avoid potential permission issues between the devcontainer and "Develop with Docker" configurations).
+
+1. From VSCode, use `Ctrl-Shift-p` and run the command `Dev Containers: Reopen in Container`.
+1. From the VSCode built-in terminal, run `./manage.py migrate`.
+1. From the VSCode built-in terminal, run `./manage.py createsuperuser --email $(git config user.email)` and follow the prompts.
+1. From the VSCode built-in terminal, run `./manage.py create_dev_dandiset --owner $(git config user.email)`
+   to create a dummy dandiset to start working with.
+
+### Run Application
+1. Run the following commands in three separate VSCode built-in-terminals:
+   1. `./manage.py runserver_plus 0.0.0.0:8000`
+   1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
+   1. `cd web/ && npm install && npm run dev`
+1. Access the site, starting at http://localhost:8000/admin/
+1. When finished, use `Ctrl+C`
+
+## Develop with Docker
+This configuration also uses containers, but with Docker Compose instead of VScode Dev Containers.
 
 ### Initial Setup
 1. Install [Docker Compose](https://docs.docker.com/compose/install/)
@@ -58,23 +81,6 @@ but allows developers to run Python code on their native system.
     1. Run `export UV_ENV_FILE=./dev/.env.docker-compose-native`
     1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
 1. When finished, run `docker compose stop`
-
-
-## Develop with VSCode Dev Containers
-
-### Initial Setup
-1. Follow the steps for [setting up Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers#_installation) if necessary.
-1. From VSCode, use `Ctrl-Shift-p` and run the command `Dev Containers: Reopen in Container`.
-1. From the VSCode built-in terminal, run `./manage.py migrate`.
-1. From the VSCode built-in terminal, run `./manage.py createsuperuser --email $(git config user.email)` and follow the prompts.
-1. From the VSCode built-in terminal, run `./manage.py create_dev_dandiset --owner $(git config user.email)`
-   to create a dummy dandiset to start working with.
-
-### Run Application
-1. Run `./manage.py runserver_plus 0.0.0.0:8000` from the VSCode built-in-terminal.
-1. Access the site, starting at http://localhost:8000/admin/
-1. When finished, use `Ctrl+C`
-
 
 ## Testing
 ### Initial Setup
