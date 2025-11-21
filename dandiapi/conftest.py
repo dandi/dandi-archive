@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dandischema.conf import get_instance_config
 import dandischema.digests.dandietag
 import pytest
 from pytest_factoryboy import register
@@ -72,3 +73,7 @@ def version(request):
 @pytest.fixture
 def api_client() -> APIClient:
     return APIClient()
+
+
+def get_first_allowed_license() -> str:
+    return sorted(x.value for x in get_instance_config().licenses)[0]

@@ -4,6 +4,7 @@ import datetime
 import hashlib
 
 from allauth.socialaccount.models import SocialAccount
+from dandischema.conf import get_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -113,6 +114,8 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
 
     @factory.lazy_attribute
     def metadata(self) -> dict:
+        from dandiapi.conftest import get_first_allowed_license
+
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
             'schemaVersion': settings.DANDI_SCHEMA_VERSION,
@@ -134,7 +137,7 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
                     'schemaKey': 'Person',
                 }
             ],
-            'license': ['spdx:CC0-1.0'],
+            'license': [get_first_allowed_license()],
         }
         # Remove faked data that might conflict with the schema types
         for key in ['about']:
@@ -162,7 +165,9 @@ class DraftVersionFactory(BaseVersionFactory):
 
 class PublishedVersionFactory(BaseVersionFactory):
     doi = factory.LazyAttribute(
-        lambda self: f'10.80507/dandi.{self.dandiset.identifier}/{self.version}'
+        lambda self: f'{get_instance_config().doi_prefix}/'
+        f'{get_instance_config().instance_name}.'
+        f'{self.dandiset.identifier}/{self.version}'
     )
     status = Version.Status.PUBLISHED
 

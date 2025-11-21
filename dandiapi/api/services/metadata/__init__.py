@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from celery.utils.log import get_task_logger
+from dandischema.conf import get_instance_config
 import dandischema.exceptions
 from dandischema.metadata import aggregate_assets_summary, validate
 from django.conf import settings
@@ -108,6 +109,8 @@ def version_aggregate_assets_summary(version: Version) -> None:
 
 def validate_version_metadata(*, version: Version) -> None:
     def _build_validatable_version_metadata(version: Version) -> dict:
+        schema_config = get_instance_config()
+
         # since Version.Status.VALID is a proxy for a version being publishable, we need to
         # validate against the PublishedDandiset schema even though we lack several things
         # at validation time: id, url, doi, and assetsSummary. this tricks the validator into
@@ -116,13 +119,16 @@ def validate_version_metadata(*, version: Version) -> None:
         metadata_for_validation = publishable_version.metadata
 
         metadata_for_validation['id'] = (
-            f'DANDI:{publishable_version.dandiset.identifier}/{publishable_version.version}'
+            f'{schema_config.instance_name}:'
+            f'{publishable_version.dandiset.identifier}/{publishable_version.version}'
         )
         metadata_for_validation['url'] = (
             f'{settings.DANDI_WEB_APP_URL}/dandiset/'
             f'{publishable_version.dandiset.identifier}/{publishable_version.version}'
         )
-        metadata_for_validation['doi'] = '10.80507/dandi.123456/0.123456.1234'
+        metadata_for_validation['doi'] = (
+            f'{schema_config.doi_prefix}/{schema_config.instance_name.lower()}.123456/0.123456.1234'
+        )
         metadata_for_validation['assetsSummary'] = {
             'schemaKey': 'AssetsSummary',
             'numberOfBytes': 1

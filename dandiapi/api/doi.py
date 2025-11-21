@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from dandischema.conf import get_instance_config
 from django.conf import settings
 import requests
 
@@ -29,10 +30,11 @@ def _generate_doi_data(version: Version):
 
     publish = settings.DANDI_DOI_PUBLISH
     # Use the DANDI test datacite instance as a placeholder if PREFIX isn't set
-    prefix = settings.DANDI_DOI_API_PREFIX or '10.80507'
+    prefix = settings.DANDI_DOI_API_PREFIX
+    instance_name: str = get_instance_config().instance_name
     dandiset_id = version.dandiset.identifier
     version_id = version.version
-    doi = f'{prefix}/dandi.{dandiset_id}/{version_id}'
+    doi = f'{prefix}/{instance_name.lower()}.{dandiset_id}/{version_id}'
     metadata = version.metadata
     metadata['doi'] = doi
     return (doi, to_datacite(metadata, publish=publish))

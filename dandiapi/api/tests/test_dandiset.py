@@ -4,6 +4,7 @@ import datetime
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
+from dandischema.conf import get_instance_config
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
@@ -21,6 +22,7 @@ from dandiapi.api.tests.factories import (
     PublishedVersionFactory,
     UserFactory,
 )
+from dandiapi.conftest import get_first_allowed_license
 
 from .fuzzy import (
     DANDISET_ID_RE,
@@ -32,6 +34,9 @@ from .fuzzy import (
 
 if TYPE_CHECKING:
     from rest_framework.test import APIClient
+
+
+_SCHEMA_CONFIG = get_instance_config()
 
 
 @pytest.mark.django_db
@@ -452,7 +457,7 @@ def test_dandiset_rest_create(api_client):
         ],
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
-        'id': f'DANDI:{dandiset.identifier}/draft',
+        'id': f'{_SCHEMA_CONFIG.instance_name}:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
@@ -489,7 +494,7 @@ def test_dandiset_rest_create_with_identifier(api_client):
     api_client.force_authenticate(user=user)
     name = 'Test Dandiset'
     identifier = '123456'
-    metadata = {'foo': 'bar', 'identifier': f'DANDI:{identifier}'}
+    metadata = {'foo': 'bar', 'identifier': f'{_SCHEMA_CONFIG.instance_name}:{identifier}'}
 
     response = api_client.post('/api/dandisets/', {'name': name, 'metadata': metadata})
     assert response.data == {
@@ -534,8 +539,8 @@ def test_dandiset_rest_create_with_identifier(api_client):
             f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'
         ],
         'name': name,
-        'identifier': f'DANDI:{identifier}',
-        'id': f'DANDI:{dandiset.identifier}/draft',
+        'identifier': f'{_SCHEMA_CONFIG.instance_name}:{identifier}',
+        'id': f'{_SCHEMA_CONFIG.instance_name}:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
@@ -574,7 +579,7 @@ def test_dandiset_rest_create_with_contributor(api_client):
     identifier = '123456'
     metadata = {
         'foo': 'bar',
-        'identifier': f'DANDI:{identifier}',
+        'identifier': f'{_SCHEMA_CONFIG.instance_name}:{identifier}',
         # This contributor is different from the user
         'contributor': [
             {
@@ -631,8 +636,8 @@ def test_dandiset_rest_create_with_contributor(api_client):
             f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'
         ],
         'name': name,
-        'identifier': f'DANDI:{identifier}',
-        'id': f'DANDI:{dandiset.identifier}/draft',
+        'identifier': f'{_SCHEMA_CONFIG.instance_name}:{identifier}',
+        'id': f'{_SCHEMA_CONFIG.instance_name}:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
@@ -712,7 +717,7 @@ def test_dandiset_rest_create_embargoed(api_client):
         ],
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
-        'id': f'DANDI:{dandiset.identifier}/draft',
+        'id': f'{_SCHEMA_CONFIG.instance_name}:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
@@ -754,7 +759,11 @@ def test_dandiset_rest_create_embargoed_with_award_info(api_client: APIClient):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
     name = 'Test Embargoed Dandiset'
-    metadata = {'name': name, 'description': 'Test embargoed dandiset', 'license': ['spdx:CC0-1.0']}
+    metadata = {
+        'name': name,
+        'description': 'Test embargoed dandiset',
+        'license': [get_first_allowed_license()],
+    }
 
     # Create embargoed dandiset with funding and award info
     embargo_end_date = (timezone.now().date() + datetime.timedelta(days=365)).isoformat()
@@ -802,7 +811,11 @@ def test_dandiset_rest_create_embargoed_no_funding_info(api_client: APIClient):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
     name = 'Test Embargoed Dandiset - No Funding'
-    metadata = {'name': name, 'description': 'Test embargoed dandiset', 'license': ['spdx:CC0-1.0']}
+    metadata = {
+        'name': name,
+        'description': 'Test embargoed dandiset',
+        'license': [get_first_allowed_license()],
+    }
 
     # Create embargoed dandiset without funding info
     query_params = {'embargo': 'true'}
@@ -847,7 +860,11 @@ def test_dandiset_rest_create_embargoed_funding_no_award(api_client: APIClient):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
     name = 'Test Embargoed Dandiset - Funding Only'
-    metadata = {'name': name, 'description': 'Test embargoed dandiset', 'license': ['spdx:CC0-1.0']}
+    metadata = {
+        'name': name,
+        'description': 'Test embargoed dandiset',
+        'license': [get_first_allowed_license()],
+    }
 
     # Create embargoed dandiset with funding source but no award number
     query_params = {
@@ -867,7 +884,11 @@ def test_dandiset_rest_create_embargoed_award_no_funding(api_client: APIClient):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
     name = 'Test Embargoed Dandiset - Award Only'
-    metadata = {'name': name, 'description': 'Test embargoed dandiset', 'license': ['spdx:CC0-1.0']}
+    metadata = {
+        'name': name,
+        'description': 'Test embargoed dandiset',
+        'license': [get_first_allowed_license()],
+    }
 
     # Create embargoed dandiset with award number but no funding source
     query_params = {
@@ -888,7 +909,7 @@ def test_dandiset_rest_create_with_duplicate_identifier(api_client):
     api_client.force_authenticate(user=user)
     name = 'Test Dandiset'
     identifier = dandiset.identifier
-    metadata = {'foo': 'bar', 'identifier': f'DANDI:{identifier}'}
+    metadata = {'foo': 'bar', 'identifier': f'{_SCHEMA_CONFIG.instance_name}:{identifier}'}
 
     response = api_client.post('/api/dandisets/', {'name': name, 'metadata': metadata})
     assert response.status_code == 400

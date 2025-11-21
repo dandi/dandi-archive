@@ -28,7 +28,14 @@ from dandiapi.zarr.models import ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
-from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
+from .fuzzy import (
+    DEFAULT_WAS_ASSOCIATED_WITH,
+    HTTP_URL_RE,
+    TIMESTAMP_RE,
+    URN_RE,
+    UTC_ISO_TIMESTAMP_RE,
+    UUID_RE,
+)
 
 # Model tests
 
@@ -127,16 +134,7 @@ def test_publish_asset(draft_asset: Asset):
             'name': 'DANDI publish',
             'startDate': UTC_ISO_TIMESTAMP_RE,
             'endDate': UTC_ISO_TIMESTAMP_RE,
-            'wasAssociatedWith': [
-                {
-                    'id': URN_RE,
-                    'identifier': 'RRID:SCR_017571',
-                    'name': 'DANDI API',
-                    # TODO: version the API
-                    'version': '0.1.0',
-                    'schemaKey': 'Software',
-                }
-            ],
+            'wasAssociatedWith': [DEFAULT_WAS_ASSOCIATED_WITH],
             'schemaKey': 'PublishActivity',
         },
         'datePublished': UTC_ISO_TIMESTAMP_RE,

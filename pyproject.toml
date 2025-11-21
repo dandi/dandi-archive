@@ -14,7 +14,7 @@ dependencies = [
   "celery",
   "dandi",  # minimal version is also provided in API /info
   # Pin dandischema to exact version to make explicit which schema version is being used
-  "dandischema==0.11.1",  # schema version 0.6.10
+  "dandischema==0.12.0",  # schema version 0.7.0
   "django[argon2]",
   "django-allauth",
   "django-auth-style",
