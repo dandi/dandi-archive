@@ -41,6 +41,7 @@ For our use case, **legal holds** are the appropriate choice because:
 ## Interaction with Garbage Collection
 
 Legal holds MUST NOT interfere with garbage collection of unpublished assets, as only published asset blobs SHALL have legal holds applied. The garbage collection processes for orphaned uploads, unreferenced AssetBlobs, and unpublished assets MUST continue to work as designed.
+Any violation of this, i.e. any interference, as e.g. attempt to remove a blob which is under Legal hold MUST be considered to be a bug as MUST NOT happen under current design, and thus will not be silently ignored. 
 
 ### Potential Interference Scenarios (and Why They Don't Occur)
 
