@@ -15,7 +15,7 @@ Currently, while our application logic prevents modification of published assets
 - Published asset blobs MUST be immutable at the S3 infrastructure level
 - The immutability mechanism MUST not interfere with the existing trailing delete functionality (S3 Bucket Versioning)
 - The solution MUST be compatible with future garbage collection features
-- The mechanism MUST be efficient when applied to large numbers of blobs during publication
+- The mechanism SHOULD be efficient when applied to large numbers of blobs during publication
 - There MUST be some sort of "backdoor" that allows deletion of published blobs if necessary, in case of extreme circumstances that warrant deletion of a published asset and/or dandiset
 
 ## Proposed Solution
