@@ -46,6 +46,8 @@ def migrate_version_metadata(dandisets: tuple[int, ...], *, include_all: bool, t
     )
 
     migrated_count = 0
+    failed_count = 0
+    unchanged_count = 0
     for version in versions.iterator():
         logger.info('-----------------------------------------')
         logger.info('Migrating %s', version)
@@ -61,10 +63,12 @@ def migrate_version_metadata(dandisets: tuple[int, ...], *, include_all: bool, t
                 metanew['schemaVersion'] = target_version
             except Exception as e:
                 logger.exception('Failed to migrate %s', version, exc_info=e)
+                failed_count += 1
                 continue
 
             if locked_version.metadata == metanew:
                 logger.info('No change in metadata for %s. Skipping save...', version)
+                unchanged_count += 1
                 continue
 
             version.metadata = metanew
@@ -86,7 +90,9 @@ def migrate_version_metadata(dandisets: tuple[int, ...], *, include_all: bool, t
         validate_version_metadata(version=version)
 
     logger.info(
-        'Migrated %s out of %s total selected versions',
+        '%d migrated, %d failed, %d left unchanged, out of %d total selected versions',
         migrated_count,
+        failed_count,
+        unchanged_count,
         versions.count(),
     )
