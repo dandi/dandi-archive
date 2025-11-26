@@ -165,7 +165,7 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
       });
       
       // Determine if service is disabled due to embargo
-      const openaccessOnly = service.openaccessOnly !== false; // Default to true
+      const openaccessOnly = service.openaccessOnly ?? true; // Default to true
       const disabled = embargoed.value && openaccessOnly;
       
       return url ? [{ name: service.name, url, disabled }] : [];
