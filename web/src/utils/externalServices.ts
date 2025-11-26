@@ -89,9 +89,12 @@ const EXTERNAL_SERVICES: ExternalService[] = [
       if (!item.zarr_id) {
         return null;
       }
-      // Extract bucket name from S3 URL (e.g., dandiarchive)
-      const bucketMatch = item.assetS3Url.match(/\/\/[^/]*\/([^/]+)\//);
-      const bucket = bucketMatch ? bucketMatch[1] : 'dandiarchive';
+      // Extract bucket name from S3 URL
+      // Handles formats like:
+      // - https://s3.amazonaws.com/bucket/zarr/...
+      // - https://bucket.s3.amazonaws.com/zarr/...
+      const bucketMatch = item.assetS3Url.match(/(?:https?:\/\/s3[^/]*\.amazonaws\.com\/([^/]+)|https?:\/\/([^.]+)\.s3[^/]*\.amazonaws\.com)/);
+      const bucket = bucketMatch ? (bucketMatch[1] || bucketMatch[2]) : 'dandiarchive';
       return `https://open.quiltdata.com/b/${bucket}/tree/zarr/${item.zarr_id}/`;
     },
   }
@@ -104,7 +107,7 @@ const EXTERNAL_SERVICES: ExternalService[] = [
  * Returns: 7b617177-ad57-4f7f-806b-060e18f42d15
  */
 function extractZarrId(contentUrl: string): string | null {
-  const zarrMatch = contentUrl.match(/\/zarr\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+  const zarrMatch = contentUrl.match(/\/zarr\/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})/);
   return zarrMatch ? zarrMatch[1] : null;
 }
 
