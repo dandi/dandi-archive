@@ -11,6 +11,7 @@ interface ExternalService {
   regex: RegExp;
   maxsize: number;
   endpoint: ExternalServiceEndpoint;
+  openaccessOnly?: boolean; // Default: true - service only works with open access data
 }
 
 const EXTERNAL_SERVICES: ExternalService[] = [
@@ -48,6 +49,7 @@ const EXTERNAL_SERVICES: ExternalService[] = [
     maxsize: Infinity,
     endpoint:
       "https://neurosift.app/nwb?url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$",
+    openaccessOnly: false, // Neurosift supports embargoed files with API key
   },
 
   {
@@ -56,6 +58,7 @@ const EXTERNAL_SERVICES: ExternalService[] = [
     maxsize: Infinity,
     endpoint:
       "https://neurosift.app/nwb?url=$asset_dandi_url$&st=lindi&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$",
+    openaccessOnly: false, // Neurosift supports embargoed files with API key
   },
 
   {
@@ -64,6 +67,7 @@ const EXTERNAL_SERVICES: ExternalService[] = [
     maxsize: Infinity,
     endpoint:
       "https://v1.neurosift.app?p=/avi&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$",
+    openaccessOnly: false, // Neurosift supports embargoed files with API key
   },
 
    {
@@ -159,7 +163,12 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
         assetDandiMetadataUrl,
         assetS3Url,
       });
-      return url ? [{ name: service.name, url }] : [];
+      
+      // Determine if service is disabled due to embargo
+      const openaccessOnly = service.openaccessOnly !== false; // Default to true
+      const disabled = embargoed.value && openaccessOnly;
+      
+      return url ? [{ name: service.name, url, disabled }] : [];
     });
 }
 
