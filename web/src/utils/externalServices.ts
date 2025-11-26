@@ -15,6 +15,7 @@ interface ExternalService {
 
 // Constants for zarr ID and S3 URL parsing
 const UUID_REGEX_PATTERN = /[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}/;
+const ZARR_ID_REGEX = new RegExp(`/zarr/(${UUID_REGEX_PATTERN.source})`);
 const DEFAULT_S3_BUCKET = 'dandiarchive';
 
 const EXTERNAL_SERVICES: ExternalService[] = [
@@ -106,7 +107,7 @@ const EXTERNAL_SERVICES: ExternalService[] = [
  * Returns: 7b617177-ad57-4f7f-806b-060e18f42d15
  */
 function extractZarrId(contentUrl: string): string | null {
-  const zarrMatch = contentUrl.match(new RegExp(`/zarr/(${UUID_REGEX_PATTERN.source})`));
+  const zarrMatch = contentUrl.match(ZARR_ID_REGEX);
   return zarrMatch ? zarrMatch[1] : null;
 }
 
