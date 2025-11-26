@@ -79,8 +79,34 @@ const EXTERNAL_SERVICES: ExternalService[] = [
     maxsize: Infinity,
     endpoint:
       "https://www.neuroglass.io/new?resource=$asset_dandi_metadata_url$",
+  },
+
+  {
+    name: "QuiltData",
+    regex: /\.zarr$/,
+    maxsize: Infinity,
+    endpoint: (item: ServiceUrlData) => {
+      if (!item.zarr_id) {
+        return null;
+      }
+      // Extract bucket name from S3 URL (e.g., dandiarchive)
+      const bucketMatch = item.assetS3Url.match(/\/\/[^/]*\/([^/]+)\//);
+      const bucket = bucketMatch ? bucketMatch[1] : 'dandiarchive';
+      return `https://open.quiltdata.com/b/${bucket}/tree/zarr/${item.zarr_id}/`;
+    },
   }
 ];
+
+/**
+ * Extract zarr_id from contentUrl for zarr files.
+ * The zarr_id is the UUID that appears after '/zarr/' in the S3 URL path.
+ * Example: https://s3.amazonaws.com/dandiarchive/zarr/7b617177-ad57-4f7f-806b-060e18f42d15/
+ * Returns: 7b617177-ad57-4f7f-806b-060e18f42d15
+ */
+function extractZarrId(contentUrl: string): string | null {
+  const zarrMatch = contentUrl.match(/\/zarr\/([a-f0-9-]+)/i);
+  return zarrMatch ? zarrMatch[1] : null;
+}
 
 interface ServiceUrlData {
   dandisetId: string,
@@ -90,6 +116,9 @@ interface ServiceUrlData {
   assetDandiUrl: string,
   assetDandiMetadataUrl: string,
   assetS3Url: string,
+  // zarr_id is extracted from contentUrl for zarr files
+  // See: https://github.com/dandi/dandi-schema/issues/356 for potential future improvements
+  zarr_id: string | null,
 }
 
 function serviceURL(endpoint: ExternalServiceEndpoint, data: ServiceUrlData): string | null {
@@ -112,7 +141,8 @@ function serviceURL(endpoint: ExternalServiceEndpoint, data: ServiceUrlData): st
     .replaceAll('$asset_url$', data.assetUrl)
     .replaceAll('$asset_dandi_url$', data.assetDandiUrl)
     .replaceAll('$asset_dandi_metadata_url$', data.assetDandiMetadataUrl)
-    .replaceAll('$asset_s3_url$', data.assetS3Url);
+    .replaceAll('$asset_s3_url$', data.assetS3Url)
+    .replaceAll('$zarr_id$', data.zarr_id || '');
 }
 
 export function getExternalServices(path: AssetPath, info: {dandisetId: string, dandisetVersion: string}) {
@@ -147,6 +177,9 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
   // dandisets (since the ready-made S3 URL will prevent access in that case).
   const assetUrl = embargoed.value ? assetDandiUrl : assetS3Url;
 
+  // Extract zarr_id from contentUrl for zarr files
+  const zarr_id = extractZarrId(assetS3Url);
+
   return EXTERNAL_SERVICES
     .filter((service) => servicePredicate(service, path))
     .flatMap((service) => {
@@ -158,6 +191,7 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
         assetDandiUrl,
         assetDandiMetadataUrl,
         assetS3Url,
+        zarr_id,
       });
       return url ? [{ name: service.name, url }] : [];
     });
