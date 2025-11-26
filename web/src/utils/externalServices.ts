@@ -104,7 +104,7 @@ const EXTERNAL_SERVICES: ExternalService[] = [
  * Returns: 7b617177-ad57-4f7f-806b-060e18f42d15
  */
 function extractZarrId(contentUrl: string): string | null {
-  const zarrMatch = contentUrl.match(/\/zarr\/([a-f0-9-]+)/i);
+  const zarrMatch = contentUrl.match(/\/zarr\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
   return zarrMatch ? zarrMatch[1] : null;
 }
 
