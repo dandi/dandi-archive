@@ -87,7 +87,7 @@ const EXTERNAL_SERVICES: ExternalService[] = [
   },
 
   {
-    name: "QuiltData",
+    name: "QuiltData: S3 Browser",
     regex: /\.zarr$/,
     maxsize: Infinity,
     endpoint: (item: ServiceUrlData) => {
