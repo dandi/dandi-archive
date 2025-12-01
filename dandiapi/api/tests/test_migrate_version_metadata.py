@@ -89,7 +89,7 @@ def test_migrate_version_metadata_specific_dandisets():
 
 
 @pytest.mark.django_db
-def test_migrate_version_metadata_error_no_args(capsys):
+def test_migrate_version_metadata_error_no_args():
     """Test that command fails when neither dandisets nor --all is specified."""
     target_version = settings.DANDI_SCHEMA_VERSION
 
@@ -99,7 +99,7 @@ def test_migrate_version_metadata_error_no_args(capsys):
 
 
 @pytest.mark.django_db
-def test_migrate_version_metadata_error_both_args(capsys):
+def test_migrate_version_metadata_error_both_args():
     """Test that command fails when both dandisets and --all are specified."""
     version = DraftVersionFactory.create()
     target_version = settings.DANDI_SCHEMA_VERSION
