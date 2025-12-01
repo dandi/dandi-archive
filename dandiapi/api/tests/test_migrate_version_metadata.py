@@ -18,10 +18,14 @@ def test_migrate_version_metadata_all():
     version2 = DraftVersionFactory.create()
     version3 = DraftVersionFactory.create()
 
-    # Store original metadata
-    original_metadata1 = version1.metadata.copy()
-    original_metadata2 = version2.metadata.copy()
-    original_metadata3 = version3.metadata.copy()
+    # Simulate older schema versions by modifying metadata
+    old_schema_version = '0.6.0'
+    version1.metadata['schemaVersion'] = old_schema_version
+    version1.save()
+    version2.metadata['schemaVersion'] = old_schema_version
+    version2.save()
+    version3.metadata['schemaVersion'] = old_schema_version
+    version3.save()
 
     # Get the current schema version from settings
     target_version = settings.DANDI_SCHEMA_VERSION
@@ -53,8 +57,14 @@ def test_migrate_version_metadata_specific_dandisets():
     version2 = DraftVersionFactory.create()
     version3 = DraftVersionFactory.create()
 
-    # Store original metadata
-    original_metadata2 = version2.metadata.copy()
+    # Simulate older schema versions by modifying metadata
+    old_schema_version = '0.6.0'
+    version1.metadata['schemaVersion'] = old_schema_version
+    version1.save()
+    version2.metadata['schemaVersion'] = old_schema_version
+    version2.save()
+    version3.metadata['schemaVersion'] = old_schema_version
+    version3.save()
 
     # Get the current schema version from settings
     target_version = settings.DANDI_SCHEMA_VERSION
@@ -76,9 +86,7 @@ def test_migrate_version_metadata_specific_dandisets():
     assert version3.metadata['schemaVersion'] == target_version
 
     # Version 2 should be unchanged (we didn't migrate it)
-    # Note: this check might need adjustment depending on default schema version
-    if 'schemaVersion' in original_metadata2:
-        assert version2.metadata['schemaVersion'] == original_metadata2['schemaVersion']
+    assert version2.metadata['schemaVersion'] == old_schema_version
 
 
 @pytest.mark.django_db
@@ -123,8 +131,15 @@ def test_migrate_version_metadata_only_draft_versions():
     draft_version = DraftVersionFactory.create()
     published_version = PublishedVersionFactory.create()
 
-    # Store original metadata
-    original_published_metadata = published_version.metadata.copy()
+    # Simulate older schema versions by modifying metadata
+    old_schema_version = '0.6.0'
+    draft_version.metadata['schemaVersion'] = old_schema_version
+    draft_version.save()
+    published_version.metadata['schemaVersion'] = old_schema_version
+    published_version.save()
+
+    # Store original published metadata
+    original_published_schema = published_version.metadata['schemaVersion']
 
     # Get the current schema version from settings
     target_version = settings.DANDI_SCHEMA_VERSION
@@ -140,13 +155,19 @@ def test_migrate_version_metadata_only_draft_versions():
     assert draft_version.metadata['schemaVersion'] == target_version
 
     # Verify that the published version was NOT migrated
-    assert published_version.metadata == original_published_metadata
+    assert published_version.metadata['schemaVersion'] == original_published_schema
 
 
 @pytest.mark.django_db
 def test_migrate_version_metadata_idempotent():
     """Test that running migration twice doesn't cause issues."""
     version = DraftVersionFactory.create()
+    
+    # Simulate older schema version
+    old_schema_version = '0.6.0'
+    version.metadata['schemaVersion'] = old_schema_version
+    version.save()
+    
     target_version = settings.DANDI_SCHEMA_VERSION
 
     # Run the migration command twice
@@ -159,3 +180,4 @@ def test_migrate_version_metadata_idempotent():
 
     # Metadata should be the same after second run
     assert version.metadata == metadata_after_first
+    assert version.metadata['schemaVersion'] == target_version
