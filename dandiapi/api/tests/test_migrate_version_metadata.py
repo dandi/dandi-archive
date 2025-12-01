@@ -161,12 +161,12 @@ def test_migrate_version_metadata_only_draft_versions():
 def test_migrate_version_metadata_idempotent():
     """Test that running migration twice doesn't cause issues."""
     version = DraftVersionFactory.create()
-    
+
     # Simulate older schema version
     old_schema_version = '0.6.0'
     version.metadata['schemaVersion'] = old_schema_version
     version.save()
-    
+
     target_version = settings.DANDI_SCHEMA_VERSION
 
     # Run the migration command twice
