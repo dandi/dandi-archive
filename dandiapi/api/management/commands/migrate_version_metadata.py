@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from dandischema.metadata import migrate
 from django.db import transaction
 import djclick as click
@@ -20,20 +21,15 @@ logger = logging.getLogger(__name__)
     nargs=-1,
 )
 @click.option(
-    '--target', 'target_version', default='', help='The target dandischema version to migrate to.'
-)
-@click.option(
     '-a',
     '--all',
     'include_all',
     is_flag=True,
     help='Run on all dandisets.',
 )
-def migrate_version_metadata(dandisets: tuple[int, ...], *, include_all: bool, target_version: str):
+def migrate_version_metadata(dandisets: tuple[int, ...], *, include_all: bool):
     if bool(dandisets) == include_all:
         raise click.ClickException("Must specify exactly one of 'dandisets' or --all")
-    if not target_version:
-        raise click.ClickException('Must specify target schema version via --target')
 
     versions = Version.objects.filter(version='draft')
     if dandisets:
@@ -42,7 +38,7 @@ def migrate_version_metadata(dandisets: tuple[int, ...], *, include_all: bool, t
     logger.info(
         'Migrating %s dandiset draft versions to schema version %s',
         versions.count(),
-        target_version,
+        DANDI_SCHEMA_VERSION,
     )
 
     migrated_count = 0
@@ -56,11 +52,9 @@ def migrate_version_metadata(dandisets: tuple[int, ...], *, include_all: bool, t
             locked_version = Version.objects.select_for_update().get(id=version.id)
 
             try:
-                metanew = migrate(
-                    locked_version.metadata, to_version=target_version, skip_validation=True
-                )
+                metanew = migrate(locked_version.metadata, skip_validation=True)
                 # We set this manually due to https://github.com/dandi/dandi-schema/issues/353
-                metanew['schemaVersion'] = target_version
+                metanew['schemaVersion'] = DANDI_SCHEMA_VERSION
             except Exception as e:
                 logger.exception('Failed to migrate %s', version, exc_info=e)
                 failed_count += 1
@@ -80,7 +74,7 @@ def migrate_version_metadata(dandisets: tuple[int, ...], *, include_all: bool, t
                 metadata=locked_version.metadata,
                 user=None,
                 admin=True,
-                description=f'Update schema version to {target_version}',
+                description=f'Update schema version to {DANDI_SCHEMA_VERSION}',
             )
 
             migrated_count += 1
