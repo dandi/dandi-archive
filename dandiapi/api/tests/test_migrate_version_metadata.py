@@ -6,8 +6,7 @@ import pytest
 from dandiapi.api.management.commands.migrate_version_metadata import (
     migrate_version_metadata,
 )
-from dandiapi.api.models import Version
-from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory
+from dandiapi.api.tests.factories import DraftVersionFactory
 
 
 @pytest.mark.django_db
