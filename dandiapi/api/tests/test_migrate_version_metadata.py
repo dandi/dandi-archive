@@ -6,7 +6,13 @@ import pytest
 from dandiapi.api.management.commands.migrate_version_metadata import (
     migrate_version_metadata,
 )
-from dandiapi.api.tests.factories import DraftVersionFactory
+from dandiapi.api.tests.factories import DraftVersionFactory, PublishedVersionFactory
+
+
+def _set_old_schema_version(version, schema_version='0.6.0'):
+    """Helper function to set an older schema version on a version object."""
+    version.metadata['schemaVersion'] = schema_version
+    version.save()
 
 
 @pytest.mark.django_db
@@ -18,13 +24,9 @@ def test_migrate_version_metadata_all():
     version3 = DraftVersionFactory.create()
 
     # Simulate older schema versions by modifying metadata
-    old_schema_version = '0.6.0'
-    version1.metadata['schemaVersion'] = old_schema_version
-    version1.save()
-    version2.metadata['schemaVersion'] = old_schema_version
-    version2.save()
-    version3.metadata['schemaVersion'] = old_schema_version
-    version3.save()
+    _set_old_schema_version(version1)
+    _set_old_schema_version(version2)
+    _set_old_schema_version(version3)
 
     # Get the current schema version from settings
     target_version = settings.DANDI_SCHEMA_VERSION
@@ -58,12 +60,9 @@ def test_migrate_version_metadata_specific_dandisets():
 
     # Simulate older schema versions by modifying metadata
     old_schema_version = '0.6.0'
-    version1.metadata['schemaVersion'] = old_schema_version
-    version1.save()
-    version2.metadata['schemaVersion'] = old_schema_version
-    version2.save()
-    version3.metadata['schemaVersion'] = old_schema_version
-    version3.save()
+    _set_old_schema_version(version1, old_schema_version)
+    _set_old_schema_version(version2, old_schema_version)
+    _set_old_schema_version(version3, old_schema_version)
 
     # Get the current schema version from settings
     target_version = settings.DANDI_SCHEMA_VERSION
@@ -124,18 +123,14 @@ def test_migrate_version_metadata_error_no_target():
 @pytest.mark.django_db
 def test_migrate_version_metadata_only_draft_versions():
     """Test that only draft versions are migrated, not published ones."""
-    from dandiapi.api.tests.factories import PublishedVersionFactory
-
     # Create a draft and a published version
     draft_version = DraftVersionFactory.create()
     published_version = PublishedVersionFactory.create()
 
     # Simulate older schema versions by modifying metadata
     old_schema_version = '0.6.0'
-    draft_version.metadata['schemaVersion'] = old_schema_version
-    draft_version.save()
-    published_version.metadata['schemaVersion'] = old_schema_version
-    published_version.save()
+    _set_old_schema_version(draft_version, old_schema_version)
+    _set_old_schema_version(published_version, old_schema_version)
 
     # Store original published metadata
     original_published_schema = published_version.metadata['schemaVersion']
@@ -163,9 +158,7 @@ def test_migrate_version_metadata_idempotent():
     version = DraftVersionFactory.create()
 
     # Simulate older schema version
-    old_schema_version = '0.6.0'
-    version.metadata['schemaVersion'] = old_schema_version
-    version.save()
+    _set_old_schema_version(version)
 
     target_version = settings.DANDI_SCHEMA_VERSION
 
