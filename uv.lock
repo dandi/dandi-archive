@@ -767,7 +767,7 @@ requires-dist = [
     { name = "boto3" },
     { name = "celery" },
     { name = "dandi" },
-    { name = "dandischema", specifier = "==0.12.0" },
+    { name = "dandischema", specifier = "==0.12.1" },
     { name = "django", extras = ["argon2"] },
     { name = "django-allauth" },
     { name = "django-auth-style" },
@@ -839,7 +839,7 @@ type = [
 
 [[package]]
 name = "dandischema"
-version = "0.12.0"
+version = "0.12.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jsonschema", extra = ["format"] },
@@ -849,9 +849,9 @@ dependencies = [
     { name = "requests" },
     { name = "zarr-checksum" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/74/9e/1747cc720270d0add1dde5ce1b6ef5107df796eb59eea91ec520bd40c696/dandischema-0.12.0.tar.gz", hash = "sha256:66542da2341440f93e08510cd544b331b8959b5420338b33f32fb2c59f95a98b", size = 98740, upload-time = "2025-11-20T23:06:32.603Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/23/b7/b44244184c16c1b1cc69070b53325965285b81843ad7755c429e1ffaa341/dandischema-0.12.1.tar.gz", hash = "sha256:481ed1da9481090d8000b3b2373a0d4876043f48d4cddc3364c18e0a97bd0c22", size = 98659, upload-time = "2025-11-26T20:16:58.672Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5f/7e/de6eee89ee6cbe0a107159090a1da66d616fbdbd5de15fa72927f80af60c/dandischema-0.12.0-py3-none-any.whl", hash = "sha256:be78a49644bb56913966d478ad2d5289ef0c72522592c3c149bb34c51c964b3f", size = 118310, upload-time = "2025-11-20T23:06:30.678Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/16/959ccdc06e45781d3c41cd552baeaaf563ffb5fe240fbd24efd26b8b2b12/dandischema-0.12.1-py3-none-any.whl", hash = "sha256:88f84cefd7883ce15d5c2f6b92411b1d00fd76468b77950fff25381e17eaab44", size = 118561, upload-time = "2025-11-26T20:16:57.121Z" },
 ]
 
 [[package]]
