@@ -53,8 +53,6 @@ def migrate_version_metadata(dandisets: tuple[int, ...], *, include_all: bool):
 
             try:
                 metanew = migrate(locked_version.metadata, skip_validation=True)
-                # We set this manually due to https://github.com/dandi/dandi-schema/issues/353
-                metanew['schemaVersion'] = DANDI_SCHEMA_VERSION
             except Exception as e:
                 logger.exception('Failed to migrate %s', version, exc_info=e)
                 failed_count += 1
