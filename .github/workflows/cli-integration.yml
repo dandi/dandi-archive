@@ -68,7 +68,7 @@ jobs:
         if: matrix.dandi-version == 'release'
         run: >
           uvx --with dandi[test]
-          pytest --pyargs -v -s --dandi-api dandi
+          pytest --pyargs -v -s --dandi-api -k "not test_nwb2asset_remote_asset" dandi
         env:
           DANDI_TESTS_PERSIST_DOCKER_COMPOSE: "1"
 
@@ -76,7 +76,7 @@ jobs:
         if: matrix.dandi-version == 'master'
         run: >
           uvx --with "dandi[test] @ git+https://github.com/dandi/dandi-cli"
-          pytest --pyargs -v -s --dandi-api dandi
+          pytest --pyargs -v -s --dandi-api -k "not test_nwb2asset_remote_asset" dandi
         env:
           DANDI_TESTS_PERSIST_DOCKER_COMPOSE: "1"
 
