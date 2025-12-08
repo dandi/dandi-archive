@@ -44,6 +44,12 @@ STORAGES['default'] = {
     },
 }
 
+# In production, enable rate limiting for unauthenticated users
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+    'anon': '500/minute',
+}
+
+
 DANDI_DEV_EMAIL: str = env.str('DJANGO_DANDI_DEV_EMAIL')
 DANDI_ADMIN_EMAIL: str = env.str('DJANGO_DANDI_ADMIN_EMAIL')
 
