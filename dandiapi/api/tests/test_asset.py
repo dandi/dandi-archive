@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from uuid import uuid4
 
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from dandischema.models import AccessType
 from django.conf import settings
 from django.db.utils import IntegrityError
@@ -179,7 +180,7 @@ def test_asset_total_size(asset_factory, asset_blob_factory, zarr_archive_factor
 def test_asset_full_metadata(draft_asset_factory):
     raw_metadata = {
         'foo': 'bar',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'schemaVersion': DANDI_SCHEMA_VERSION,
     }
     asset: Asset = draft_asset_factory(metadata=raw_metadata)
 
@@ -199,7 +200,7 @@ def test_asset_full_metadata(draft_asset_factory):
         'contentUrl': [download_url, blob_url],
         'contentSize': asset.blob.size,
         'digest': asset.blob.digest,
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{DANDI_SCHEMA_VERSION}/context.json',
     }
 
 
@@ -208,7 +209,7 @@ def test_asset_full_metadata_zarr(draft_asset_factory):
     zarr_archive = ZarrArchiveFactory.create()
     raw_metadata = {
         'foo': 'bar',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'schemaVersion': DANDI_SCHEMA_VERSION,
     }
     asset: Asset = draft_asset_factory(metadata=raw_metadata, blob=None, zarr=zarr_archive)
 
@@ -230,7 +231,7 @@ def test_asset_full_metadata_zarr(draft_asset_factory):
         'digest': asset.digest,
         # This should be injected on all zarr assets
         'encodingFormat': 'application/x-zarr',
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{DANDI_SCHEMA_VERSION}/context.json',
     }
 
 
@@ -240,7 +241,7 @@ def test_asset_full_metadata_access(
 ):
     raw_metadata = {
         'foo': 'bar',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'schemaVersion': DANDI_SCHEMA_VERSION,
     }
     embargoed_zarr_asset: Asset = draft_asset_factory(
         metadata=raw_metadata, blob=None, zarr=embargoed_zarr_archive_factory()
@@ -786,7 +787,7 @@ def test_asset_create_path_validation(api_client, asset_blob, path, expected_sta
     api_client.force_authenticate(user=user)
 
     metadata = {
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'schemaVersion': DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-nwb',
         'path': path,
     }
@@ -813,7 +814,7 @@ def test_asset_create_conflicting_path(api_client, asset_blob):
         asset_blob=asset_blob,
         metadata={
             'path': 'foo/bar.txt',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
 
@@ -825,7 +826,7 @@ def test_asset_create_conflicting_path(api_client, asset_blob):
             asset_blob=asset_blob,
             metadata={
                 'path': 'foo/bar.txt/baz.txt',
-                'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+                'schemaVersion': DANDI_SCHEMA_VERSION,
             },
         )
 
@@ -837,7 +838,7 @@ def test_asset_create_conflicting_path(api_client, asset_blob):
             asset_blob=asset_blob,
             metadata={
                 'path': 'foo',
-                'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+                'schemaVersion': DANDI_SCHEMA_VERSION,
             },
         )
 
@@ -1253,7 +1254,7 @@ def test_asset_rest_rename(api_client, asset_blob):
     api_client.force_authenticate(user=user)
 
     # Create asset
-    metadata = {'path': 'foo/bar', 'schemaVersion': settings.DANDI_SCHEMA_VERSION}
+    metadata = {'path': 'foo/bar', 'schemaVersion': DANDI_SCHEMA_VERSION}
     asset = add_asset_to_version(
         user=user, version=draft_version, asset_blob=asset_blob, metadata=metadata
     )
@@ -1650,7 +1651,7 @@ def test_asset_rest_delete_zarr_modified(
         {
             'metadata': {
                 'path': 'sample.zarr',
-                'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+                'schemaVersion': DANDI_SCHEMA_VERSION,
             },
             'zarr_id': zarr_archive.zarr_id,
         },

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
 from dandischema.conf import get_instance_config
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
@@ -465,8 +466,8 @@ def test_dandiset_rest_create(api_client):
             f'{user.last_name}, {user.first_name} ({year}) {name} '
             f'(Version draft) [Data set]. DANDI Archive. {url}'
         ),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{DANDI_SCHEMA_VERSION}/context.json',
+        'schemaVersion': DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
         'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
         'repository': settings.DANDI_WEB_APP_URL,
@@ -548,8 +549,8 @@ def test_dandiset_rest_create_with_identifier(api_client):
             f'{user.last_name}, {user.first_name} ({year}) {name} '
             f'(Version draft) [Data set]. DANDI Archive. {url}'
         ),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{DANDI_SCHEMA_VERSION}/context.json',
+        'schemaVersion': DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
         'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
         'repository': settings.DANDI_WEB_APP_URL,
@@ -642,8 +643,8 @@ def test_dandiset_rest_create_with_contributor(api_client):
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': (f'Jane Doe ({year}) {name} (Version draft) [Data set]. DANDI Archive. {url}'),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{DANDI_SCHEMA_VERSION}/context.json',
+        'schemaVersion': DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
         'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
         'repository': settings.DANDI_WEB_APP_URL,
@@ -725,8 +726,8 @@ def test_dandiset_rest_create_embargoed(api_client):
             f'{user.last_name}, {user.first_name} ({year}) {name} '
             f'(Version draft) [Data set]. DANDI Archive. {url}'
         ),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{DANDI_SCHEMA_VERSION}/context.json',
+        'schemaVersion': DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
         'access': [
             {

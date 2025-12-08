@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.conf import settings
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.db.models import Q, QuerySet
 import pytest
 
@@ -383,7 +383,7 @@ def test_asset_path_ordering(asset_blob):
         asset_blob=asset_blob,
         metadata={
             'path': 'a/z',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
     add_asset_to_version(
@@ -392,7 +392,7 @@ def test_asset_path_ordering(asset_blob):
         asset_blob=asset_blob,
         metadata={
             'path': 'aa/z',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
 
