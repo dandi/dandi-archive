@@ -150,11 +150,16 @@ REST_FRAMEWORK['EXCEPTION_HANDLER'] = 'dandiapi.drf_utils.rewrap_django_core_exc
 # Throttling configuration
 REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
     'rest_framework.throttling.AnonRateThrottle',
-    'dandiapi.api.throttling.DandiUserRateThrottle',
 ]
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'anon': '60/min',
-    'user': '120/min',
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'dandi_cache_table',
+    }
 }
 
 REST_FRAMEWORK_EXTENSIONS = {'DEFAULT_PARENT_LOOKUP_KWARG_NAME_PREFIX': ''}
