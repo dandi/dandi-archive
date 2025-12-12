@@ -157,12 +157,6 @@ urlpatterns = [
         RedirectView.as_view(permanent=True, url=reverse_lazy('docs-redoc')),
         name='schema-redoc',
     ),
-    path(
-        'sitemap.xml',
-        sitemap,
-        {'sitemaps': sitemaps},
-        name='django.contrib.sitemaps.views.sitemap',
-    ),
     # Webdav doc page views
     path(
         'api/webdav/docs/swagger/',
@@ -170,6 +164,16 @@ urlpatterns = [
         name='webdav-schema-swagger-ui',
     ),
 ]
+
+if settings.DANDI_ENABLE_SITEMAP_XML:
+    urlpatterns += [
+        path(
+            'sitemap.xml',
+            sitemap,
+            {'sitemaps': sitemaps},
+            name='django.contrib.sitemaps.views.sitemap',
+        ),
+    ]
 
 if settings.DEBUG:
     import debug_toolbar.toolbar

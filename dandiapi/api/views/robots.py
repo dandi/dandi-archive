@@ -5,7 +5,9 @@ from django.http import HttpResponse
 
 
 def robots_txt_view(request):
-    content = f"""# Allow Googlebot to access dandiset metadata for structured data indexing
+    parts: list[str] = []
+
+    parts.append("""# Allow Googlebot to access dandiset metadata for structured data indexing
 User-agent: Googlebot
 Allow: /api/dandisets/search
 Allow: /api/dandisets/*/
@@ -17,9 +19,11 @@ Disallow: /
 
 # Disallow all other bots from accessing API endpoints
 User-agent: *
-Disallow: /
+Disallow: /""")
 
-# Sitemap location
-Sitemap: {settings.DANDI_API_URL}/sitemap.xml
-"""
+    if settings.DANDI_ENABLE_SITEMAP_XML:
+        parts.append(f'Sitemap: {settings.DANDI_API_URL}/sitemap.xml')
+
+    content = '\n\n'.join(parts)
+
     return HttpResponse(content, content_type='text/plain')
