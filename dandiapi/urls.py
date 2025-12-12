@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path, re_path, register_converter, reverse_lazy
 from django.views.generic import RedirectView
 from drf_yasg import openapi
@@ -37,6 +38,7 @@ from dandiapi.api.views import (
     webdav,
 )
 from dandiapi.search.views import search_genotypes, search_species
+from dandiapi.sitemaps import sitemaps
 from dandiapi.zarr.views import ZarrViewSet
 
 router = ExtendedSimpleRouter()
@@ -154,6 +156,12 @@ urlpatterns = [
         'redoc/',
         RedirectView.as_view(permanent=True, url=reverse_lazy('docs-redoc')),
         name='schema-redoc',
+    ),
+    path(
+        'sitemap.xml',
+        sitemap,
+        {'sitemaps': sitemaps},
+        name='django.contrib.sitemaps.views.sitemap',
     ),
     # Webdav doc page views
     path(
