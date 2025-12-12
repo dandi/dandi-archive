@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 
 from dandiapi.api.models.dandiset import Dandiset
@@ -16,7 +17,7 @@ class DandisetSitemap(Sitemap):
         return f'/dandiset/{obj.identifier}/'
 
     def get_domain(self, site):
-        return 'dandiarchive.org'
+        return settings.DANDI_WEB_APP_DOMAIN
 
 
 sitemaps = {
