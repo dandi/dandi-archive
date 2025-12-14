@@ -15,6 +15,16 @@
       </v-card-title>
 
       <v-card-text class="px-0">
+        <v-alert
+          v-if="isDraft"
+          type="warning"
+          variant="tonal"
+          class="mb-4"
+        >
+          <strong>Citing draft dandisets is not recommended</strong> as the content may change.
+          Please contact the authors to request publication of this dandiset.
+        </v-alert>
+
         <p class="text-body-1 mb-4">
           To promote reproducibility and give credit to researchers who share their data,
           please acknowledge the contributors and cite this dataset in your publications.
@@ -235,6 +245,7 @@ const props = defineProps({
 
 const store = useDandisetStore();
 const currentDandiset = computed(() => store.dandiset);
+const isDraft = computed(() => store.version === 'draft');
 
 const citation = computed(() => props.meta?.citation);
 const doi = computed(() => props.meta?.doi);
