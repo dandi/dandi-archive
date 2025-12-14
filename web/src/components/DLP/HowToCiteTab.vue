@@ -16,13 +16,27 @@
 
       <v-card-text class="px-0">
         <v-alert
-          v-if="isDraft"
+          v-if="isDraft && hasPublishedVersions"
           type="warning"
           variant="tonal"
           class="mb-4"
         >
           <strong>Citing draft dandisets is not recommended</strong> as the content may change.
-          Please contact the authors to request publication of this dandiset.
+          Please cite the
+          <router-link :to="latestPublishedVersionLink">
+            latest published version ({{ latestPublishedVersion }})
+          </router-link>
+          instead.
+        </v-alert>
+
+        <v-alert
+          v-else-if="isDraft"
+          type="warning"
+          variant="tonal"
+          class="mb-4"
+        >
+          <strong>Citing draft dandisets is not recommended</strong> as the content may change.
+          Please contact the authors to request publication of this dandiset before citing.
         </v-alert>
 
         <p class="text-body-1 mb-4">
@@ -246,6 +260,18 @@ const props = defineProps({
 const store = useDandisetStore();
 const currentDandiset = computed(() => store.dandiset);
 const isDraft = computed(() => store.version === 'draft');
+const publishedVersions = computed(() => store.publishedVersions);
+const hasPublishedVersions = computed(() => publishedVersions.value && publishedVersions.value.length > 0);
+const latestPublishedVersion = computed(() => {
+  if (!publishedVersions.value || publishedVersions.value.length === 0) return null;
+  // Versions are sorted, so the first one is the latest
+  return publishedVersions.value[0].version;
+});
+const latestPublishedVersionLink = computed(() => {
+  if (!currentDandiset.value || !latestPublishedVersion.value) return '';
+  const { identifier } = currentDandiset.value.dandiset;
+  return `/dandiset/${identifier}/${latestPublishedVersion.value}`;
+});
 
 const citation = computed(() => props.meta?.citation);
 const doi = computed(() => props.meta?.doi);
