@@ -23,6 +23,9 @@ class Dandiset(TimeStampedModel):
     starred_users = models.ManyToManyField(
         to=User, through='DandisetStar', related_name='starred_dandisets'
     )
+    # Tracks when a publish reminder email was sent to owners of this dandiset.
+    # Null means no reminder has been sent yet.
+    publish_reminder_sent_at = models.DateTimeField(null=True, blank=True, default=None)
 
     class Meta:
         ordering = ['id']

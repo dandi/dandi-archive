@@ -242,3 +242,33 @@ def send_dandiset_unembargo_failed_message(dandiset: Dandiset):
     messages = [build_dandiset_unembargo_failed_message(dandiset)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
+
+
+def build_publish_reminder_message(dandiset: Dandiset):
+    """Build an email reminding dandiset owners to publish their dandiset."""
+    dandiset_context = {
+        'identifier': dandiset.identifier,
+        'name': dandiset.draft_version.name,
+        'ui_link': f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}',
+    }
+
+    render_context = {
+        **BASE_RENDER_CONTEXT,
+        'dandiset': dandiset_context,
+    }
+    html_message = render_to_string('api/mail/publish_reminder.html', render_context)
+    return build_message(
+        subject=f'Reminder: Publish your Dandiset "{dandiset.draft_version.name}"',
+        message=strip_tags(html_message),
+        html_message=html_message,
+        to=[owner.email for owner in get_dandiset_owners(dandiset)],
+        reply_to=[settings.DANDI_ADMIN_EMAIL],
+    )
+
+
+def send_publish_reminder_message(dandiset: Dandiset):
+    """Send an email reminding dandiset owners to publish their dandiset."""
+    logger.info('Sending publish reminder message to dandiset %s owners.', dandiset.identifier)
+    messages = [build_publish_reminder_message(dandiset)]
+    with mail.get_connection() as connection:
+        connection.send_messages(messages)

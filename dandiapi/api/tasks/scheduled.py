@@ -19,7 +19,7 @@ from django.contrib.auth.models import User
 from django.db import connection
 from django.db.models.query_utils import Q
 
-from dandiapi.api.mail import send_pending_users_message
+from dandiapi.api.mail import send_pending_users_message, send_publish_reminder_message
 from dandiapi.api.models import UserMetadata, Version
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.dandiset import Dandiset
@@ -156,6 +156,68 @@ def compute_application_stats() -> None:
     )
 
 
+# Number of days after which a draft-only dandiset is considered "stale" and
+# eligible for a publish reminder email.
+PUBLISH_REMINDER_DAYS = 30
+
+
+@shared_task(soft_time_limit=120)
+def send_publish_reminder_emails() -> None:
+    """
+    Send reminder emails to owners of draft-only dandisets that haven't been modified recently.
+
+    This task finds all dandisets that:
+    1. Have never been published (only have a draft version)
+    2. Have a draft version that hasn't been modified in PUBLISH_REMINDER_DAYS days
+    3. Are not embargoed (embargoed dandisets have different publication workflows)
+    4. Have not already received a publish reminder email
+
+    For each such dandiset, an email is sent to all owners reminding them to publish.
+    The dandiset's publish_reminder_sent_at field is then updated to prevent duplicate emails.
+    """
+    from django.utils import timezone
+
+    cutoff_date = timezone.now() - timedelta(days=PUBLISH_REMINDER_DAYS)
+
+    # Find dandisets that:
+    # - Are not embargoed
+    # - Have never been published (no versions other than 'draft')
+    # - Have a draft version that was last modified before the cutoff date
+    # - Have not already received a publish reminder email
+    stale_draft_dandisets = (
+        Dandiset.objects.filter(
+            embargo_status=Dandiset.EmbargoStatus.OPEN,
+            publish_reminder_sent_at__isnull=True,  # Only dandisets that haven't been reminded
+        )
+        .exclude(
+            # Exclude dandisets that have any published versions
+            versions__version__regex=r'^\d'
+        )
+        .filter(
+            # Only include dandisets with draft versions modified before cutoff
+            versions__version='draft',
+            versions__modified__lt=cutoff_date,
+        )
+        .distinct()
+    )
+
+    stale_count = stale_draft_dandisets.count()
+    if stale_count > 0:
+        logger.info('Found %s stale draft dandisets to send publish reminders', stale_count)
+        for dandiset in stale_draft_dandisets.iterator():
+            try:
+                send_publish_reminder_message(dandiset)
+                # Mark the dandiset as having received a reminder
+                dandiset.publish_reminder_sent_at = timezone.now()
+                dandiset.save(update_fields=['publish_reminder_sent_at'])
+            except Exception:
+                logger.exception(
+                    'Failed to send publish reminder for dandiset %s', dandiset.identifier
+                )
+    else:
+        logger.debug('Found no stale draft dandisets to send publish reminders')
+
+
 def register_scheduled_tasks(sender: Celery, **kwargs):
     """Register tasks with a celery beat schedule."""
     logger.info(
@@ -186,3 +248,6 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     # Run garbage collection once a day
     # TODO: enable this once we're ready to run garbage collection automatically
     # sender.add_periodic_task(timedelta(days=1), garbage_collection.s())
+
+    # Send weekly publish reminder emails to owners of stale draft-only dandisets
+    sender.add_periodic_task(crontab(hour=9, minute=0, day_of_week=1), send_publish_reminder_emails.s())
