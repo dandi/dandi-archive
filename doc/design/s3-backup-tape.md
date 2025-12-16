@@ -82,7 +82,7 @@ $$
 - Granite (internal pricing; would require a 'liaison') storage: at the given estimate of ~$15.62/TB/year
 
 $$
-    \frac{\$4}{\rm{TB} \ \rm{year}} \cdot 1 \rm{PB} = \frac{\$4}{\rm{TB} \ \rm{year}} \cdot 1,000 \ \rm{TB} \cdot \frac{1 \ \rm{year}}{12 \ \rm{month}} \approx **\$1,301.66/month**
+    \frac{\$15.62}{\rm{TB} \ \rm{year}} \cdot 1 \rm{PB} = \frac{\$15.62}{\rm{TB} \ \rm{year}} \cdot 1,000 \ \rm{TB} \cdot \frac{1 \ \rm{year}}{12 \ \rm{month}} \approx **\$1,301.66/month**
 $$
 
 - Granite (external) storage: at the given estimate of ~$24.78/TB/year
@@ -106,6 +106,8 @@ The following table shows the initial, final, intermediate, and cumulative costs
 | NESE  | $4,000 / year | $10,000 / year | $14,000 / year | $18,000 / year | $22,000 / year | $26,000 / year | $94,000 |
 | Deep<br>Glacier| $11,880 / year | $29,700 / year | $41,580 / year | $53,460 / year | $65,340 / year | $77,220 / year | $279,180 |
 | Deep Glacier<br>+<br>Full Restore[^2] | $14,380 / year | $35,950 / year | $50,330 / year | $64,710 / year | $79,090 / year | $93,470 / year  | max: $372,650 |
+| Granite (Internal) | $15,620 / year |	$39,050 / year | $54,670 / year | $70,290 / year | $85,910 / year | $101,530 / year | $367,070 |
+| Granite (External) | $24,780 / year |	$61,950 / year | $86,730 / year | $111,510 / year | $136,290 / year | $161,070 / year | $582,330 |
 
 [^1]: LINC is expected to make a one-time contribution of 0.5 PB.
 [^2]: In the event that a full restoration of the bucket is required once during the year indicated by the column, the Deep Glacier approach has additional costs to just the underlying storage.
