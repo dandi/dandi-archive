@@ -58,7 +58,7 @@ Unlike the [Deep Glacier approach](https://github.com/dandi/dandi-archive/blob/b
 ## Limitations and Considerations
 
 - **Upper bound on total storage**: No quota for an upper limit of long-term storage has yet been provided, aside from the grand 70 PB total of the entire NESE store and 300 PB for Granite; the providers claim expansion is possible as need arises.
-- **Maximum file size**: NESE tape services do place a maximum file size limitation of 1 TiB; though no single file on DANDI would violate this (some might come close though). No limitation has been relayed for Granite or others.
+- **Maximum file size**: NESE tape services do place a maximum file size limitation of 1 TiB; though no single file on DANDI would violate this (some might come close though). Granite requests an average file size of 100MB, but it is unclear how strong this requirement is (we also haven't computed what DANDI's average is).
 - **Replication is eventually consistent**: No guarantees about replication speed (the time between an object finishing upload into the primary bucket and when it is available in the backup bucket) are provided. Using previous bandwidth experience to the old Dropbox backup, multi-gigabit speeds should be possible and is expected to keep up with ingest rates on the primary S3 bucket.
 
 
@@ -91,6 +91,8 @@ $$
     \frac{\$24.78}{\rm{TB} \ \rm{year}} \cdot 1 \rm{PB} = \frac{\$24.78}{\rm{TB} \ \rm{year}} \cdot 1,000 \ \rm{TB} \cdot \frac{1 \ \rm{year}}{12 \ \rm{month}} \approx **\$2,065/month**
 $$
 
+- OSN storage: one-time hardware purchase $90k per 1.4 PB : unknown if there are yearly costs associated with maintenance.
+
 where units are converted for consistency with the [Deep Glacier design](https://github.com/dandi/dandi-archive/blob/b3e0a9df4188533723fb2ad4a95506aa724fc089/doc/design/s3-backup.md).
 
 
@@ -108,6 +110,8 @@ The following table shows the initial, final, intermediate, and cumulative costs
 | Deep Glacier<br>+<br>Full Restore[^2] | $14,380 / year | $35,950 / year | $50,330 / year | $64,710 / year | $79,090 / year | $93,470 / year  | max: $372,650 |
 | Granite (Internal) | $15,620 / year |	$39,050 / year | $54,670 / year | $70,290 / year | $85,910 / year | $101,530 / year | $367,070 |
 | Granite (External) | $24,780 / year |	$61,950 / year | $86,730 / year | $111,510 / year | $136,290 / year | $161,070 / year | $582,330 |
+| OSN | $64,285.71 (% used of $90,000) |
+| ORCD Expansion | ? | ? | ?
 
 [^1]: LINC is expected to make a one-time contribution of 0.5 PB.
 [^2]: In the event that a full restoration of the bucket is required once during the year indicated by the column, the Deep Glacier approach has additional costs to just the underlying storage.
