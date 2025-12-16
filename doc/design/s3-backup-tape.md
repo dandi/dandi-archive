@@ -1,9 +1,11 @@
-# S3 Backup (NESE Tape @ Dartmouth)
+# S3 Backup (Non-AWS)
 
 ## Terms used
 
 - **Primary bucket**: The sponsored bucket that is currently used for storing DANDI data. Located in us-east-2.
 - **Backup bucket**: The separate bucket that stores the same data as the primary bucket, but with the Glacier Deep Archive storage class. Located in us-east-2. Does not exist yet as of this writing.
+
+
 
 ## Why is backup necessary?
 
@@ -14,6 +16,8 @@ While the [S3 Trailing Delete](./s3-trailing-delete.md) design protects against 
 A backup system provides an additional layer of data protection by maintaining a copy of the data in the primary bucket, along with a record of all ongoing changes to that data. The backup bucket will thus behave much like the tape archival systems of old, enabling administrators to "rewind" to find data in the backup bucket as it was at a given point in history.
 
 While the [Deep Glacier design](https://github.com/dandi/dandi-archive/blob/b3e0a9df4188533723fb2ad4a95506aa724fc089/doc/design/s3-backup.md) protects against some of these same aspects, it does not protect against geographical (catastrophic destruction of physical data centers, as from natural events or otherwise; since the proposed replication bucket would be within the AWS same region), nor against denial of central AWS services by the provider(s). Having more institutionally-backed options offers greater protection through diversification of the underlying storage services used.
+
+
 
 ## Requirements
 
@@ -26,13 +30,19 @@ While the [Deep Glacier design](https://github.com/dandi/dandi-archive/blob/b3e0
 
 - **Cost control.** Enable tunable controls to help keep costs reasonable for the expected data volume.
 
+
+
 ## Proposed Solution
 
-The solution leverages the widely used [NESE Tape](https://nese.readthedocs.io/en/latest/user-docs.html#nese-tape) service provided through the [Dartmouth Discovery HPC](https://rc.dartmouth.edu/hpc/discovery-overview/):
+The solution leverages one of the widely used [NESE Tape](https://nese.readthedocs.io/en/latest/user-docs.html#nese-tape) (provided through the [Dartmouth Discovery HPC](https://rc.dartmouth.edu/hpc/discovery-overview/)), [Granite](https://docs.ncsa.illinois.edu/systems/granite/en/latest/index.html), or [Open Storage Network](https://www.openstoragenetwork.org/get-involved/get-a-pod/) services:
 
 NESE Tape provides higher density, lower cost storage, currently accessible via Globus. NESE Tape is composed of a tape system with several storage frames and 34 tape drives supporting up to 70 PB today with space available for expansion as needed.
 
 Each NESE Tape allocation comes with a disk-based staging area that is available via Globus. Users write to the staging area and then the data is migrated to tape based on a storage lifecycle policy. The default quota on this area is 10 TB or 2% of tape capacity, whichever is larger. There is also a minimum temporary hard quota set to 4 x staging-area space to allow for short term movement of larger amounts of data.
+
+Granite is made up of a single Spectra TFinity Plus library running Specta’s LumOS library software. This 19-frame library is capable of holding over 300PB of replicated data, leveraging 20 LTO-9 tape drives to transfer data to/from thousands of LTO-9 (18TB) tapes.
+
+
 
 ### How It Works
 
@@ -43,16 +53,21 @@ Unlike the [Deep Glacier approach](https://github.com/dandi/dandi-archive/blob/b
 - files with access time age > 2 weeks are stubbed.
 - files < 100 MB copied to tape, but also remain on disk.
 
+
+
 ## Limitations and Considerations
 
-- **Upper bound on total storage**: No quota for an upper limit of long-term storage has yet been provided, aside from the grand 70 PB total of the entire NESE store; the providers claim expansion is possible as need arises.
+- **Upper bound on total storage**: No quota for an upper limit of long-term storage has yet been provided, aside from the grand 70 PB total of the entire NESE store and 300 PB for Granite; the providers claim expansion is possible as need arises.
+- **Maximum file size**: NESE tape services do place a maximum file size limitation of 1 TiB; though no single file on DANDI would violate this (some might come close though). No limitation has been relayed for Granite or others.
 - **Replication is eventually consistent**: No guarantees about replication speed (the time between an object finishing upload into the primary bucket and when it is available in the backup bucket) are provided. Using previous bandwidth experience to the old Dropbox backup, multi-gigabit speeds should be possible and is expected to keep up with ingest rates on the primary S3 bucket.
+
+
 
 ## Cost
 
 Note that unlike the [Deep Glacier approach](https://github.com/dandi/dandi-archive/blob/b3e0a9df4188533723fb2ad4a95506aa724fc089/doc/design/s3-backup.md), no egress cost would be induced from the data transfer as all operations are strictly under the open data bucket.
 
-Also note that currentt cost estimates are rough quotes provided verbatim from discussions between @yarikoptic and the Dartmouth IT team and are subject to change when/if this path solidifies.
+Also note that current cost estimates are rough quotes provided verbatim from discussions between @yarikoptic and the Dartmouth IT team and are subject to change when/if this path solidifies.
 
 **Below are the additional costs introduced by this backup feature** for a 1 PB primary bucket.
 
@@ -64,7 +79,21 @@ $$
     \frac{\$4}{\rm{TB} \ \rm{year}} \cdot 1 \rm{PB} = \frac{\$4}{\rm{TB} \ \rm{year}} \cdot 1,000 \ \rm{TB} \cdot \frac{1 \ \rm{year}}{12 \ \rm{month}} \approx **\$333/month**
 $$
 
-where units are converted for consitency with the [Deep Glacier design](https://github.com/dandi/dandi-archive/blob/b3e0a9df4188533723fb2ad4a95506aa724fc089/doc/design/s3-backup.md).
+- Granite (internal pricing; would require a 'liaison') storage: at the given estimate of ~$15.62/TB/year
+
+$$
+    \frac{\$4}{\rm{TB} \ \rm{year}} \cdot 1 \rm{PB} = \frac{\$4}{\rm{TB} \ \rm{year}} \cdot 1,000 \ \rm{TB} \cdot \frac{1 \ \rm{year}}{12 \ \rm{month}} \approx **\$1,301.66/month**
+$$
+
+- Granite (external) storage: at the given estimate of ~$24.78/TB/year
+
+$$
+    \frac{\$24.78}{\rm{TB} \ \rm{year}} \cdot 1 \rm{PB} = \frac{\$24.78}{\rm{TB} \ \rm{year}} \cdot 1,000 \ \rm{TB} \cdot \frac{1 \ \rm{year}}{12 \ \rm{month}} \approx **\$2,065/month**
+$$
+
+where units are converted for consistency with the [Deep Glacier design](https://github.com/dandi/dandi-archive/blob/b3e0a9df4188533723fb2ad4a95506aa724fc089/doc/design/s3-backup.md).
+
+
 
 ### Future Costs
 
