@@ -51,21 +51,34 @@
         </p>
 
         <!-- Citation -->
-        <h3 class="text-h6 mb-2">
-          Full Citation
-        </h3>
+        <div class="d-flex align-center mb-2">
+          <h3 class="text-h6 mr-4">
+            Full Citation
+          </h3>
+          <v-select
+            v-model="selectedCitationFormat"
+            :items="citationFormats"
+            item-title="text"
+            item-value="value"
+            variant="outlined"
+            density="compact"
+            hide-details
+            class="citation-format-select"
+          />
+        </div>
         <div
-          v-if="citation"
+          v-if="currentCitation"
           class="copy-block mb-4"
         >
           <div class="copy-block-content">
-            <span>{{ citation }}</span>
+            <pre v-if="isCodeFormat" class="citation-text-code">{{ currentCitation }}</pre>
+            <span v-else class="citation-text">{{ currentCitation }}</span>
             <v-btn
               icon
               size="small"
               variant="text"
               class="copy-btn"
-              @click="copyToClipboard(citation)"
+              @click="copyToClipboard(currentCitation)"
             >
               <v-icon size="small">
                 mdi-content-copy
@@ -221,30 +234,17 @@
           </p>
         </div>
 
-        <v-divider class="my-4" />
-
-        <!-- More citation formats link -->
-        <p class="text-body-2 text-center">
-          More citations available at:
-          <a
-            href="https://citation.doi.org/"
-            target="_blank"
-            rel="noopener"
-          >
-            DOI Citation Formatter
-            <v-icon size="small">mdi-open-in-new</v-icon>
-          </a>
-        </p>
       </v-card-text>
     </v-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, type PropType } from 'vue';
+import { computed, type PropType, ref } from 'vue';
 
 import { useDandisetStore } from '@/stores/dandiset';
 import type { DandisetMetadata } from '@/types';
+import { dandisetToCFF, cffToBibTeX, cffToAPA, cffToMLA, cffToChicago, cffToHarvard, cffToVancouver, cffToIEEE, cffToRIS, cffToYAML } from '@/utils/cff';
 
 const props = defineProps({
   schema: {
@@ -273,9 +273,78 @@ const latestPublishedVersionLink = computed(() => {
   return `/dandiset/${identifier}/${latestPublishedVersion.value}`;
 });
 
+// Define citation format types
+type CitationFormat = 'apa' | 'mla' | 'chicago' | 'harvard' | 'vancouver' | 'ieee' | 'bibtex' | 'ris' | 'cff';
+
+// Citation format state
+const selectedCitationFormat = ref<CitationFormat>('apa'); // For the dropdown in Full Citation section
+
+// Generate CFF object from metadata
+const cffObject = computed(() => {
+  if (!props.meta) return null;
+  return dandisetToCFF(props.meta, typeof doi.value === 'string' ? doi.value : undefined);
+});
+
+// Generate citations in different formats
+const formattedCitations = computed<Record<CitationFormat, string>>(() => {
+  if (!cffObject.value || !currentDandiset.value) {
+    return {
+      apa: '',
+      mla: '',
+      chicago: '',
+      harvard: '',
+      vancouver: '',
+      ieee: '',
+      bibtex: '',
+      ris: '',
+      cff: '',
+    };
+  }
+  const identifier = dandiIdentifier.value;
+
+  return {
+    apa: cffToAPA(cffObject.value),
+    mla: cffToMLA(cffObject.value),
+    chicago: cffToChicago(cffObject.value),
+    harvard: cffToHarvard(cffObject.value),
+    vancouver: cffToVancouver(cffObject.value),
+    ieee: cffToIEEE(cffObject.value),
+    bibtex: cffToBibTeX(cffObject.value, identifier),
+    ris: cffToRIS(cffObject.value, identifier),
+    cff: cffToYAML(cffObject.value),
+  };
+});
+
+const citationFormats: Array<{ value: CitationFormat; text: string; icon: string }> = [
+  { value: 'apa', text: 'APA 7th', icon: 'mdi-format-text' },
+  { value: 'mla', text: 'MLA 9th', icon: 'mdi-format-text' },
+  { value: 'chicago', text: 'Chicago', icon: 'mdi-format-text' },
+  { value: 'harvard', text: 'Harvard', icon: 'mdi-format-text' },
+  { value: 'vancouver', text: 'Vancouver', icon: 'mdi-format-text' },
+  { value: 'ieee', text: 'IEEE', icon: 'mdi-format-text' },
+  { value: 'bibtex', text: 'BibTeX', icon: 'mdi-code-braces' },
+  { value: 'ris', text: 'RIS', icon: 'mdi-file-export' },
+  { value: 'cff', text: 'CFF (YAML)', icon: 'mdi-file-code' },
+];
+
 const citation = computed(() => props.meta?.citation);
 const doi = computed(() => props.meta?.doi);
 const licenses = computed(() => props.meta?.license);
+
+// Current citation based on selected format
+const currentCitation = computed(() => {
+  // For published versions with a citation, allow format selection
+  if (citation.value && formattedCitations.value[selectedCitationFormat.value]) {
+    return formattedCitations.value[selectedCitationFormat.value];
+  }
+  // For drafts or when CFF generation fails, show the original citation if available
+  return citation.value || '';
+});
+
+// Check if the selected format is a code-like format that needs preformatted text
+const isCodeFormat = computed(() => {
+  return ['bibtex', 'ris', 'cff'].includes(selectedCitationFormat.value);
+});
 
 const dandiIdentifier = computed(() => {
   if (!currentDandiset.value) return '';
@@ -346,5 +415,51 @@ async function copyToClipboard(text: string) {
 
 .copy-btn {
   flex-shrink: 0;
+}
+
+.citation-preview {
+  position: relative;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  padding: 16px;
+  padding-top: 32px;
+}
+
+.citation-preview pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.copy-preview-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.citation-format-select {
+  max-width: 200px;
+  min-width: 150px;
+}
+
+.citation-text {
+  flex: 1;
+  word-break: break-word;
+  line-height: 1.5;
+}
+
+.citation-text-code {
+  flex: 1;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background: transparent;
+  padding: 0;
 }
 </style>
