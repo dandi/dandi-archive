@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 import logging
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, cast
 from urllib.parse import urlunparse
 
@@ -146,6 +147,24 @@ REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
 REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] += ['dandiapi.api.permissions.IsApprovedOrReadOnly']
 REST_FRAMEWORK['DEFAULT_PAGINATION_CLASS'] = 'dandiapi.api.views.pagination.DandiPagination'
 REST_FRAMEWORK['EXCEPTION_HANDLER'] = 'dandiapi.drf_utils.rewrap_django_core_exceptions'
+
+# Throttling configuration
+REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
+    'rest_framework.throttling.AnonRateThrottle',
+]
+# By default, set request rate limit to a very high number, effectively disabling it.
+# This is done to preserve the rate limiting behavior between dev and prod,
+# without actually impeding developer experience.
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+    'anon': f'{sys.maxsize}/minute',
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'dandi_cache_table',
+    }
+}
 
 REST_FRAMEWORK_EXTENSIONS = {'DEFAULT_PARENT_LOOKUP_KWARG_NAME_PREFIX': ''}
 
