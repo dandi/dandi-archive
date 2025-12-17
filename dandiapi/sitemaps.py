@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from urllib.parse import urlparse
+
 from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 
@@ -17,7 +19,7 @@ class DandisetSitemap(Sitemap):
         return f'/dandiset/{obj.identifier}/'
 
     def get_domain(self, site):
-        return settings.DANDI_WEB_APP_DOMAIN
+        return urlparse(settings.DANDI_WEB_APP_URL).netloc
 
 
 sitemaps = {
