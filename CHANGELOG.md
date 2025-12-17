@@ -1,3 +1,39 @@
+# v0.20.0 (Wed Dec 17 2025)
+
+### Release Notes
+
+#### Add vendorization support ([#2584](https://github.com/dandi/dandi-archive/pull/2584))
+
+This PR makes the instance config as defined in `dandischema.conf`, per https://github.com/dandi/dandi-schema/pull/294, available through the `api/info/` endpoint and replaces the hardcoded `DAND:`, the hardcoded RRID, and the supported licenses with the corresponding attributes in schema instance config defined in `dandischema.conf`.
+
+---
+
+#### 🚀 Enhancement
+
+- Add vendorization support [#2584](https://github.com/dandi/dandi-archive/pull/2584) ([@candleindark](https://github.com/candleindark) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🐛 Bug Fix
+
+- Empty commit for release [#2680](https://github.com/dandi/dandi-archive/pull/2680) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Update management command for schema migration [#2650](https://github.com/dandi/dandi-archive/pull/2650) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Remove `DANDI_SCHEMA_VERSION` as a setting [#2644](https://github.com/dandi/dandi-archive/pull/2644) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Auto approve users from McGill University [#2657](https://github.com/dandi/dandi-archive/pull/2657) ([@kabilar](https://github.com/kabilar))
+- Don't use django setting to store allowed schema versions [#2643](https://github.com/dandi/dandi-archive/pull/2643) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Add create_test_user management command [#2642](https://github.com/dandi/dandi-archive/pull/2642) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Add docker volume for pre-commit cache [#2640](https://github.com/dandi/dandi-archive/pull/2640) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 4
+
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.19.0 (Thu Nov 13 2025)
 
 ### Release Notes
