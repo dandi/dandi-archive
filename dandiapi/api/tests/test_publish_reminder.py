@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from dandiapi.api.mail import build_publish_reminder_message, send_publish_reminder_message
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.models.email import SentEmail
 from dandiapi.api.tasks.scheduled import PUBLISH_REMINDER_DAYS, send_publish_reminder_emails
 from dandiapi.api.tests.factories import (
     DandisetFactory,
@@ -33,13 +34,14 @@ def test_build_publish_reminder_message():
 
 @pytest.mark.django_db
 def test_send_publish_reminder_message(mailoutbox):
-    """Test that the publish reminder email is sent correctly."""
+    """Test that the publish reminder email is sent correctly and recorded."""
     users = [UserFactory.create() for _ in range(3)]
     draft_version = DraftVersionFactory.create(dandiset__owners=users)
     dandiset = draft_version.dandiset
 
-    send_publish_reminder_message(dandiset)
+    sent_email = send_publish_reminder_message(dandiset)
 
+    # Check the email was sent
     assert len(mailoutbox) == 1
     assert 'Reminder' in mailoutbox[0].subject
     assert dandiset.identifier in mailoutbox[0].body
@@ -48,6 +50,14 @@ def test_send_publish_reminder_message(mailoutbox):
     owner_emails = {user.email for user in users}
     mailbox_to_emails = set(mailoutbox[0].to)
     assert owner_emails == mailbox_to_emails
+
+    # Check the email was recorded in SentEmail
+    assert sent_email is not None
+    assert sent_email.template_name == 'publish_reminder'
+    assert sent_email.dandiset == dandiset
+    assert set(sent_email.to) == owner_emails
+    assert sent_email.recipients.count() == 3
+    assert set(sent_email.recipients.all()) == set(users)
 
 
 @pytest.mark.django_db
@@ -200,13 +210,19 @@ def test_send_publish_reminder_emails_only_once(mailoutbox):
     assert len(mailoutbox) == 1
     assert dandiset.identifier in mailoutbox[0].body
 
-    # Verify the dandiset was marked as reminded
-    dandiset.refresh_from_db()
-    assert dandiset.publish_reminder_sent_at is not None
+    # Verify a SentEmail record was created
+    sent_emails = SentEmail.objects.filter(
+        template_name='publish_reminder',
+        dandiset=dandiset,
+    )
+    assert sent_emails.count() == 1
 
     # Second run should NOT send another email
     send_publish_reminder_emails()
     assert len(mailoutbox) == 1  # Still only 1 email total
+
+    # Still only one SentEmail record
+    assert sent_emails.count() == 1
 
 
 @pytest.mark.django_db
@@ -220,8 +236,15 @@ def test_send_publish_reminder_emails_excludes_already_reminded(mailoutbox):
     stale_draft_version.save(update_fields=['modified'])
 
     dandiset = stale_draft_version.dandiset
-    dandiset.publish_reminder_sent_at = timezone.now() - timedelta(days=7)  # Reminded a week ago
-    dandiset.save(update_fields=['publish_reminder_sent_at'])
+
+    # Create a SentEmail record to simulate a previous reminder
+    SentEmail.objects.create(
+        template_name='publish_reminder',
+        subject=f'Reminder: Publish your Dandiset "{stale_draft_version.name}"',
+        to=[user.email],
+        text_content='Previous reminder content',
+        dandiset=dandiset,
+    )
 
     send_publish_reminder_emails()
 
@@ -230,8 +253,8 @@ def test_send_publish_reminder_emails_excludes_already_reminded(mailoutbox):
 
 
 @pytest.mark.django_db
-def test_send_publish_reminder_emails_updates_reminder_timestamp(mailoutbox):
-    """Test that the publish_reminder_sent_at field is updated after sending an email."""
+def test_send_publish_reminder_emails_records_sent_email(mailoutbox):
+    """Test that a SentEmail record is created after sending an email."""
     user = UserFactory.create()
 
     # Create a stale draft-only dandiset
@@ -240,14 +263,23 @@ def test_send_publish_reminder_emails_updates_reminder_timestamp(mailoutbox):
     stale_draft_version.save(update_fields=['modified'])
     dandiset = stale_draft_version.dandiset
 
-    # Verify the field is initially null
-    assert dandiset.publish_reminder_sent_at is None
+    # Verify no SentEmail records exist initially
+    assert SentEmail.objects.filter(dandiset=dandiset).count() == 0
 
     before_send = timezone.now()
     send_publish_reminder_emails()
     after_send = timezone.now()
 
-    # Verify the field was updated
-    dandiset.refresh_from_db()
-    assert dandiset.publish_reminder_sent_at is not None
-    assert before_send <= dandiset.publish_reminder_sent_at <= after_send
+    # Verify a SentEmail record was created
+    sent_emails = SentEmail.objects.filter(
+        template_name='publish_reminder',
+        dandiset=dandiset,
+    )
+    assert sent_emails.count() == 1
+
+    sent_email = sent_emails.first()
+    assert sent_email.subject == f'Reminder: Publish your Dandiset "{stale_draft_version.name}"'
+    assert user.email in sent_email.to
+    assert before_send <= sent_email.sent_at <= after_send
+    assert sent_email.recipients.filter(id=user.id).exists()
+    assert sent_email.render_context.get('dandiset_identifier') == dandiset.identifier
