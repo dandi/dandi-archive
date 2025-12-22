@@ -168,7 +168,7 @@ urlpatterns = [
 if settings.DANDI_ENABLE_SITEMAP_XML:
     urlpatterns += [
         path(
-            'sitemap.xml',
+            'sitemaps/frontend.xml',
             sitemap,
             {'sitemaps': sitemaps},
             name='django.contrib.sitemaps.views.sitemap',
