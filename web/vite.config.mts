@@ -7,7 +7,7 @@ import ViteFonts from 'unplugin-fonts/vite'
 import VueRouter from 'unplugin-vue-router/vite'
 
 // Utilities
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import { execSync } from 'node:child_process'
 import { fileURLToPath, URL } from 'node:url'
 
@@ -38,65 +38,76 @@ process.env.VITE_APP_GIT_REVISION = getGitRevision();
 
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [
-    VueRouter(),
-    Vue({
-      template: { transformAssetUrls },
-    }),
-    // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
-    Vuetify({
-      autoImport: true,
-      styles: {
-        configFile: 'src/styles/settings.scss',
-      },
-    }),
-    Components(),
-    ViteFonts({
-      google: {
-        families: [ {
-          name: 'Roboto',
-          styles: 'wght@100;300;400;500;700;900',
-        }],
-      },
-    }),
-    nodePolyfills(),
-  ],
-  define: { 'process.env': {} },
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-      // TODO: this is a fix for a bug in vite, see https://github.com/vitejs/vite/discussions/8549#discussioncomment-7333115
-      '@jsdevtools/ono': '@jsdevtools/ono/cjs/index.js',
-    },
-    extensions: [
-      '.js',
-      '.json',
-      '.jsx',
-      '.mjs',
-      '.ts',
-      '.tsx',
-      '.vue',
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd());
+
+  return {
+    plugins: [
+      VueRouter(),
+      Vue({
+        template: { transformAssetUrls },
+      }),
+      // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
+      Vuetify({
+        autoImport: true,
+        styles: {
+          configFile: 'src/styles/settings.scss',
+        },
+      }),
+      Components(),
+      ViteFonts({
+        google: {
+          families: [{
+            name: 'Roboto',
+            styles: 'wght@100;300;400;500;700;900',
+          }],
+        },
+      }),
+      nodePolyfills(),
     ],
-  },
-  server: {
-    host: process.env.VITE_HOST || 'localhost',
-    port: 8085,
-  },
-  css: {
-    preprocessorOptions: {
-      sass: {
-        api: 'modern-compiler',
+    define: { 'process.env': {} },
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        // TODO: this is a fix for a bug in vite, see https://github.com/vitejs/vite/discussions/8549#discussioncomment-7333115
+        '@jsdevtools/ono': '@jsdevtools/ono/cjs/index.js',
+      },
+      extensions: [
+        '.js',
+        '.json',
+        '.jsx',
+        '.mjs',
+        '.ts',
+        '.tsx',
+        '.vue',
+      ],
+    },
+    server: {
+      host: process.env.VITE_HOST || 'localhost',
+      port: 8085,
+      proxy: {
+        '/sitemap.xml': {
+          target: `${env.VITE_APP_DANDI_BACKEND_ROOT}/sitemaps/frontend.xml`,
+          changeOrigin: true,
+          rewrite: () => '',
+        }
+      }
+    },
+    css: {
+      preprocessorOptions: {
+        sass: {
+          api: 'modern-compiler',
+        },
       },
     },
-  },
-  // https://koumoul-dev.github.io/vuetify-jsonschema-form/latest/getting-started
-  optimizeDeps: {
-    include: commonjsDeps,
-  },
-  build: {
-    commonjsOptions: {
-      transformMixedEsModules: true,
+    // https://koumoul-dev.github.io/vuetify-jsonschema-form/latest/getting-started
+    optimizeDeps: {
+      include: commonjsDeps,
     },
-  },
+    build: {
+      commonjsOptions: {
+        transformMixedEsModules: true,
+      },
+    },
+  };
 })
