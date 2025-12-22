@@ -15,11 +15,6 @@
       <!-- Download -->
       <DownloadDialog />
 
-      <!-- Cite As -->
-      <div v-if="currentDandiset.dandiset.embargo_status === 'OPEN'">
-        <CiteAsDialog />
-      </div>
-
       <!-- Contact -->
       <ContactDialog />
 
@@ -115,7 +110,6 @@ import { useDandisetStore } from '@/stores/dandiset';
 
 import { open as openMeditor } from '@/components/Meditor/state';
 import DownloadDialog from './DownloadDialog.vue';
-import CiteAsDialog from './CiteAsDialog.vue';
 import ShareDialog from './ShareDialog.vue';
 import ContactDialog from './ContactDialog.vue';
 import ExternalDandisetServicesDialog from './ExternalDandisetServicesDialog.vue';
