@@ -13,7 +13,9 @@ class DandisetSitemap(Sitemap):
     priority = 0.5
 
     def items(self):
-        return Dandiset.objects.filter(embargo_status=Dandiset.EmbargoStatus.OPEN)
+        if settings.DANDI_ENABLE_SITEMAP_XML:
+            return Dandiset.objects.filter(embargo_status=Dandiset.EmbargoStatus.OPEN)
+        return Dandiset.objects.none()
 
     def location(self, obj: Dandiset) -> str:
         return f'/dandiset/{obj.identifier}/'
