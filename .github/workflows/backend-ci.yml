@@ -57,7 +57,7 @@ jobs:
       DJANGO_DANDI_INSTANCE_IDENTIFIER: "RRID:ABC_123456"
       DJANGO_DANDI_DOI_API_PREFIX: "10.80507"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # fetch history for all branches and tags
       - name: Install uv
