@@ -111,10 +111,6 @@ STATIC_ROOT.mkdir(exist_ok=True)
 # for convenience serving a site on a subpath.
 STATIC_URL = 'static/'
 
-# Make Django and Allauth redirects consistent, but both may be changed.
-LOGIN_REDIRECT_URL = '/'
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'
-
 CORS_ALLOWED_ORIGINS: list[str] = env.list('DJANGO_CORS_ALLOWED_ORIGINS', cast=str, default=[])
 CORS_ALLOWED_ORIGIN_REGEXES: list[str] = env.list(
     'DJANGO_CORS_ALLOWED_ORIGIN_REGEXES', cast=str, default=[]
@@ -182,6 +178,10 @@ DANDI_INSTANCE_IDENTIFIER = env.str('DJANGO_DANDI_INSTANCE_IDENTIFIER')
 DANDI_DOI_API_PREFIX = env.str(
     'DJANGO_DANDI_DOI_API_PREFIX'
 )  # This is used by us directly, but not in all circumstances
+
+# Make Django and Allauth redirects consistent, but both may be changed.
+LOGIN_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_REDIRECT_URL = DANDI_WEB_APP_URL
 
 # Non-required environment variabless
 _dandi_doi_api_url = cast('ParseResult | None', env.url('DJANGO_DANDI_DOI_API_URL', default=None))
