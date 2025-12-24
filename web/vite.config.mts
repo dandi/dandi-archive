@@ -87,11 +87,16 @@ export default defineConfig(({ mode }) => {
       port: 8085,
       proxy: {
         '/sitemap.xml': {
-          target: `${env.VITE_APP_DANDI_BACKEND_ROOT}/sitemaps/frontend.xml`,
+          target: `${env.VITE_APP_DANDI_BACKEND_ROOT}/frontend/sitemap.xml`,
           changeOrigin: true,
           rewrite: () => '',
-        }
-      }
+        },
+        '/robots.txt': {
+          target: `${env.VITE_APP_DANDI_BACKEND_ROOT}/frontend/robots.txt`,
+          changeOrigin: true,
+          rewrite: () => '',
+        },
+      },
     },
     css: {
       preprocessorOptions: {

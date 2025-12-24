@@ -10,7 +10,14 @@ export default {
     backendUrl = backendUrl.endsWith('/') ? backendUrl.slice(0, -1) : backendUrl;
     netlifyConfig.redirects.unshift({
       from: '/sitemap.xml',
-      to: `${backendUrl}/sitemaps/frontend.xml`,
+      to: `${backendUrl}/frontend/sitemap.xml`,
+      status: 200,
+    });
+
+    // Add redirect to robots view.
+    netlifyConfig.redirects.unshift({
+      from: '/robots.txt',
+      to: `${backendUrl}/frontend/robots.txt`,
       status: 200,
     });
   },
