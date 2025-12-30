@@ -67,12 +67,12 @@ def social_account_to_dict(social_account: SocialAccount):
 def serialize_user(user: User):
     """Serialize a user that's been annotated with a `social_account_data` field."""
     username = user.username
-    name = f'{user.first_name} {user.last_name}'.strip()
+    name = user.get_full_name()
 
     # Prefer social account info if present
     if user.social_account_data is not None:
-        username = user.social_account_data.get('login', username)
-        name = user.social_account_data.get('name', name)
+        username = user.social_account_data.get('login') or username
+        name = user.social_account_data.get('name') or name
 
     return {
         'admin': user.is_superuser,
