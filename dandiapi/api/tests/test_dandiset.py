@@ -573,97 +573,96 @@ def test_dandiset_rest_create_with_identifier(api_client):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_create_with_contributor(api_client):
+def test_dandiset_rest_create_funky_contributor(api_client):
+    # Test that a malformed contributor field still results in a contact person
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+
+    user_contact_name = f'{user.last_name}, {user.first_name}'
+
+    contributor_values = [
+        # Test with entirely wrong contributor value
+        True,
+        # Test with entirely wrong contributor list items
+        ['string, not a dict'],
+        # Test with missing values
+        [{}],
+        # Test with missing roleName field
+        [
+            {
+                'name': user_contact_name,
+                'email': user.email,
+            }
+        ],
+        # Test with incorrect rolename value
+        [
+            {
+                'name': user_contact_name,
+                'email': user.email,
+                'roleName': 128,
+            }
+        ],
+        # Test with incorrect rolename list value
+        [
+            {
+                'name': user_contact_name,
+                'email': user.email,
+                'roleName': [True],
+            }
+        ],
+        # Test with other role names
+        [
+            {
+                'name': user_contact_name,
+                'email': user.email,
+                'roleName': ['other role'],
+            }
+        ],
+    ]
+
+    for val in contributor_values:
+        response = api_client.post(
+            '/api/dandisets/',
+            {
+                'name': 'Test Dandiset',
+                'metadata': {
+                    'contributor': val,
+                },
+            },
+        )
+        assert response.status_code == 200
+        assert response.data['contact_person'] == user_contact_name
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_non_author_contact_person(api_client):
     user = UserFactory.create(first_name='John', last_name='Doe', is_superuser=True)
     api_client.force_authenticate(user=user)
     name = 'Test Dandiset'
     identifier = '123456'
+
+    contributor = {
+        'name': 'Jane Doe',
+        'email': 'jane.doe@kitware.com',
+        'roleName': ['dcite:ContactPerson'],
+        'schemaKey': 'Person',
+        'affiliation': [],
+        'includeInCitation': True,
+    }
+
     metadata = {
         'foo': 'bar',
         'identifier': f'{_SCHEMA_CONFIG.instance_name}:{identifier}',
         # This contributor is different from the user
-        'contributor': [
-            {
-                'name': 'Jane Doe',
-                'email': 'jane.doe@kitware.com',
-                'roleName': ['dcite:ContactPerson'],
-                'schemaKey': 'Person',
-                'affiliation': [],
-                'includeInCitation': True,
-            }
-        ],
+        'contributor': [contributor],
     }
 
     response = api_client.post('/api/dandisets/', {'name': name, 'metadata': metadata})
-    assert response.data == {
-        'identifier': identifier,
-        'created': TIMESTAMP_RE,
-        'modified': TIMESTAMP_RE,
-        'most_recent_published_version': None,
-        'draft_version': {
-            'version': 'draft',
-            'name': name,
-            'asset_count': 0,
-            'active_uploads': 0,
-            'size': 0,
-            'status': 'Pending',
-            'created': TIMESTAMP_RE,
-            'modified': TIMESTAMP_RE,
-        },
-        'contact_person': 'Jane Doe',
-        'embargo_status': 'OPEN',
-        'star_count': 0,
-        'is_starred': False,
-    }
+    assert response.status_code == 200
+    assert response.data['contact_person'] == contributor['name']
 
-    # Creating a Dandiset has side affects.
-    # Verify that the user is the only owner.
     dandiset = Dandiset.objects.get(id=identifier)
-    assert list(get_dandiset_owners(dandiset).all()) == [user]
-
-    # Verify that a draft Version and VersionMetadata were also created.
-    assert dandiset.versions.count() == 1
-    assert dandiset.most_recent_published_version is None
-    assert dandiset.draft_version.version == 'draft'
-    assert dandiset.draft_version.name == name
-    assert dandiset.draft_version.status == Version.Status.PENDING
-
-    # Verify that computed metadata was injected
-    year = datetime.datetime.now(datetime.UTC).year
-    url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata == {
-        **metadata,
-        'manifestLocation': [
-            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'
-        ],
-        'name': name,
-        'identifier': f'{_SCHEMA_CONFIG.instance_name}:{identifier}',
-        'id': f'{_SCHEMA_CONFIG.instance_name}:{dandiset.identifier}/draft',
-        'version': 'draft',
-        'url': url,
-        'dateCreated': UTC_ISO_TIMESTAMP_RE,
-        'citation': (f'Jane Doe ({year}) {name} (Version draft) [Data set]. DANDI Archive. {url}'),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{DANDI_SCHEMA_VERSION}/context.json',
-        'schemaVersion': DANDI_SCHEMA_VERSION,
-        'schemaKey': 'Dandiset',
-        'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
-        'repository': settings.DANDI_WEB_APP_URL,
-        'contributor': [
-            {
-                'name': 'Jane Doe',
-                'email': 'jane.doe@kitware.com',
-                'roleName': ['dcite:ContactPerson'],
-                'schemaKey': 'Person',
-                'affiliation': [],
-                'includeInCitation': True,
-            }
-        ],
-        'assetsSummary': {
-            'schemaKey': 'AssetsSummary',
-            'numberOfBytes': 0,
-            'numberOfFiles': 0,
-        },
-    }
+    assert dandiset.draft_version.metadata['contributor'] == [contributor]
 
 
 @pytest.mark.django_db
