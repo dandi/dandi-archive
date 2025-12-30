@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+
 from dandischema.consts import DANDI_SCHEMA_VERSION
 
 from dandiapi.api.models.version import Version
@@ -12,7 +14,7 @@ def _normalize_version_metadata(raw_version_metadata: dict, name: str, email: st
     This could overwrite fields in the raw version metadata.
     """
     # Strip away any computed fields
-    version_metadata = Version.strip_metadata(raw_version_metadata)
+    version_metadata = copy.deepcopy(Version.strip_metadata(raw_version_metadata))
 
     # Only inject a schemaVersion and default contributor field if they are
     # not specified in the version_metadata
