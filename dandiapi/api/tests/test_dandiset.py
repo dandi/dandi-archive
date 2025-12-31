@@ -659,10 +659,24 @@ def test_dandiset_rest_create_non_author_contact_person(api_client):
 
     response = api_client.post('/api/dandisets/', {'name': name, 'metadata': metadata})
     assert response.status_code == 200
+
+    # Ensure that the primary "contact person" remains unchanged, since that was
+    # supplied at the time of dandiset creation
     assert response.data['contact_person'] == contributor['name']
 
+    # However, also ensure that the dandiset author is listed as a contributor, and a contact person
     dandiset = Dandiset.objects.get(id=identifier)
-    assert dandiset.draft_version.metadata['contributor'] == [contributor]
+    assert dandiset.draft_version.metadata['contributor'] == [
+        contributor,
+        {
+            'name': f'{user.last_name}, {user.first_name}',
+            'email': user.email,
+            'roleName': ['dcite:ContactPerson'],
+            'schemaKey': 'Person',
+            'affiliation': [],
+            'includeInCitation': True,
+        },
+    ]
 
 
 @pytest.mark.django_db

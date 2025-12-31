@@ -38,20 +38,7 @@ def _normalize_contributor(version_metadata: dict, name: str, email: str) -> dic
 
     contributor = version_metadata['contributor']
 
-    # Check that no contact person exists. If they do, we don't need to do anything
-    contact_person = next(
-        (
-            cont
-            for cont in contributor
-            if isinstance(cont.get('roleName'), list)
-            and CONTACT_PERSON_ROLE in cont.get('roleName', [])
-        ),
-        None,
-    )
-    if contact_person:
-        return version_metadata
-
-    # No contact person exists, check if author exists. If not, we will set the default contributor
+    # Check if author exists. If not, we will set the default contributor
     author_contributor = next(
         (cont for cont in contributor if cont.get('name') == name and cont.get('email') == email),
         None,
