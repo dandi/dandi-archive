@@ -2,6 +2,19 @@
 
 This document expands upon the [Deep Glacier design](https://github.com/dandi/dandi-archive/pull/2627) to include all other known alternative options with their advantages, limitations, and costs for an easy high-level comparison.
 
+### Contents
+
+- [Proposed Solutions](#proposed-solutions)
+  - [S3 Replication (Deep Glacier)](#s3-replication-deep-glacier)
+  - [Tape](#tape)
+  - [Institutional Servers](#institutional-servers)
+  - [Distributed](#distributed)
+- [General Considerations](#general-considerations)
+- [How They Work](#how-they-work)
+- [Specific Advantages and Limitations](#specific-advantages-and-limitations)
+- [Cost Summary](#cost-summary)
+- [Cost Details](#cost-details)
+- [Future Costs Over Time](#future-costs-over-time)
 
 
 ## Why is backup necessary?
@@ -187,7 +200,7 @@ $$
 
 
 ### OSN
-  
+
 OSN offers 1.4 PB for $90,000, renewing on a five-year hardware warranty. Amortizing gives:
 
 $$
@@ -209,7 +222,7 @@ $$
 
 The DANDI Archive is expecting a ramp-up in data volume of around 1 PB of new data over each of the next five years, culminating in a total nearing 6PB.
 
-The following table shows the initial, final, intermediate, and cumulative costs for all backup options. 
+The following table shows the initial, final, intermediate, and cumulative costs for all backup options.
 
 | Design | Year 0<br>(1 PB) | Year 1<br>(2.5 PB)[^2] | Year 2<br>(3.5 PB) | Year 3<br>(4.5 PB) | Year 4<br>(5.5 PB) | Year 5<br>(6.5 PB) | Cumulative Total<br>Over All Years|
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
