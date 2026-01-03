@@ -1,142 +1,61 @@
-# Moving Parts
+# Validation Improvements
 
-This is a summary of system components that are relevant to publish and how they relate to each other.
+## The Problem
 
-### Dandiset
-A DANDI dataset.
-Each dandiset is guaranteed to have a draft Version, and can also have any number of published Versions.
+There are a host of open issues regarding data validation.
 
-### Version
-Versions consist of a JSON blob of Dandiset metadata and any number of Assets.
-There are two kinds of Version: draft and published.
-Published Versions are immutable, only draft Versions are editable (except admins, who have superpowers).
-Versions also track the validation status of their Dandiset metadata. Asset metadata validation is not recorded in the Version.
+The most egregious of these is that it is possible (and indeed, not even difficult) to create an invalid Dandiset, upload it, and publish it to obtain a DOI despite the constituent NWB files being improper in any number of files.
 
-### AssetBlob
-This is basically just a pointer to a blob in `blobs/` on S3.
-AssetBlobs are central to how we implement deduplication of blobs in S3.
-Multiple Assets can refer to the same AssetBlob, meaning we only need to store each blob in S3 once.
-Each Asset could have a different metadata record for the same AssetBlob.
+Issues include but are not limited to:
+- Using extensions to overload metadata fields used in core metadata digests.
+- Missing required metadata fields.
+- Incorrectly formatted metadata fields.
+- Invalid NWB files (e.g., opening with PyNWB instead of an HDF5 library returns validation errors).
 
-Whenever a new AssetBlob is created, a background task runs to compute the sha256 checksum (a "digest") of the blob.
-This can take a long time for large blobs, as it must stream all of the data from S3.
+The root cause of much of this is the fact that there is two-fold:
+- There are simple, not hidden (though slightly discouraged) CLI flags for bypassing validations at time of upload.
+- There is no **server-side validation** of Dandisets contents beyond the simple JSON validity of extracted metadata.
 
-### Asset
-Assets consist of a JSON blob of metadata and a reference to an AssetBlob.
-Versions and Assets are many-to-many; a Version can have any number of Assets, and an Asset can belong to any number of Versions (even, hypothetically, versions in different Dandisets).
-Assets also track their validation status.
 
-Uploading new data or modifying the metadata of an Asset doesn't actually modify the Asset.
-Instead, it creates a new Asset and replaces the reference to that Asset in the Version.
-This ensures that other Versions which might refer to the original Asset are unmodified, while the Version containing the Asset being modified reflects the changes correctly.
 
-Similarly to Versions, there are two kinds of Asset: draft and published.
-Draft Assets are only allowed to belong to draft Versions.
-Published Assets are basically the same as draft Assets, but have some extra metadata included that was defined during the publish process (`datePublished`, `publishedBy`, etc).
+## Secondary Issue
 
-Note that published Assets can belong to both draft and published Versions.
+It is a very common issue for the DANDI Helpdesk and info email to receive help requests for users attempting to submit invalid files, without understanding why they are invalid or how to fix this.
 
-When a published Asset is modified in this way, the publish metadata is stripped out, effectively creating a new draft Asset.
+The current approach to resolving such issues involves a lot of back-and-forth communication, which is time-consuming for both the Helpdesk and the submitters.
 
-_In general_, Assets should be immutable; any modification will instead create a new draft Asset.
-* One exception to this is calculating the AssetBlob digest.
-When the digest completes, it will be injected directly into the metadata of any Assets referencing that AssetBlob.
-* The other exception is creating a published Asset during the publish process.
-This involves directly injecting the new metadata fields into the draft Asset, effectively turning it into a published Asset in place.
+The files can sometimes be difficult to share via other means, the validation output and log files may be hard to find or interpret, and the submitters may not have the technical expertise to resolve the issues on their own.
 
-### Metadata Schemas
-Version metadata and Asset metadata must conform to defined schemas.
-There are two sets of schemas.
-The first applies to both draft and published metadata, and is used by the web metadata editor.
-The second is more restrictive, and only applies to published metadata.
-It requires additional fields like `datePublished`, `publishedBy`, and `doi` that are only knowable at publish time.
-The second one is used to validate metadata prior to publish.
+It can also be a source of great frustration for such users (even those who are experienced developers who have submitted multiple datasets to the archive), and can thus breed discontent within the DANDI community.
 
-The JSON schemas can be found at https://github.com/dandi/schema.
 
-The pydantic models can be found and imported from https://github.com/dandi/dandischema.
-dandi-api will look up the JSON schema for the specified `schemaVersion` and use it for validation. Hopefully at some point we can find a way to provide arbitrary pydantic model versions and use those instead.
 
-# Pre-publish
+## Proposal
 
-## Uploading data / Modifying metadata
-Whenever changes are made to the draft Version of a Dandiset, metadata will almost always be modified.
-Several metadata fields are computed based on other properties of the Version or Asset, like `size` or`fileCount`.
-* Modifying Version metadata obviously alters the Version metadata.
-* Uploading a new Asset alters the `assetsSummary` of the Version metadata.
-* Uploading new data to an existing Asset (probably) alters the `contentSize` field of the Asset metadata.
-Note that the sha256 digest is included in the Asset metadata.
-* Modifying the Asset metadata obviously alters the Asset metadata, but also alters the `assetsSummary` of the Version metadata.
-Whenever a Version or Asset is saved, these computed fields are injected into the metadata.
+To address these issues, I propose the following changes to DANDI philosophy:
 
-## Validation process
-Whenever metadata is modified, a validation task runs in the background to ensure that everything is ready for publish.
-There are separate tasks for version metadata validation and asset metadata validation which use different schemas.
+1. **Server-side file validation**: Implement comprehensive server-side validation checks for all uploaded Dandisets. This includes the actual running of the `dandi validate` command through our own resources and configurations. This removes any need for 'trust' to be placed upon data submitters.
+2. **Allow upload of invalid content**: The final goal of any Dandiset should be to obtain a persistent DOI from publication. This should only be granted if the Dandiset is valid. However, to facilitate the submission process, we should still allow users to upload invalid content. This allows them to use 'draft' mode as a staging area, where they can iteratively fix validation issues prior to being able to publish. This would greatly alleviate Problem 2 as well as certain other challenges often experienced by individuals going through the data standardization process.
+3. **Eliminate client-side bypass of validation**: Remove any CLI flags or options that allow users to bypass validation during upload. The CLI can (and should) still warn the user about issues as early in the process as possible, but it should not stop the process entirely (though an interactive prompt to continue may be worth considering). This will improve the user experience considerably.
 
-The validation tasks work by preparing the metadata as if to publish the Version or Asset, then checking if that new metadata conforms to the publish schema.
+I further suggest offloading the code logic of DANDI Validation into a separate package that can be maintained independently of the logic for downloading and uploading content.
 
-Note that the asset metadata validation task actually requires both a Version and an Asset, since the `contentUrl` field of the Asset is different depending on which Version the Asset belongs to.
+The effect of these changes would simplify the data submission process, reduce the maintenance burden of the DANDI CLI (which would then focus purely on data transfer to and from the archive), and alleviate a bit of the burden on the DANDI Helpdesk.
 
-Versions can have the following validation states:
-* `PENDING`
-* `VALIDATING`
-* `VALID`
-* `INVALID`
-* `PUBLISHED` (note that assets do not have this)
 
-The `PUBLISHED` state means that Versions are technically not `VALID` after they are published, so they cannot be publish repeatedly without changes.
-The next time a change is made to the metadata, the validation task will run on the version, which will change the state to `VALID`/`INVALID`, re-enabling publish.
 
-Assets can have the following validation states:
-* `PENDING`
-* `VALIDATING`
-* `VALID`
-* `INVALID`
+## Analytics
 
-Because validation works with already computed metadata that is presumable of limited size, it is a very fast running task.
+The following dashboard shows the results of calling `dandi validate` on all published Dandisets as of early 2026:
 
-# Publish
-Publishing a draft Version creates a new published Version that is a complete copy of the draft Version, but is immutable and permanent.
+In summary, ???% of published Dandisets have validation errors, with the most common issues being:
 
-Publish is started through an API call, presumably made by a user clicking the `Publish` button in the web GUI.
-Only dandiset owners have permission to use the API endpoint.
-* During development, only admins can publish.
+TODO
 
-If a Version is not `VALID` or any of the Assets in the Version is not `VALID`, publish is not allowed.
 
-## Publish process
-1. The dandiset is locked so that no other publishes can happen simultaneously.
 
-2. A new published Version is created with the required publish metadata information.
-It is initially empty.
+## Interaction with 'Data Sunsetting' Policy
 
-3. A new DOI is created that points to the new Version.
-This is an API call to an external service, https://datacite.org/.
-This involves digesting the Version metadata into something that can be used by Datacite.
-See the doi-generation-1.md design document for more details.
+If the 'Data Sunsetting' policy is implemented with increased time restrictions on draft state Dandisets (with considerations for embargo), these two policy changes together create a 'ticking clock' on how long data can exist on the archive in between initial submission (with potential invalidations) and final publication.
 
-4. For every draft Asset in the draft Version, the required publish metadata fields are injected, turning those Assets into published Assets.
-Published Assets, e.g. Assets that already have those fields from previous publishes, _are skipped_.
-Because they describe Assets that have already been published in a past version, there is no reason to re-publish them.
-
-5. Associate all of the publish Assets, new and old, with the new published Version.
-
-6. The dandiset is unlocked.
-
-7. An email is sent to the owners that the Dandiset is published.
-
-8. Asynchronously, manifest files (`dandiset.yaml` and `assets.yaml`) are written out to S3 describing the newly published Version by a background task.
-
-Say that a user publishes a Dandiset for the first time, modifies a single Asset, then publishes again.
-During the first publish, all of the Assets will be drafts, so they will all be promoted to published Assets via metadata injection.
-Modifying the published Asset will create a new draft Asset, so the Dandiset will have a single draft Asset and all other Assets published.
-During the second publish, the publish process will also "publishify" the draft Asset, but leave the formerly published Assets alone.
-
-The end result is that the second published Version contains one Asset that was published at the same time as the Version, and many Assets that were published in the first published Version.
-The draft Version will point to the same Assets as the second published Version.
-
-## Publish process performance
-The first time a Dandiset is published, all of the Assets need to be published, which is a potentially intensive DB request.
-Because the entire publish process happens in an API call, this may degrade performance for Dandisets with very large numbers of Assets.
-We may eventually need to break the logic of the publish process into a background task which is dispatched by the API call.
-The API call would still lock the Dandiset to prevent multiple publishes, and to indicate to users that the publish is in progress.
+While this may place increased pressure upon data submitters, it will also prevent stagnation by preventing potentially valuable datasets from lingering in draft state indefinitely.
