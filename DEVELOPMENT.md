@@ -19,6 +19,7 @@ This is the simplest configuration for developers to start with.
 
 1. From VSCode, use `Ctrl-Shift-p` and run the command `Dev Containers: Reopen in Container`.
 1. From the VSCode built-in terminal, run `./manage.py migrate`.
+1. Run `docker compose run --rm django ./manage.py createcachetable`
 1. From the VSCode built-in terminal, run `./manage.py createsuperuser --email $(git config user.email)` and follow the prompts.
 1. From the VSCode built-in terminal, run `./manage.py create_dev_dandiset --owner $(git config user.email)`
    to create a dummy dandiset to start working with.
@@ -37,6 +38,7 @@ This configuration also uses containers, but with Docker Compose instead of VSco
 ### Initial Setup
 1. Install [Docker Compose](https://docs.docker.com/compose/install/)
 1. Run `docker compose run --rm django ./manage.py migrate`
+1. Run `docker compose run --rm django ./manage.py createcachetable`
 1. Run `docker compose run --rm django ./manage.py createsuperuser --email $(git config user.email)`
    and follow the prompts to create your own user.
    This sets your username to your git email to ensure parity with how GitHub logins work. You can also replace the command substitution expression with a literal email address, or omit the `--email` option entirely to run the command in interactive mode.
@@ -67,6 +69,7 @@ but allows developers to run Python code on their native system.
 1. [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/)
 1. Run `export UV_ENV_FILE=./dev/.env.docker-compose-native`
 1. Run `./manage.py migrate`
+1. Run `docker compose run --rm django ./manage.py createcachetable`
 1. Run `./manage.py createsuperuser --email $(git config user.email)` and follow the prompts.
 1. Run `./manage.py create_dev_dandiset --owner $(git config user.email)`
    to create a dummy dandiset to start working with.

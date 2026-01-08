@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dandischema.conf import get_instance_config
+import pytest
 
 
+@pytest.mark.django_db
 def test_rest_info_instance_config_include_none(api_client):
     resp = api_client.get('/api/info/')
     assert resp.status_code == 200
