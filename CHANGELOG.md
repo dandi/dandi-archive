@@ -1,3 +1,27 @@
+# v0.21.0 (Thu Jan 08 2026)
+
+#### 🚀 Enhancement
+
+- Add basic rate limit implementation [#2665](https://github.com/dandi/dandi-archive/pull/2665) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🐛 Bug Fix
+
+- Remove user_migration scripts [#2595](https://github.com/dandi/dandi-archive/pull/2595) ([@brianhelba](https://github.com/brianhelba))
+
+#### 🔩 Dependency Updates
+
+- [gh-actions](deps): Bump actions/upload-artifact from 5 to 6 [#2674](https://github.com/dandi/dandi-archive/pull/2674) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- [gh-actions](deps): Bump actions/download-artifact from 6 to 7 [#2675](https://github.com/dandi/dandi-archive/pull/2675) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- [gh-actions](deps): Bump actions/checkout from 5 to 6 [#2651](https://github.com/dandi/dandi-archive/pull/2651) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 3
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.20.0 (Wed Dec 17 2025)
 
 ### Release Notes
