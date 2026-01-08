@@ -166,7 +166,11 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         citation = f'{name} ({year}). (Version {version}) [Data set]. DANDI Archive. {url}'
         if 'contributor' in metadata and isinstance(metadata['contributor'], list):
             cl = '; '.join(
-                [val['name'] for val in metadata['contributor'] if val.get('includeInCitation')]
+                [
+                    val['name']
+                    for val in metadata['contributor']
+                    if isinstance(val, dict) and val.get('includeInCitation')
+                ]
             )
             if cl:
                 citation = (
