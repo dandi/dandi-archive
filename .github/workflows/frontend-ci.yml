@@ -105,6 +105,9 @@ jobs:
     - name: Apply migrations to API server
       run: ./manage.py migrate
 
+    - name: Create any cache tables
+      run: ./manage.py createcachetable
+
     - name: Install test data
       run: ./manage.py loaddata playwright
 
