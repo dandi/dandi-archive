@@ -423,8 +423,19 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             version=self.kwargs['versions__version'],
         )
 
+        # Use custom pagination class to reduce unnecessary counts of assets
+        paginator = LazyPagination()
+
         # Apply filtering from included filter class first
         asset_queryset = self.filter_queryset(version.assets.all())
+
+        # Check if the path query arg is pointing at a direct path.
+        # If that's the case, just retrieve the single asset.
+        path = self.request.query_params.get('path')
+        if path:
+            assets = Asset.objects.filter(path=path, versions=version)
+            if assets.exists():
+                asset_queryset = assets
 
         # Filter query to only zarr assets, if requested
         zarr_only = serializer.validated_data['zarr']
@@ -442,8 +453,6 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             asset_queryset = asset_queryset.filter(path__iregex=glob_pattern.replace('\\*', '.*'))
 
         # Retrieve just the first N asset IDs, and use them for pagination
-        # Use custom pagination class to reduce unnecessary counts of assets
-        paginator = LazyPagination()
         qs = asset_queryset.values_list('id', flat=True)
         page_of_asset_ids = paginator.paginate_queryset(qs, request=self.request, view=self)
 
