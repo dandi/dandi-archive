@@ -104,7 +104,9 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
     asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
-    path = models.CharField(max_length=512, validators=[validate_asset_path], db_collation='C')
+    path = models.CharField(
+        max_length=512, validators=[validate_asset_path], db_collation='C', db_index=True
+    )
     blob = models.ForeignKey(
         AssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
     )
