@@ -1,3 +1,15 @@
+# v0.21.1 (Tue Jan 13 2026)
+
+#### 🐛 Bug Fix
+
+- Improve performance of asset list endpoint when exact path is provided [#2691](https://github.com/dandi/dandi-archive/pull/2691) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.21.0 (Thu Jan 08 2026)
 
 #### 🚀 Enhancement
