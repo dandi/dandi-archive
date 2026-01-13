@@ -149,9 +149,11 @@ REST_FRAMEWORK['DEFAULT_PAGINATION_CLASS'] = 'dandiapi.api.views.pagination.Dand
 REST_FRAMEWORK['EXCEPTION_HANDLER'] = 'dandiapi.drf_utils.rewrap_django_core_exceptions'
 
 # Throttling configuration
-REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
-    'rest_framework.throttling.AnonRateThrottle',
-]
+# TODO: Uncomment once throttling is re-enabled
+# REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
+#     'rest_framework.throttling.AnonRateThrottle',
+# ]
+
 # By default, set request rate limit to a very high number, effectively disabling it.
 # This is done to preserve the rate limiting behavior between dev and prod,
 # without actually impeding developer experience.
