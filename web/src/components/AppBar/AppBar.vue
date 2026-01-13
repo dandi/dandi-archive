@@ -199,7 +199,7 @@ const navItems: NavigationItem[] = [
     external: true,
   },
   {
-    text: 'Help',
+    text: 'Support',
     to: dandiHelpUrl,
     external: true,
   },
