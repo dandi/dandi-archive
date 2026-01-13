@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from secrets import randbelow
+
 from .base import *
 
 SECRET_KEY = 'insecure-secret'  # noqa: S105
@@ -18,7 +20,7 @@ STORAGES['default'] = {
         'querystring_expire': int(timedelta(hours=6).total_seconds()),
     },
 }
-DANDI_DANDISETS_BUCKET_NAME = 'test-django-storage'
+DANDI_DANDISETS_BUCKET_NAME = f'test-django-storage-{randbelow(1_000_000):06d}'
 
 # Testing will set EMAIL_BACKEND to use the memory backend
 
