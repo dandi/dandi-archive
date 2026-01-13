@@ -1,3 +1,15 @@
+# v0.21.2 (Tue Jan 13 2026)
+
+#### 🐛 Bug Fix
+
+- Disable throttling of unauthenticated users [#2694](https://github.com/dandi/dandi-archive/pull/2694) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.21.1 (Tue Jan 13 2026)
 
 #### 🐛 Bug Fix
