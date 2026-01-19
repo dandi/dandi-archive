@@ -1,4 +1,4 @@
-_commit: v0.41.0
+_commit: v0.44.0
 _src_path: gh:kitware-resonant/cookiecutter-resonant
 core_app_name: api
 include_example_code: false
@@ -6,3 +6,4 @@ project_name: DANDI Archive
 project_slug: dandiapi
 python_package_name: dandiapi
 site_domain: api.dandiarchive.org
+use_asgi: false
