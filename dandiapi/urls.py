@@ -132,12 +132,6 @@ register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
     path('', root_content_view),
     path('robots.txt', robots_txt_view, name='robots_txt'),
-    path(
-        'frontend/sitemap.xml',
-        sitemap,
-        {'sitemaps': sitemaps},
-        name='frontend_sitemap',
-    ),
     path('frontend/robots.txt', frontend_robots_txt_view, name='frontend_robots_txt'),
     path('api/audit/events/asset', asset_audit_events, name='asset_audit_events'),
     *api_urlpatterns,
@@ -172,6 +166,16 @@ urlpatterns = [
         name='webdav-schema-swagger-ui',
     ),
 ]
+
+if settings.DANDI_ENABLE_SITEMAP_XML:
+    urlpatterns += [
+        path(
+            'frontend/sitemap.xml',
+            sitemap,
+            {'sitemaps': sitemaps},
+            name='frontend_sitemap',
+        ),
+    ]
 
 if settings.DEBUG:
     import debug_toolbar.toolbar
