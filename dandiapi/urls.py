@@ -136,7 +136,7 @@ urlpatterns = [
         'frontend/sitemap.xml',
         sitemap,
         {'sitemaps': sitemaps},
-        name='django.contrib.sitemaps.views.sitemap',
+        name='frontend_sitemap',
     ),
     path('frontend/robots.txt', frontend_robots_txt_view, name='frontend_robots_txt'),
     path('api/audit/events/asset', asset_audit_events, name='asset_audit_events'),
