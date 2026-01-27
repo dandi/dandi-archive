@@ -39,7 +39,7 @@ class DigestSerializer(serializers.Serializer):
 class UploadInitializationRequestSerializer(serializers.Serializer):
     contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
     digest = DigestSerializer()
-    dandiset = serializers.RegexField(Dandiset.IDENTIFIER_REGEX)
+    dandiset = serializers.RegexField(f'^{Dandiset.IDENTIFIER_REGEX}$')
 
 
 class PartInitializationResponseSerializer(serializers.Serializer):
@@ -131,7 +131,7 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
     if digest['algorithm'] != 'dandi:dandi-etag':
         return Response('Unsupported Digest Type', status=400)
     etag = digest['value']
-    dandiset_id = request_serializer.validated_data['dandiset']
+    dandiset_id = int(request_serializer.validated_data['dandiset'])
     dandiset = get_object_or_404(
         get_visible_dandisets(request.user),
         id=dandiset_id,
