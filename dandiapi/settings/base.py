@@ -30,6 +30,8 @@ BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 
 ROOT_URLCONF = 'dandiapi.urls'
 
+WSGI_APPLICATION = 'dandiapi.wsgi.application'
+
 INSTALLED_APPS = [
     # Install local apps first, to ensure any overridden resources are found first
     'dandiapi.api.apps.ApiConfig',
@@ -79,6 +81,7 @@ MIDDLEWARE = [
     # Add username middleware after authentication to capture username for gunicorn access logs
     'dandiapi.api.middleware.GunicornUsernameMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.sites.middleware.CurrentSiteMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
 ]
@@ -90,7 +93,7 @@ DATABASES = {
     'default': {
         **env.db_url('DJANGO_DATABASE_URL', engine='django.db.backends.postgresql'),
         'CONN_MAX_AGE': timedelta(minutes=10).total_seconds(),
-    }
+    },
 }
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

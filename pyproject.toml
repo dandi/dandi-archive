@@ -26,7 +26,7 @@ dependencies = [
   "django-guardian",
   "django-oauth-toolkit",
   "django-resonant-settings[allauth,celery]",
-  "django-resonant-utils",
+  "django-resonant-utils[allauth,s3_storage]",
   "django-stubs-ext",
   # TODO: pin djangorestframework until we figure out what the cause of
   # https://github.com/dandi/dandi-archive/issues/1896 is.
@@ -45,8 +45,8 @@ dependencies = [
   # Production-only
   "django-s3-file-field[s3]",
   "django-storages[s3]",
-  "gunicorn",
   "sentry-sdk[celery,django,pure_eval]",
+  "gunicorn",
   # Development-only, but required
   "tqdm",
 ]

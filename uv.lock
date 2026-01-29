@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.13"
 resolution-markers = [
     "python_full_version >= '3.14' and platform_machine != 'arm64' and sys_platform == 'darwin'",
@@ -697,7 +697,7 @@ dependencies = [
     { name = "django-guardian" },
     { name = "django-oauth-toolkit" },
     { name = "django-resonant-settings", extra = ["allauth", "celery"] },
-    { name = "django-resonant-utils" },
+    { name = "django-resonant-utils", extra = ["allauth", "s3-storage"] },
     { name = "django-s3-file-field", extra = ["s3"] },
     { name = "django-storages", extra = ["s3"] },
     { name = "django-stubs-ext" },
@@ -781,7 +781,7 @@ requires-dist = [
     { name = "django-guardian" },
     { name = "django-oauth-toolkit" },
     { name = "django-resonant-settings", extras = ["allauth", "celery"] },
-    { name = "django-resonant-utils" },
+    { name = "django-resonant-utils", extras = ["allauth", "s3-storage"] },
     { name = "django-s3-file-field", extras = ["s3"] },
     { name = "django-storages", extras = ["s3"] },
     { name = "django-stubs-ext" },
@@ -1026,14 +1026,14 @@ wheels = [
 
 [[package]]
 name = "django-resonant-settings"
-version = "0.41.0"
+version = "0.44.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django-environ" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ee/19/4fa035cec41b5c7ceb1348f5aec7692ec6a71b0a1d79cec7746aa2e1926a/django_resonant_settings-0.41.0.tar.gz", hash = "sha256:1324c12d33329a36a198c500695434db57206ac75ee63fa8da35d390831bc8de", size = 17654, upload-time = "2025-10-16T20:11:42.172Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/eb/0a/56cdf3b7e1bce9f110b3182abe8a3e4d8a8413b57a0bd6f3da87bb6d116e/django_resonant_settings-0.44.0.tar.gz", hash = "sha256:8a7f90b7b0f2cbd7373eaff2209c4c67a0efe8dbb328285034be9e29a957a102", size = 18244, upload-time = "2025-12-17T05:25:10.655Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/d3/ac3e2ffd10139f3f209acafc1f8dd7b9d177c1b7b26b71cdd60e2f36020e/django_resonant_settings-0.41.0-py3-none-any.whl", hash = "sha256:10be63da455eaaa67a34b057dabe9f15b380917c945cb8c33f929ad1afde2b47", size = 24123, upload-time = "2025-10-16T20:11:41.112Z" },
+    { url = "https://files.pythonhosted.org/packages/0d/15/1fdc2342aa7b06917e9faab5edd90a1ab9dc346d83fe890ce4153201ba07/django_resonant_settings-0.44.0-py3-none-any.whl", hash = "sha256:74b75d93d843821c8813972aa85cfd5ef732c99c0c93ba2cccee619b0e346937", size = 24956, upload-time = "2025-12-17T05:25:11.621Z" },
 ]
 
 [package.optional-dependencies]
@@ -1054,6 +1054,14 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/9c/44/957ba59dd6d36a63d49dc12c98ac817fd7bc840e858d7b0d48cc997f3b7a/django_resonant_utils-0.16.0.tar.gz", hash = "sha256:0eb954b262732ba5e4b5fea95ee8b5035f8b7d21191a4d05b40c5b51ca060713", size = 12502, upload-time = "2025-07-10T19:31:35.482Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b9/49/394af41df5f9c73cd3703374364be8ce8581c0b0390761498958410dc648/django_resonant_utils-0.16.0-py3-none-any.whl", hash = "sha256:3f7b8b7e284269cac704122ef823be415eaf777d601d51a46369250294c276c4", size = 14201, upload-time = "2025-07-10T19:31:34.29Z" },
+]
+
+[package.optional-dependencies]
+allauth = [
+    { name = "django-allauth" },
+]
+s3-storage = [
+    { name = "django-storages", extra = ["s3"] },
 ]
 
 [[package]]
