@@ -1,3 +1,21 @@
+# v0.21.3 (Mon Feb 02 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, William Allen ([@williamjallen](https://github.com/williamjallen)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Update URL for user support [#2688](https://github.com/dandi/dandi-archive/pull/2688) ([@kabilar](https://github.com/kabilar))
+- Fix dandiset ID parsing during upload initialization [#2696](https://github.com/dandi/dandi-archive/pull/2696) ([@williamjallen](https://github.com/williamjallen))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- William Allen ([@williamjallen](https://github.com/williamjallen))
+
+---
+
 # v0.21.2 (Tue Jan 13 2026)
 
 #### 🐛 Bug Fix
