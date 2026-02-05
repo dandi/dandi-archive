@@ -1,3 +1,15 @@
+# v0.21.4 (Thu Feb 05 2026)
+
+#### 🐛 Bug Fix
+
+- Update copyright year in footer [#2701](https://github.com/dandi/dandi-archive/pull/2701) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v0.21.3 (Mon Feb 02 2026)
 
 :tada: This release contains work from a new contributor! :tada:
