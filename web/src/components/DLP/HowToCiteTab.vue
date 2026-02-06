@@ -263,12 +263,18 @@ const isDraft = computed(() => store.version === 'draft');
 const publishedVersions = computed(() => store.publishedVersions);
 const hasPublishedVersions = computed(() => publishedVersions.value && publishedVersions.value.length > 0);
 const latestPublishedVersion = computed(() => {
-  if (!publishedVersions.value || publishedVersions.value.length === 0) return null;
+  if (!publishedVersions.value || publishedVersions.value.length === 0) {
+    return null;
+  }
+
   // Versions are sorted, so the first one is the latest
   return publishedVersions.value[0].version;
 });
 const latestPublishedVersionLink = computed(() => {
-  if (!currentDandiset.value || !latestPublishedVersion.value) return '';
+  if (!currentDandiset.value || !latestPublishedVersion.value) {
+    return '';
+  }
+
   const { identifier } = currentDandiset.value.dandiset;
   return `/dandiset/${identifier}/${latestPublishedVersion.value}`;
 });
@@ -281,7 +287,10 @@ const selectedCitationFormat = ref<CitationFormat>('apa'); // For the dropdown i
 
 // Generate CFF object from metadata
 const cffObject = computed(() => {
-  if (!props.meta) return null;
+  if (!props.meta) {
+    return null;
+  }
+
   return dandisetToCFF(props.meta, typeof doi.value === 'string' ? doi.value : undefined);
 });
 
@@ -347,7 +356,10 @@ const isCodeFormat = computed(() => {
 });
 
 const dandiIdentifier = computed(() => {
-  if (!currentDandiset.value) return '';
+  if (!currentDandiset.value) {
+    return '';
+  }
+
   const { identifier } = currentDandiset.value.dandiset;
   const version = props.meta?.version || currentDandiset.value.version;
   return `DANDI:${identifier}/${version}`;
@@ -357,7 +369,10 @@ const dandiUrl = computed(() => {
   if (doi.value) {
     return `https://doi.org/${doi.value}`;
   }
-  if (!currentDandiset.value) return '';
+  if (!currentDandiset.value) {
+    return '';
+  }
+
   const { identifier } = currentDandiset.value.dandiset;
   return `https://dandiarchive.org/dandiset/${identifier}`;
 });
