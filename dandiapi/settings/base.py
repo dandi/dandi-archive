@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.postgres',
     'django.contrib.sessions',
+    'django.contrib.sitemaps',
     'django.contrib.sites',
     'django.contrib.staticfiles',
     'django_extensions',
@@ -217,3 +218,5 @@ DANDI_AUTO_APPROVE_USERS = False
 
 DANDI_DEV_EMAIL: str
 DANDI_ADMIN_EMAIL: str
+
+DANDI_ENABLE_SITEMAP_XML: bool = env.bool('DJANGO_DANDI_ENABLE_SITEMAP_XML', default=False)
