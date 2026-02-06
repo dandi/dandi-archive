@@ -242,17 +242,29 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'asset-download',
             kwargs={'asset_id': str(self.asset_id)},
         )
+
+        is_embargoed = self.is_embargoed
+        if is_embargoed:
+            # Embargo info is only set on the first version's metadata
+            first_version = self.versions.first()
+            access = {
+                'schemaKey': 'AccessRequirements',
+                'status': AccessType.EmbargoedAccess.value,
+            }
+            # Some tests create assets without an associated version
+            if first_version:
+                embargoed_until = first_version.metadata['access'][0]['embargoedUntil']
+                access['embargoedUntil'] = embargoed_until
+        else:
+            access = {
+                'schemaKey': 'AccessRequirements',
+                'status': AccessType.OpenAccess.value,
+            }
+
         metadata = {
             **self.metadata,
             'id': self.dandi_asset_id(self.asset_id),
-            'access': [
-                {
-                    'schemaKey': 'AccessRequirements',
-                    'status': AccessType.EmbargoedAccess.value
-                    if self.is_embargoed
-                    else AccessType.OpenAccess.value,
-                }
-            ],
+            'access': [access],
             'path': self.path,
             'identifier': str(self.asset_id),
             'contentUrl': [download_url, self.s3_url],
