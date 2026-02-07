@@ -4,7 +4,7 @@ This document discusses the design of a *versioned Zarr* concept, which is neede
 
 ## Executive Summary
 
-Zarr Archives are simply too big and too complex to copy when modified to create new versions (as is done with “blob” assets). Instead, we propose to only change the stored objects for individual chunks, using S3 bucket versioning to maintain previous versions, while tracking the association between chunk paths and S3 objects in a database table. This will enable a lightweight model representing an immutable snapshot of a Zarr Archive suitable for publishing in a Dandiset, as well as optimized access to the latest version of the Zarr, and other services such as Zarr manifest files.
+Zarr Archives are simply too big and too complex to copy when modified to create new versions (as is done with “blob” assets). Instead, we propose to only change the stored objects for individual shards (in Zarr version 3) or chunks (in Zarr version 2), using S3 bucket versioning to maintain previous versions, while tracking the association between shard/chunk paths and S3 objects in a database table. This will enable a lightweight model representing an immutable snapshot of a Zarr Archive suitable for publishing in a Dandiset, as well as optimized access to the latest version of the Zarr, and other services such as Zarr manifest files.
 
 ## Current Situation
 
