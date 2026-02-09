@@ -228,26 +228,26 @@
           </v-card>
         </v-col>
       </v-row>
-      <!-- TODO: Re-enable these tab components when the others are complete -->
-
-      <!-- <v-tabs
-        v-model="currentTab"
-        background-color="grey lighten-5"
-        class="ml-3"
-        show-arrows
-      >
-        <v-tabs-slider />
-
-        <v-tab
-          v-for="(tab, index) in tabs"
-          :key="tab.name"
-          :href="`#${index}`"
-        >
-          <v-icon>{{ tab.icon }}</v-icon>
-          {{ tab.name }}
-        </v-tab>
-      </v-tabs> -->
     </v-card>
+
+    <!-- Tab navigation -->
+    <v-tabs
+      v-model="currentTab"
+      bg-color="grey-lighten-5"
+      class="border-b pl-9"
+      show-arrows
+    >
+      <v-tab
+        v-for="(tab, index) in tabs"
+        :key="tab.name"
+        :value="index"
+      >
+        <v-icon start>
+          {{ tab.icon }}
+        </v-icon>
+        {{ tab.name }}
+      </v-tab>
+    </v-tabs>
 
     <!-- Dynamically render component based on current tab -->
     <v-row class="justify-center">
@@ -281,12 +281,8 @@ import { useDandisetStore } from '@/stores/dandiset';
 import { getDoiMetadata } from '@/utils/doi';
 import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from '@/types';
 
-import AccessInformationTab from '@/components/DLP/AccessInformationTab.vue';
-import AssetSummaryTab from '@/components/DLP/AssetSummaryTab.vue';
-import ContributorsTab from '@/components/DLP/ContributorsTab.vue';
+import HowToCiteTab from '@/components/DLP/HowToCiteTab.vue';
 import OverviewTab from '@/components/DLP/OverviewTab.vue';
-import RelatedResourcesTab from '@/components/DLP/RelatedResourcesTab.vue';
-import SubjectMatterTab from '@/components/DLP/SubjectMatterTab.vue';
 import ShareDialog from './ShareDialog.vue';
 import StarButton from '@/components/StarButton.vue';
 
@@ -297,31 +293,12 @@ const tabs = [
   {
     name: 'Overview',
     component: OverviewTab,
+    icon: 'mdi-information-outline',
   },
   {
-    name: 'Contributors',
-    component: ContributorsTab,
-    icon: 'mdi-account',
-  },
-  {
-    name: 'Subject Matter',
-    component: SubjectMatterTab,
-    icon: 'mdi-notebook-outline',
-  },
-  {
-    name: 'Access Information',
-    component: AccessInformationTab,
-    icon: 'mdi-account-question',
-  },
-  {
-    name: 'Asset Summary',
-    component: AssetSummaryTab,
-    icon: 'mdi-clipboard-list',
-  },
-  {
-    name: 'Related Resources',
-    component: RelatedResourcesTab,
-    icon: 'mdi-book',
+    name: 'How to Cite',
+    component: HowToCiteTab,
+    icon: 'mdi-format-quote-close',
   },
 ];
 
