@@ -75,14 +75,6 @@ test.describe("dandiset landing page", async () => {
       ).toBeVisible();
     });
 
-    test("displays citation not available message for drafts", async ({ page }) => {
-      await page.getByRole("tab", { name: "How to Cite" }).click();
-
-      await expect(
-        page.getByText("Citation will be available after the dandiset is published."),
-      ).toBeVisible();
-    });
-
     test("displays all expected sections", async ({ page }) => {
       await page.getByRole("tab", { name: "How to Cite" }).click();
 

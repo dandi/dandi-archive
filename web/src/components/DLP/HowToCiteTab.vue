@@ -66,10 +66,7 @@
             class="citation-format-select"
           />
         </div>
-        <div
-          v-if="currentCitation"
-          class="copy-block mb-4"
-        >
+        <div class="copy-block mb-4">
           <div class="copy-block-content">
             <pre v-if="isCodeFormat" class="citation-text-code">{{ currentCitation }}</pre>
             <span v-else class="citation-text">{{ currentCitation }}</span>
@@ -92,12 +89,6 @@
             </v-btn>
           </div>
         </div>
-        <p
-          v-else
-          class="text-body-2 font-italic mb-4"
-        >
-          Citation will be available after the dandiset is published.
-        </p>
 
         <!-- DOI info for published versions -->
         <div
@@ -346,8 +337,9 @@ const currentCitation = computed(() => {
   if (citation.value && formattedCitations.value[selectedCitationFormat.value]) {
     return formattedCitations.value[selectedCitationFormat.value];
   }
-  // For drafts or when CFF generation fails, show the original citation if available
-  return citation.value || '';
+
+  // Default to the original citation value
+  return citation.value;
 });
 
 // Check if the selected format is a code-like format that needs preformatted text
