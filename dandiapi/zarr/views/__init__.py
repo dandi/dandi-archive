@@ -19,7 +19,7 @@ from dandiapi.api.services import audit
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.views.pagination import DandiPagination
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveChunk, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 if TYPE_CHECKING:
@@ -358,3 +358,25 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             )
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(method='GET')
+    @action(
+        methods=['HEAD', 'GET'],
+        url_path='version/(?P<version_id>[^/.]+)/file/(?P<path>.+)',
+        # detail=True,
+        detail=False,
+    )
+    def files_new(self, request, version_id: str, path: str):
+        chunk = get_object_or_404(
+            ZarrArchiveChunk.objects.select_related('version__zarr'),
+            version__version_id=version_id,
+            key=path,
+        )
+
+        zarr_archive = chunk.version.zarr
+
+        # return HttpResponseRedirect(zarr_archive.s3_path(chunk.key))
+        # return HttpResponseRedirect(zarr_archive.storage.url(zarr_archive.s3_path(chunk.key)))
+        return HttpResponseRedirect(
+            f'https://dandiarchive.s3.amazonaws.com/{zarr_archive.s3_path(chunk.key)}'
+        )

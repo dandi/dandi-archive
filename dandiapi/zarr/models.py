@@ -106,3 +106,17 @@ class ZarrArchive(TimeStampedModel):
         # Files deleted, mark pending
         self.mark_pending()
         self.save()
+
+
+class ZarrArchiveVersion(models.Model):  # noqa: DJ008
+    version_id = models.UUIDField()
+    zarr = models.ForeignKey(ZarrArchive, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+
+
+class ZarrArchiveChunk(models.Model):  # noqa: DJ008
+    version = models.ForeignKey(ZarrArchiveVersion, on_delete=models.CASCADE)
+    key = models.CharField(max_length=256, db_index=True)
+    object_version_id = models.CharField(max_length=32)
+    etag = models.CharField(max_length=32)
+    delete_marker = models.BooleanField()
