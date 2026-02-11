@@ -116,10 +116,10 @@
               <v-list>
                 <v-list-item>
                   Install the Python client (DANDI CLI)
-                  in a Python 3.8+ environment using command:
+                  in a Python {{ minPythonVersion }} environment using command:
                 </v-list-item>
                 <v-list-item>
-                  <kbd>pip install "dandi>=0.60.0"</kbd>
+                  <kbd>pip install "dandi>={{ latestDandiVersion }}"</kbd>
                 </v-list-item>
               </v-list>
             </v-expansion-panel-text>
@@ -130,10 +130,26 @@
   </v-menu>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useDandisetStore } from '@/stores/dandiset';
 import CopyText from '@/components/CopyText.vue';
 import { dandiDocumentationUrl } from '@/utils/constants';
+
+const latestDandiVersion = ref('0.74.0');
+const minPythonVersion = ref('>=3.10');
+
+onMounted(async () => {
+  try {
+    const response = await fetch('https://pypi.org/pypi/dandi/json');
+    if (response.ok) {
+      const data = await response.json();
+      minPythonVersion.value = data.info.requires_python;
+      latestDandiVersion.value = data.info.version;
+    }
+  } catch (error) {
+    console.warn('Failed to fetch `dandi` info from PyPI:', error);
+  }
+});
 
 function downloadCommand(identifier: string, version: string): string {
   // Use the special 'DANDI:' url prefix if appropriate.
