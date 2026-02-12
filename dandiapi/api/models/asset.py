@@ -17,9 +17,15 @@ from django.db.models import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.metadata import PublishableMetadataMixin
 
 from .version import Version
+
+
+class EmbargoedAssetWithinOpenDandisetError(Exception):
+    """Raised when an embargoed asset exists in an open dandiset."""
+
 
 ASSET_CHARS_REGEX = r'[A-z0-9(),&\s#+~_=-]'
 ASSET_PATH_REGEX = rf'^({ASSET_CHARS_REGEX}?\/?\.?{ASSET_CHARS_REGEX})+$'
@@ -236,6 +242,36 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     def dandi_asset_id(asset_id: str | uuid.UUID):
         return f'dandiasset:{asset_id}'
 
+    def access_metadata(self):
+        # Default to open access
+        embargoed = self.is_embargoed
+        access = {
+            'schemaKey': 'AccessRequirements',
+            'status': AccessType.EmbargoedAccess.value
+            if embargoed
+            else AccessType.OpenAccess.value,
+        }
+
+        if embargoed:
+            draft_version = self.versions.select_related('dandiset').filter(version='draft').first()
+
+            # Only bother with embargoedUntil if this asset is associated with an embargoed dandiset
+            # draft version. Otherwise, we wouldn't have a date to put here, and it won't be checked
+            # anyway.
+            if draft_version is not None:
+                # This shouldn't ever occur, but if it does, we'll want to know about it.
+                if draft_version.dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN:
+                    raise EmbargoedAssetWithinOpenDandisetError(
+                        'Embargoed asset contained within OPEN dandiset'
+                    )
+
+                # EmbargoedUntil isn't guaranteed to be set
+                embargo_end_date = draft_version.metadata['access'][0].get('embargoedUntil')
+                if embargo_end_date is not None:
+                    access['embargoedUntil'] = embargo_end_date
+
+        return access
+
     @property
     def full_metadata(self):
         download_url = settings.DANDI_API_URL + reverse(
@@ -243,28 +279,10 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             kwargs={'asset_id': str(self.asset_id)},
         )
 
-        is_embargoed = self.is_embargoed
-        if is_embargoed:
-            # Embargo info is only set on the first version's metadata
-            first_version = self.versions.first()
-            access = {
-                'schemaKey': 'AccessRequirements',
-                'status': AccessType.EmbargoedAccess.value,
-            }
-            # Some tests create assets without an associated version
-            if first_version:
-                embargoed_until = first_version.metadata['access'][0]['embargoedUntil']
-                access['embargoedUntil'] = embargoed_until
-        else:
-            access = {
-                'schemaKey': 'AccessRequirements',
-                'status': AccessType.OpenAccess.value,
-            }
-
         metadata = {
             **self.metadata,
             'id': self.dandi_asset_id(self.asset_id),
-            'access': [access],
+            'access': [self.access_metadata()],
             'path': self.path,
             'identifier': str(self.asset_id),
             'contentUrl': [download_url, self.s3_url],
