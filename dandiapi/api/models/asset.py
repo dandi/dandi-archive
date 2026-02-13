@@ -13,7 +13,8 @@ from django.contrib.postgres.indexes import HashIndex
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import Q
+from django.db.models import CharField, DateField, Min, Q
+from django.db.models.functions import Cast
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
@@ -252,24 +253,56 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             else AccessType.OpenAccess.value,
         }
 
-        if embargoed:
-            draft_version = self.versions.select_related('dandiset').filter(version='draft').first()
+        # Nothing else to do if not embargoed
+        if not embargoed:
+            return access
+
+        # For zarr assets, is_embargoed is based on the dandiset directly, and a zarr can
+        # only be associated with one dandiset, so we know this dandiset is embargoed
+        if self.zarr is not None:
+            draft_version = self.versions.filter(version='draft').first()
 
             # Only bother with embargoedUntil if this asset is associated with an embargoed dandiset
             # draft version. Otherwise, we wouldn't have a date to put here, and it won't be checked
             # anyway.
             if draft_version is not None:
-                # This shouldn't ever occur, but if it does, we'll want to know about it.
-                if draft_version.dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN:
-                    raise EmbargoedAssetWithinOpenDandisetError(
-                        'Embargoed asset contained within OPEN dandiset'
-                    )
-
                 # EmbargoedUntil isn't guaranteed to be set
-                embargo_end_date = draft_version.metadata['access'][0].get('embargoedUntil')
+                embargo_end_date: str | None = draft_version.metadata['access'][0].get(
+                    'embargoedUntil'
+                )
                 if embargo_end_date is not None:
                     access['embargoedUntil'] = embargo_end_date
 
+            return access
+
+        # In the blob case, we need to consider all dandisets this blob might be associated with,
+        # and take the minimum embargo end date
+
+        # This blob should only be associated with embargoed dandisets
+        open_dandisets = self.blob.assets.filter(
+            versions__dandiset__embargo_status=Dandiset.EmbargoStatus.OPEN
+        )
+        if open_dandisets.exists():
+            raise EmbargoedAssetWithinOpenDandisetError(
+                'Embargoed asset contained within OPEN dandiset'
+            )
+
+        # Retrieve the minimum embargo end date, across all dandisets
+        embargo_end_date: datetime.date | None = (
+            self.blob.assets.filter(versions__isnull=False)
+            .annotate(
+                embargo_end_date=Cast(
+                    Cast('versions__metadata__access__0__embargoedUntil', output_field=CharField()),
+                    output_field=DateField(),
+                )
+            )
+            .aggregate(min_embargo_end_date=Min('embargo_end_date'))['min_embargo_end_date']
+        )
+
+        if embargo_end_date is None:
+            return access
+
+        access['embargoedUntil'] = embargo_end_date.isoformat()
         return access
 
     @property
