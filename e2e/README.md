@@ -29,8 +29,8 @@ Prior to executing the tests, you will need to login at `localhost:8085` to prov
 ```bash
 cd e2e
 
-# Install testdata
-./manage.py loaddata playwright
+# Install testdata (manage.py is in the repo root)
+../manage.py loaddata playwright
 
 # Run all tests
 npx playwright test

@@ -147,7 +147,7 @@ For frequent deployment administration tasks, `django-extensions` provides a con
 ### create_dev_dandiset
 
 ```
-python manage.py create_dev_dandiset --owner $(git config user.email) --name My Dummy Dandiset
+./manage.py create_dev_dandiset --owner $(git config user.email) --name My Dummy Dandiset
 ```
 
 This creates a dummy dandiset with valid metadata and a single dummy asset.
