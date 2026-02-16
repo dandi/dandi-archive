@@ -14,6 +14,25 @@ from dandiapi.api.services import garbage_collection
 
 
 @pytest.mark.django_db
+@pytest.mark.ai_generated
+def test_garbage_collection_event_str():
+    """Test that GarbageCollectionEvent.__str__ uses the timestamp field."""
+    event = GarbageCollectionEvent.objects.create(type='AssetBlob')
+    result = str(event)
+    assert 'AssetBlob' in result
+    assert str(event.timestamp.year) in result
+
+
+@pytest.mark.django_db
+@pytest.mark.ai_generated
+def test_garbage_collection_event_record_str():
+    """Test that GarbageCollectionEventRecord.__str__ includes event type."""
+    event = GarbageCollectionEvent.objects.create(type='Upload')
+    record = GarbageCollectionEventRecord.objects.create(event=event, record={'id': 1})
+    assert str(record) == 'Upload record'
+
+
+@pytest.mark.django_db
 def test_garbage_collect_uploads(upload_factory):
     # Create an expired upload by setting its created date to the past.
     # We have to do this in an UPDATE query, because using the `created` kwarg in the factory

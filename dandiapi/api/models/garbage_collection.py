@@ -10,7 +10,7 @@ class GarbageCollectionEvent(models.Model):
     )
 
     def __str__(self) -> str:
-        return f'{self.type} ({self.created})'
+        return f'{self.type} ({self.timestamp})'
 
 
 class GarbageCollectionEventRecord(models.Model):
