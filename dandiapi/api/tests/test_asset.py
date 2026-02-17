@@ -1297,7 +1297,9 @@ def test_asset_rest_update(api_client, asset, asset_blob):
 @pytest.mark.django_db
 def test_asset_rest_update_embargo(api_client, asset, embargoed_asset_blob):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    draft_version = DraftVersionFactory.create(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED, dandiset__owners=[user]
+    )
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
     add_asset_paths(asset=asset, version=draft_version)
