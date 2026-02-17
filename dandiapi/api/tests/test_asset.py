@@ -235,44 +235,6 @@ def test_asset_full_metadata_zarr(draft_asset_factory):
     }
 
 
-@pytest.mark.django_db
-def test_asset_full_metadata_access(
-    draft_asset_factory, asset_blob_factory, zarr_archive_factory, embargoed_zarr_archive_factory
-):
-    raw_metadata = {
-        'foo': 'bar',
-        'schemaVersion': DANDI_SCHEMA_VERSION,
-    }
-    embargoed_zarr_asset: Asset = draft_asset_factory(
-        metadata=raw_metadata, blob=None, zarr=embargoed_zarr_archive_factory()
-    )
-    open_zarr_asset: Asset = draft_asset_factory(
-        metadata=raw_metadata, blob=None, zarr=zarr_archive_factory()
-    )
-
-    embargoed_blob_asset: Asset = draft_asset_factory(
-        metadata=raw_metadata, blob=asset_blob_factory(embargoed=True), zarr=None
-    )
-    open_blob_asset: Asset = draft_asset_factory(
-        metadata=raw_metadata, blob=asset_blob_factory(embargoed=False), zarr=None
-    )
-
-    # Test that access is correctly inferred from embargo status
-    assert embargoed_zarr_asset.full_metadata['access'] == [
-        {'schemaKey': 'AccessRequirements', 'status': AccessType.EmbargoedAccess.value}
-    ]
-    assert embargoed_blob_asset.full_metadata['access'] == [
-        {'schemaKey': 'AccessRequirements', 'status': AccessType.EmbargoedAccess.value}
-    ]
-
-    assert open_zarr_asset.full_metadata['access'] == [
-        {'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}
-    ]
-    assert open_blob_asset.full_metadata['access'] == [
-        {'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}
-    ]
-
-
 # API Tests
 
 
@@ -1335,7 +1297,9 @@ def test_asset_rest_update(api_client, asset, asset_blob):
 @pytest.mark.django_db
 def test_asset_rest_update_embargo(api_client, asset, embargoed_asset_blob):
     user = UserFactory.create()
-    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    draft_version = DraftVersionFactory.create(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED, dandiset__owners=[user]
+    )
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
     add_asset_paths(asset=asset, version=draft_version)

@@ -178,7 +178,9 @@ def add_asset_to_version(
             and asset_blob.embargoed
             and version.dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN
         ):
-            AssetBlob.objects.filter(blob_id=asset_blob.blob_id).update(embargoed=False)
+            asset_blob.embargoed = False
+            asset_blob.save()
+
             transaction.on_commit(
                 lambda: remove_asset_blob_embargoed_tag_task.delay(blob_id=asset_blob.blob_id)
             )
