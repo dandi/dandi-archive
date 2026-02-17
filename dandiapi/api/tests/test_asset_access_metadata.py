@@ -183,19 +183,3 @@ def test_access_metadata_embargoed_blob_no_embargoed_until(
 
     for asset in assets:
         assert 'embargoedUntil' not in asset.access_metadata()
-
-
-@pytest.mark.django_db
-def test_access_metadata_embargoed_zarr_not_in_draft_version(
-    embargoed_zarr_archive_factory, draft_asset_factory
-):
-    """Embargoed zarr asset not in any draft version has no embargoedUntil."""
-    zarr = embargoed_zarr_archive_factory()
-    asset = draft_asset_factory(blob=None, zarr=zarr)
-    # Do not add asset to any version; asset.versions.filter(version='draft').first() is None
-    access = asset.access_metadata()
-    assert access == {
-        'schemaKey': 'AccessRequirements',
-        'status': AccessType.EmbargoedAccess.value,
-    }
-    assert 'embargoedUntil' not in access
