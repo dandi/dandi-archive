@@ -293,10 +293,9 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             .aggregate(min_embargo_end_date=Min('embargo_end_date'))['min_embargo_end_date']
         )
 
-        if embargo_end_date is None:
-            return access
+        if embargo_end_date is not None:
+            access['embargoedUntil'] = embargo_end_date.isoformat()
 
-        access['embargoedUntil'] = embargo_end_date.isoformat()
         return access
 
     @property
