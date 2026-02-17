@@ -1,3 +1,33 @@
+# v0.21.5 (Tue Feb 17 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Heberto Mayorquin ([@h-mayorquin](https://github.com/h-mayorquin)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Fix propagation of embargoed date from dandisets to assets [#2698](https://github.com/dandi/dandi-archive/pull/2698) ([@h-mayorquin](https://github.com/h-mayorquin) [@jjnesbitt](https://github.com/jjnesbitt))
+- bf: fix GarbageCollectionEvent.__str__ referencing nonexistent field [#2710](https://github.com/dandi/dandi-archive/pull/2710) ([@yarikoptic](https://github.com/yarikoptic) [@jjnesbitt](https://github.com/jjnesbitt))
+- Add "How to Cite" Tab to Dandiset Landing Page [#2671](https://github.com/dandi/dandi-archive/pull/2671) ([@bendichter](https://github.com/bendichter) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 📝 Documentation
+
+- Fixes of minor inconsistencies in docs claude identified [#2709](https://github.com/dandi/dandi-archive/pull/2709) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 🧪 Tests
+
+- Revert "bf(test): test_nwb2asset_remote_asset which might be stalling here" [#2708](https://github.com/dandi/dandi-archive/pull/2708) ([@yarikoptic](https://github.com/yarikoptic))
+- ci(tests): pass -s to pytest  and skip hanging test_nwb2asset_remote_asset [#2662](https://github.com/dandi/dandi-archive/pull/2662) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 4
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Heberto Mayorquin ([@h-mayorquin](https://github.com/h-mayorquin))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.21.4 (Thu Feb 05 2026)
 
 #### 🐛 Bug Fix
