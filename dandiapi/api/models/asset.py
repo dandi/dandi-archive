@@ -260,18 +260,12 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         # For zarr assets, is_embargoed is based on the dandiset directly, and a zarr can
         # only be associated with one dandiset, so we know this dandiset is embargoed
         if self.zarr is not None:
-            draft_version = self.versions.filter(version='draft').first()
+            draft_version = self.zarr.dandiset.draft_version
 
-            # Only bother with embargoedUntil if this asset is associated with an embargoed dandiset
-            # draft version. Otherwise, we wouldn't have a date to put here, and it won't be checked
-            # anyway.
-            if draft_version is not None:
-                # EmbargoedUntil isn't guaranteed to be set
-                embargo_end_date: str | None = draft_version.metadata['access'][0].get(
-                    'embargoedUntil'
-                )
-                if embargo_end_date is not None:
-                    access['embargoedUntil'] = embargo_end_date
+            # EmbargoedUntil isn't guaranteed to be set
+            embargo_end_date: str | None = draft_version.metadata['access'][0].get('embargoedUntil')
+            if embargo_end_date is not None:
+                access['embargoedUntil'] = embargo_end_date
 
             return access
 
