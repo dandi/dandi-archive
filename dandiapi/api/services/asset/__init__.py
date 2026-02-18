@@ -46,6 +46,9 @@ def _create_asset(
     return asset
 
 
+# NOTE: There is intentionally no transaction.atomic decorator on this function, as it's meant
+# to be called from the high level service functions within this file, which do wrap this in a
+# transaction. In production code, this function should never be called outside of a transaction.
 def _add_asset_to_version(
     *,
     version: Version,
@@ -53,6 +56,22 @@ def _add_asset_to_version(
     zarr_archive: ZarrArchive | None,
     metadata: dict,
 ) -> Asset:
+    # Creating an asset in an OPEN dandiset that points to an
+    # embargoed blob results in that blob being unembargoed.
+    # NOTE: This only applies to asset blobs, as zarrs cannot belong to
+    # multiple dandisets at once.
+    if (
+        asset_blob is not None
+        and asset_blob.embargoed
+        and version.dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN
+    ):
+        asset_blob.embargoed = False
+        asset_blob.save()
+
+        transaction.on_commit(
+            lambda: remove_asset_blob_embargoed_tag_task.delay(blob_id=asset_blob.blob_id)
+        )
+
     path = metadata['path']
     asset = _create_asset(
         path=path, asset_blob=asset_blob, zarr_archive=zarr_archive, metadata=metadata
@@ -169,22 +188,6 @@ def add_asset_to_version(
         raise ZarrArchiveBelongsToDifferentDandisetError
 
     with transaction.atomic():
-        # Creating an asset in an OPEN dandiset that points to an
-        # embargoed blob results in that blob being unembargoed.
-        # NOTE: This only applies to asset blobs, as zarrs cannot belong to
-        # multiple dandisets at once.
-        if (
-            asset_blob is not None
-            and asset_blob.embargoed
-            and version.dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN
-        ):
-            asset_blob.embargoed = False
-            asset_blob.save()
-
-            transaction.on_commit(
-                lambda: remove_asset_blob_embargoed_tag_task.delay(blob_id=asset_blob.blob_id)
-            )
-
         asset = _add_asset_to_version(
             version=version,
             asset_blob=asset_blob,
