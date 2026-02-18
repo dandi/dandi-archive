@@ -1,3 +1,15 @@
+# v0.21.6 (Wed Feb 18 2026)
+
+#### 🐛 Bug Fix
+
+- Properly unembargo blobs when asset is updated [#2713](https://github.com/dandi/dandi-archive/pull/2713) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.21.5 (Tue Feb 17 2026)
 
 :tada: This release contains work from a new contributor! :tada:
