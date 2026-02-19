@@ -88,6 +88,7 @@ export interface Info {
   };
   schema_url: string;
   schema_version: string;
+  'cli-minimal-version': string;
 }
 
 export interface DandisetStats {
