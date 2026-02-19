@@ -116,7 +116,7 @@
               <v-list>
                 <v-list-item>
                   Install the Python client (DANDI CLI)
-                  in a Python 3.8+ environment using command:
+                  in a Python {{ cliRequiresPython }} environment using command:
                 </v-list-item>
                 <v-list-item>
                   <kbd>pip install "dandi>={{ cliMinimalVersion }}"</kbd>
@@ -155,9 +155,11 @@ const publishedVersions = computed(() => store.versions);
 const currentVersion = computed(() => store.version);
 
 const cliMinimalVersion = ref<string>();
+const cliRequiresPython = ref<string>();
 onMounted(async () => {
   const info = await dandiRest.info();
   cliMinimalVersion.value = info['cli-minimal-version'];
+  cliRequiresPython.value = info['cli-requires-python'];
 });
 
 const selectedDownloadOption = ref('draft');

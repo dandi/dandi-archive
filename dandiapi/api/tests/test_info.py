@@ -39,3 +39,16 @@ def test_cli_minimal_version_matches_dandischema(api_client):
     # Ensure that local dandischema is compatible with the CLI version
     local_version = importlib.metadata.version('dandischema')
     assert version_range.contains(local_version)
+
+
+def test_cli_requires_python_compatible_with_minimal_version(api_client):
+    """Test that the CLI's required python version is compatible with the minimal version."""
+    info = api_client.get('/api/info/').json()
+    minimal_version: str = info['cli-minimal-version']
+    data = requests.get(f'https://pypi.org/pypi/dandi/{minimal_version}/json').json()
+
+    cli_requires_python: str = info['cli-requires-python']
+    dandischema_requires_python: str = data['info']['requires_python']
+
+    # Test for exact match
+    assert cli_requires_python == dandischema_requires_python
