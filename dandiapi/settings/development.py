@@ -12,7 +12,7 @@ INSTALLED_APPS += [
     'debug_toolbar',
     'django_browser_reload',
 ]
-# Force WhiteNoice to serve static files, even when using 'manage.py runserver_plus'
+# Force WhiteNoise to serve static files, even when using 'manage.py runserver_plus'
 staticfiles_index = INSTALLED_APPS.index('django.contrib.staticfiles')
 INSTALLED_APPS.insert(staticfiles_index, 'whitenoise.runserver_nostatic')
 
