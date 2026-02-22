@@ -82,6 +82,8 @@ const dandiRest = {
       user.value = null;
       localStorage.clear();
     }
+
+    window.location.href = 'http://localhost:8000/accounts/logout/'
   },
   async me(): Promise<User> {
     const { data: user } = await client.get('users/me/');
