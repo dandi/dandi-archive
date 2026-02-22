@@ -19,10 +19,11 @@ from django.contrib.auth.models import User
 from django.db import connection
 from django.db.models.query_utils import Q
 
-from dandiapi.api.mail import send_pending_users_message
+from dandiapi.api.mail import send_pending_users_message, send_publish_reminder_message
 from dandiapi.api.models import UserMetadata, Version
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.models.email import SentEmail
 from dandiapi.api.models.stats import ApplicationStats
 from dandiapi.api.services.garbage_collection import garbage_collect
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
@@ -156,6 +157,75 @@ def compute_application_stats() -> None:
     )
 
 
+# Number of days after which a draft-only dandiset is considered "stale" and
+# eligible for a publish reminder email.
+PUBLISH_REMINDER_DAYS = 30
+
+
+@shared_task(soft_time_limit=120)
+def send_publish_reminder_emails() -> None:
+    """
+    Send reminder emails to owners of draft-only dandisets that haven't been modified recently.
+
+    This task finds all dandisets that:
+    1. Have never been published (only have a draft version)
+    2. Have a draft version that hasn't been modified in PUBLISH_REMINDER_DAYS days
+    3. Are not embargoed (embargoed dandisets have different publication workflows)
+    4. Have not already received a publish reminder email
+
+    For each such dandiset, an email is sent to all owners reminding them to publish.
+    The email is recorded in the SentEmail table for tracking purposes.
+    """
+    from django.utils import timezone
+
+    cutoff_date = timezone.now() - timedelta(days=PUBLISH_REMINDER_DAYS)
+
+    # Get IDs of dandisets that have already received a publish reminder email
+    dandisets_already_reminded = SentEmail.objects.filter(
+        template_name='publish_reminder',
+        dandiset__isnull=False,
+    ).values_list('dandiset_id', flat=True)
+
+    # Find dandisets that:
+    # - Are not embargoed
+    # - Have never been published (no versions other than 'draft')
+    # - Have a draft version that was last modified before the cutoff date
+    # - Have not already received a publish reminder email
+    stale_draft_dandisets = (
+        Dandiset.objects.filter(
+            embargo_status=Dandiset.EmbargoStatus.OPEN,
+        )
+        .exclude(
+            # Exclude dandisets that have already been reminded
+            id__in=dandisets_already_reminded
+        )
+        .exclude(
+            # Exclude dandisets that have any published versions
+            versions__version__regex=r'^\d'
+        )
+        .filter(
+            # Only include dandisets with draft versions modified before cutoff
+            versions__version='draft',
+            versions__modified__lt=cutoff_date,
+        )
+        .distinct()
+    )
+
+    stale_count = stale_draft_dandisets.count()
+    if stale_count > 0:
+        logger.info('Found %s stale draft dandisets to send publish reminders', stale_count)
+        for dandiset in stale_draft_dandisets.iterator():
+            try:
+                # send_publish_reminder_message now records the email in SentEmail
+                send_publish_reminder_message(dandiset)
+            except Exception:
+                logger.exception(
+                    'Failed to send publish reminder for dandiset %s', dandiset.identifier
+                )
+    else:
+        logger.debug('Found no stale draft dandisets to send publish reminders')
+
+
 def register_scheduled_tasks(sender: Celery, **kwargs):
     """Register tasks with a celery beat schedule."""
     logger.info(
@@ -186,3 +256,6 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     # Run garbage collection once a day
     # TODO: enable this once we're ready to run garbage collection automatically
     # sender.add_periodic_task(timedelta(days=1), garbage_collection.s())
+
+    # Send weekly publish reminder emails to owners of stale draft-only dandisets
+    sender.add_periodic_task(crontab(hour=9, minute=0, day_of_week=1), send_publish_reminder_emails.s())
