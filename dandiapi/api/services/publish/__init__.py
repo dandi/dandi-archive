@@ -100,10 +100,15 @@ def _build_publishable_version_from_draft(draft_version: Version) -> Version:
         }
     )
 
+    release_notes: str | None = draft_version.release_notes
+    if release_notes:
+        publishable_version_metadata['releaseNotes'] = release_notes
+
     return Version(
         dandiset=draft_version.dandiset,
         name=draft_version.name,
         metadata=publishable_version_metadata,
+        release_notes=draft_version.release_notes,
         status=Version.Status.VALID,
         version=Version.next_published_version(draft_version.dandiset),
     )
@@ -207,9 +212,15 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         )
 
 
-def publish_dandiset(*, user: User, dandiset: Dandiset) -> None:
+def publish_dandiset(*, user: User, dandiset: Dandiset, release_notes: str | None = None) -> None:
     from dandiapi.api.tasks import publish_dandiset_task
 
     with transaction.atomic():
         _lock_dandiset_for_publishing(user=user, dandiset=dandiset)
+
+        if release_notes:
+            Version.objects.filter(dandiset=dandiset, version='draft').update(
+                release_notes=release_notes
+            )
+
         transaction.on_commit(lambda: publish_dandiset_task.delay(dandiset.id, user.id))

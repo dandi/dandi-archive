@@ -125,6 +125,55 @@
                       <v-btn
                         :color="showPublishWarning ? 'error' : 'success'"
                         variant="flat"
+                        @click="showReleaseNotesDialog"
+                      >
+                        Continue
+                        <v-icon>
+                          mdi-arrow-right
+                        </v-icon>
+                      </v-btn>
+                    </v-card-actions>
+                  </v-card>
+                </v-dialog>
+
+                <v-dialog
+                  v-model="showReleaseNotesDialogVisible"
+                  width="600"
+                >
+                  <v-card>
+                    <v-card-title class="text-h5 bg-grey-lighten-2">
+                      Release Notes (Optional)
+                    </v-card-title>
+
+                    <v-card-text class="pt-4">
+                      <p class="text-body-2 mb-4">
+                        Provide a brief description of changes in this release.
+                        This will help users understand what's new or different in this version.
+                      </p>
+                      <v-textarea
+                        v-model="releaseNotes"
+                        label="Release Notes"
+                        placeholder="Enter release notes here..."
+                        rows="6"
+                        variant="outlined"
+                        hint="Optional: Describe the changes, improvements, or fixes in this release"
+                        persistent-hint
+                      />
+                    </v-card-text>
+
+                    <v-divider />
+
+                    <v-card-actions class="justify-end">
+                      <v-btn
+                        color="dropzone"
+                        variant="flat"
+                        @click="cancelReleaseNotes"
+                      >
+                        Cancel
+                      </v-btn>
+                      <v-btn
+                        :color="showPublishWarning ? 'error' : 'success'"
+                        variant="flat"
                         @click="publish"
                       >
                         Publish
@@ -163,7 +212,6 @@
             v-for="(version, i) in allVersions"
             :key="i"
             :class="'opacity-100 ' + (i === (allVersions?.length || 0) - 1 ? 'border-b-0' : 'border-b')"
-            :disabled="version.version === currentDandiset?.version"
             @click="setVersion(version)"
           >
             <div class="d-flex align-center justify-space-between">
@@ -176,6 +224,16 @@
                 >
                   mdi-arrow-right-thick
                 </v-icon>
+                <v-btn
+                  v-if="version.release_notes"
+                  icon
+                  variant="text"
+                  size="small"
+                  class="ml-2"
+                  @click.stop="showVersionReleaseNotes(version)"
+                >
+                  <v-icon>mdi-text-box-outline</v-icon>
+                </v-btn>
                 <span :class="currentDandiset?.version === version.version ? 'font-weight-bold' : ''">{{ version?.version.toUpperCase() || '' }}</span>
               </v-list-item-title>
               <v-list-item-subtitle class="text-caption">
@@ -195,6 +253,37 @@
       </v-card-text>
     </v-card>
 
+    <v-dialog
+      v-model="showReleaseNotesViewDialog"
+      width="600"
+    >
+      <v-card>
+        <v-card-title class="text-h5 bg-grey-lighten-2">
+          Release Notes - {{ selectedVersionForNotes?.version.toUpperCase() }}
+        </v-card-title>
+
+        <v-card-text class="pt-4">
+          <p class="text-body-2 mb-2 text-grey-darken-1">
+            {{ formatDate(selectedVersionForNotes?.modified || '') }}
+          </p>
+          <p class="text-body-1 white-space-pre-wrap">
+            {{ selectedVersionForNotes?.release_notes }}
+          </p>
+        </v-card-text>
+
+        <v-divider />
+
+        <v-card-actions class="justify-end">
+          <v-btn
+            color="primary"
+            variant="flat"
+            @click="showReleaseNotesViewDialog = false"
+          >
+            Close
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-snackbar :model-value="!!alreadyBeingPublishedError">
       This dandiset is already being published. Please wait for publishing to complete.
     </v-snackbar>
@@ -393,6 +482,10 @@ const showPublishWarning: ComputedRef<boolean> = computed(
 const showPublishWarningDialog = ref(false);
 
 const showPublishChecklistDialog = ref(false);
+const showReleaseNotesDialogVisible = ref(false);
+const releaseNotes = ref('');
+const showReleaseNotesViewDialog = ref(false);
+const selectedVersionForNotes = ref<Version | null>(null);
 
 function formatDate(date: string): string {
   return moment(date).format('ll');
@@ -421,6 +514,15 @@ function setVersion({ version }: Version) {
   }
 }
 
+function showReleaseNotesDialog() {
+  showPublishChecklistDialog.value = false;
+  showReleaseNotesDialogVisible.value = true;
+}
+function cancelReleaseNotes() {
+  showReleaseNotesDialogVisible.value = false;
+  releaseNotes.value = '';
+}
+
 async function publish() {
   if (currentDandiset.value) {
     // If user is an admin but not an owner, display the warning dialog before publishing
@@ -430,12 +532,17 @@ async function publish() {
     }
 
     showPublishChecklistDialog.value = false;
+    showReleaseNotesDialogVisible.value = false;
     showPublishWarningDialog.value = false;
 
     isPublishing.value = true;
     try {
-      const { version } = await dandiRest.publish(currentDandiset.value.dandiset.identifier);
+      const { version } = await dandiRest.publish(
+        currentDandiset.value.dandiset.identifier,
+        releaseNotes.value || undefined,
+      );
       newlyPublishedVersion.value = version;
+      releaseNotes.value = ''; // Clear release notes after successful publish
     } catch (e) {
       // A 423: Locked error means that the dandiset is currently undergoing publishing.
       // If that happens, display an error.
@@ -446,6 +553,11 @@ async function publish() {
       }
     }
   }
+}
+
+function showVersionReleaseNotes(version: Version) {
+  selectedVersionForNotes.value = version;
+  showReleaseNotesViewDialog.value = true;
 }
 
 function navigateToPublishedVersion() {
