@@ -23,10 +23,16 @@ def extract_contact_person(version: Version) -> str:
     # TODO: move this logic into dandischema since it is schema-dependant
     contributors = version.metadata.get('contributor')
     if contributors is not None and isinstance(contributors, list):
+        contributors = [cont for cont in contributors if isinstance(cont, dict)]
         for contributor in contributors:
             name = contributor.get('name')
             role_names = contributor.get('roleName')
-            if name is not None and role_names is not None and 'dcite:ContactPerson' in role_names:
+            if (
+                name is not None
+                and role_names is not None
+                and isinstance(role_names, list)
+                and 'dcite:ContactPerson' in role_names
+            ):
                 return name
     return ''
 
