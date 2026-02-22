@@ -237,13 +237,31 @@
                         <v-list-item
                           v-for="el in item.services"
                           :key="el.name"
-                          :href="el.url"
+                          :href="el.disabled ? undefined : el.url"
+                          :disabled="el.disabled"
                           target="_blank"
                           rel="noreferrer"
                         >
                           <v-list-item-title class="font-weight-light">
                             {{ el.name }}
                           </v-list-item-title>
+                          <template
+                            v-if="el.disabled"
+                            #append
+                          >
+                            <v-tooltip location="top">
+                              <template #activator="{ props: tooltipProps }">
+                                <v-icon
+                                  color="warning"
+                                  size="small"
+                                  v-bind="tooltipProps"
+                                >
+                                  mdi-lock
+                                </v-icon>
+                              </template>
+                              <span>Not available for embargoed assets</span>
+                            </v-tooltip>
+                          </template>
                         </v-list-item>
                       </v-list>
                     </v-menu>
@@ -296,6 +314,7 @@ const FILES_PER_PAGE = 15;
 interface AssetService {
   name: string,
   url: string,
+  disabled?: boolean, // Service is disabled for embargoed assets
 }
 
 interface ExtendedAssetPath extends AssetPath {
