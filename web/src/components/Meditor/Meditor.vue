@@ -123,6 +123,17 @@
             <span>Redo</span>
           </v-tooltip>
           <v-spacer />
+          <v-btn
+            :href="aiEditorURL"
+            target="_blank"
+            rel="noopener"
+            variant="tonal"
+            color="primary"
+            size="small"
+            prepend-icon="mdi-robot"
+          >
+            Beta feature: try AI assisted metadata editing
+          </v-btn>
           <v-tooltip location="bottom">
             <template #activator="{ props }">
               <v-btn
@@ -272,6 +283,7 @@ const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
 const id = computed(() => currentDandiset.value?.dandiset.identifier);
+const aiEditorURL = computed(() => `https://medit.dandiarchive.org/?dandiset=${id.value}`);
 const schema: ComputedRef<JSONSchema7> = computed(() => store.schema);
 const model = computed(() => currentDandiset.value?.metadata);
 const readonly = computed(() => !store.userCanModifyDandiset);
