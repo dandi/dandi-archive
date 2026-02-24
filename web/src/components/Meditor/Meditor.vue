@@ -283,7 +283,8 @@ const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
 const id = computed(() => currentDandiset.value?.dandiset.identifier);
-const aiEditorURL = computed(() => `https://medit.dandiarchive.org/?dandiset=${id.value}`);
+const baseApiUrl = import.meta.env.VITE_APP_DANDI_API_ROOT;
+const aiEditorURL = computed(() => `https://medit.dandiarchive.org/?dandiset=${id.value}&instance=${baseApiUrl}`);
 const schema: ComputedRef<JSONSchema7> = computed(() => store.schema);
 const model = computed(() => currentDandiset.value?.metadata);
 const readonly = computed(() => !store.userCanModifyDandiset);

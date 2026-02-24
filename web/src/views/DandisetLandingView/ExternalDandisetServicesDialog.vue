@@ -110,7 +110,8 @@ const aiEditorURL = computed(() => {
   }
 
   const dandisetId = currentDandiset.value.dandiset.identifier;
-  return `https://medit.dandiarchive.org/?dandiset=${dandisetId}`;
+  const baseApiUrl = import.meta.env.VITE_APP_DANDI_API_ROOT;
+  return `https://medit.dandiarchive.org/?dandiset=${dandisetId}&instance=${baseApiUrl}`;
 });
 
 </script>
