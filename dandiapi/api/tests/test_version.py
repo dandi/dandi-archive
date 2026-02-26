@@ -490,7 +490,6 @@ def test_version_rest_info(api_client, version):
         'metadata': version.metadata,
         'size': version.size,
         'status': version.status,
-        'asset_validation_errors': [],
         'version_validation_errors': [],
         'contact_person': version.metadata['contributor'][0]['name'],
     }
@@ -523,9 +522,9 @@ def test_version_asset_validation_errors(
     )
 
     resp = api_client.get(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/info/'
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/asset_validation_errors/'
     )
-    assert resp.json()['asset_validation_errors'] == expected_validation_errors
+    assert resp.json() == expected_validation_errors
 
 
 @pytest.mark.django_db
@@ -563,9 +562,9 @@ def test_version_zarr_asset_validation_errors(
     )
 
     resp = api_client.get(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/info/'
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/asset_validation_errors/'
     )
-    assert resp.json()['asset_validation_errors'] == expected_validation_errors
+    assert resp.json() == expected_validation_errors
 
 
 @pytest.mark.django_db
@@ -641,7 +640,6 @@ def test_version_rest_update(api_client):
         'metadata': saved_metadata,
         'size': draft_version.size,
         'status': 'Pending',
-        'asset_validation_errors': [],
         'version_validation_errors': [],
         'contact_person': 'Vargas, Getúlio',
     }

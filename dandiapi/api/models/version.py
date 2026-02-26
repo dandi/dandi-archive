@@ -94,8 +94,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         # Return False if any asset is not VALID
         return not self.assets.exclude(status=Asset.Status.VALID).exists()
 
-    @property
-    def asset_validation_errors(self) -> list[VersionAssetValidationError]:
+    def get_asset_validation_errors(self) -> list[VersionAssetValidationError]:
         # Import here to avoid dependency cycle
         from dandiapi.zarr.models import ZarrArchiveStatus
 
