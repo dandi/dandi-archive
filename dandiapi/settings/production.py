@@ -31,14 +31,13 @@ SOCIALACCOUNT_ONLY = True
 # (specifically when DEBUG is True), 'localhost' and '127.0.0.1' will be added.
 ALLOWED_HOSTS: list[str] = env.list('DJANGO_ALLOWED_HOSTS', cast=str)
 
-DANDI_DANDISETS_BUCKET_NAME: str = env.str('DJANGO_STORAGE_BUCKET_NAME')
 STORAGES['default'] = {
     'BACKEND': 'dandiapi.storage.DandiS3Storage',
     'OPTIONS': {
         'region_name': env.str('AWS_DEFAULT_REGION'),
         'access_key': env.str('AWS_ACCESS_KEY_ID'),
         'secret_key': env.str('AWS_SECRET_ACCESS_KEY'),
-        'bucket_name': DANDI_DANDISETS_BUCKET_NAME,
+        'bucket_name': env.str('DJANGO_STORAGE_BUCKET_NAME'),
         'querystring_expire': int(timedelta(hours=6).total_seconds()),
         'max_memory_size': 5 * 1024 * 1024,
     },

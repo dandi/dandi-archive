@@ -56,7 +56,6 @@ STORAGES['default'] = {
         'media_url': _storage_media_url,
     },
 }
-DANDI_DANDISETS_BUCKET_NAME = STORAGES['default']['OPTIONS']['bucket_name']  # TODO: remove
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 

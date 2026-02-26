@@ -102,7 +102,6 @@ STORAGES: dict[str, dict[str, Any]] = {
         'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },
 }
-DANDI_DANDISETS_BUCKET_NAME: str
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Django staticfiles auto-creates any intermediate directories, but do so here to prevent warnings.

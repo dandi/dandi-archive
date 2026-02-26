@@ -18,7 +18,6 @@ STORAGES['default'] = {
         'querystring_expire': int(timedelta(hours=6).total_seconds()),
     },
 }
-DANDI_DANDISETS_BUCKET_NAME = 'test-django-storage'
 
 # Testing will set EMAIL_BACKEND to use the memory backend
 
