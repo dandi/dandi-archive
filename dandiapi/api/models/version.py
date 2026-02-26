@@ -102,9 +102,9 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         from .asset import Asset
 
         # We want to display "Pending" assets in the validation errors list,
-        # despite them not being stored explicitly as errors in the database.
-        # Grab a random sample of 50 pending or currently validating assets
-        # and place them first in the list.
+        #   despite them not being stored explicitly as errors in the database.
+        # We must exclude pending zarr assets, as they are collected in the next step.
+        # For performance reasons, we only return the first 50 assets.
         pending_assets: models.QuerySet[VersionAssetValidationError] = (
             self.assets.filter(status=Asset.Status.PENDING)
             .exclude(zarr__status=ZarrArchiveStatus.PENDING)
@@ -115,6 +115,9 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             .values('field', 'message', 'path')[:50]
         )
 
+        # Next, get all zarr assets which have not been finalized. These also are not stored
+        #   explicitly as errors in the database, so we need to construct them manually.
+        # For performance reasons, we only return the first 50 assets.
         incomplete_zarr_assets: models.QuerySet[VersionAssetValidationError] = (
             self.assets.filter(zarr__status=ZarrArchiveStatus.PENDING)
             .annotate(
@@ -124,10 +127,10 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             .values('field', 'message', 'path')
         )[:50]
 
-        # Next, get all INVALID assets. Each of these should have one or more
-        # validation errors stored in the database.
+        # Finally, get all INVALID assets. Each of these should have one or more
+        #   validation errors stored in the database.
         # For performance reasons, we truncate the list of INVALID assets such
-        # that we only display errors for the 50 assets with the most errors.
+        #   that we only display errors for the 50 assets with the most errors.
         invalid_assets: models.QuerySet[dict] = (
             self.assets.filter(status=Asset.Status.INVALID)
             .alias(
