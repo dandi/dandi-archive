@@ -15,8 +15,6 @@ from .base import *
 from resonant_settings.production.email import *  # isort: skip
 from resonant_settings.production.https import *  # isort: skip
 
-WSGI_APPLICATION = 'dandiapi.wsgi.application'
-
 SECRET_KEY: str = env.str('DJANGO_SECRET_KEY')
 
 INSTALLED_APPS += [
