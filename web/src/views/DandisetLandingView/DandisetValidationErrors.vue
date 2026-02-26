@@ -84,7 +84,7 @@ const props = defineProps({
   },
 });
 
-const numAssetValidationErrors = computed(() => props.dandiset.asset_validation_errors.length);
+const numAssetValidationErrors = computed(() => props.dandiset.asset_validation_errors?.length);
 
 // Error dialog
 const errorDialogOpen = ref(false);

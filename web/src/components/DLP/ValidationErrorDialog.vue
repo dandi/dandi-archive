@@ -118,31 +118,17 @@
 
 <script setup lang="ts">
 import type { ValidationError } from '@/types';
-import type { PropType } from 'vue';
 import { watch, computed, ref } from 'vue';
 
 import { VALIDATION_ICONS } from '@/utils/constants';
 
-const props = defineProps({
-  assetValidationErrors: {
-    type: Array as PropType<ValidationError[]>,
-    required: true,
-  },
-  versionValidationErrors: {
-    type: Array as PropType<ValidationError[]>,
-    required: true,
-  },
-  selectedTab: {
-    type: String as PropType<'metadata' | 'assets'>,
-    required: false,
-    default: 'metadata',
-  },
-  owner: {
-    type: Boolean,
-    required: false,
-    default: false,
-  },
-});
+
+const props = defineProps<{
+  assetValidationErrors?: ValidationError[];
+  versionValidationErrors: ValidationError[];
+  selectedTab: 'metadata' | 'assets';
+  owner: boolean;
+}>();
 
 defineEmits(['openMeditor']);
 
@@ -152,10 +138,10 @@ watch(() => props.selectedTab, (val) => {
 });
 
 const showMetadataTab = computed(() => !!props.versionValidationErrors.length);
-const showAssetsTab = computed(() => !!Object.keys(props.assetValidationErrors).length);
+const showAssetsTab = computed(() => props.assetValidationErrors?.length);
 const groupedAssetValidationErrors = computed(() => {
   const path_asset_map: Record<string, ValidationError[]> = {};
-  props.assetValidationErrors.forEach((err) => {
+  props.assetValidationErrors?.forEach((err) => {
     if (!(err.path in path_asset_map)) {
       path_asset_map[err.path] = [];
     }
