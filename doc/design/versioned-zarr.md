@@ -110,6 +110,10 @@ The perception of performance is that caching this data in memory would result i
 
 The recommendation is to implement the design using Postgres directly, and only consider other options if and when performance problems do arise.
 
+## Discussion
+
+This section contains discussion of alternative approaches and problems to solve with the proposed design.
+
 ### Performance/Usability Tradeoffs
 
 Requirement 4 (”a*ccess to the latest version of a Zarr via S3”*) forces the “archaeological” chunk storage strategy described above, with the benefit that the most recent version of a given Zarr will always be available via S3, providing performance benefits for consumers of the Zarr (no redirects from the DANDI API needed) and for administrators of the Archive (no incoming traffic to serve that Zarr).
@@ -143,3 +147,23 @@ The crucial questions and discussion/investigation topics are the following:
 1. **What are the expected and encouraged usage patterns for Zarrs?** In particular, can we confirm (with evidence, perhaps) that the heaviest-used Zarr will always by the latest version? Do we expect / plan to encourage people to share Zarrs between Dandisets?
 2. **What are the performance characteristics of the DANDI API Zarr backend (compared to the S3 Zarr backend) and the manifest-driven access scheme?** If clients do not see a significant performance loss from using the DANDI Zarr backend (or if specialized clients can use manifest-driven access logic), then maintaining an S3 backend for every Zarr (at the costs described above) becomes less attractive for the overall system.
 3. **What are the costs and benefits of the S3 materialization design?** The S3 materialization design attempt to bridge between the current proposal and this alternative proposal by still providing an avenue to hosting Zarrs in an S3 backend-compatible way.
+
+### Data Integrity Issues with S3
+
+One flaw in the proposed design is a form of ["dirty read"](https://en.wikipedia.org/wiki/Isolation_(database_systems)#Dirty_reads) that can occur when reading Zarrs from S3. Consider the following sequence of events:
+
+1. A Zarr is uploaded to a Dandiset and finalized, resulting in version `A`. This is, by definition, the latest version and is thus accessible via an S3 URL.
+2. A user begins reading Zarr `A` through an application like Neuroglancer, with the S3 URL.
+3. The Zarr has chunks replaced (e.g., to fix a data issue), but is not yet finalized. (The latest version remains `A`.)
+4. The Neuroglancer user refreshes their view, changing what is displayed on screen (due to the data change in Step 3).
+5. The Zarr is finalized, creating version `B` (which also, by definition, becomes the latest version).
+
+The issue occurs in the time between Steps 3 and 5, when, due to the way Zarr chunks are stored in S3, the changes are visible even though they have not yet been "committed" (via a finalize operation). This kind of failure is known as a "dirty read" in database systems, prompting our borrowing of the term here.
+
+This example is minimal. Arbitrarily bad things can happen during the space between Steps 3 and 5. For instance, the Dandiset owner might, for example, delete arrays from the Zarr, only to restore them later, to arbitrary degrees of complexity. Anyone using the S3 URL in an attempt to streamline their data access will have to go along for the ride.
+
+Database systems use various implementations of so-called "isolation levels" to prevent this type of error from occurring, through mechanisms like locks etc. In DANDI, the versioned Zarr concept should provide this level of safety, but this note demonstrates how the S3 optimization breaks that safety. (If the user in Step 2 were to use the DANDI backend URL to view the Zarr, these problems would not occur; in fact, that usage illustrates how DANDI can support reproducible science, even for changing Zarrs.)
+
+A mitigation for this situation would be to exclusively use DANDI backend URLs, or to use S3 URLs for materialized Zarr versions (where this problem cannot arise).
+
+An objection to this observation may be that users must be aware that Zarrs accessed through the S3 URL may change under them. However, this is a rather large cost to pass onto the end user for something that we have conceptualized merely as an optimization. The same performance investigations mentioned in the last section can be used to evaluate the relative merits of the proposed design and the alternate design introduced in that section.
