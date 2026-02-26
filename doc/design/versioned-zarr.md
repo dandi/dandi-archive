@@ -2,6 +2,11 @@
 
 This document discusses the design of a *versioned Zarr* concept, which is needed to enable publishing of Zarr-bearing Dandisets.
 
+Prior proposals:
+
+- [`#1833`: Design doc - Publish Dandisets that contain Zarr archives](https://github.com/dandi/dandi-archive/pull/1833)
+- [`#1892`: Design doc for Zarr versioning/publishing support via Zarr Manifest Files](https://github.com/dandi/dandi-archive/pull/1892)
+
 ## Executive Summary
 
 Zarr Archives are simply too big and too complex to copy when modified to create new versions (as is done with “blob” assets). Instead, we propose to only change the stored objects for individual shards (in Zarr version 3) or chunks (in Zarr version 2), using S3 bucket versioning to maintain previous versions, while tracking the association between shard/chunk paths and S3 objects in a database table. This will enable a lightweight model representing an immutable snapshot of a Zarr Archive suitable for publishing in a Dandiset, as well as optimized access to the latest version of the Zarr, and other services such as Zarr manifest files.
