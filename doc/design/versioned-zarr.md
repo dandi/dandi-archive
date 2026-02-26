@@ -11,6 +11,8 @@ Prior proposals:
 
 Zarr Archives are simply too big and too complex to copy when modified to create new versions (as is done with “blob” assets). Instead, we propose to only change the stored objects for individual shards (in Zarr version 3) or chunks (in Zarr version 2), using S3 bucket versioning to maintain previous versions, while tracking the association between shard/chunk paths and S3 objects in a database table. This will enable a lightweight model representing an immutable snapshot of a Zarr Archive suitable for publishing in a Dandiset, as well as optimized access to the latest version of the Zarr, and other services such as Zarr manifest files.
 
+Note: for simplicity, we will refer to the individual files comprising a Zarr, whether they are *chunks* or *shards* in context, as “chunks”. In particular, we wish to avoid the term “object” due to possible confusion with S3 objects. This proposal is unaffected by the difference between chunked and sharded Zarrs.
+
 ## Current Situation
 
 Zarr Archives (”Zarrs” for short) are a strategy for storing large multidimensional numeric array datasets in the cloud, optimized for parking data in a place one time, then bringing computation to it, rather than carting around such large amounts of data, which can be unwieldy, slow, and expensive. Conceptually, Zarrs consist of several “chunks” containing data or metadata and control information, organized into a standardized “folder” structure. The chunks may be thought of as “files” (particularly when a Zarr is stored on a filesystem), but the “files” and “folders” need not be literal files and folders, which in turn enables many “Zarr backends”, including systems that do not actually store folders and files (such as S3).
