@@ -105,7 +105,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         # despite them not being stored explicitly as errors in the database.
         # Grab a random sample of 50 pending or currently validating assets
         # and place them first in the list.
-        pending_assets: models.QuerySet[Asset] = (
+        pending_assets: models.QuerySet[VersionAssetValidationError] = (
             self.assets.filter(status=Asset.Status.PENDING)
             .exclude(zarr__status=ZarrArchiveStatus.PENDING)
             .annotate(
@@ -115,7 +115,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             .values('field', 'message', 'path')[:50]
         )
 
-        incomplete_zarr_assets: models.QuerySet[Asset] = (
+        incomplete_zarr_assets: models.QuerySet[VersionAssetValidationError] = (
             self.assets.filter(zarr__status=ZarrArchiveStatus.PENDING)
             .annotate(
                 field=models.Value(''),
@@ -128,7 +128,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         # validation errors stored in the database.
         # For performance reasons, we truncate the list of INVALID assets such
         # that we only display errors for the 50 assets with the most errors.
-        invalid_assets: models.QuerySet[Asset] = (
+        invalid_assets: models.QuerySet[dict] = (
             self.assets.filter(status=Asset.Status.INVALID)
             .alias(
                 validation_error_count=models.Func(
