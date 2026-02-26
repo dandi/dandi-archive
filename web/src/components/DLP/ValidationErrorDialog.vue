@@ -108,6 +108,7 @@
                 </v-list-group>
               </template>
             </v-list-item>
+            <v-divider />
           </template>
         </v-list>
       </v-tabs-window-item>
