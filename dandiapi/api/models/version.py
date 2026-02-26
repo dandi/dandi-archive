@@ -97,6 +97,8 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     @property
     def asset_validation_errors(self) -> list[VersionAssetValidationError]:
         # Import here to avoid dependency cycle
+        from dandiapi.zarr.models import ZarrArchiveStatus
+
         from .asset import Asset
 
         # We want to display "Pending" assets in the validation errors list,
@@ -105,12 +107,22 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         # and place them first in the list.
         pending_assets: models.QuerySet[Asset] = (
             self.assets.filter(status__in=[Asset.Status.PENDING, Asset.Status.VALIDATING])
+            .exclude(zarr__status=ZarrArchiveStatus.PENDING)
             .annotate(
                 field=models.Value(''),
                 message=models.Value('asset is currently being validated, please wait.'),
             )
             .values('field', 'message', 'path')[:50]
         )
+
+        incomplete_zarr_assets: models.QuerySet[Asset] = (
+            self.assets.filter(zarr__status=ZarrArchiveStatus.PENDING)
+            .annotate(
+                field=models.Value(''),
+                message=models.Value('zarr asset is not yet finalized.'),
+            )
+            .values('field', 'message', 'path')
+        )[:50]
 
         # Next, get all INVALID assets. Each of these should have one or more
         # validation errors stored in the database.
@@ -129,15 +141,19 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             .values('path', 'validation_errors')
         )[:50]
 
-        return list(pending_assets) + [
-            {
-                'field': error['field'],
-                'message': error['message'],
-                'path': asset['path'],
-            }
-            for asset in invalid_assets
-            for error in asset['validation_errors']
-        ]
+        return (
+            list(pending_assets)
+            + list(incomplete_zarr_assets)
+            + [
+                {
+                    'field': error['field'],
+                    'message': error['message'],
+                    'path': asset['path'],
+                }
+                for asset in invalid_assets
+                for error in asset['validation_errors']
+            ]
+        )
 
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:

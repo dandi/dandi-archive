@@ -10,6 +10,7 @@ from dandischema.models import AccessType
 from django.conf import settings
 from freezegun import freeze_time
 import pytest
+from zarr_checksum.checksum import EMPTY_CHECKSUM
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
@@ -20,6 +21,7 @@ from dandiapi.api.tests.factories import (
     PublishedVersionFactory,
     UserFactory,
 )
+from dandiapi.zarr.models import ZarrArchiveStatus
 
 if TYPE_CHECKING:
     from rest_framework.test import APIClient
@@ -500,7 +502,9 @@ def test_version_rest_info(api_client, version):
     'asset_status',
     [Asset.Status.PENDING, Asset.Status.VALIDATING, Asset.Status.VALID, Asset.Status.INVALID],
 )
-def test_version_rest_info_with_asset(api_client, draft_asset_factory, asset_status: Asset.Status):
+def test_version_asset_validation_errors(
+    api_client, draft_asset_factory, asset_status: Asset.Status
+):
     version = DraftVersionFactory.create(status=Version.Status.VALID)
     asset = draft_asset_factory(status=asset_status)
     version.assets.add(asset)
@@ -519,31 +523,50 @@ def test_version_rest_info_with_asset(api_client, draft_asset_factory, asset_sta
         else []
     )
 
-    assert api_client.get(
+    resp = api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/info/'
-    ).data == {
-        'dandiset': {
-            'identifier': version.dandiset.identifier,
-            'created': TIMESTAMP_RE,
-            'modified': TIMESTAMP_RE,
-            'contact_person': version.metadata['contributor'][0]['name'],
-            'embargo_status': 'OPEN',
-            'star_count': 0,
-            'is_starred': False,
-        },
-        'version': version.version,
-        'name': version.name,
-        'created': TIMESTAMP_RE,
-        'modified': TIMESTAMP_RE,
-        'asset_count': 1,
-        'active_uploads': 0,
-        'metadata': version.metadata,
-        'size': version.size,
-        'status': Asset.Status.VALID,
-        'asset_validation_errors': expected_validation_errors,
-        'version_validation_errors': [],
-        'contact_person': version.metadata['contributor'][0]['name'],
-    }
+    )
+    assert resp.json()['asset_validation_errors'] == expected_validation_errors
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('zarr_status', [c[0] for c in ZarrArchiveStatus.choices])
+def test_version_zarr_asset_validation_errors(
+    api_client, draft_asset_factory, zarr_archive_factory, zarr_status: ZarrArchiveStatus
+):
+    version = DraftVersionFactory.create(status=Version.Status.VALID)
+    zarr_archive = zarr_archive_factory(
+        status=zarr_status,
+        # Zarr save fails if status is Complete with a null checksum
+        checksum=EMPTY_CHECKSUM if zarr_status == ZarrArchiveStatus.COMPLETE else None,
+    )
+    asset = draft_asset_factory(status=Asset.Status.PENDING, blob=None, zarr=zarr_archive)
+    version.assets.add(asset)
+    add_version_asset_paths(version=version)
+
+    # Create expected validation errors for pending/validating assets
+    expected_validation_errors = (
+        [
+            {
+                'field': '',
+                'message': 'zarr asset is not yet finalized.',
+                'path': asset.path,
+            }
+        ]
+        if zarr_status == ZarrArchiveStatus.PENDING
+        else [
+            {
+                'field': '',
+                'message': 'asset is currently being validated, please wait.',
+                'path': asset.path,
+            }
+        ]
+    )
+
+    resp = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/info/'
+    )
+    assert resp.json()['asset_validation_errors'] == expected_validation_errors
 
 
 @pytest.mark.django_db
