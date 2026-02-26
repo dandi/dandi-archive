@@ -292,7 +292,6 @@ def test_version_invalid(version, status):
     'status',
     [
         Asset.Status.PENDING,
-        Asset.Status.VALIDATING,
         Asset.Status.INVALID,
     ],
 )
@@ -500,7 +499,7 @@ def test_version_rest_info(api_client, version):
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     'asset_status',
-    [Asset.Status.PENDING, Asset.Status.VALIDATING, Asset.Status.VALID, Asset.Status.INVALID],
+    [Asset.Status.PENDING, Asset.Status.VALID, Asset.Status.INVALID],
 )
 def test_version_asset_validation_errors(
     api_client, draft_asset_factory, asset_status: Asset.Status
@@ -519,7 +518,7 @@ def test_version_asset_validation_errors(
                 'path': asset.path,
             }
         ]
-        if asset_status in [Asset.Status.PENDING, Asset.Status.VALIDATING]
+        if asset_status == Asset.Status.PENDING
         else []
     )
 

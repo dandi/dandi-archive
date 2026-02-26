@@ -106,7 +106,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         # Grab a random sample of 50 pending or currently validating assets
         # and place them first in the list.
         pending_assets: models.QuerySet[Asset] = (
-            self.assets.filter(status__in=[Asset.Status.PENDING, Asset.Status.VALIDATING])
+            self.assets.filter(status=Asset.Status.PENDING)
             .exclude(zarr__status=ZarrArchiveStatus.PENDING)
             .annotate(
                 field=models.Value(''),
