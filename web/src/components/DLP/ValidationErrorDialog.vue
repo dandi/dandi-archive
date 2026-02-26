@@ -28,6 +28,7 @@
         </v-btn>
         <v-list
           class="overflow-y-auto"
+          max-height="80vh"
         >
           <div
             v-for="(error, index) in versionValidationErrors"
@@ -56,6 +57,7 @@
       >
         <v-list
           class="overflow-y-auto"
+          max-height="80vh"
         >
           <template
             v-for="(errors, path) in groupedAssetValidationErrors"
