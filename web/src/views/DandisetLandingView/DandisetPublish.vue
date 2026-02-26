@@ -372,7 +372,7 @@ const publishButtonDisabled = computed(() => {
   }
 
   return Boolean(
-    dandiset.version_validation_errors.length
+    dandiset.validation_errors.length
     || dandiset.asset_validation_errors.length
     || dandiset.dandiset.embargo_status !== 'OPEN'
     || publishDisabledMessage.value

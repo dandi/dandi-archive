@@ -490,7 +490,7 @@ def test_version_rest_info(api_client, version):
         'metadata': version.metadata,
         'size': version.size,
         'status': version.status,
-        'version_validation_errors': [],
+        'validation_errors': [],
         'contact_person': version.metadata['contributor'][0]['name'],
     }
 
@@ -640,7 +640,7 @@ def test_version_rest_update(api_client):
         'metadata': saved_metadata,
         'size': draft_version.size,
         'status': 'Pending',
-        'version_validation_errors': [],
+        'validation_errors': [],
         'contact_person': 'Vargas, Getúlio',
     }
 
