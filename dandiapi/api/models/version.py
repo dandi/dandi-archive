@@ -111,7 +111,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
                 field=models.Value(''),
                 message=models.Value('asset is currently being validated, please wait.'),
             )
-            .values('field', 'message', 'path')[:50]
+            .values('field', 'message', 'path')
         )
 
         # Next, get all zarr assets which have not been finalized. These also are not stored
@@ -124,7 +124,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
                 message=models.Value('zarr asset is not yet finalized.'),
             )
             .values('field', 'message', 'path')
-        )[:50]
+        )
 
         # Finally, get all INVALID assets. Each of these should have one or more
         #   validation errors stored in the database.
@@ -141,7 +141,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             )
             .order_by('-validation_error_count')
             .values('path', 'validation_errors')
-        )[:50]
+        )
 
         return (
             list(pending_assets)
