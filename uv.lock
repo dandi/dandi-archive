@@ -734,9 +734,6 @@ dev = [
     { name = "tox" },
     { name = "tox-uv" },
 ]
-format = [
-    { name = "ruff" },
-]
 lint = [
     { name = "ruff" },
 ]
@@ -758,7 +755,7 @@ type = [
     { name = "boto3-stubs", extra = ["s3"] },
     { name = "celery-types" },
     { name = "django-stubs", extra = ["compatible-mypy"] },
-    { name = "djangorestframework-stubs" },
+    { name = "djangorestframework-stubs", extra = ["compatible-mypy"] },
     { name = "mypy" },
 ]
 
@@ -813,7 +810,6 @@ dev = [
     { name = "tox" },
     { name = "tox-uv" },
 ]
-format = [{ name = "ruff" }]
 lint = [{ name = "ruff" }]
 test = [
     { name = "djangorestframework-yaml" },
@@ -833,7 +829,7 @@ type = [
     { name = "boto3-stubs", extras = ["s3"] },
     { name = "celery-types" },
     { name = "django-stubs", extras = ["compatible-mypy"] },
-    { name = "djangorestframework-stubs" },
+    { name = "djangorestframework-stubs", extras = ["compatible-mypy"] },
     { name = "mypy" },
 ]
 
@@ -1026,14 +1022,15 @@ wheels = [
 
 [[package]]
 name = "django-resonant-settings"
-version = "0.44.0"
+version = "0.47.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "django" },
     { name = "django-environ" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/eb/0a/56cdf3b7e1bce9f110b3182abe8a3e4d8a8413b57a0bd6f3da87bb6d116e/django_resonant_settings-0.44.0.tar.gz", hash = "sha256:8a7f90b7b0f2cbd7373eaff2209c4c67a0efe8dbb328285034be9e29a957a102", size = 18244, upload-time = "2025-12-17T05:25:10.655Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/e2/0961283ccaf797307f3671a7ff3965b5a54d816ff86c9091713cdcfde562/django_resonant_settings-0.47.1.tar.gz", hash = "sha256:3d58bed8d0595806a42007ef63f58348523d95699e5811068ca3337483ef5843", size = 19179, upload-time = "2026-02-26T15:46:42.839Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0d/15/1fdc2342aa7b06917e9faab5edd90a1ab9dc346d83fe890ce4153201ba07/django_resonant_settings-0.44.0-py3-none-any.whl", hash = "sha256:74b75d93d843821c8813972aa85cfd5ef732c99c0c93ba2cccee619b0e346937", size = 24956, upload-time = "2025-12-17T05:25:11.621Z" },
+    { url = "https://files.pythonhosted.org/packages/da/7d/a5f08da9e00e626b26beebcb94c5adfa26f78f54c1c9c3b61b8654ae5f02/django_resonant_settings-0.47.1-py3-none-any.whl", hash = "sha256:c96756aeac75248eca14b580228c6c41e2e6186030dbc47723cdb1b959f8a4ef", size = 26093, upload-time = "2026-02-26T15:46:41.69Z" },
 ]
 
 [package.optional-dependencies]
@@ -1160,6 +1157,12 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/77/33/79c0dd2a02ead2702a1b3d25579b56ffdc1bc6d1271c31a0979ce9ad10fa/djangorestframework_stubs-3.16.4.tar.gz", hash = "sha256:f43136bfbef568dd0e10848427c01bd9ef759dd328195949f6f7f9a2292a34f6", size = 31960, upload-time = "2025-09-29T20:11:20.57Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ba/45/63fac5c34313986acc005529fdba638822bae973f2b61a0542a6c8494847/djangorestframework_stubs-3.16.4-py3-none-any.whl", hash = "sha256:3b27353fa797876f55da87eceafe4c2f265a93924fa7763d257e509d865df1b2", size = 56503, upload-time = "2025-09-29T20:11:19.317Z" },
+]
+
+[package.optional-dependencies]
+compatible-mypy = [
+    { name = "django-stubs", extra = ["compatible-mypy"] },
+    { name = "mypy" },
 ]
 
 [[package]]

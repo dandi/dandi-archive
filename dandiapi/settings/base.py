@@ -10,6 +10,7 @@ from urllib.parse import urlunparse
 from corsheaders.defaults import default_headers
 import django_stubs_ext
 from environ import Env
+
 from resonant_settings.allauth import *
 from resonant_settings.celery import *
 from resonant_settings.django import *

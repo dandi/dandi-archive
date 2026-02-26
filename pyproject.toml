@@ -75,15 +75,12 @@ dev = [
 lint = [
   "ruff",
 ]
-format = [
-  "ruff",
-]
 type = [
   "mypy",
   "boto3-stubs[s3]",
   "celery-types",
   "django-stubs[compatible-mypy]",
-  "djangorestframework-stubs",
+  "djangorestframework-stubs[compatible-mypy]",
 ]
 test = [
   "djangorestframework-yaml",
@@ -104,7 +101,7 @@ test = [
 ]
 
 [tool.hatch.build]
-packages = [
+only-include = [
   "dandiapi",
 ]
 
@@ -123,26 +120,8 @@ only-include = [
 source = "vcs"
 raw-options = {version_scheme = "no-guess-dev"}
 
-[tool.mypy]
-ignore_missing_imports = true
-show_error_codes = true
-disable_error_code = ["attr-defined", "var-annotated"]
-follow_imports = "skip" # Don't follow imports into other files. This should be removed once all type errors have been resolved.
-exclude = [
-    "^dandiapi/api/tests/",
-    "^dandiapi/api/views/",
-    "^dandiapi/zarr/tests/",
-]
-
-# Re-enable these when https://github.com/typeddjango/django-stubs/issues/417 is fixed.
-# plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
-
-# [tool.django-stubs]
-# django_settings_module = "dandiapi.settings"
-
 [tool.ruff]
 line-length = 100
-target-version = "py313"
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -151,7 +130,7 @@ ignore = [
   # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
   "COM812", # missing-trailing-comma
   "COM819", # prohibited-trailing-comma
-  "D206", # indent-with-spaces
+  "D206", # docstring-tab-indentation
   "D300", # triple-single-quotes
   "E111", # indentation-with-invalid-multiple
   "E114", # indentation-with-invalid-multiple-comment
@@ -161,54 +140,60 @@ ignore = [
   "Q", # flake8-quotes
   "W191", # tab-indentation
 
-  "A003", # Class attribute is shadowing a Python builtin
+  # Incompatible with Django
+  "A003", # builtin-attribute-shadowing
+  "ARG001", # unused-function-argument
+  "ARG002", # unused-method-argument
+  "RUF012", # mutable-class-default
+
+  # Overly burdensome
   "ANN", # flake8-annotations
-  "ARG001", # Unused function argument
-  "ARG002", # Unused method argument
-  "D1", # Missing docstring
-  "EM101", # Exception must not use a string literal, assign to variable first
-  "EM102", # Exception must not use an f-string literal, assign to variable first
-  "ERA001", # Found commented-out code
+  "D1", # undocumented-*
+  "EM", # flake8-errmsg
+  "ERA001", # commented-out-code
   "FIX", # flake8-fixme
-  "TD002", # Missing author in TODO
-  "TD003", # Missing issue link on the line following this TODO
-  "TRY003", # Avoid specifying long messages outside the exception class
+  "PLR2004", # magic-value-comparison
+  "RET505", # superfluous-else-return
+  "RET506", # superfluous-else-raise
+  "RET507", # superfluous-else-continue
+  "RET508", # superfluous-else-break
+  "TD002", # missing-todo-author
+  "TD003", # missing-todo-link
+  "TRY003", # raise-vanilla-args
 
-  # Try to fix upstream
-  "RUF012", #  Mutable class attributes should be annotated with `typing.ClassVar`
-
-  # Fix in DANDI codebase. PR that will fix this:
-  # https://github.com/dandi/dandi-archive/pull/1782
-  "PTH119", # TODO: re-enable this when it's fixed
-  "PLC0415", # `import` should be at the top-level of a file
+  # Project-specific
+  "PLC0415", # import-outside-top-level
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"scripts/**" = [
-  "INP001", # File is part of an implicit namespace package
+"**/migrations/**" = [
+  "N806", # non-lowercase-variable-in-function
+  "RUF012", # mutable-class-default
 ]
 "**/settings/**" = [
-  "F403", # unable to detect undefined names
-  "F405", # may be undefined, or defined from star imports
+  "F403", # undefined-local-with-import-star
+  "F405", # undefined-local-with-import-star-usage
 ]
-"**/migrations/**" = [
-  "N806", # Variable in function should be lowercase
-  "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
-]
-"**/management/commands/**" = [
-  "INP001", # File is part of an implicit namespace package
+"**/settings/{development,testing}.py" = [
+  "S105", # hardcoded-password-string
 ]
 "**/tests/**" = [
-  "DJ007", # Do not use `__all__`
-  "DJ008", # Model does not define `__str__` method
-  "PLR0913", # Too many arguments to function call
-  "PLR2004", # Magic value used in comparison
+  "DJ007", # django-all-with-model-form
+  "DJ008", # django-model-without-dunder-str
+  "INP001", # implicit-namespace-package
+  "PLR0913", # too-many-arguments
   "S", # flake8-bandit
-  "SLF001", # Private member accessed
+  "SLF001", # private-member-access
+]
+"scripts/**" = [
+  "INP001", # implicit-namespace-package
 ]
 
-[tool.ruff.format]
-quote-style = "single"
+[tool.ruff.lint.flake8-boolean-trap]
+extend-allowed-calls = ["pydantic.Field", "django.db.models.Value"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["ninja.Query"]
 
 [tool.ruff.lint.flake8-self]
 extend-ignore-names = ["_base_manager", "_default_manager",  "_meta"]
@@ -216,11 +201,34 @@ extend-ignore-names = ["_base_manager", "_default_manager",  "_meta"]
 [tool.ruff.lint.isort]
 # Sort by name, don't cluster "from" vs "import"
 force-sort-within-sections = true
-# Deferred annotations allows TCH rules to move more imports into TYPE_CHECKING blocks
+# Deferred annotations allows TC* rules to move more imports into TYPE_CHECKING blocks
 required-imports = ["from __future__ import annotations"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder", "resonant-settings"]
+sections = {"resonant-settings" = ["resonant_settings"] }
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.mypy]
+files = [
+  "dandiapi",
+]
+check_untyped_defs = true
+ignore_missing_imports = true
+show_error_codes = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unused_ignores = true
+plugins = [
+  "mypy_django_plugin.main",
+  "mypy_drf_plugin.main",
+]
+
+[tool.django-stubs]
+django_settings_module = "dandiapi.settings.testing"
 
 [tool.pytest.ini_options]
 addopts = [
@@ -237,7 +245,7 @@ addopts = [
 filterwarnings = [
   "error",
   # pytest often causes unclosed socket warnings
-  "ignore:unclosed <socket\\.socket:ResourceWarning",
+  'ignore:unclosed <socket\.socket:ResourceWarning',
   # TODO: Remove this with pytest_factoryboy
   "ignore:Using a <class 'dict'> as model type:UserWarning:pytest_factoryboy.fixture",
 ]

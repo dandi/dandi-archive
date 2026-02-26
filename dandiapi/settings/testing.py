@@ -4,7 +4,7 @@ from secrets import randbelow
 
 from .base import *
 
-SECRET_KEY = 'insecure-secret'  # noqa: S105
+SECRET_KEY = 'insecure-secret'
 
 # Use a fast, insecure hasher to speed up tests
 PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
