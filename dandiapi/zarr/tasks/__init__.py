@@ -8,6 +8,7 @@ from zarr_checksum import compute_zarr_checksum
 from zarr_checksum.generators import S3ClientOptions, yield_files_s3
 
 from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
+from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.version import Version
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
@@ -72,6 +73,11 @@ def ingest_zarr_archive(zarr_id: str, *, force: bool = False):
         Version.objects.filter(id=zarr.dandiset.draft_version.id).update(
             status=Version.Status.PENDING, modified=timezone.now()
         )
+
+        # Set the asset status back to pending, and update modified
+        zarr_assets = Asset.objects.filter(zarr=zarr, published=False)
+        if zarr_assets.exists():
+            zarr_assets.update(status=Asset.Status.PENDING, modified=timezone.now())
 
 
 def ingest_dandiset_zarrs(dandiset_id: int, **kwargs):
