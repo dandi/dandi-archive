@@ -158,7 +158,7 @@
         <div
           v-else-if="!assetSummary || !Object.keys(assetSummary).length"
           class="font-italic font-weight-bold"
-          v-text="`This Dandiset does not contain any valid assets.${currentDandiset?.asset_validation_errors.length ? ' Please check the asset validation errors on the right panel.' : ''}`"
+          v-text="`This Dandiset does not contain any valid assets.${hasAssetValidationErrors ? ' Please check the asset validation errors on the right panel.' : ''}`"
         />
         <div
           v-for="([type, items], i) in Object.entries(assetSummary)"
@@ -288,6 +288,7 @@ const display = useDisplay();
 
 const store = useDandisetStore();
 const currentDandiset = computed(() => store.dandiset);
+const hasAssetValidationErrors = computed(() => Boolean(currentDandiset.value?.asset_validation_errors?.length));
 
 const contributors = computed(
   () => props.meta.contributor?.filter(

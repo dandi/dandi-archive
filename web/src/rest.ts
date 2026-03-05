@@ -13,6 +13,7 @@ import type {
   Zarr,
   DandisetSearchResult,
   IncompleteUpload,
+  ValidationError,
 } from '@/types';
 import type {
   Dandiset as DandisetMetadata,
@@ -111,7 +112,7 @@ const dandiRest = {
     let page = 1;
 
     while (true) {
-      const res = await client.get(`dandisets/${identifier}/uploads/`, {params: { page }});
+      const res = await client.get(`dandisets/${identifier}/uploads/`, { params: { page } });
 
       uploads.push(...res.data.results);
       if (res.data.next === null) {
@@ -198,6 +199,10 @@ const dandiRest = {
       throw error;
     }
   },
+  async assetValidationErrors(identifier: string, version: string): Promise<ValidationError[]> {
+    const { data } = await client.get(`dandisets/${identifier}/versions/${version}/asset_validation_errors/`);
+    return data;
+  },
   async mostRecentVersion(identifier: string) {
     // Look up the last version using page filters
     const versions = await this.versions(identifier, { page_size: 1, order: '-created' });
@@ -233,7 +238,7 @@ const dandiRest = {
       embargoEndDate?: string;
     }
   ) {
-    const params: { embargo: boolean; [key: string]: any } = { embargo: true };
+    const params: { embargo: boolean;[key: string]: any } = { embargo: true };
 
     // Add embargo-specific parameters
     if (embargoData.hasAward) {
