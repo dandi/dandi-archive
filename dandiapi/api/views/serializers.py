@@ -230,12 +230,23 @@ class DandisetListSerializer(DandisetSerializer):
 
         return contact
 
+    def get_modified(self, dandiset):
+        """Return the most recent version's modified timestamp instead of the dandiset's."""
+        draft = self.context['dandisets'].get(dandiset.id, {}).get('draft')
+        if draft is not None:
+            return draft.modified
+        published = self.context['dandisets'].get(dandiset.id, {}).get('published')
+        if published is not None:
+            return published.modified
+        return dandiset.modified
+
     def get_star_count(self, dandiset):
         return self.context['stars'][dandiset.id]['total']
 
     def get_is_starred(self, dandiset):
         return self.context['stars'][dandiset.id]['starred_by_current_user']
 
+    modified = serializers.SerializerMethodField()
     most_recent_published_version = serializers.SerializerMethodField()
     draft_version = serializers.SerializerMethodField()
 
@@ -254,6 +265,18 @@ class DandisetDetailSerializer(DandisetSerializer):
     class Meta(DandisetSerializer.Meta):
         fields = [*DandisetSerializer.Meta.fields, 'most_recent_published_version', 'draft_version']
 
+    def get_modified(self, dandiset):
+        """Return the most recent version's modified timestamp instead of the dandiset's."""
+        try:
+            return dandiset.draft_version.modified
+        except Exception:
+            pass
+        mrpv = dandiset.most_recent_published_version
+        if mrpv is not None:
+            return mrpv.modified
+        return dandiset.modified
+
+    modified = serializers.SerializerMethodField()
     most_recent_published_version = VersionSerializer(read_only=True, child_context=True)
     draft_version = VersionSerializer(read_only=True, child_context=True)
 
