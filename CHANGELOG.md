@@ -1,3 +1,15 @@
+# v0.21.8 (Fri Mar 06 2026)
+
+#### 🐛 Bug Fix
+
+- Upgrade to Resonant v0.47 [#2692](https://github.com/dandi/dandi-archive/pull/2692) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 1
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+
+---
+
 # v0.21.7 (Fri Mar 06 2026)
 
 #### 🐛 Bug Fix
