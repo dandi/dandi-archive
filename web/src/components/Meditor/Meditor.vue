@@ -210,7 +210,8 @@
         >
           <v-card class="pa-2 px-1">
             <v-form
-              class="px-7"
+              class="px-7 overflow-y-auto"
+              style="height: 70vh;"
             >
               <v-jsf-wrapper
                 :prop-key="propKey"
