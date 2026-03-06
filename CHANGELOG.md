@@ -1,3 +1,17 @@
+# v0.21.7 (Fri Mar 06 2026)
+
+#### 🐛 Bug Fix
+
+- Add scrollbar to meditor component for overflowing content [#2724](https://github.com/dandi/dandi-archive/pull/2724) ([@kabilar](https://github.com/kabilar))
+- Don't return `null` names or usernames from user search endpoint [#2681](https://github.com/dandi/dandi-archive/pull/2681) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v0.21.6 (Wed Feb 18 2026)
 
 #### 🐛 Bug Fix
