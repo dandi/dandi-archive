@@ -12,10 +12,8 @@ from ._sentry_utils import get_sentry_performance_sample_rate
 from .base import *
 
 # Import these afterwards, to override
-from resonant_settings.production.email import *  # isort: skip
-from resonant_settings.production.https import *  # isort: skip
-
-WSGI_APPLICATION = 'dandiapi.wsgi.application'
+from resonant_settings.production.email import *
+from resonant_settings.production.https import *
 
 SECRET_KEY: str = env.str('DJANGO_SECRET_KEY')
 
@@ -27,18 +25,17 @@ LOGIN_URL = '/accounts/github/login/'
 # Only allow GitHub auth on production, no username/password
 SOCIALACCOUNT_ONLY = True
 
-# This only needs to be defined in production. Testing will add 'testserver'. In development
-# (specifically when DEBUG is True), 'localhost' and '127.0.0.1' will be added.
+# This only needs to be defined in production. Testing will add "testserver". In development
+# (specifically when DEBUG is True), "localhost" and "127.0.0.1" will be added.
 ALLOWED_HOSTS: list[str] = env.list('DJANGO_ALLOWED_HOSTS', cast=str)
 
-DANDI_DANDISETS_BUCKET_NAME: str = env.str('DJANGO_STORAGE_BUCKET_NAME')
 STORAGES['default'] = {
     'BACKEND': 'dandiapi.storage.DandiS3Storage',
     'OPTIONS': {
         'region_name': env.str('AWS_DEFAULT_REGION'),
         'access_key': env.str('AWS_ACCESS_KEY_ID'),
         'secret_key': env.str('AWS_SECRET_ACCESS_KEY'),
-        'bucket_name': DANDI_DANDISETS_BUCKET_NAME,
+        'bucket_name': env.str('DJANGO_STORAGE_BUCKET_NAME'),
         'querystring_expire': int(timedelta(hours=6).total_seconds()),
         'max_memory_size': 5 * 1024 * 1024,
     },
@@ -53,8 +50,8 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
 DANDI_DEV_EMAIL: str = env.str('DJANGO_DANDI_DEV_EMAIL')
 DANDI_ADMIN_EMAIL: str = env.str('DJANGO_DANDI_ADMIN_EMAIL')
 
-# sentry_sdk is able to directly use environment variables like 'SENTRY_DSN', but prefix them
-# with 'DJANGO_' to avoid conflicts with other Sentry-using services.
+# sentry_sdk is able to directly use environment variables like "SENTRY_DSN", but prefix them
+# with "DJANGO_" to avoid conflicts with other Sentry-using services.
 sentry_sdk.init(
     dsn=env.str('DJANGO_SENTRY_DSN', default=None),
     environment=env.str('DJANGO_SENTRY_ENVIRONMENT', default=None),

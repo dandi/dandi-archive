@@ -10,6 +10,7 @@ from urllib.parse import urlunparse
 from corsheaders.defaults import default_headers
 import django_stubs_ext
 from environ import Env
+
 from resonant_settings.allauth import *
 from resonant_settings.celery import *
 from resonant_settings.django import *
@@ -29,6 +30,8 @@ env = Env()
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 
 ROOT_URLCONF = 'dandiapi.urls'
+
+WSGI_APPLICATION = 'dandiapi.wsgi.application'
 
 INSTALLED_APPS = [
     # Install local apps first, to ensure any overridden resources are found first
@@ -79,6 +82,7 @@ MIDDLEWARE = [
     # Add username middleware after authentication to capture username for gunicorn access logs
     'dandiapi.api.middleware.GunicornUsernameMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.sites.middleware.CurrentSiteMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
 ]
@@ -90,7 +94,7 @@ DATABASES = {
     'default': {
         **env.db_url('DJANGO_DATABASE_URL', engine='django.db.backends.postgresql'),
         'CONN_MAX_AGE': timedelta(minutes=10).total_seconds(),
-    }
+    },
 }
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -102,7 +106,6 @@ STORAGES: dict[str, dict[str, Any]] = {
         'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },
 }
-DANDI_DANDISETS_BUCKET_NAME: str
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Django staticfiles auto-creates any intermediate directories, but do so here to prevent warnings.
