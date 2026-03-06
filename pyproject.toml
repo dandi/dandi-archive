@@ -12,7 +12,6 @@ dependencies = [
   # Runtime dependencies, always needed
   "boto3",
   "celery",
-  "dandi", # minimal version is also provided in API /info
   # Pin dandischema to exact version to make explicit which schema version is being used
   "dandischema==0.12.1", # schema version 0.7.0
   "django[argon2]",
@@ -61,6 +60,7 @@ development = [
   "watchdog",
   "werkzeug",
 ]
+cli = ["dandi>=0.74.0"]
 
 [dependency-groups]
 dev = [
