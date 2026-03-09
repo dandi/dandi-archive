@@ -169,13 +169,3 @@ def test_ordering_by_modified(api_client):
         v3.dandiset.identifier,
         v1.dandiset.identifier,
     ]
-
-
-@pytest.mark.django_db
-def test_date_modified_populated_in_version_metadata():
-    """dateModified should be populated in the version metadata JSON."""
-    draft_version = DraftVersionFactory.create()
-
-    # After save, metadata should contain dateModified
-    assert 'dateModified' in draft_version.metadata
-    assert draft_version.metadata['dateModified'] is not None

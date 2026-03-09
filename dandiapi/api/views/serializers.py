@@ -269,7 +269,7 @@ class DandisetDetailSerializer(DandisetSerializer):
         """Return the most recent version's modified timestamp instead of the dandiset's."""
         try:
             return dandiset.draft_version.modified
-        except Exception:
+        except Version.DoesNotExist:
             pass
         mrpv = dandiset.most_recent_published_version
         if mrpv is not None:

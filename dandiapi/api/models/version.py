@@ -247,7 +247,6 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
                 f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}'
             ),
             'dateCreated': self.dandiset.created.isoformat(),
-            'dateModified': self.modified.isoformat() if self.modified else None,
             'access': self._populate_access_metadata(),
         }
 
