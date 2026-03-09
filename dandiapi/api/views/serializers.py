@@ -200,7 +200,7 @@ class DandisetListSerializer(DandisetSerializer):
     """The dandiset serializer to be used in the listing endpoint."""
 
     class Meta(DandisetSerializer.Meta):
-        fields = [*DandisetSerializer.Meta.fields, 'most_recent_published_version', 'draft_version']
+        fields = [*DandisetSerializer.Meta.fields, 'content_modified', 'most_recent_published_version', 'draft_version']
 
     @swagger_serializer_method(serializer_or_field=DandisetVersionSerializer)
     def get_draft_version(self, dandiset):
@@ -230,8 +230,8 @@ class DandisetListSerializer(DandisetSerializer):
 
         return contact
 
-    def get_modified(self, dandiset):
-        """Return the most recent version's modified timestamp instead of the dandiset's."""
+    def get_content_modified(self, dandiset):
+        """Return the most recent version's modified timestamp (content change time)."""
         draft = self.context['dandisets'].get(dandiset.id, {}).get('draft')
         if draft is not None:
             return draft.modified
@@ -246,7 +246,7 @@ class DandisetListSerializer(DandisetSerializer):
     def get_is_starred(self, dandiset):
         return self.context['stars'][dandiset.id]['starred_by_current_user']
 
-    modified = serializers.SerializerMethodField()
+    content_modified = serializers.SerializerMethodField()
     most_recent_published_version = serializers.SerializerMethodField()
     draft_version = serializers.SerializerMethodField()
 
@@ -263,10 +263,10 @@ class DandisetSearchResultListSerializer(DandisetListSerializer):
 
 class DandisetDetailSerializer(DandisetSerializer):
     class Meta(DandisetSerializer.Meta):
-        fields = [*DandisetSerializer.Meta.fields, 'most_recent_published_version', 'draft_version']
+        fields = [*DandisetSerializer.Meta.fields, 'content_modified', 'most_recent_published_version', 'draft_version']
 
-    def get_modified(self, dandiset):
-        """Return the most recent version's modified timestamp instead of the dandiset's."""
+    def get_content_modified(self, dandiset):
+        """Return the most recent version's modified timestamp (content change time)."""
         try:
             return dandiset.draft_version.modified
         except Version.DoesNotExist:
@@ -276,7 +276,7 @@ class DandisetDetailSerializer(DandisetSerializer):
             return mrpv.modified
         return dandiset.modified
 
-    modified = serializers.SerializerMethodField()
+    content_modified = serializers.SerializerMethodField()
     most_recent_published_version = VersionSerializer(read_only=True, child_context=True)
     draft_version = VersionSerializer(read_only=True, child_context=True)
 

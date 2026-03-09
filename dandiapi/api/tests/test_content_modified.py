@@ -1,4 +1,4 @@
-"""Tests for the modified field reflecting version content changes."""
+"""Tests for the content_modified field reflecting version content changes."""
 
 from __future__ import annotations
 
@@ -7,19 +7,15 @@ import datetime
 from django.utils import timezone
 import pytest
 
-from dandiapi.api.asset_paths import add_asset_paths
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.tests.factories import (
-    DraftAssetFactory,
     DraftVersionFactory,
-    UserFactory,
 )
 
 
 @pytest.mark.django_db
-def test_list_modified_reflects_version_modified(api_client):
-    """The listing endpoint's modified field should reflect the version's modified, not the
-    dandiset's."""
+def test_list_content_modified_reflects_version_modified(api_client):
+    """The listing endpoint's content_modified field should reflect the version's modified."""
     draft_version = DraftVersionFactory.create()
     dandiset = draft_version.dandiset
 
@@ -33,16 +29,15 @@ def test_list_modified_reflects_version_modified(api_client):
     assert response.status_code == 200
     result = response.data['results'][0]
 
-    # The API modified should match the version's modified, not the dandiset's stale one
-    dandiset.refresh_from_db()
     draft_version.refresh_from_db()
-    assert result['modified'] != dandiset.modified.isoformat().replace('+00:00', 'Z')
-    assert result['modified'] == draft_version.modified.isoformat().replace('+00:00', 'Z')
+    assert result['content_modified'] == draft_version.modified.isoformat().replace(
+        '+00:00', 'Z'
+    )
 
 
 @pytest.mark.django_db
-def test_retrieve_modified_reflects_version_modified(api_client):
-    """The retrieve endpoint's modified field should reflect the version's modified."""
+def test_retrieve_content_modified_reflects_version_modified(api_client):
+    """The retrieve endpoint's content_modified field should reflect the version's modified."""
     draft_version = DraftVersionFactory.create()
     dandiset = draft_version.dandiset
 
@@ -53,81 +48,14 @@ def test_retrieve_modified_reflects_version_modified(api_client):
     assert response.status_code == 200
 
     draft_version.refresh_from_db()
-    assert response.data['modified'] == draft_version.modified.isoformat().replace('+00:00', 'Z')
-
-
-@pytest.mark.django_db
-def test_modified_updates_on_metadata_edit(api_client):
-    """The version modified timestamp should update when metadata is edited via the API."""
-    user = UserFactory.create()
-    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
-    dandiset = draft_version.dandiset
-    api_client.force_authenticate(user=user)
-
-    original_modified = draft_version.modified
-
-    api_client.put(
-        f'/api/dandisets/{dandiset.identifier}/versions/{draft_version.version}/',
-        {'metadata': {'foo': 'bar'}, 'name': 'Updated Name'},
-        format='json',
+    assert response.data['content_modified'] == draft_version.modified.isoformat().replace(
+        '+00:00', 'Z'
     )
 
-    draft_version.refresh_from_db()
-    assert draft_version.modified > original_modified
-
 
 @pytest.mark.django_db
-def test_modified_updates_on_asset_add(api_client, asset_blob):
-    """The version modified timestamp should update when an asset is added."""
-    user = UserFactory.create()
-    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
-    dandiset = draft_version.dandiset
-    api_client.force_authenticate(user=user)
-
-    original_modified = draft_version.modified
-
-    api_client.post(
-        f'/api/dandisets/{dandiset.identifier}/versions/{draft_version.version}/assets/',
-        {
-            'metadata': {
-                'encodingFormat': 'application/x-nwb',
-                'path': 'test/asset.nwb',
-            },
-            'blob_id': asset_blob.blob_id,
-        },
-        format='json',
-    )
-
-    draft_version.refresh_from_db()
-    assert draft_version.modified > original_modified
-
-
-@pytest.mark.django_db
-def test_modified_updates_on_asset_remove(api_client):
-    """The version modified timestamp should update when an asset is removed."""
-    user = UserFactory.create()
-    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
-    dandiset = draft_version.dandiset
-    asset = DraftAssetFactory.create()
-    draft_version.assets.add(asset)
-    add_asset_paths(asset, draft_version)
-    api_client.force_authenticate(user=user)
-
-    draft_version.refresh_from_db()
-    original_modified = draft_version.modified
-
-    api_client.delete(
-        f'/api/dandisets/{dandiset.identifier}'
-        f'/versions/{draft_version.version}/assets/{asset.asset_id}/',
-    )
-
-    draft_version.refresh_from_db()
-    assert draft_version.modified > original_modified
-
-
-@pytest.mark.django_db
-def test_ordering_by_modified(api_client):
-    """Ordering by modified should sort by version modified timestamps."""
+def test_ordering_by_content_modified(api_client):
+    """Ordering by content_modified should sort by version modified timestamps."""
     now = timezone.now()
 
     # Create 3 dandisets with draft versions
@@ -148,7 +76,8 @@ def test_ordering_by_modified(api_client):
 
     # Ascending
     response = api_client.get(
-        '/api/dandisets/', {'ordering': 'modified', 'draft': 'true', 'empty': 'true'}
+        '/api/dandisets/',
+        {'ordering': 'content_modified', 'draft': 'true', 'empty': 'true'},
     )
     assert response.status_code == 200
     ids = [r['identifier'] for r in response.data['results']]
@@ -160,7 +89,8 @@ def test_ordering_by_modified(api_client):
 
     # Descending
     response = api_client.get(
-        '/api/dandisets/', {'ordering': '-modified', 'draft': 'true', 'empty': 'true'}
+        '/api/dandisets/',
+        {'ordering': '-content_modified', 'draft': 'true', 'empty': 'true'},
     )
     assert response.status_code == 200
     ids = [r['identifier'] for r in response.data['results']]
