@@ -22,6 +22,7 @@ def test_rest_info_instance_config_include_none(api_client):
     )
 
 
+@pytest.mark.django_db
 def test_cli_minimal_version_matches_dandischema(api_client):
     """Test that local dandischema and minimal cli dandischema are compatible."""
     # Get CLI version info from pypi
@@ -41,6 +42,7 @@ def test_cli_minimal_version_matches_dandischema(api_client):
     assert version_range.contains(local_version)
 
 
+@pytest.mark.django_db
 def test_cli_requires_python_compatible_with_minimal_version(api_client):
     """Test that the CLI's required python version is compatible with the minimal version."""
     info = api_client.get('/api/info/').json()
