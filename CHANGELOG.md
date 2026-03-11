@@ -1,3 +1,17 @@
+# v0.21.9 (Wed Mar 11 2026)
+
+#### 🐛 Bug Fix
+
+- Display the correct CLI and required python version in the GUI [#2714](https://github.com/dandi/dandi-archive/pull/2714) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Remove CLI as core dependency [#2715](https://github.com/dandi/dandi-archive/pull/2715) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Set asset to pending when its zarr is ingested [#2720](https://github.com/dandi/dandi-archive/pull/2720) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.21.8 (Fri Mar 06 2026)
 
 #### 🐛 Bug Fix
