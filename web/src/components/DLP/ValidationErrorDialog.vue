@@ -60,7 +60,7 @@
           max-height="80vh"
         >
           <template
-            v-for="(errors, path) in groupedAssetValidationErrors"
+            v-for="(errors, path) in paginatedGroupedAssetValidationErrors"
             :key="path"
           >
             <v-list-item lines="two">
@@ -111,6 +111,12 @@
             <v-divider />
           </template>
         </v-list>
+        <v-pagination
+          v-model="assetValidationErrorPage"
+          :length="Math.ceil(Object.keys(groupedAssetValidationErrors).length / assetValidationErrorPageSize)"
+          :total-visible="8"
+          variant="flat"
+        />
       </v-tabs-window-item>
     </v-tabs-window>
   </v-card>
@@ -139,6 +145,10 @@ watch(() => props.selectedTab, (val) => {
 
 const showMetadataTab = computed(() => !!props.versionValidationErrors.length);
 const showAssetsTab = computed(() => props.assetValidationErrors?.length);
+
+const assetValidationErrorPageSize = 100;
+const assetValidationErrorPage = ref(1);
+
 const groupedAssetValidationErrors = computed(() => {
   const path_asset_map: Record<string, ValidationError[]> = {};
   props.assetValidationErrors?.forEach((err) => {
@@ -149,6 +159,14 @@ const groupedAssetValidationErrors = computed(() => {
   });
 
   return path_asset_map;
+});
+
+const paginatedGroupedAssetValidationErrors: typeof groupedAssetValidationErrors = computed(() => {
+  const slicedKeys = Object.keys(groupedAssetValidationErrors.value).slice(
+    assetValidationErrorPageSize*(assetValidationErrorPage.value - 1),
+    assetValidationErrorPageSize*assetValidationErrorPage.value
+  );
+  return slicedKeys.reduce((obj, key) => ({...obj, [key]: groupedAssetValidationErrors.value[key]}), {});
 });
 
 function getValidationErrorIcon(errorField: string): string {
