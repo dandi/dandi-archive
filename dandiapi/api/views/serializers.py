@@ -373,14 +373,10 @@ class VersionDetailSerializer(VersionSerializer):
     class Meta(VersionSerializer.Meta):
         fields = [
             *VersionSerializer.Meta.fields,
-            'asset_validation_errors',
-            'version_validation_errors',
+            'validation_errors',
             'metadata',
             'contact_person',
         ]
-
-    # rename this field in the serializer to differentiate from asset_validation_errors
-    version_validation_errors = serializers.JSONField(source='validation_errors')
 
     def get_contact_person(self, obj):
         return extract_contact_person(obj)
