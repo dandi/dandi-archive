@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import datetime
 from typing import TYPE_CHECKING
 
 import dandischema
 from django.core.files.storage import default_storage
+from django.utils import timezone
 import pytest
 
 from dandiapi.api.manifests import all_manifest_filepaths
@@ -255,10 +257,22 @@ def test_unembargo_dandiset(
 
     write_manifest_files(draft_version.id)
 
+    # Seed access metadata to match what would exist in reality: the version was
+    # created while EMBARGOED (with EmbargoedAccess status and a future embargoedUntil),
+    # then kickoff changed the dandiset to UNEMBARGOING without saving the version.
+    original_embargoed_until = '2099-01-01T00:00:00+00:00'
+    draft_version.metadata['access'][0]['status'] = (
+        dandischema.models.AccessType.EmbargoedAccess.value
+    )
+    draft_version.metadata['access'][0]['embargoedUntil'] = original_embargoed_until
+    draft_version.save()
+
     assert all(asset.is_embargoed for asset in draft_version.assets.all())
     assert all(asset.status == Asset.Status.VALID for asset in draft_version.assets.all())
 
+    before_unembargo = timezone.now()
     unembargo_dandiset(dandiset, owners[0])
+    after_unembargo = timezone.now()
 
     for zarr_file in zarr_files:
         zarr_file_s3_path = zarr_archive.s3_path(str(zarr_file.path))
@@ -276,6 +290,12 @@ def test_unembargo_dandiset(
         draft_version.metadata['access'][0]['status']
         == dandischema.models.AccessType.OpenAccess.value
     )
+
+    # Verify embargoedUntil was replaced with the actual unembargo timestamp
+    embargoed_until = draft_version.metadata['access'][0]['embargoedUntil']
+    assert embargoed_until != original_embargoed_until
+    embargoed_until_dt = datetime.datetime.fromisoformat(embargoed_until)
+    assert before_unembargo <= embargoed_until_dt <= after_unembargo
 
     # Check that a correct email exists
     assert mailoutbox
