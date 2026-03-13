@@ -6,20 +6,24 @@ from django_extensions.db.models import TimeStampedModel
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 
 
+class DandisetEmbargoStatus(models.TextChoices):
+    EMBARGOED = 'EMBARGOED', 'Embargoed'
+    UNEMBARGOING = 'UNEMBARGOING', 'Unembargoing'
+    OPEN = 'OPEN', 'Open'
+
+
 class Dandiset(TimeStampedModel):
     # Don't add beginning and end markers, so this can be embedded in larger regexes
     IDENTIFIER_REGEX = r'\d{6}'
 
-    class EmbargoStatus(models.TextChoices):
-        EMBARGOED = 'EMBARGOED', 'Embargoed'
-        UNEMBARGOING = 'UNEMBARGOING', 'Unembargoing'
-        OPEN = 'OPEN', 'Open'
+    EmbargoStatus = DandisetEmbargoStatus
 
     embargo_status = models.CharField(
         max_length=max(len(choice[0]) for choice in EmbargoStatus.choices),
         choices=EmbargoStatus.choices,
         default=EmbargoStatus.OPEN,
     )
+    embargo_end_date = models.DateField(null=True, blank=True, default=None)
     starred_users = models.ManyToManyField(
         to=User, through='DandisetStar', related_name='starred_dandisets'
     )
@@ -27,6 +31,15 @@ class Dandiset(TimeStampedModel):
     class Meta:
         ordering = ['id']
         permissions = [('owner', 'Owns the dandiset')]
+        constraints = [
+            models.CheckConstraint(
+                name='embargoed_dandiset_has_embargo_end_date',
+                condition=(
+                    models.Q(embargo_end_date__isnull=False)
+                    | models.Q(embargo_status=DandisetEmbargoStatus.OPEN)
+                ),
+            )
+        ]
 
     @property
     def identifier(self) -> str:

@@ -101,6 +101,7 @@ def create_embargoed_dandiset(  # noqa: PLR0913
         )
 
         dandiset.embargo_status = Dandiset.EmbargoStatus.EMBARGOED
+        dandiset.embargo_end_date = embargo_end_date.date()
         dandiset.full_clean()
         dandiset.save()
 
