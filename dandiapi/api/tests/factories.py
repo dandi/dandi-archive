@@ -8,6 +8,7 @@ from dandischema.conf import get_instance_config
 from dandischema.consts import DANDI_SCHEMA_VERSION
 from dandischema.models import AccessType
 from django.contrib.auth.models import User
+from django.utils import timezone
 import factory
 import faker
 
@@ -75,6 +76,14 @@ class DandisetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Dandiset
         skip_postgeneration_save = True
+
+    embargo_end_date = factory.LazyAttribute(
+        lambda self: (
+            timezone.now().date() + datetime.timedelta(days=365 * 2)
+            if self.embargo_status != Dandiset.EmbargoStatus.OPEN
+            else None
+        )
+    )
 
     @factory.post_generation
     def owners(self, create: bool, extracted: list[User] | None) -> None:  # noqa: FBT001
