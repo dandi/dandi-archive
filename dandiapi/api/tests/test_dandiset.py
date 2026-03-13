@@ -784,6 +784,7 @@ def test_dandiset_rest_create_embargoed_with_award_info(api_client: APIClient):
     # Verify the created dandiset in database
     dandiset = Dandiset.objects.get(id=response.data['identifier'])
     assert dandiset.embargo_status == Dandiset.EmbargoStatus.EMBARGOED
+    assert dandiset.embargo_end_date == datetime.date.fromisoformat(embargo_end_date)
 
     # Check draft version metadata has access requirements
     assert dandiset.draft_version.metadata['access'] == [
@@ -901,6 +902,53 @@ def test_dandiset_rest_create_embargoed_award_no_funding(api_client: APIClient):
     response = api_client.post(url, {'name': name, 'metadata': metadata})
 
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_embargoed_embargo_end_date(api_client: APIClient):
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    metadata = {
+        'name': 'Test',
+        'description': 'Test embargoed dandiset',
+        'license': [get_first_allowed_license()],
+    }
+
+    # Keep embargo end date under two years from now, since no funding data was supplied
+    end_date = timezone.now().date() + datetime.timedelta(days=485)
+    query_params = urlencode({'embargo': 'true', 'embargo_end_date': end_date.isoformat()})
+    response = api_client.post(
+        f'/api/dandisets/?{query_params}',
+        {'name': 'Test', 'metadata': metadata},
+    )
+    assert response.status_code == 200
+
+    dandiset = Dandiset.objects.get(id=int(response.json()['identifier']))
+    assert dandiset.embargo_end_date == end_date
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_embargoed_embargo_end_date_default(api_client: APIClient):
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+
+    response = api_client.post(
+        f'/api/dandisets/?{urlencode({"embargo": "true"})}',
+        {
+            'name': 'Test',
+            'metadata': {
+                'name': 'Test',
+                'description': 'Test embargoed dandiset',
+                'license': [get_first_allowed_license()],
+            },
+        },
+    )
+    assert response.status_code == 200
+
+    dandiset = Dandiset.objects.get(id=response.data['identifier'])
+    assert dandiset.embargo_end_date is not None
+    expected_end = timezone.now().date() + datetime.timedelta(days=365 * 2)
+    assert abs((dandiset.embargo_end_date - expected_end).days) <= 1
 
 
 @pytest.mark.django_db
