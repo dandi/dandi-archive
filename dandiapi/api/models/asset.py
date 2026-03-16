@@ -284,6 +284,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         # The only way embargo_end_date can be None here is if asset isn't associated with any
         # versions (most likely due to being updated). Even so, sometimes these assets are accessed
         # directly, so we need to handle that case.
+        # TODO: Update once https://github.com/dandi/dandi-archive/issues/2733 is addressed
         if embargo_end_date is not None:
             access['embargoedUntil'] = embargo_end_date.isoformat()
 
