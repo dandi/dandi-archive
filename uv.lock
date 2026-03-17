@@ -806,76 +806,76 @@ type = [
 
 [package.metadata]
 requires-dist = [
-    { name = "boto3" },
-    { name = "celery" },
-    { name = "dandi", marker = "extra == 'cli'", specifier = ">=0.74.0" },
+    { name = "boto3", specifier = "==1.40.51" },
+    { name = "celery", specifier = "==5.5.3" },
+    { name = "dandi", marker = "extra == 'cli'", specifier = "==0.74.3" },
     { name = "dandischema", specifier = "==0.12.1" },
-    { name = "django", extras = ["argon2"] },
-    { name = "django-allauth" },
-    { name = "django-auth-style" },
-    { name = "django-browser-reload", marker = "extra == 'development'" },
-    { name = "django-click" },
-    { name = "django-cors-headers" },
-    { name = "django-debug-toolbar", marker = "extra == 'development'" },
-    { name = "django-environ" },
-    { name = "django-extensions" },
-    { name = "django-filter" },
-    { name = "django-guardian" },
-    { name = "django-oauth-toolkit" },
-    { name = "django-resonant-settings", extras = ["allauth", "celery"] },
-    { name = "django-resonant-utils", extras = ["allauth", "s3-storage"] },
-    { name = "django-s3-file-field", extras = ["s3"] },
-    { name = "django-storages", extras = ["s3"] },
-    { name = "django-stubs-ext" },
-    { name = "djangorestframework", specifier = "<3.15.0" },
-    { name = "drf-extensions" },
-    { name = "drf-yasg" },
-    { name = "fsspec", extras = ["http"] },
-    { name = "gunicorn" },
-    { name = "ipython", marker = "extra == 'development'" },
-    { name = "jsonschema" },
-    { name = "more-itertools" },
-    { name = "psycopg", extras = ["binary"] },
-    { name = "pyyaml" },
-    { name = "requests" },
-    { name = "rich" },
-    { name = "sentry-sdk", extras = ["celery", "django", "pure-eval"] },
-    { name = "tqdm" },
-    { name = "watchdog", marker = "extra == 'development'" },
-    { name = "werkzeug", marker = "extra == 'development'" },
-    { name = "whitenoise", extras = ["brotli"] },
-    { name = "zarr-checksum" },
+    { name = "django", extras = ["argon2"], specifier = "==5.2.7" },
+    { name = "django-allauth", specifier = "==65.12.0" },
+    { name = "django-auth-style", specifier = "==0.12.0" },
+    { name = "django-browser-reload", marker = "extra == 'development'", specifier = "==1.21.0" },
+    { name = "django-click", specifier = "==2.4.1" },
+    { name = "django-cors-headers", specifier = "==4.9.0" },
+    { name = "django-debug-toolbar", marker = "extra == 'development'", specifier = "==6.0.0" },
+    { name = "django-environ", specifier = "==0.12.1" },
+    { name = "django-extensions", specifier = "==4.1" },
+    { name = "django-filter", specifier = "==25.2" },
+    { name = "django-guardian", specifier = "==3.2.0" },
+    { name = "django-oauth-toolkit", specifier = "==3.1.0" },
+    { name = "django-resonant-settings", extras = ["allauth", "celery"], specifier = "==0.48.1" },
+    { name = "django-resonant-utils", extras = ["allauth", "s3-storage"], specifier = "==0.16.0" },
+    { name = "django-s3-file-field", extras = ["s3"], specifier = "==1.1.0" },
+    { name = "django-storages", extras = ["s3"], specifier = "==1.14.6" },
+    { name = "django-stubs-ext", specifier = "==5.2.7" },
+    { name = "djangorestframework", specifier = "==3.14.0" },
+    { name = "drf-extensions", specifier = "==0.8.0" },
+    { name = "drf-yasg", specifier = "==1.21.11" },
+    { name = "fsspec", extras = ["http"], specifier = "==2025.9.0" },
+    { name = "gunicorn", specifier = "==23.0.0" },
+    { name = "ipython", marker = "extra == 'development'", specifier = "==9.6.0" },
+    { name = "jsonschema", specifier = "==4.25.1" },
+    { name = "more-itertools", specifier = "==10.8.0" },
+    { name = "psycopg", extras = ["binary"], specifier = "==3.2.10" },
+    { name = "pyyaml", specifier = "==6.0.3" },
+    { name = "requests", specifier = "==2.32.5" },
+    { name = "rich", specifier = "==14.2.0" },
+    { name = "sentry-sdk", extras = ["celery", "django", "pure-eval"], specifier = "==2.41.0" },
+    { name = "tqdm", specifier = "==4.67.1" },
+    { name = "watchdog", marker = "extra == 'development'", specifier = "==6.0.0" },
+    { name = "werkzeug", marker = "extra == 'development'", specifier = "==3.1.3" },
+    { name = "whitenoise", extras = ["brotli"], specifier = "==6.11.0" },
+    { name = "zarr-checksum", specifier = "==0.4.7" },
 ]
 provides-extras = ["cli", "development"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "dandiapi", extras = ["development"] },
-    { name = "pre-commit" },
-    { name = "tox" },
-    { name = "tox-uv" },
+    { name = "pre-commit", specifier = "==4.3.0" },
+    { name = "tox", specifier = "==4.31.0" },
+    { name = "tox-uv", specifier = "==1.29.0" },
 ]
-lint = [{ name = "ruff" }]
+lint = [{ name = "ruff", specifier = "==0.14.0" }]
 test = [
-    { name = "djangorestframework-yaml" },
-    { name = "factory-boy" },
-    { name = "faker" },
-    { name = "freezegun" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-django" },
-    { name = "pytest-factoryboy" },
-    { name = "pytest-memray" },
-    { name = "pytest-mock" },
-    { name = "pytest-random-order" },
-    { name = "pytest-repeat" },
+    { name = "djangorestframework-yaml", specifier = "==2.0.0" },
+    { name = "factory-boy", specifier = "==3.3.3" },
+    { name = "faker", specifier = "==37.11.0" },
+    { name = "freezegun", specifier = "==1.5.5" },
+    { name = "pytest", specifier = "==8.4.2" },
+    { name = "pytest-cov", specifier = "==7.0.0" },
+    { name = "pytest-django", specifier = "==4.11.1" },
+    { name = "pytest-factoryboy", specifier = "==2.8.1" },
+    { name = "pytest-memray", specifier = "==1.8.0" },
+    { name = "pytest-mock", specifier = "==3.15.1" },
+    { name = "pytest-random-order", specifier = "==1.2.0" },
+    { name = "pytest-repeat", specifier = "==0.9.4" },
 ]
 type = [
-    { name = "boto3-stubs", extras = ["s3"] },
-    { name = "celery-types" },
-    { name = "django-stubs", extras = ["compatible-mypy"] },
-    { name = "djangorestframework-stubs", extras = ["compatible-mypy"] },
-    { name = "mypy" },
+    { name = "boto3-stubs", extras = ["s3"], specifier = "==1.40.51" },
+    { name = "celery-types", specifier = "==0.23.0" },
+    { name = "django-stubs", extras = ["compatible-mypy"], specifier = "==5.2.7" },
+    { name = "djangorestframework-stubs", extras = ["compatible-mypy"], specifier = "==3.16.4" },
+    { name = "mypy", specifier = "==1.18.2" },
 ]
 
 [[package]]
@@ -1019,11 +1019,11 @@ wheels = [
 
 [[package]]
 name = "django-environ"
-version = "0.12.0"
+version = "0.12.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d6/04/65d2521842c42f4716225f20d8443a50804920606aec018188bbee30a6b0/django_environ-0.12.0.tar.gz", hash = "sha256:227dc891453dd5bde769c3449cf4a74b6f2ee8f7ab2361c93a07068f4179041a", size = 56804, upload-time = "2025-01-13T17:03:37.74Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d4/3c/b2de27581c28929e3b33c5797e3d075c93541b4a8499ddc84dfd659d550f/django_environ-0.12.1.tar.gz", hash = "sha256:22859c6e905ab7637fa3348d1787543bb4492f38d761104a3ce0519b7b752845", size = 58257, upload-time = "2026-02-14T01:19:50.733Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/83/b3/0a3bec4ecbfee960f39b1842c2f91e4754251e0a6ed443db9fe3f666ba8f/django_environ-0.12.0-py2.py3-none-any.whl", hash = "sha256:92fb346a158abda07ffe6eb23135ce92843af06ecf8753f43adf9d2366dcc0ca", size = 19957, upload-time = "2025-01-13T17:03:32.918Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/1c/a6c55b856cb2c5824ee2fe5e27d6f54909ac7c228672b359ecbca99a6b41/django_environ-0.12.1-py2.py3-none-any.whl", hash = "sha256:064ba2d5082f833e6d7fe4def4928bde1eedc0248a417575da7db147aeec1c20", size = 20035, upload-time = "2026-02-14T01:19:48.683Z" },
 ]
 
 [[package]]
@@ -1079,15 +1079,15 @@ wheels = [
 
 [[package]]
 name = "django-resonant-settings"
-version = "0.47.1"
+version = "0.48.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
     { name = "django-environ" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/07/e2/0961283ccaf797307f3671a7ff3965b5a54d816ff86c9091713cdcfde562/django_resonant_settings-0.47.1.tar.gz", hash = "sha256:3d58bed8d0595806a42007ef63f58348523d95699e5811068ca3337483ef5843", size = 19179, upload-time = "2026-02-26T15:46:42.839Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/93/36/70d9e2441a204e138c50c97b7791efa8e8bc15e17dfea2c2413733d2e576/django_resonant_settings-0.48.1.tar.gz", hash = "sha256:c101ccc60e6922e875140eeb3c2f089aac2bf0ebca63c512f826f91286d16983", size = 19231, upload-time = "2026-03-06T05:01:10.797Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/da/7d/a5f08da9e00e626b26beebcb94c5adfa26f78f54c1c9c3b61b8654ae5f02/django_resonant_settings-0.47.1-py3-none-any.whl", hash = "sha256:c96756aeac75248eca14b580228c6c41e2e6186030dbc47723cdb1b959f8a4ef", size = 26093, upload-time = "2026-02-26T15:46:41.69Z" },
+    { url = "https://files.pythonhosted.org/packages/5e/f2/15b8afe28ed7b76e8e7f7d6bac8b49cc977691142659d5468671c0889536/django_resonant_settings-0.48.1-py3-none-any.whl", hash = "sha256:01e494132d05828c4a79b54d1e5013052b4e40cc034e7dd52cf8b4c93a57e4e7", size = 26102, upload-time = "2026-03-06T05:01:09.754Z" },
 ]
 
 [package.optional-dependencies]
