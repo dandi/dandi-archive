@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
+requires = ["hatchling==1.29.0", "hatch-vcs==0.5.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -10,57 +10,57 @@ license-files = ["LICENSE", "NOTICE"]
 classifiers = ["Private :: Do Not Upload"]
 dependencies = [
   # Runtime dependencies, always needed
-  "boto3",
-  "celery",
+  "boto3==1.40.51",
+  "celery==5.5.3",
   # Pin dandischema to exact version to make explicit which schema version is being used
   "dandischema==0.12.1", # schema version 0.7.0
-  "django[argon2]",
-  "django-allauth",
-  "django-auth-style",
-  "django-click",
-  "django-cors-headers",
-  "django-environ",
-  "django-extensions",
-  "django-filter",
-  "django-guardian",
-  "django-oauth-toolkit",
-  "django-resonant-settings[allauth,celery]",
-  "django-resonant-utils[allauth,s3_storage]",
-  "django-stubs-ext",
+  "django[argon2]==5.2.7",
+  "django-allauth==65.12.0",
+  "django-auth-style==0.12.0",
+  "django-click==2.4.1",
+  "django-cors-headers==4.9.0",
+  "django-environ==0.12.1",
+  "django-extensions==4.1",
+  "django-filter==25.2",
+  "django-guardian==3.2.0",
+  "django-oauth-toolkit==3.1.0",
+  "django-resonant-settings[allauth,celery]==0.48.1",
+  "django-resonant-utils[allauth,s3_storage]==0.16.0",
+  "django-stubs-ext==5.2.7",
   # TODO: pin djangorestframework until we figure out what the cause of
   # https://github.com/dandi/dandi-archive/issues/1896 is.
-  "djangorestframework<3.15.0",
-  "drf-extensions",
-  "drf-yasg",
-  "fsspec[http]",
-  "jsonschema",
-  "more_itertools",
-  "psycopg[binary]",
-  "pyyaml",
-  "requests",
-  "rich",
-  "whitenoise[brotli]",
-  "zarr-checksum",
+  "djangorestframework==3.14.0",
+  "drf-extensions==0.8.0",
+  "drf-yasg==1.21.11",
+  "fsspec[http]==2025.9.0",
+  "jsonschema==4.25.1",
+  "more_itertools==10.8.0",
+  "psycopg[binary]==3.2.10",
+  "pyyaml==6.0.3",
+  "requests==2.32.5",
+  "rich==14.2.0",
+  "whitenoise[brotli]==6.11.0",
+  "zarr-checksum==0.4.7",
   # Production-only
-  "django-s3-file-field[s3]",
-  "django-storages[s3]",
-  "sentry-sdk[celery,django,pure_eval]",
-  "gunicorn",
+  "django-s3-file-field[s3]==1.1.0",
+  "django-storages[s3]==1.14.6",
+  "sentry-sdk[celery,django,pure_eval]==2.41.0",
+  "gunicorn==23.0.0",
   # Development-only, but required
-  "tqdm",
+  "tqdm==4.67.1",
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
 development = [
   # Runtime dependencies, only needed with "development" settings
-  "django-browser-reload",
-  "django-debug-toolbar",
-  "ipython",
-  "watchdog",
-  "werkzeug",
+  "django-browser-reload==1.21.0",
+  "django-debug-toolbar==6.0.0",
+  "ipython==9.6.0",
+  "watchdog==6.0.0",
+  "werkzeug==3.1.3",
 ]
-cli = ["dandi>=0.74.0"]
+cli = ["dandi==0.74.3"]
 
 [dependency-groups]
 dev = [
@@ -68,36 +68,36 @@ dev = [
   # The "dev" dependency group is installed by default,
   # so use this to install "development" extras by default too
   "dandiapi[development]",
-  "pre-commit",
-  "tox",
-  "tox-uv",
+  "pre-commit==4.3.0",
+  "tox==4.31.0",
+  "tox-uv==1.29.0",
 ]
 lint = [
-  "ruff",
+  "ruff==0.14.0",
 ]
 type = [
-  "mypy",
-  "boto3-stubs[s3]",
-  "celery-types",
-  "django-stubs[compatible-mypy]",
-  "djangorestframework-stubs[compatible-mypy]",
+  "mypy==1.18.2",
+  "boto3-stubs[s3]==1.40.51",
+  "celery-types==0.23.0",
+  "django-stubs[compatible-mypy]==5.2.7",
+  "djangorestframework-stubs[compatible-mypy]==3.16.4",
 ]
 test = [
-  "djangorestframework-yaml",
-  "Faker",
-  "factory-boy",
-  "freezegun",
-  "pytest",
-  "pytest-cov",
-  "pytest-django",
-  "pytest-factoryboy",
+  "djangorestframework-yaml==2.0.0",
+  "Faker==37.11.0",
+  "factory-boy==3.3.3",
+  "freezegun==1.5.5",
+  "pytest==8.4.2",
+  "pytest-cov==7.0.0",
+  "pytest-django==4.11.1",
+  "pytest-factoryboy==2.8.1",
   # Enable with "pytest --memray ..."
-  "pytest-memray",
-  "pytest-mock",
+  "pytest-memray==1.8.0",
+  "pytest-mock==3.15.1",
   # Enable with "pytest --random-order ..."
-  "pytest-random-order",
+  "pytest-random-order==1.2.0",
   # Enable with "pytest --count=... ..."
-  "pytest-repeat",
+  "pytest-repeat==0.9.4",
 ]
 
 [tool.hatch.build]
