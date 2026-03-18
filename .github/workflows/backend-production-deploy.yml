@@ -18,7 +18,7 @@ concurrency:
 jobs:
   reset-release-branch:
     name: Update release branch
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
         with:
@@ -33,7 +33,7 @@ jobs:
 
   production-deploy:
     name: Deploy to Heroku
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: reset-release-branch
     steps:
       - uses: actions/checkout@v6
