@@ -1,3 +1,22 @@
+# v0.21.10 (Wed Mar 18 2026)
+
+#### 🐛 Bug Fix
+
+- Add Blog link to AppBar navigation [#2739](https://github.com/dandi/dandi-archive/pull/2739) ([@yarikoptic](https://github.com/yarikoptic))
+- Update dependency @sentry/vue to v10 [#2736](https://github.com/dandi/dandi-archive/pull/2736) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency node to v24 [#2737](https://github.com/dandi/dandi-archive/pull/2737) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Upgrade to Resonant v0.48.1 [#2734](https://github.com/dandi/dandi-archive/pull/2734) ([@brianhelba](https://github.com/brianhelba))
+- Add required pytest marks for test_info tests [#2727](https://github.com/dandi/dandi-archive/pull/2727) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 4
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.21.9 (Wed Mar 11 2026)
 
 #### 🐛 Bug Fix
