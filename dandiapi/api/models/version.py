@@ -224,6 +224,8 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             if self.dandiset.embargoed
             else AccessType.OpenAccess.value,
         }
+        if self.dandiset.embargo_end_date is not None:
+            access[0]['embargoedUntil'] = self.dandiset.embargo_end_date.isoformat()
 
         return access
 
