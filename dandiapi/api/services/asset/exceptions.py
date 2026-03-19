@@ -11,7 +11,7 @@ class DandisetOwnerRequiredError(DandiError):
 
 
 class PublishedDandisetNotModifiableError(DandiError):
-    http_status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    http_status_code = status.HTTP_405_METHOD_NOT_ALLOWED
     message = 'Only draft versions can be modified.'
 
 
