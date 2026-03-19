@@ -486,7 +486,7 @@ def test_nested_asset_ordering_with_authenticated_user(api_client, asset_factory
 
 @pytest.mark.django_db
 def test_nested_asset_ordering_with_embargoed_assets(
-    api_client, asset_factory, embargoed_asset_blob
+    api_client, draft_asset_factory, embargoed_asset_blob
 ):
     """Test that ordering works with embargoed assets."""
     from dandiapi.api.models.dandiset import Dandiset
@@ -498,9 +498,9 @@ def test_nested_asset_ordering_with_embargoed_assets(
     api_client.force_authenticate(user=user)
 
     # Create assets with different paths
-    asset1 = asset_factory(path='a_first.txt', blob=embargoed_asset_blob)
-    asset2 = asset_factory(path='c_last.txt', blob=embargoed_asset_blob)
-    asset3 = asset_factory(path='b_middle.txt', blob=embargoed_asset_blob)
+    asset1 = draft_asset_factory(path='a_first.txt', blob=embargoed_asset_blob)
+    asset2 = draft_asset_factory(path='c_last.txt', blob=embargoed_asset_blob)
+    asset3 = draft_asset_factory(path='b_middle.txt', blob=embargoed_asset_blob)
 
     draft_version.assets.add(asset1)
     draft_version.assets.add(asset2)
@@ -1744,7 +1744,7 @@ def test_asset_download(api_client, version, asset):
 @pytest.mark.django_db
 def test_asset_download_embargo(
     api_client,
-    asset_factory,
+    draft_asset_factory,
     embargoed_asset_blob,
 ):
     user = UserFactory.create()
@@ -1753,7 +1753,7 @@ def test_asset_download_embargo(
         dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED, dandiset__owners=[user]
     )
     # Generate assets and blobs
-    asset = asset_factory(blob=embargoed_asset_blob)
+    asset = draft_asset_factory(blob=embargoed_asset_blob)
     version.assets.add(asset)
 
     response = api_client.get(
