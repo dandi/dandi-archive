@@ -486,7 +486,7 @@ def test_nested_asset_ordering_with_authenticated_user(api_client, asset_factory
 
 @pytest.mark.django_db
 def test_nested_asset_ordering_with_embargoed_assets(
-    api_client, asset_factory, embargoed_asset_blob
+    api_client, draft_asset_factory, embargoed_asset_blob
 ):
     """Test that ordering works with embargoed assets."""
     from dandiapi.api.models.dandiset import Dandiset
@@ -498,9 +498,9 @@ def test_nested_asset_ordering_with_embargoed_assets(
     api_client.force_authenticate(user=user)
 
     # Create assets with different paths
-    asset1 = asset_factory(path='a_first.txt', blob=embargoed_asset_blob)
-    asset2 = asset_factory(path='c_last.txt', blob=embargoed_asset_blob)
-    asset3 = asset_factory(path='b_middle.txt', blob=embargoed_asset_blob)
+    asset1 = draft_asset_factory(path='a_first.txt', blob=embargoed_asset_blob)
+    asset2 = draft_asset_factory(path='c_last.txt', blob=embargoed_asset_blob)
+    asset3 = draft_asset_factory(path='b_middle.txt', blob=embargoed_asset_blob)
 
     draft_version.assets.add(asset1)
     draft_version.assets.add(asset2)
@@ -1744,7 +1744,7 @@ def test_asset_download(api_client, version, asset):
 @pytest.mark.django_db
 def test_asset_download_embargo(
     api_client,
-    asset_factory,
+    draft_asset_factory,
     embargoed_asset_blob,
 ):
     user = UserFactory.create()
@@ -1753,7 +1753,7 @@ def test_asset_download_embargo(
         dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED, dandiset__owners=[user]
     )
     # Generate assets and blobs
-    asset = asset_factory(blob=embargoed_asset_blob)
+    asset = draft_asset_factory(blob=embargoed_asset_blob)
     version.assets.add(asset)
 
     response = api_client.get(
@@ -1840,6 +1840,9 @@ def test_asset_direct_download_head(api_client, version, asset):
 
 @pytest.mark.django_db
 def test_asset_direct_metadata(api_client, asset):
+    draft_version = DraftVersionFactory.create()
+    draft_version.assets.add(asset)
+
     assert (
         json.loads(api_client.get(f'/api/assets/{asset.asset_id}/').content) == asset.full_metadata
     )
@@ -1847,6 +1850,9 @@ def test_asset_direct_metadata(api_client, asset):
 
 @pytest.mark.django_db
 def test_asset_direct_info(api_client, asset):
+    draft_version = DraftVersionFactory.create()
+    draft_version.assets.add(asset)
+
     assert api_client.get(f'/api/assets/{asset.asset_id}/info/').json() == {
         'asset_id': str(asset.asset_id),
         'blob': str(asset.blob.blob_id),
@@ -1857,6 +1863,13 @@ def test_asset_direct_info(api_client, asset):
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
     }
+
+
+@pytest.mark.django_db
+def test_asset_direct_orphaned(api_client, asset):
+    assert api_client.get(f'/api/assets/{asset.asset_id}/').status_code == 404
+    assert api_client.get(f'/api/assets/{asset.asset_id}/info/').status_code == 404
+    assert api_client.get(f'/api/assets/{asset.asset_id}/download/').status_code == 404
 
 
 @pytest.mark.django_db
