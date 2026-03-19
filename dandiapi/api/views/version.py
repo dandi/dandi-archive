@@ -13,6 +13,7 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services import audit
+from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.permissions.dandiset import (
     is_dandiset_owner,
@@ -96,10 +97,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         """Update the metadata of a version."""
         version: Version = self.get_object()
         if version.version != 'draft':
-            return Response(
-                'Only draft versions can be modified.',
-                status=status.HTTP_405_METHOD_NOT_ALLOWED,
-            )
+            raise DraftDandisetNotModifiableError
         if version.dandiset.unembargo_in_progress:
             raise DandisetUnembargoInProgressError
 

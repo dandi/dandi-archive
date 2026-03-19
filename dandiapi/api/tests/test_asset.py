@@ -1197,7 +1197,7 @@ def test_asset_create_published_version(api_client, asset):
             'blob_id': asset.blob.blob_id,
         },
     )
-    assert resp.status_code == 405
+    assert resp.status_code == 422
     assert resp.data == 'Only draft versions can be modified.'
 
 
@@ -1536,7 +1536,7 @@ def test_asset_rest_update_published_version(api_client, asset):
         f'versions/{published_version.version}/assets/{asset.asset_id}/',
         {'metadata': new_metadata},
     )
-    assert resp.status_code == 405
+    assert resp.status_code == 422
     assert resp.data == 'Only draft versions can be modified.'
 
 
@@ -1714,7 +1714,7 @@ def test_asset_rest_delete_published_version(api_client, asset):
         f'/api/dandisets/{published_version.dandiset.identifier}/'
         f'versions/{published_version.version}/assets/{asset.asset_id}/'
     )
-    assert response.status_code == 405
+    assert response.status_code == 422
     assert response.data == 'Only draft versions can be modified.'
 
 

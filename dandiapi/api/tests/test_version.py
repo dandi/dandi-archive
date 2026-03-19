@@ -674,7 +674,7 @@ def test_version_rest_update_published_version(api_client):
         f'/versions/{published_version.version}/',
         {'metadata': new_metadata, 'name': new_name},
     )
-    assert resp.status_code == 405
+    assert resp.status_code == 422
     assert resp.data == 'Only draft versions can be modified.'
 
 
