@@ -10,7 +10,7 @@ class DandisetOwnerRequiredError(DandiError):
     message = 'A dandiset owner is required to perform this action.'
 
 
-class DraftDandisetNotModifiableError(DandiError):
+class PublishedDandisetNotModifiableError(DandiError):
     http_status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     message = 'Only draft versions can be modified.'
 
