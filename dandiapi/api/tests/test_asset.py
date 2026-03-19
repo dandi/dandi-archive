@@ -1840,6 +1840,9 @@ def test_asset_direct_download_head(api_client, version, asset):
 
 @pytest.mark.django_db
 def test_asset_direct_metadata(api_client, asset):
+    draft_version = DraftVersionFactory.create()
+    draft_version.assets.add(asset)
+
     assert (
         json.loads(api_client.get(f'/api/assets/{asset.asset_id}/').content) == asset.full_metadata
     )
@@ -1847,6 +1850,9 @@ def test_asset_direct_metadata(api_client, asset):
 
 @pytest.mark.django_db
 def test_asset_direct_info(api_client, asset):
+    draft_version = DraftVersionFactory.create()
+    draft_version.assets.add(asset)
+
     assert api_client.get(f'/api/assets/{asset.asset_id}/info/').json() == {
         'asset_id': str(asset.asset_id),
         'blob': str(asset.blob.blob_id),
@@ -1857,6 +1863,13 @@ def test_asset_direct_info(api_client, asset):
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
     }
+
+
+@pytest.mark.django_db
+def test_asset_direct_orphaned(api_client, asset):
+    assert api_client.get(f'/api/assets/{asset.asset_id}/').status_code == 404
+    assert api_client.get(f'/api/assets/{asset.asset_id}/info/').status_code == 404
+    assert api_client.get(f'/api/assets/{asset.asset_id}/download/').status_code == 404
 
 
 @pytest.mark.django_db
