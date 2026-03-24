@@ -1,3 +1,15 @@
+# v0.22.0 (Tue Mar 24 2026)
+
+#### 🚀 Enhancement
+
+- Add AI assisted metadata editor button to meditor and Open With menu [#2718](https://github.com/dandi/dandi-archive/pull/2718) ([@satra](https://github.com/satra))
+
+#### Authors: 1
+
+- Satrajit Ghosh ([@satra](https://github.com/satra))
+
+---
+
 # v0.21.11 (Tue Mar 24 2026)
 
 #### 🐛 Bug Fix
