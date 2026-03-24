@@ -156,6 +156,8 @@
                         placeholder="Enter release notes here..."
                         rows="6"
                         variant="outlined"
+                        counter="5000"
+                        maxlength="5000"
                         hint="Optional: Describe the changes, improvements, or fixes in this release"
                         persistent-hint
                       />

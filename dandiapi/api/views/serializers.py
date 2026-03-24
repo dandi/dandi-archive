@@ -150,7 +150,7 @@ class VersionMetadataSerializer(serializers.ModelSerializer):
 
 
 class PublishVersionSerializer(serializers.Serializer):
-    release_notes = serializers.CharField(required=False, allow_blank=True)
+    release_notes = serializers.CharField(required=False, allow_blank=True, max_length=5000)
 
 
 class VersionSerializer(serializers.ModelSerializer):

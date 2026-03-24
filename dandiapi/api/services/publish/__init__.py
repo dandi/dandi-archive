@@ -218,9 +218,8 @@ def publish_dandiset(*, user: User, dandiset: Dandiset, release_notes: str | Non
     with transaction.atomic():
         _lock_dandiset_for_publishing(user=user, dandiset=dandiset)
 
-        if release_notes:
-            Version.objects.filter(dandiset=dandiset, version='draft').update(
-                release_notes=release_notes
-            )
+        Version.objects.filter(dandiset=dandiset, version='draft').update(
+            release_notes=release_notes or ''
+        )
 
         transaction.on_commit(lambda: publish_dandiset_task.delay(dandiset.id, user.id))

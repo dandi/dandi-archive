@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('api', '0029_merge'),
+        ('api', '0030_alter_asset_path'),
     ]
 
     operations = [
@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 default='',
                 help_text='The most recent release notes used for publishing.',
-                max_length=512,
+                max_length=5000,
             ),
         ),
     ]

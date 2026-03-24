@@ -47,7 +47,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     )
     doi = models.CharField(max_length=64, null=True, default=None, blank=True)  # noqa: DJ001
     release_notes = models.CharField(
-        max_length=512,
+        max_length=5000,
         default='',
         blank=True,
         help_text='The most recent release notes used for publishing.',
@@ -197,6 +197,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'datePublished',
             'publishedBy',
             'manifestLocation',
+            'releaseNotes',
         ]
         stripped = {key: metadata[key] for key in metadata if key not in computed_fields}
 
