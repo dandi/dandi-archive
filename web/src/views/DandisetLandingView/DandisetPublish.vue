@@ -105,7 +105,7 @@
                         <v-list-item
                           v-for="(item, i) in PUBLISH_CHECKLIST"
                           :key="`checklist_item_${i}`"
-                          class="text-body-2 my-1 text-wrap"
+                          class="text-body-2 my-1"
                           v-html="`<span>${i+1}. ${item}</span>`"
                         />
                         <!-- eslint-enable vue/no-v-html vue/no-v-text-v-html-on-component -->
@@ -464,3 +464,10 @@ function navigateToPublishedVersion() {
 }
 
 </script>
+
+<style scoped>
+:deep(.v-list-item__content) {
+  white-space: normal;
+  overflow: visible;
+}
+</style>
