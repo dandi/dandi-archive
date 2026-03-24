@@ -95,21 +95,21 @@
                     </v-card-title>
 
                     <v-card-text>
-                      <v-list>
+                      <div>
                         <span class="text-body-1 font-weight-bold">
                           For best results, please check the following
                           items before you publish:
                         </span>
                         <!-- Note: this is safe as we aren't rendering any user-generated input -->
-                        <!-- eslint-disable vue/no-v-html vue/no-v-text-v-html-on-component -->
-                        <v-list-item
+                        <!-- eslint-disable vue/no-v-html -->
+                        <p
                           v-for="(item, i) in PUBLISH_CHECKLIST"
                           :key="`checklist_item_${i}`"
                           class="text-body-2 my-1"
-                          v-html="`<span>${i+1}. ${item}</span>`"
+                          v-html="`${i+1}. ${item}`"
                         />
-                        <!-- eslint-enable vue/no-v-html vue/no-v-text-v-html-on-component -->
-                      </v-list>
+                        <!-- eslint-enable vue/no-v-html -->
+                      </div>
                     </v-card-text>
 
                     <v-divider />
@@ -464,10 +464,3 @@ function navigateToPublishedVersion() {
 }
 
 </script>
-
-<style scoped>
-.v-list-item {
-  white-space: normal !important;
-  overflow: visible !important;
-}
-</style>
