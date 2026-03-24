@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import typing
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -25,7 +26,8 @@ if TYPE_CHECKING:
 
 class DashboardMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.is_superuser
+        user = typing.cast('User', self.request.user)
+        return user.is_staff or user.is_superuser
 
 
 class DashboardView(DashboardMixin, TemplateView):
@@ -125,8 +127,8 @@ def user_approval_view(request: HttpRequest, username: str):
     if not request.user.is_authenticated:
         return HttpResponseRedirect(redirect_to=f'{settings.LOGIN_URL}?next={request.path}')
 
-    # If they are authenticated but are not a superuser, deny access
-    if not request.user.is_superuser:
+    # If they are authenticated but are not a superuser or staff, deny access
+    if not (request.user.is_superuser or request.user.is_staff):
         raise PermissionDenied
 
     user: User = get_object_or_404(User.objects.select_related('metadata'), username=username)
