@@ -89,6 +89,10 @@ class DashboardView(DashboardMixin, TemplateView):
 
 def mailchimp_csv_view(request: HttpRequest) -> StreamingHttpResponse:
     """Generate a Mailchimp-compatible CSV file of all active users."""
+    # If they are authenticated but are not a superuser or staff, deny access
+    if not (request.user.is_superuser or request.user.is_staff):
+        raise PermissionDenied
+
     # Exclude the django-guardian anonymous user account.
     users = User.objects.filter(metadata__status=UserMetadata.Status.APPROVED).exclude(
         username='AnonymousUser'
