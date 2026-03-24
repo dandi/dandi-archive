@@ -466,8 +466,8 @@ function navigateToPublishedVersion() {
 </script>
 
 <style scoped>
-:deep(.v-list-item__content) {
-  white-space: normal;
-  overflow: visible;
+.v-list-item {
+  white-space: normal !important;
+  overflow: visible !important;
 }
 </style>
