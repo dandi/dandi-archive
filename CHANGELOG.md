@@ -1,3 +1,18 @@
+# v0.21.11 (Tue Mar 24 2026)
+
+#### 🐛 Bug Fix
+
+- Update dashboard permissions [#2752](https://github.com/dandi/dandi-archive/pull/2752) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Fix heroku build [#2741](https://github.com/dandi/dandi-archive/pull/2741) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Update dependency ubuntu to v24 [#2738](https://github.com/dandi/dandi-archive/pull/2738) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 2
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.21.10 (Wed Mar 18 2026)
 
 #### 🐛 Bug Fix
