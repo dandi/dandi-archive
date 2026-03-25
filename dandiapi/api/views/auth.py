@@ -205,7 +205,11 @@ def _process_new_registration(
     # Send appropriate emails
     for socialaccount in user.socialaccount_set.all():
         # Send verification email if institutional email was provided
-        if needs_verification and needs_institutional_verification:
+        if (
+            needs_verification
+            and needs_institutional_verification
+            and not github_email_auto_approve
+        ):
             send_verification_email(user, socialaccount)
 
         # Send approved email if they have been auto-approved
