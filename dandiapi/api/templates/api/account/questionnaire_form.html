@@ -17,8 +17,8 @@
 
         <div class="input-field">
           <input id="institutional_email" name="institutional_email" type="email" class="validate">
-          <label class="active" for="institutional_email">Institutional Email (optional, .edu or .gov for automatic verification)</label>
-          <span class="helper-text">Providing a .edu or .gov email will help expedite your registration</span>
+          <label class="active" for="institutional_email">Institutional Email (optional, for automatic verification)</label>
+          <span class="helper-text">Providing an institutional email (e.g. .edu, .gov, .ac.uk) will help expedite your registration</span>
         </div>
         {% for name, value in query_params.items %}
           <input type="hidden" name="{{ name }}" value="{{ value }}">

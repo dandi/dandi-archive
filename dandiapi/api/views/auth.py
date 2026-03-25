@@ -28,6 +28,7 @@ from dandiapi.api.models import UserMetadata
 from dandiapi.api.permissions import AuthenticatedRequest, IsApproved
 
 if TYPE_CHECKING:
+    from django.contrib.auth.models import User
     from django.http import HttpRequest, HttpResponse
 
 
@@ -62,6 +63,23 @@ NEW_USER_QUESTIONS = QUESTIONS
 
 # questions for existing users who have no first/last name
 COLLECT_USER_NAME_QUESTIONS = QUESTIONS[:2]
+
+# Email suffixes that qualify for auto-approval
+AUTO_APPROVE_EMAIL_SUFFIXES = [
+    '.edu',
+    '.gov',
+    '@alleninstitute.org',
+    '@nih.gov',
+    '@janelia.hhmi.org',
+    '@ccf.org',
+    '.ac.uk',
+    '.mcgill.ca',
+]
+
+
+def _has_auto_approve_email(email: str) -> bool:
+    """Check if an email address matches any auto-approve suffix."""
+    return any(email.endswith(suffix) for suffix in AUTO_APPROVE_EMAIL_SUFFIXES)
 
 
 @require_http_methods(['GET'])
@@ -141,50 +159,9 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
             not questionnaire_already_filled_out
             and user_metadata.status == UserMetadata.Status.INCOMPLETE
         ):
-            # Check if user has a GitHub email that should be auto-approved
-            github_email_auto_approve = any(
-                request.user.email.endswith(suffix)
-                for suffix in [
-                    '.edu',
-                    '.gov',
-                    '@alleninstitute.org',
-                    '@nih.gov',
-                    '@janelia.hhmi.org',
-                    '@ccf.org',
-                    '.ac.uk',
-                    '.mcgill.ca',
-                ]
+            _process_new_registration(
+                request.user, user_metadata, needs_verification=needs_verification
             )
-
-            # Check if user provided an institutional email that should be verified
-            has_institutional_email = bool(user_metadata.institutional_email)
-            needs_institutional_verification = has_institutional_email and (
-                user_metadata.institutional_email.endswith('.edu')
-                or user_metadata.institutional_email.endswith('.gov')
-            )
-
-            # Auto-approve users with eligible GitHub emails, otherwise set to pending
-            user_metadata.status = (
-                UserMetadata.Status.APPROVED
-                if github_email_auto_approve
-                else UserMetadata.Status.PENDING
-            )
-
-            user_metadata.save(update_fields=['status'])
-
-            # Send appropriate emails
-            for socialaccount in request.user.socialaccount_set.all():
-                # Send verification email if institutional email was provided
-                if needs_verification and needs_institutional_verification:
-                    send_verification_email(request.user, socialaccount)
-
-                # Send approved email if they have been auto-approved
-                if user_metadata.status == UserMetadata.Status.APPROVED:
-                    send_approved_user_message(request.user, socialaccount)
-                # otherwise, send "awaiting approval" email for regular cases
-                elif not needs_institutional_verification:
-                    send_registered_notice_email(request.user, socialaccount)
-                    send_new_user_message_email(request.user, socialaccount)
 
         # pass on OAuth query string params to auth endpoint
         return HttpResponseRedirect(
@@ -206,3 +183,37 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
             'dandi_web_app_url': settings.DANDI_WEB_APP_URL,
         },
     )
+
+
+def _process_new_registration(
+    user: User, user_metadata: UserMetadata, *, needs_verification: bool
+) -> None:
+    """Handle status assignment and email sending for new user registrations."""
+    github_email_auto_approve = _has_auto_approve_email(user.email)
+
+    # Check if user provided an institutional email that should be verified
+    needs_institutional_verification = bool(
+        user_metadata.institutional_email
+    ) and _has_auto_approve_email(user_metadata.institutional_email)
+
+    # Auto-approve users with eligible GitHub emails, otherwise set to pending
+    user_metadata.status = (
+        UserMetadata.Status.APPROVED
+        if github_email_auto_approve
+        else UserMetadata.Status.PENDING
+    )
+    user_metadata.save(update_fields=['status'])
+
+    # Send appropriate emails
+    for socialaccount in user.socialaccount_set.all():
+        # Send verification email if institutional email was provided
+        if needs_verification and needs_institutional_verification:
+            send_verification_email(user, socialaccount)
+
+        # Send approved email if they have been auto-approved
+        if user_metadata.status == UserMetadata.Status.APPROVED:
+            send_approved_user_message(user, socialaccount)
+        # otherwise, send "awaiting approval" email for regular cases
+        elif not needs_institutional_verification:
+            send_registered_notice_email(user, socialaccount)
+            send_new_user_message_email(user, socialaccount)
