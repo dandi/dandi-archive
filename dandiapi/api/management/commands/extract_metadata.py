@@ -52,7 +52,7 @@ def extract_asset_metadata(asset: Asset, draft_version: Version):
 
     new_metadata = nwb2asset(
         readable_asset, digest=get_asset_digest(asset), schema_version=get_schema_version()
-    ).json_dict()
+    ).model_dump(mode='json', exclude_none=True)
 
     # Use dandiset owner, default to some admin user
     user = (

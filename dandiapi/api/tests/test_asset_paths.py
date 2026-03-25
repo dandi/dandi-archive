@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.conf import settings
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.db.models import Q, QuerySet
 import pytest
 
@@ -18,14 +18,14 @@ from dandiapi.api.models import Asset, AssetPath, Version
 from dandiapi.api.models.asset_paths import AssetPathRelation
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.asset.exceptions import AssetAlreadyExistsError
-from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.tasks import publish_dandiset_task
+from dandiapi.api.tests.factories import DraftVersionFactory, UserFactory
 
 
 @pytest.fixture
-def ingested_asset(draft_version_factory, asset_factory) -> Asset:
+def ingested_asset(asset_factory) -> Asset:
     asset: Asset = asset_factory()
-    version: Version = draft_version_factory()
+    version: Version = DraftVersionFactory.create()
     version.assets.add(asset)
 
     # Add asset to paths
@@ -47,10 +47,10 @@ def test_extract_paths(path, expected):
 
 
 @pytest.mark.django_db
-def test_asset_path_add_asset(draft_version_factory, asset_factory):
+def test_asset_path_add_asset(asset_factory):
     # Create asset with version
     asset: Asset = asset_factory()
-    version: Version = draft_version_factory()
+    version: Version = DraftVersionFactory.create()
     version.assets.add(asset)
 
     # Add asset to paths
@@ -88,10 +88,10 @@ def test_asset_path_add_asset(draft_version_factory, asset_factory):
 
 
 @pytest.mark.django_db
-def test_asset_path_add_asset_idempotent(draft_version_factory, asset_factory):
+def test_asset_path_add_asset_idempotent(asset_factory):
     # Create asset with version
     asset: Asset = asset_factory()
-    version: Version = draft_version_factory()
+    version: Version = DraftVersionFactory.create()
     version.assets.add(asset)
 
     # Add asset to paths
@@ -105,11 +105,11 @@ def test_asset_path_add_asset_idempotent(draft_version_factory, asset_factory):
 
 
 @pytest.mark.django_db
-def test_asset_path_add_asset_conflicting_path(draft_version_factory, asset_factory):
+def test_asset_path_add_asset_conflicting_path(asset_factory):
     # Create asset with version
     asset1: Asset = asset_factory()
     asset2: Asset = asset_factory(path=asset1.path)
-    version: Version = draft_version_factory()
+    version: Version = DraftVersionFactory.create()
     version.assets.add(asset1)
     version.assets.add(asset2)
 
@@ -126,9 +126,9 @@ def test_asset_path_add_asset_conflicting_path(draft_version_factory, asset_fact
 
 
 @pytest.mark.django_db
-def test_asset_path_add_version_asset_paths(draft_version_factory, asset_factory):
+def test_asset_path_add_version_asset_paths(asset_factory):
     # Create asset with version
-    version: Version = draft_version_factory()
+    version: Version = DraftVersionFactory.create()
     version.assets.add(asset_factory(path='foo/bar/baz.txt'))
     version.assets.add(asset_factory(path='foo/bar/baz2.txt'))
     version.assets.add(asset_factory(path='foo/baz/file.txt'))
@@ -160,9 +160,9 @@ def test_asset_path_add_version_asset_paths(draft_version_factory, asset_factory
 
 
 @pytest.mark.django_db
-def test_asset_path_add_version_asset_paths_idempotent(draft_version_factory, asset_factory):
+def test_asset_path_add_version_asset_paths_idempotent(asset_factory):
     # Create asset with version
-    version: Version = draft_version_factory()
+    version: Version = DraftVersionFactory.create()
     version.assets.add(asset_factory(path='foo/bar/baz.txt'))
     version.assets.add(asset_factory(path='foo/bar/baz2.txt'))
     version.assets.add(asset_factory(path='foo/baz/file.txt'))
@@ -178,13 +178,14 @@ def test_asset_path_add_version_asset_paths_idempotent(draft_version_factory, as
     )
     for path in leafpaths:
         assert path.aggregate_files == 1
+        assert path.asset is not None
         assert path.aggregate_size == path.asset.size
 
 
 @pytest.mark.django_db
-def test_asset_path_add_asset_shared_paths(draft_version_factory, asset_factory):
+def test_asset_path_add_asset_shared_paths(asset_factory):
     # Create asset with version
-    version: Version = draft_version_factory()
+    version: Version = DraftVersionFactory.create()
     asset1: Asset = asset_factory(path='foo/bar.txt')
     asset2: Asset = asset_factory(path='foo/baz.txt')
     version.assets.add(asset1)
@@ -196,6 +197,8 @@ def test_asset_path_add_asset_shared_paths(draft_version_factory, asset_factory)
 
     # Get path
     path = AssetPath.objects.get(path='foo', version=version)
+    assert asset1.blob is not None
+    assert asset2.blob is not None
     assert path.aggregate_size == asset1.blob.size + asset2.blob.size
     assert path.aggregate_files == 2
 
@@ -224,9 +227,9 @@ def test_asset_path_delete_asset_idempotent(ingested_asset):
 
 
 @pytest.mark.django_db
-def test_asset_path_update_asset(draft_version_factory, asset_factory):
+def test_asset_path_update_asset(asset_factory):
     # Create asset with version
-    version: Version = draft_version_factory()
+    version: Version = DraftVersionFactory.create()
     old_asset: Asset = asset_factory(path='a/b.txt')
     version.assets.add(old_asset)
     add_asset_paths(old_asset, version)
@@ -252,11 +255,9 @@ def test_asset_path_update_asset(draft_version_factory, asset_factory):
 
 
 @pytest.mark.django_db
-def test_asset_path_delete_asset_shared_paths(
-    draft_version_factory, asset_factory, asset_blob_factory
-):
+def test_asset_path_delete_asset_shared_paths(asset_factory, asset_blob_factory):
     # Create asset with version
-    version: Version = draft_version_factory()
+    version: Version = DraftVersionFactory.create()
     asset1: Asset = asset_factory(path='foo/bar.txt', blob=asset_blob_factory(size=128))
     asset2: Asset = asset_factory(path='foo/baz.txt', blob=asset_blob_factory(size=256))
     version.assets.add(asset1)
@@ -271,13 +272,14 @@ def test_asset_path_delete_asset_shared_paths(
 
     # Get path
     path = AssetPath.objects.get(path='foo', version=version)
+    assert asset2.blob is not None
     assert path.aggregate_size == asset2.blob.size
     assert path.aggregate_files == 1
 
 
 @pytest.mark.django_db
-def test_asset_path_search_asset_paths(draft_version_factory, asset_factory):
-    version: Version = draft_version_factory()
+def test_asset_path_search_asset_paths(asset_factory):
+    version: Version = DraftVersionFactory.create()
     assets = [asset_factory(path=path) for path in ['foo/bar.txt', 'foo/baz.txt', 'bar/foo.txt']]
     for asset in assets:
         version.assets.add(asset)
@@ -287,19 +289,22 @@ def test_asset_path_search_asset_paths(draft_version_factory, asset_factory):
     qs = search_asset_paths('', version)
 
     # Assert that there are two folders
+    assert qs is not None
     assert qs.count() == 2
     assert sorted([x.path for x in qs]) == ['bar', 'foo']
     assert all(x.asset is None for x in qs)
 
     # Search foo, assert there are two files
     qs = search_asset_paths('foo', version)
+    assert qs is not None
     assert qs.count() == 2
     assert all(x.asset is not None for x in qs)
 
 
 @pytest.mark.django_db
-def test_asset_path_publish_version(draft_version_factory, asset_factory, user):
-    version: Version = draft_version_factory()
+def test_asset_path_publish_version(asset_factory):
+    user = UserFactory.create()
+    version: Version = DraftVersionFactory.create()
     asset = asset_factory(path='foo/bar.txt', status=Asset.Status.VALID)
     version.assets.add(asset)
     add_asset_paths(asset, version)
@@ -329,8 +334,8 @@ def test_asset_path_publish_version(draft_version_factory, asset_factory, user):
 
 
 @pytest.mark.django_db
-def test_asset_path_get_root_paths(draft_version_factory, asset_factory):
-    version = draft_version_factory()
+def test_asset_path_get_root_paths(asset_factory):
+    version = DraftVersionFactory.create()
     version.assets.add(asset_factory(path='a'))
     version.assets.add(asset_factory(path='b/c'))
     version.assets.add(asset_factory(path='d'))
@@ -341,15 +346,15 @@ def test_asset_path_get_root_paths(draft_version_factory, asset_factory):
 
 
 @pytest.mark.django_db
-def test_asset_path_get_root_paths_many(draft_version_factory, asset_factory):
-    version = draft_version_factory()
+def test_asset_path_get_root_paths_many(asset_factory):
+    version = DraftVersionFactory.create()
     version.assets.add(asset_factory(path='a'))
     version.assets.add(asset_factory(path='b/c'))
     version.assets.add(asset_factory(path='d'))
     version.assets.add(asset_factory(path='e/f/g'))
     add_version_asset_paths(version)
 
-    version2 = draft_version_factory()
+    version2 = DraftVersionFactory.create()
     version2.assets.add(asset_factory(path='a'))
     version2.assets.add(asset_factory(path='b/c'))
     version2.assets.add(asset_factory(path='d'))
@@ -363,22 +368,22 @@ def test_asset_path_get_root_paths_many(draft_version_factory, asset_factory):
 
 
 @pytest.mark.django_db
-def test_asset_path_ordering(draft_version, asset_blob, user):
+def test_asset_path_ordering(asset_blob):
     # The default collation will ignore special characters, including slashes, on the first pass. If
     # there are ties, it uses these characters to break ties. This means that in the below example,
     # removing the slashes leads to a comparison of 'az' and 'aaz', which would obviously sort the
     # latter before the former ('aaz', then 'az'). However, with the slashes, it's clear that 'a/z'
     # should come before 'aa/z'. This is fixed by changing the collation of the path field, and as
     # such this test serves as a regression test.
-
-    add_dandiset_owner(dandiset=draft_version.dandiset, user=user)
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     add_asset_to_version(
         user=user,
         version=draft_version,
         asset_blob=asset_blob,
         metadata={
             'path': 'a/z',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
     add_asset_to_version(
@@ -387,7 +392,7 @@ def test_asset_path_ordering(draft_version, asset_blob, user):
         asset_blob=asset_blob,
         metadata={
             'path': 'aa/z',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
 

@@ -4,7 +4,6 @@ const TITLE = 'DANDI Archive';
 
 // Function to set the page title based on the directive's binding value
 const setPageTitle = (el: HTMLElement, binding: DirectiveBinding) => {
-  console.log(binding)
   if (binding?.value) {
     document.title = `${binding.value} - ${TITLE}`;
   } else {

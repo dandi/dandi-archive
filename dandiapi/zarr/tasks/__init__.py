@@ -9,7 +9,6 @@ from zarr_checksum.generators import S3ClientOptions, yield_files_s3
 
 from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
 from dandiapi.api.models.version import Version
-from dandiapi.api.storage import get_storage_params
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
@@ -32,20 +31,22 @@ def ingest_zarr_archive(zarr_id: str, *, force: bool = False):
     # Instantiate updater and add files as they come in.
     # Compute the checksum before starting the transaction to avoid long lived locks.
     logger.info('Computing checksum for zarr %s...', zarr.zarr_id)
-    storage_params = get_storage_params(zarr.storage)
     checksum = compute_zarr_checksum(
         yield_files_s3(
             bucket=zarr.storage.bucket_name,
             prefix=zarr.s3_path(''),
             client_options=S3ClientOptions(
-                endpoint_url=storage_params['endpoint_url'],
-                aws_access_key_id=storage_params['access_key'],
-                aws_secret_access_key=storage_params['secret_key'],
-                region_name='us-east-1',
+                region_name=zarr.storage.region_name,
+                use_ssl=zarr.storage.use_ssl,
+                verify=zarr.storage.verify,
+                endpoint_url=zarr.storage.endpoint_url,
+                aws_access_key_id=zarr.storage.access_key,
+                aws_secret_access_key=zarr.storage.secret_key,
+                aws_session_token=zarr.storage.security_token,
+                config=zarr.storage.client_config,
             ),
         )
     )
-
     # Zarr is in correct state, lock until ingestion finishes
     with transaction.atomic():
         zarr = (

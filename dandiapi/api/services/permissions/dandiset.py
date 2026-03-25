@@ -20,7 +20,7 @@ if typing.TYPE_CHECKING:
 
 
 def get_dandiset_owners(dandiset: Dandiset) -> QuerySet[User]:
-    qs = typing.cast(QuerySet[User], get_users_with_perms(dandiset, only_with_perms_in=['owner']))
+    qs = typing.cast('QuerySet[User]', get_users_with_perms(dandiset, only_with_perms_in=['owner']))
     return qs.order_by('date_joined')
 
 
@@ -53,7 +53,7 @@ def is_dandiset_owner(dandiset: Dandiset, user: AbstractBaseUser | AnonymousUser
     if isinstance(user, AnonymousUser):
         return False
 
-    user = typing.cast(User, user)
+    user = typing.cast('User', user)
     return user.has_perm('owner', dandiset)
 
 
@@ -62,7 +62,7 @@ def is_owned_asset(asset: Asset, user: AbstractBaseUser | AnonymousUser) -> bool
     if user.is_anonymous:
         return False
 
-    user = typing.cast(User, user)
+    user = typing.cast('User', user)
     asset_dandisets = Dandiset.objects.filter(versions__in=asset.versions.all())
     asset_dandisets_owned_by_user = DandisetUserObjectPermission.objects.filter(
         content_object__in=asset_dandisets,

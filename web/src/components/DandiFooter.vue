@@ -1,21 +1,21 @@
 <template>
-  <v-footer class="text-body-2">
+  <v-footer class="text-body-2 border-t">
     <v-container>
       <CookieBanner />
       <v-row>
         <v-col offset="2">
-          &copy; 2019 - 2025 The DANDI Team<br>
+          &copy; 2019 - {{ currentYear }} The DANDI Team<br>
           <a
             target="_blank"
             rel="noopener"
-            href="https://docs.dandiarchive.org/about/terms/"
+            :href="`${dandiDocumentationUrl}/terms-policies/terms/`"
           >Terms</a>
           <v-icon size="x-small">
             mdi-open-in-new
           </v-icon> / <a
             target="_blank"
             rel="noopener"
-            href="https://docs.dandiarchive.org/about/policies/"
+            :href="`${dandiDocumentationUrl}/terms-policies/policies/`"
           >Policies</a>
           <v-icon size="x-small">
             mdi-open-in-new
@@ -99,9 +99,11 @@
 
 <script setup lang="ts">
 import CookieBanner from './CookieBanner.vue';
+import { dandiDocumentationUrl } from '@/utils/constants';
 
 const version = import.meta.env.VITE_APP_VERSION;
 const githubLink = import.meta.env.VITE_APP_GIT_REVISION ? `https://github.com/dandi/dandi-archive/commit/${import.meta.env.VITE_APP_GIT_REVISION}` : 'https://github.com/dandi/dandi-archive';
+const currentYear = new Date().getFullYear();
 </script>
 
 <style scoped>

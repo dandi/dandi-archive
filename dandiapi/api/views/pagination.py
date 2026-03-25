@@ -95,6 +95,8 @@ class LazyPagination(PageNumberPagination):
 
     def get_paginated_response(self, data) -> Response:
         """Overridden to only include the count of the queryset on the first page."""
+        if self.page is None:
+            raise RuntimeError('Paginator is uninitialized.')
         page_dict = OrderedDict(
             [
                 ('count', self.page.paginator.count if self.page.number == 1 else None),

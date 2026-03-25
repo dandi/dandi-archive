@@ -4,6 +4,7 @@ import pytest
 
 from dandiapi.api.models import Dandiset
 from dandiapi.api.services.embargo import AssetBlobEmbargoedError, remove_asset_blob_embargoed_tag
+from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
 
 
 @pytest.fixture(
@@ -64,17 +65,15 @@ EMPTY_PAGINATION = {
 @pytest.mark.django_db
 def test_embargo_visibility(
     api_client,
-    user,
-    dandiset_factory,
-    draft_version_factory,
     draft_asset_factory,
     embargoed_asset_blob,
     embargo_status,
     method,
     url_format,
 ):
-    dandiset = dandiset_factory(embargo_status=embargo_status)
-    version = draft_version_factory(dandiset=dandiset)
+    user = UserFactory.create()
+    dandiset = DandisetFactory.create(embargo_status=embargo_status)
+    version = DraftVersionFactory.create(dandiset=dandiset)
     asset = draft_asset_factory(blob=embargoed_asset_blob)
     version.assets.add(asset)
 

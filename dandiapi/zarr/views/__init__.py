@@ -18,7 +18,6 @@ from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services import audit
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
-from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
@@ -231,21 +230,14 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         raw_after = serializer.validated_data['after'].lstrip('/')
         after = (base_path + raw_after).rstrip('/') if raw_after else ''
 
-        # Handle head request redirects
+        # Note: S3 will 404 if the file does not exist.
         if request.method == 'HEAD':
-            # We cannot use storage.url because that presigns a GET request.
-            # Instead, we need to presign the HEAD request using the storage-appropriate client.
-            url = zarr_archive.storage.generate_presigned_head_object_url(full_prefix)
-            return HttpResponseRedirect(url)
-
-        # Return a redirect to the file, if requested
-        # S3 will 404 if the file does not exist.
+            return HttpResponseRedirect(zarr_archive.storage.url(full_prefix, http_method='HEAD'))
         if download:
             return HttpResponseRedirect(zarr_archive.storage.url(zarr_archive.s3_path(raw_prefix)))
 
         # Retrieve file listing
-        client = get_boto_client()
-        listing = client.list_objects_v2(
+        listing = zarr_archive.storage.s3_client.list_objects_v2(
             Bucket=zarr_archive.storage.bucket_name,
             Prefix=full_prefix,
             StartAfter=after,
@@ -307,7 +299,14 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
             # Generate presigned urls
             logger.info('Beginning upload to zarr archive %s', zarr_archive.zarr_id)
-            urls = zarr_archive.generate_upload_urls(paths)
+            urls = [
+                zarr_archive.storage.generate_presigned_put_object_url(
+                    zarr_archive.s3_path(o['path']),
+                    content_md5=o['base64md5'],
+                    tags={'embargoed': 'true'} if zarr_archive.embargoed else None,
+                )
+                for o in paths
+            ]
 
             # Set status back to pending, since with these URLs the zarr could have been changed
             zarr_archive.mark_pending()

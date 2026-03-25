@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import datetime
 import logging
+from typing import TypedDict
 
+from dandischema.conf import get_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
@@ -17,6 +19,12 @@ from dandiapi.api.models.metadata import PublishableMetadataMixin
 from .dandiset import Dandiset
 
 logger = logging.getLogger(__name__)
+
+
+class VersionAssetValidationError(TypedDict):
+    field: str
+    message: str
+    path: str
 
 
 class Version(PublishableMetadataMixin, TimeStampedModel):
@@ -52,7 +60,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         constraints = [
             models.CheckConstraint(
                 name='version_metadata_has_schema_version',
-                check=Q(metadata__schemaVersion__isnull=False),
+                condition=Q(metadata__schemaVersion__isnull=False),
             )
         ]
         indexes = [
@@ -87,36 +95,49 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         return not self.assets.exclude(status=Asset.Status.VALID).exists()
 
     @property
-    def asset_validation_errors(self) -> list[dict[str, str]]:
+    def asset_validation_errors(self) -> list[VersionAssetValidationError]:
         # Import here to avoid dependency cycle
         from .asset import Asset
 
-        # Get assets that are not VALID (could be pending, validating, or invalid)
-        invalid_assets: models.QuerySet[Asset] = self.assets.exclude(
-            status=Asset.Status.VALID
-        ).values('status', 'path', 'validation_errors')
+        # We want to display "Pending" assets in the validation errors list,
+        # despite them not being stored explicitly as errors in the database.
+        # Grab a random sample of 50 pending or currently validating assets
+        # and place them first in the list.
+        pending_assets: models.QuerySet[Asset] = (
+            self.assets.filter(status__in=[Asset.Status.PENDING, Asset.Status.VALIDATING])
+            .annotate(
+                field=models.Value(''),
+                message=models.Value('asset is currently being validated, please wait.'),
+            )
+            .values('field', 'message', 'path')[:50]
+        )
 
-        asset_validating_error = {
-            'field': '',
-            'message': 'asset is currently being validated, please wait.',
-        }
+        # Next, get all INVALID assets. Each of these should have one or more
+        # validation errors stored in the database.
+        # For performance reasons, we truncate the list of INVALID assets such
+        # that we only display errors for the 50 assets with the most errors.
+        invalid_assets: models.QuerySet[Asset] = (
+            self.assets.filter(status=Asset.Status.INVALID)
+            .alias(
+                validation_error_count=models.Func(
+                    'validation_errors',
+                    function='jsonb_array_length',
+                    output_field=models.IntegerField(),
+                )
+            )
+            .order_by('-validation_error_count')
+            .values('path', 'validation_errors')
+        )[:50]
 
-        def inject_path(asset: dict, err: dict):
-            return {**err, 'path': asset['path']}
-
-        # Aggregate errors, ensuring the path of the asset is included
-        errors = []
-        for asset in invalid_assets:
-            # Must be pending or validating
-            if asset['status'] != Asset.Status.INVALID:
-                errors.append(inject_path(asset, asset_validating_error))
-                continue
-
-            # Must be invalid, only add entry in map if it has any errors
-            if asset['validation_errors']:
-                errors.extend([inject_path(asset, err) for err in asset['validation_errors']])
-
-        return errors
+        return list(pending_assets) + [
+            {
+                'field': error['field'],
+                'message': error['message'],
+                'path': asset['path'],
+            }
+            for asset in invalid_assets
+            for error in asset['validation_errors']
+        ]
 
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:
@@ -209,6 +230,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     def _populate_metadata(self):
         from dandiapi.api.manifests import manifest_location
 
+        schema_config = get_instance_config()
         metadata = {
             **self.metadata,
             '@context': (
@@ -217,13 +239,12 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             ),
             'manifestLocation': manifest_location(self),
             'name': self.name,
-            'identifier': f'DANDI:{self.dandiset.identifier}',
+            'identifier': (f'{schema_config.instance_name}:{self.dandiset.identifier}'),
             'version': self.version,
-            'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
+            'id': (f'{schema_config.instance_name}:{self.dandiset.identifier}/{self.version}'),
             'repository': settings.DANDI_WEB_APP_URL,
             'url': (
-                f'{settings.DANDI_WEB_APP_URL}/dandiset/'
-                f'{self.dandiset.identifier}/{self.version}'
+                f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}'
             ),
             'dateCreated': self.dandiset.created.isoformat(),
             'access': self._populate_access_metadata(),

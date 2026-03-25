@@ -3,6 +3,8 @@ from __future__ import annotations
 import pytest
 from rest_framework.permissions import SAFE_METHODS
 
+from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
+
 
 @pytest.mark.parametrize(
     ('method', 'url_format', 'owner_required'),
@@ -70,17 +72,15 @@ from rest_framework.permissions import SAFE_METHODS
 @pytest.mark.django_db
 def test_approved_or_readonly(
     api_client,
-    user,
-    dandiset_factory,
-    draft_version_factory,
     draft_asset_factory,
     zarr_archive_factory,
     method,
     url_format,
     owner_required,
 ):
-    dandiset = dandiset_factory()
-    version = draft_version_factory(dandiset=dandiset)
+    user = UserFactory.create()
+    dandiset = DandisetFactory.create()
+    version = DraftVersionFactory.create(dandiset=dandiset)
     zarr = zarr_archive_factory(dandiset=dandiset)
     asset = draft_asset_factory()
     version.assets.add(asset)
@@ -106,9 +106,7 @@ def test_approved_or_readonly(
     # denied after reading the request body
     if url == '/api/zarr/' and method == 'post':
         response = getattr(api_client, method)(
-            url,
-            data={'name': 'test', 'dandiset': dandiset.identifier},
-            format='json',
+            url, data={'name': 'test', 'dandiset': dandiset.identifier}
         )
     else:
         response = getattr(api_client, method)(url)

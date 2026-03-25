@@ -6,6 +6,7 @@ import RefParser from '@apidevtools/json-schema-ref-parser';
 import { dandiRest, user } from '@/rest';
 import type { User, Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
+import { fixSchema } from '@/utils/schema';
 
 
 function isUnauthenticatedOrForbidden(err: unknown) {
@@ -32,6 +33,8 @@ export const useDandisetStore = defineStore('dandiset', {
   }),
   getters: {
     version: (state) => (state.dandiset ? state.dandiset.version : draftVersion),
+    draftVersion: (state) => state.versions?.find((v) => v.version === draftVersion),
+    publishedVersions: (state) => state.versions?.filter((v) => v.version !== draftVersion),
     schemaVersion: (state) => state.schema?.properties.schemaVersion.default,
     userCanModifyDandiset: (state) => {
       // published versions are never editable, and logged out users can never edit a dandiset
@@ -116,13 +119,7 @@ export const useDandisetStore = defineStore('dandiset', {
 
       const schema = await RefParser.dereference(res.data);
 
-      // TODO: Fix this upstream in the schema
-      // @ts-expect-error TS7053
-      schema['properties']['identifier']['pattern'] = '^DANDI:\\d{6}$'
-      // @ts-expect-error TS7053
-      schema['$defs']['Project']['properties']['wasAssociatedWith']['items']['oneOf'][2]['properties']['identifier']['pattern'] = '^RRID:.*'
-
-      this.schema = schema;
+      this.schema = fixSchema(schema);
     },
     async fetchOwners(identifier: string) {
       const { data } = await dandiRest.owners(identifier);

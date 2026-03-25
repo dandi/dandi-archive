@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='assetpath',
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     ('path__endswith', '/'),
                     ('path__startswith', '/'),
                     _connector='OR',

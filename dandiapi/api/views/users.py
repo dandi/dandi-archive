@@ -8,13 +8,14 @@ from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.db.models import OuterRef, Q, Subquery
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import serializers
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from dandiapi.api.models import UserMetadata
-from dandiapi.api.permissions import IsApproved
+from dandiapi.api.permissions import AuthenticatedRequest, IsAdminUser, IsApproved
 from dandiapi.api.views.serializers import UserDetailSerializer, UserSerializer
 
 if TYPE_CHECKING:
@@ -88,7 +89,7 @@ def serialize_user(user: User):
 @api_view(['GET'])
 @parser_classes([JSONParser])
 @permission_classes([IsAuthenticated])
-def users_me_view(request: Request) -> HttpResponseBase:
+def users_me_view(request: AuthenticatedRequest) -> HttpResponseBase:
     """Get the currently authenticated user."""
     if request.user.socialaccount_set.count() == 1:
         social_account = request.user.socialaccount_set.get()
@@ -107,7 +108,7 @@ def users_me_view(request: Request) -> HttpResponseBase:
 @api_view(['GET'])
 @parser_classes([JSONParser])
 @permission_classes([IsApproved])
-def users_search_view(request: Request) -> HttpResponseBase:
+def users_search_view(request: AuthenticatedRequest) -> HttpResponseBase:
     """Search for a user."""
     request_serializer = UserSerializer(data=request.query_params)
 
@@ -144,3 +145,35 @@ def users_search_view(request: Request) -> HttpResponseBase:
     users = [serialize_user(user) for user in qs]
     response_serializer = UserDetailSerializer(users, many=True)
     return Response(response_serializer.data)
+
+
+class UserListQuerySerializer(serializers.Serializer):
+    approved_only = serializers.BooleanField(default=False)
+
+
+@swagger_auto_schema(
+    methods=['GET'],
+    responses={
+        200: 'A list of current users',
+        403: 'Only admins can access this endpoint',
+    },
+    query_serializer=UserListQuerySerializer,
+)
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def users_list_view(request: Request) -> Response:
+    """Get a list of currently registered users."""
+    queryset = (
+        User.objects.all()
+        .filter(socialaccount__extra_data__login__isnull=False)
+        .values_list('socialaccount__extra_data__login', flat=True)
+        .order_by('socialaccount__extra_data__login')
+    )
+
+    query_serializer = UserListQuerySerializer(data=request.query_params)
+    query_serializer.is_valid(raise_exception=True)
+
+    if query_serializer.validated_data['approved_only']:
+        queryset = queryset.filter(metadata__status=UserMetadata.Status.APPROVED)
+
+    return Response(queryset)

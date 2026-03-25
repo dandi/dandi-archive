@@ -6,20 +6,27 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
 import uuid
 
+from dandischema.digests.dandietag import DandiETag
 from dandischema.models import AccessType
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import Q
+from django.db.models import CharField, DateField, Min, Q
+from django.db.models.functions import Cast
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.metadata import PublishableMetadataMixin
-from dandiapi.api.storage import get_storage, get_storage_prefix
 
 from .version import Version
+
+
+class EmbargoedAssetWithinOpenDandisetError(Exception):
+    """Raised when an embargoed asset exists in an open dandiset."""
+
 
 ASSET_CHARS_REGEX = r'[A-z0-9(),&\s#+~_=-]'
 ASSET_PATH_REGEX = rf'^({ASSET_CHARS_REGEX}?\/?\.?{ASSET_CHARS_REGEX})+$'
@@ -34,6 +41,13 @@ ASSET_COMPUTED_FIELDS = [
     'datePublished',
     'publishedBy',
 ]
+
+
+class AssetStatus(models.TextChoices):
+    PENDING = 'Pending'
+    VALIDATING = 'Validating'
+    VALID = 'Valid'
+    INVALID = 'Invalid'
 
 
 def validate_asset_path(path: str):
@@ -51,10 +65,10 @@ if TYPE_CHECKING:
 
 class AssetBlob(TimeStampedModel):
     SHA256_REGEX = r'[0-9a-f]{64}'
-    ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
+    ETAG_REGEX = DandiETag.REGEX
 
     embargoed = models.BooleanField(default=False)
-    blob = models.FileField(blank=True, storage=get_storage, upload_to=get_storage_prefix)
+    blob = models.FileField(blank=True)
     blob_id = models.UUIDField(unique=True)
     sha256 = models.CharField(  # noqa: DJ001
         null=True,
@@ -63,18 +77,13 @@ class AssetBlob(TimeStampedModel):
         max_length=64,
         validators=[RegexValidator(f'^{SHA256_REGEX}$')],
     )
-    etag = models.CharField(max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')])
+    etag = models.CharField(
+        unique=True, max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')]
+    )
     size = models.PositiveBigIntegerField()
-    download_count = models.PositiveBigIntegerField(default=0)
 
     class Meta:
         indexes = [HashIndex(fields=['etag'])]
-        constraints = [
-            models.UniqueConstraint(
-                name='unique-etag-size',
-                fields=['etag', 'size'],
-            )
-        ]
 
     @property
     def references(self) -> int:
@@ -101,14 +110,10 @@ class AssetBlob(TimeStampedModel):
 class Asset(PublishableMetadataMixin, TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
-    class Status(models.TextChoices):
-        PENDING = 'Pending'
-        VALIDATING = 'Validating'
-        VALID = 'Valid'
-        INVALID = 'Invalid'
-
     asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
-    path = models.CharField(max_length=512, validators=[validate_asset_path], db_collation='C')
+    path = models.CharField(
+        max_length=512, validators=[validate_asset_path], db_collation='C', db_index=True
+    )
     blob = models.ForeignKey(
         AssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
     )
@@ -119,35 +124,49 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     versions = models.ManyToManyField(Version, related_name='assets')
     status = models.CharField(
         max_length=10,
-        default=Status.PENDING,
-        choices=Status.choices,
+        default=AssetStatus.PENDING,
+        choices=AssetStatus,
     )
     validation_errors = models.JSONField(default=list, blank=True, null=True)
     published = models.BooleanField(default=False)
 
+    # Let other code still refer to statuses via Asset.Status
+    Status = AssetStatus
+
     class Meta:
         ordering = ['created']
+        indexes = [
+            # Other statuses are likely too common to index, but pending assets are continually
+            # polled and being moved through the pipeline.
+            models.Index(
+                fields=['status'],
+                name='%(app_label)s_%(class)s_status_pending',
+                condition=Q(status=AssetStatus.PENDING),
+            ),
+        ]
         constraints = [
             models.CheckConstraint(
                 name='blob-xor-zarr',
-                check=(
+                condition=(
                     Q(blob__isnull=True, zarr__isnull=False)
                     | Q(blob__isnull=False, zarr__isnull=True)
                 ),
             ),
             models.CheckConstraint(
                 name='asset_metadata_has_schema_version',
-                check=Q(metadata__schemaVersion__isnull=False),
+                condition=Q(metadata__schemaVersion__isnull=False),
             ),
-            models.CheckConstraint(name='asset_path_regex', check=Q(path__regex=ASSET_PATH_REGEX)),
             models.CheckConstraint(
-                name='asset_path_no_leading_slash', check=~Q(path__startswith='/')
+                name='asset_path_regex', condition=Q(path__regex=ASSET_PATH_REGEX)
+            ),
+            models.CheckConstraint(
+                name='asset_path_no_leading_slash', condition=~Q(path__startswith='/')
             ),
             # Ensure that if the asset is published, its metadata must contain the computed fields
             # Otherwise, ensure its metadata contains none of the computed fields
             models.CheckConstraint(
                 name='asset_metadata_no_computed_keys_or_published',
-                check=(
+                condition=(
                     (Q(published=False) & ~Q(metadata__has_any_keys=ASSET_COMPUTED_FIELDS))
                     | (Q(published=True) & Q(metadata__has_keys=ASSET_COMPUTED_FIELDS))
                 ),
@@ -155,44 +174,42 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         ]
 
     @property
-    def is_blob(self):
-        return self.blob is not None
-
-    @property
-    def is_zarr(self):
-        return self.zarr is not None
-
-    @property
     def is_embargoed(self) -> bool:
         if self.blob is not None:
             return self.blob.embargoed
-
-        return self.zarr.embargoed  # type: ignore  # noqa: PGH003
+        if self.zarr is not None:
+            return self.zarr.embargoed
+        raise RuntimeError('Asset must have a blob or zarr archive')
 
     @property
     def size(self):
-        if self.is_blob:
+        if self.blob is not None:
             return self.blob.size
-
-        return self.zarr.size
+        if self.zarr is not None:
+            return self.zarr.size
+        raise RuntimeError('Asset must have a blob or zarr archive')
 
     @property
     def sha256(self):
-        if self.is_blob:
+        if self.blob is not None:
             return self.blob.sha256
         raise RuntimeError('Zarr does not support SHA256')
 
     @property
     def digest(self) -> dict[str, str]:
-        if self.is_blob:
+        if self.blob is not None:
             return self.blob.digest
-        return self.zarr.digest
+        if self.zarr is not None:
+            return self.zarr.digest
+        raise RuntimeError('Asset must have a blob or zarr archive')
 
     @property
     def s3_url(self) -> str:
-        if self.is_blob:
+        if self.blob is not None:
             return self.blob.s3_url
-        return self.zarr.s3_url
+        if self.zarr is not None:
+            return self.zarr.s3_url
+        raise RuntimeError('Asset must have a blob or zarr archive')
 
     def is_different_from(
         self,
@@ -226,23 +243,72 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     def dandi_asset_id(asset_id: str | uuid.UUID):
         return f'dandiasset:{asset_id}'
 
+    def access_metadata(self):
+        # Default to open access
+        embargoed = self.is_embargoed
+        access = {
+            'schemaKey': 'AccessRequirements',
+            'status': AccessType.EmbargoedAccess.value
+            if embargoed
+            else AccessType.OpenAccess.value,
+        }
+
+        # Nothing else to do if not embargoed
+        if not embargoed:
+            return access
+
+        # For zarr assets, is_embargoed is based on the dandiset directly, and a zarr can
+        # only be associated with one dandiset, so we know this dandiset is embargoed
+        if self.zarr is not None:
+            draft_version = self.zarr.dandiset.draft_version
+
+            # EmbargoedUntil isn't guaranteed to be set
+            embargo_end_date: str | None = draft_version.metadata['access'][0].get('embargoedUntil')
+            if embargo_end_date is not None:
+                access['embargoedUntil'] = embargo_end_date
+
+            return access
+
+        # In the blob case, we need to consider all dandisets this blob might be associated with,
+        # and take the minimum embargo end date
+
+        # This blob should only be associated with embargoed dandisets
+        open_dandisets = self.blob.assets.filter(
+            versions__dandiset__embargo_status=Dandiset.EmbargoStatus.OPEN
+        )
+        if open_dandisets.exists():
+            raise EmbargoedAssetWithinOpenDandisetError(
+                'Embargoed asset contained within OPEN dandiset'
+            )
+
+        # Retrieve the minimum embargo end date, across all dandisets
+        embargo_end_date: datetime.date | None = (
+            self.blob.assets.filter(versions__isnull=False)
+            .annotate(
+                embargo_end_date=Cast(
+                    Cast('versions__metadata__access__0__embargoedUntil', output_field=CharField()),
+                    output_field=DateField(),
+                )
+            )
+            .aggregate(min_embargo_end_date=Min('embargo_end_date'))['min_embargo_end_date']
+        )
+
+        if embargo_end_date is not None:
+            access['embargoedUntil'] = embargo_end_date.isoformat()
+
+        return access
+
     @property
     def full_metadata(self):
         download_url = settings.DANDI_API_URL + reverse(
             'asset-download',
             kwargs={'asset_id': str(self.asset_id)},
         )
+
         metadata = {
             **self.metadata,
             'id': self.dandi_asset_id(self.asset_id),
-            'access': [
-                {
-                    'schemaKey': 'AccessRequirements',
-                    'status': AccessType.EmbargoedAccess.value
-                    if self.is_embargoed
-                    else AccessType.OpenAccess.value,
-                }
-            ],
+            'access': [self.access_metadata()],
             'path': self.path,
             'identifier': str(self.asset_id),
             'contentUrl': [download_url, self.s3_url],
@@ -254,7 +320,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'https://raw.githubusercontent.com/dandi/schema/master/releases/'
             f'{schema_version}/context.json'
         )
-        if self.is_zarr:
+        if self.zarr is not None:
             metadata['encodingFormat'] = 'application/x-zarr'
         return metadata
 

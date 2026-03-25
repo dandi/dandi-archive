@@ -1,17 +1,14 @@
 <template>
   <v-card
+    :prepend-icon="icon"
     variant="outlined"
     height="100%"
   >
-    <v-card-title
-      :id="name"
-      class="font-weight-regular"
+    <template
+      #title
     >
-      <v-icon class="mr-3 text-grey-lighten-1">
-        {{ icon }}
-      </v-icon>
-      {{ name }}
-    </v-card-title>
+      <span>{{ name }}</span>
+    </template>
     <v-list
       v-if="items && items.length"
       :style="`column-count: ${columnCount};`"
@@ -61,7 +58,7 @@
     </v-list>
     <v-sheet
       v-else
-      class="ma-5"
+      class="mx-5 mt-1 mb-4 pa-0"
     >
       <!-- Optional alternate component that will be used as a fallback if `items` is empty -->
       <slot name="emptyFallback" />

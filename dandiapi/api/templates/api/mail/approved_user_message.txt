@@ -1,14 +1,12 @@
 {% autoescape off %}
 Dear {{ greeting_name }},
 
-Your DANDI account has been approved. You can go to {{ dandi_web_app_url }} and login with your GitHub account
-to start creating dandisets and uploading data.
+Your DANDI account has been approved. You can go to {{ dandi_web_app_url }} and login with your GitHub account to start creating dandisets and uploading data.
 
 Please use the following links to post any questions or issues.
 
 DANDI Docs: https://docs.dandiarchive.org
-Discussions: https://github.com/dandi/helpdesk/discussions
-Issues: https://github.com/dandi/helpdesk/issues/new/choose
+Support: https://docs.dandiarchive.org/support/
 YouTube: https://www.youtube.com/@dandiarchive
 (please Subscribe)
 

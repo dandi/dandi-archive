@@ -12,6 +12,7 @@ from django.db.models.aggregates import Count
 from django.db.models.query import Prefetch, QuerySet
 from django.forms.models import BaseInlineFormSet
 from django.http.response import HttpResponse
+from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
 from django.utils.html import format_html
 from guardian.admin import GuardedModelAdmin
@@ -27,6 +28,7 @@ from dandiapi.api.models import (
     UserMetadata,
     Version,
 )
+from dandiapi.api.models.stats import ApplicationStats
 from dandiapi.api.views.users import social_account_to_dict
 from dandiapi.zarr.tasks import ingest_dandiset_zarrs
 
@@ -54,7 +56,7 @@ class UserAdmin(BaseUserAdmin):
         UserMetadataInline,
         SocialAccountInline,
     )
-    actions = ['export_emails_to_plaintext']
+    actions = ['export_emails_to_plaintext', 'export_github_usernames_to_plaintext']
     list_filter = ['metadata__status', 'is_staff', 'is_superuser', 'is_active']
 
     def get_queryset(self, request):
@@ -72,6 +74,18 @@ class UserAdmin(BaseUserAdmin):
         writer = csv.writer(response)
         emails = [obj.email for obj in queryset]
         writer.writerow(emails)
+        return response
+
+    @admin.action(description="Export selected users' GitHub usernames")
+    def export_github_usernames_to_plaintext(self, request, queryset: QuerySet[User]):
+        response = HttpResponse(content_type='text/plain')
+        writer = csv.writer(response)
+        github_usernames = (
+            SocialAccount.objects.filter(user__in=queryset)
+            .values_list('extra_data__login', flat=True)
+            .order_by('extra_data__login')
+        )
+        writer.writerow(github_usernames)
         return response
 
     @admin.display(ordering='metadata__status')
@@ -282,3 +296,22 @@ class DandisetStarAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'dandiset__id')
     raw_id_fields = ('user', 'dandiset')
     date_hierarchy = 'created'
+
+
+@admin.register(ApplicationStats)
+class ApplicationStatsAdmin(admin.ModelAdmin):
+    list_display = (
+        'timestamp',
+        'id',
+        'dandiset_count',
+        'published_dandiset_count',
+        'user_count',
+        'get_size',
+    )
+    list_filter = ('timestamp',)
+    date_hierarchy = 'timestamp'
+    actions = ['compute_stats']
+
+    @admin.display(description='Size', ordering='size')
+    def get_size(self, obj: ApplicationStats):
+        return filesizeformat(obj.size)

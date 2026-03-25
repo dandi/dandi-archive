@@ -5,10 +5,12 @@ import pytest
 from dandiapi.api.management.commands.create_dev_dandiset import create_dev_dandiset
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.services.permissions.dandiset import get_dandiset_owners
+from dandiapi.api.tests.factories import UserFactory
 
 
 @pytest.mark.django_db
-def test_create_dev_dandiset(user):
+def test_create_dev_dandiset():
+    user = UserFactory.create()
     create_dev_dandiset('--name', 'My Test Dandiset', '--owner', user.email)
 
     assert Dandiset.objects.count() == 1
@@ -27,4 +29,5 @@ def test_create_dev_dandiset(user):
 
     assert AssetBlob.objects.count() == 1
     asset_blob = AssetBlob.objects.get()
-    assert AssetBlob.blob.field.storage.exists(asset_blob.blob.name)
+    with asset_blob.blob.open() as asset_blob_stream:
+        assert asset_blob_stream.read() == b'A' * 20

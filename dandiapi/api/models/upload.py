@@ -2,25 +2,25 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from django.conf import settings
+from dandischema.digests.dandietag import DandiETag
 from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import CreationDateTimeField
 
-from dandiapi.api.storage import get_storage, get_storage_prefix
+from dandiapi.api.multipart import DandiS3MultipartManager
 
 from .asset import AssetBlob
 from .dandiset import Dandiset
 
 
 class Upload(models.Model):  # noqa: DJ008
-    ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
+    ETAG_REGEX = DandiETag.REGEX
 
     created = CreationDateTimeField()
 
     dandiset = models.ForeignKey(Dandiset, related_name='uploads', on_delete=models.CASCADE)
 
-    blob = models.FileField(blank=True, storage=get_storage, upload_to=get_storage_prefix)
+    blob = models.FileField(blank=True)
     embargoed = models.BooleanField(default=False)
 
     # This is the key used to generate the object key, and the primary identifier for the upload.
@@ -38,28 +38,28 @@ class Upload(models.Model):  # noqa: DJ008
     size = models.PositiveBigIntegerField()
 
     class Meta:
+        ordering = ['created']
         indexes = [models.Index(fields=['etag'])]
 
     @staticmethod
     def object_key(upload_id):
         upload_id = str(upload_id)
-        return (
-            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-            f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
-        )
+        return f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
 
     @classmethod
     def initialize_multipart_upload(cls, etag, size, dandiset: Dandiset):
         upload_id = uuid4()
         object_key = cls.object_key(upload_id)
         embargoed = dandiset.embargo_status == Dandiset.EmbargoStatus.EMBARGOED
-        multipart_initialization = cls.blob.field.storage.multipart_manager.initialize_upload(
+        multipart_initialization = DandiS3MultipartManager(
+            cls._meta.get_field('blob').storage
+        ).initialize_upload(
             object_key,
             size,
             # The upload HTTP API does not pass the file name or content type, and it would be a
             # breaking change to start requiring this.
             'application/octet-stream',
-            tagging='embargoed=true' if embargoed else None,
+            tags={'embargoed': 'true'} if embargoed else None,
         )
 
         upload = cls(
@@ -88,10 +88,10 @@ class Upload(models.Model):  # noqa: DJ008
         )
 
     def object_key_exists(self):
-        return self.blob.field.storage.exists(self.blob.name)
+        return self.blob.storage.exists(self.blob.name)
 
     def actual_size(self):
-        return self.blob.field.storage.size(self.blob.name)
+        return self.blob.storage.size(self.blob.name)
 
-    def actual_etag(self):
-        return self.blob.storage.etag_from_blob_name(self.blob.name)
+    def actual_etag(self) -> str | None:
+        return self.blob.storage.e_tag(self.blob.name)

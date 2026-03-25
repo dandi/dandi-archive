@@ -1,11 +1,9 @@
 <template>
-  <v-menu location="left">
+  <v-menu>
     <template #activator="{ props }">
-      <v-btn
+      <v-list-item
         id="external-dandiset-services"
-        variant="outlined"
-        block
-        class="justify-space-between"
+        class="justify-space-between border rounded-b"
         v-bind="props"
       >
         <template #prepend>
@@ -15,14 +13,14 @@
           >
             mdi-web
           </v-icon>
-          <span>Open with</span>
+          <v-list-item-title>Open with</v-list-item-title>
         </template>
         <template #append>
           <v-icon end>
             mdi-chevron-down
           </v-icon>
         </template>
-      </v-btn>
+      </v-list-item>
     </template>
     <v-card>
       <v-list>
@@ -77,7 +75,7 @@ const neurosiftURL = computed(() => {
   const metadata = currentDandiset.value.metadata;
   const dandisetId = currentDandiset.value.dandiset.identifier;
   const dandisetVersion = metadata.version;
-  const stagingParam = metadata.url!.startsWith('https://gui-staging.dandiarchive.org/') ? '&staging=1' : '';
+  const stagingParam = metadata.url!.startsWith('https://sandbox.dandiarchive.org/') ? '&staging=1' : '';
 
   return `https://neurosift.app/dandiset/${dandisetId}?dandisetVersion=${dandisetVersion}${stagingParam}`;
 });

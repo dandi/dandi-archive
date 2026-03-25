@@ -80,6 +80,7 @@ export default defineConfig({
     ],
   },
   server: {
+    host: process.env.VITE_HOST || 'localhost',
     port: 8085,
   },
   css: {

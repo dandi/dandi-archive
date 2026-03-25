@@ -4,6 +4,7 @@ import typing
 from typing import TYPE_CHECKING
 
 from allauth.socialaccount.models import SocialAccount
+from dandischema.conf import get_instance_config
 from django.contrib.auth.models import User
 from django.contrib.postgres.lookups import Unaccent
 from django.db import transaction
@@ -24,10 +25,12 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import DandisetStar
 from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset import (
-    create_dandiset,
+    create_embargoed_dandiset,
+    create_open_dandiset,
     delete_dandiset,
     star_dandiset,
     unstar_dandiset,
@@ -111,8 +114,13 @@ class DandisetOrderingFilter(filters.OrderingFilter):
             queryset = queryset.annotate(
                 size=Subquery(
                     latest_version.annotate(
-                        size=Coalesce(Sum('assets__blob__size'), 0)
-                        + Coalesce(Sum('assets__zarr__size'), 0)
+                        size=Coalesce(
+                            Sum(
+                                'asset_paths__aggregate_size',
+                                filter=~Q(asset_paths__path__contains='/'),
+                            ),
+                            0,
+                        )
                     ).values('size')
                 )
             ).order_by(ordering)
@@ -137,11 +145,20 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
         if not search_term:
             return queryset
 
+        # Split search term into individual words and apply AND logic
+        # so that all words must be present (in any order)
+        search_words = search_term.split()
+
+        # Build a Q object that requires all words to be present
+        q_filter = Q()
+        for word in search_words:
+            q_filter &= Q(search_field__icontains=word)
+
         # We must formulate the filter using a separate query first, as otherwise
         # the generated SQL is incompatible previously generated clauses
         matching_dandiset_ids = (
             Version.objects.alias(search_field=Unaccent(Cast('metadata', TextField())))
-            .filter(search_field__icontains=search_term)
+            .filter(q_filter)
             .values_list('dandiset_id', flat=True)
             .distinct()
         )
@@ -192,16 +209,26 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 version_count__gt=1
             )
         if not show_empty:
-            # Only include dandisets that have assets in their most recent version.
-            most_recent_version = (
-                Version.objects.filter(dandiset=OuterRef('pk'))
-                .order_by('-created')
-                .annotate(asset_count=Count('assets'))[:1]
+            # Get the most recent version of every dandiset in the queryset
+            most_recent_versions = (
+                Version.objects.filter(dandiset__in=queryset)
+                .order_by('dandiset_id', '-created')
+                .distinct('dandiset_id')
             )
-            queryset = queryset.annotate(
-                asset_count=Subquery(most_recent_version.values('asset_count'))
+
+            # Use asset paths to determine which of these most recent versions are empty. This is
+            # done by simply querying the table for any asset paths from any of the most recent
+            # versions, and returning back the list of version IDs. This may seem like it
+            # accomplishes nothing, but since asset paths only exist when assets on a version exist,
+            # it filters out versions which have no assets (those that are empty).
+            nonempty_version_ids = (
+                AssetPath.objects.filter(version__in=most_recent_versions)
+                .order_by()
+                .distinct('version_id')
+                .values_list('version_id', flat=True)
             )
-            queryset = queryset.filter(asset_count__gt=0)
+
+            queryset = queryset.filter(versions__in=nonempty_version_ids)
         if not show_embargoed:
             queryset = queryset.filter(embargo_status='OPEN')
         if filter_starred:
@@ -220,7 +247,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             raise NotAuthenticated
 
         # Raise 403 if unauthorized
-        self.request.user = typing.cast(User, self.request.user)
+        self.request.user = typing.cast('User', self.request.user)
         if not is_dandiset_owner(dandiset, self.request.user):
             raise PermissionDenied
 
@@ -262,7 +289,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         user = self.request.user
         if user.is_anonymous:
             return dandisets_to_stars
-        user = typing.cast(User, user)
+        user = typing.cast('User', user)
 
         # Filter previous query to current user stars
         user_starred_dandisets = dandiset_stars.filter(user=user)
@@ -408,21 +435,30 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         identifier = None
         if 'identifier' in serializer.validated_data['metadata']:
             identifier = serializer.validated_data['metadata']['identifier']
-            if identifier.startswith('DANDI:'):
-                identifier = identifier[6:]
+            identifier = identifier.removeprefix(f'{get_instance_config().instance_name}:')
 
             try:
                 identifier = int(identifier)
             except ValueError:
                 return Response(f'Invalid Identifier {identifier}', status=400)
 
-        dandiset, _ = create_dandiset(
-            user=request.user,
-            identifier=identifier,
-            embargo=query_serializer.validated_data['embargo'],
-            version_name=serializer.validated_data['name'],
-            version_metadata=serializer.validated_data['metadata'],
-        )
+        if query_serializer.validated_data['embargo']:
+            dandiset, _ = create_embargoed_dandiset(
+                user=request.user,
+                identifier=identifier,
+                version_name=serializer.validated_data['name'],
+                version_metadata=serializer.validated_data['metadata'],
+                funding_source=query_serializer.validated_data.get('funding_source'),
+                award_number=query_serializer.validated_data.get('award_number'),
+                embargo_end_date=query_serializer.validated_data['embargo_end_date'],
+            )
+        else:
+            dandiset, _ = create_open_dandiset(
+                user=request.user,
+                identifier=identifier,
+                version_name=serializer.validated_data['name'],
+                version_metadata=serializer.validated_data['metadata'],
+            )
 
         serializer = DandisetDetailSerializer(instance=dandiset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -522,13 +558,14 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
             # All owners found
             with transaction.atomic():
+                dandiset_locked = Dandiset.objects.select_for_update().get(pk=dandiset__pk)
                 owners = user_owners + [acc.user for acc in socialaccount_owners]
-                removed_owners, added_owners = replace_dandiset_owners(dandiset, owners)
-                dandiset.save()
+                removed_owners, added_owners = replace_dandiset_owners(dandiset_locked, owners)
+                dandiset_locked.save()
 
                 if removed_owners or added_owners:
                     audit.change_owners(
-                        dandiset=dandiset,
+                        dandiset=dandiset_locked,
                         user=request.user,
                         removed_owners=removed_owners,
                         added_owners=added_owners,

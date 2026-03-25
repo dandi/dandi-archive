@@ -1,17 +1,31 @@
 from __future__ import annotations
 
+import importlib.metadata
+from urllib.parse import ParseResult, urlencode, urlparse, urlunparse
+
+from dandischema.conf import get_instance_config
+from dandischema.consts import ALLOWED_INPUT_SCHEMAS, DANDI_SCHEMA_VERSION
 from django.conf import settings
+from django.urls import reverse
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from dandiapi import __version__
 
-schema_url = (
-    'https://raw.githubusercontent.com/dandi/schema/master/'
-    f'releases/{settings.DANDI_SCHEMA_VERSION}/dandiset.json'
-)
+def get_schema_url():
+    """Get the URL for the schema based on current server deployment."""
+    scheme, netloc = urlparse(settings.DANDI_API_URL)[:2]
+    return urlunparse(
+        ParseResult(
+            scheme=scheme,
+            netloc=netloc,
+            path=reverse('schema-view'),
+            query=urlencode({'model': 'Dandiset'}),
+            params='',
+            fragment='',
+        )
+    )
 
 
 class ApiServiceSerializer(serializers.Serializer):
@@ -38,9 +52,13 @@ class ApiInfoSerializer(serializers.Serializer):
             }
         )
 
+    # Instance Configuration
+    instance_config = serializers.JSONField()
+
     # Schema
     schema_version = serializers.CharField()
     schema_url = serializers.URLField()
+    allowed_schema_versions = serializers.ListField(child=serializers.CharField())
 
     # Versions
     version = serializers.CharField()
@@ -55,13 +73,17 @@ class ApiInfoSerializer(serializers.Serializer):
     method='GET',
 )
 @api_view()
-def info_view(self):
+def info_view(request):
     api_url = f'{settings.DANDI_API_URL}/api'
     serializer = ApiInfoSerializer(
         data={
-            'schema_version': settings.DANDI_SCHEMA_VERSION,
-            'schema_url': schema_url,
-            'version': __version__,
+            # Set exclude_none=False to prevent any fields set to `None` from being set to a
+            # different default value when the JSON is de-serialized into a Pydantic model.
+            'instance_config': get_instance_config().model_dump(mode='json', exclude_none=False),
+            'schema_version': DANDI_SCHEMA_VERSION,
+            'schema_url': get_schema_url(),
+            'allowed_schema_versions': ALLOWED_INPUT_SCHEMAS,
+            'version': importlib.metadata.version('dandiapi'),
             'cli-minimal-version': '0.60.0',
             'cli-bad-versions': [],
             'services': {

@@ -1,5 +1,6 @@
 import type { JSONSchema7 } from 'json-schema';
 import type { VuetifyOptions } from 'vuetify';
+import Ajv from 'ajv/dist/2020';
 
 import { cloneDeep, pickBy } from 'lodash';
 import type {
@@ -13,6 +14,7 @@ import {
   isBasicEditorSchema,
   isComplexEditorSchema,
 } from './types';
+import type { EditorInterface } from './editor';
 
 export function computeBasicSchema(schema: JSONSchema7): JSONSchema7 {
   const newProperties = pickBy(schema.properties, (val): val is BasicSchema | BasicArraySchema => (
@@ -99,4 +101,35 @@ export const VJSFVuetifyDefaultProps: VuetifyOptions['defaults'] = {
     variant: 'outlined',
     density: 'compact',
   },
+};
+
+/**
+ * Validates the metadata models of the editor interface using Ajv.
+ * It checks the basic model and complex model against their respective schemas.
+ * If the models are not valid, it sets the corresponding validation flags to false
+ * to trigger the error state in the UI.
+ *
+ * This is needed because we do not currently feed the entire complex model and schema
+ * into VJSF for validation. Instead, we only pass a single sub-model and schema into
+ * VJSF when it has been selected by the "Edit" button. This means that validation errors
+ * that apply to the entire complex model will not be caught until the user clicks "Save"
+ * and the entire model is validated on the server. This function is a workaround to
+ * validate the entire complex model on the client side.
+ */
+export const validateDandisetMetadata = (editorInterface: EditorInterface) => {
+  const ajv = new Ajv({ allErrors: true, strict: false, verbose: true });
+
+  // Update the basic model validation flag.
+  editorInterface.basicModelValid.value = ajv.compile(editorInterface.basicSchema)(editorInterface.basicModel.value);
+
+  // Update the complex model validation flags. Because the complex model is an object mapping
+  // subschema names to their validation status, we need set each subschema's validation status
+  // individually.
+  const validateComplexModel = ajv.compile(editorInterface.complexSchema);
+  validateComplexModel(editorInterface.complexModel);
+
+  const invalidFields = new Set(validateComplexModel.errors?.map((error) => error.instancePath.split('/')[1]));
+  for (const key in editorInterface.complexModelValidation) {
+    editorInterface.complexModelValidation[key] = !invalidFields.has(key);
+  }
 };

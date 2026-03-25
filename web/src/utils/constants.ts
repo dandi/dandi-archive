@@ -1,8 +1,9 @@
 const dandiUrl = 'https://dandiarchive.org';
 const dandiAboutUrl = 'https://about.dandiarchive.org/';
 const dandiDocumentationUrl = 'https://docs.dandiarchive.org';
-const dandiHelpUrl = 'https://github.com/dandi/helpdesk/issues/new/choose';
+const dandiHelpUrl = 'https://docs.dandiarchive.org/support/';
 const dandihubUrl = 'https://hub.dandiarchive.org/';
+const sandboxDocsUrl = `${dandiDocumentationUrl}/getting-started/creating-account/`;
 
 const draftVersion = 'draft';
 
@@ -57,6 +58,7 @@ export {
   dandiAboutUrl,
   dandiDocumentationUrl,
   dandihubUrl,
+  sandboxDocsUrl,
   draftVersion,
   dandiHelpUrl,
   VALIDATION_ICONS,

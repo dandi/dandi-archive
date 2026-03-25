@@ -11,6 +11,7 @@
         <template #activator="{ props: menuProps }">
           <v-icon
             v-bind="menuProps"
+            class="mr-6"
           >
             mdi-cog
           </v-icon>
@@ -39,37 +40,115 @@
           </v-list-item>
         </v-list>
       </v-menu>
-      <div class="mx-6">
-        Sort By:
-      </div>
-      <v-chip-group
-        :model-value="sortOption"
-        selected-class="white text-light-blue bg-white"
-        dark
-        mandatory
-        style="min-width: 25%"
+      <DandisetSearchField class="flex-grow-1 mr-2" />
+      <v-btn
+        variant="flat"
       >
-        <v-chip
-          v-for="(option, i) in sortingOptions"
-          :key="option.name"
-          @click="changeSort(i)"
+        <span class="pr-2">
+          <span
+            v-if="sortDir === 1"
+          >
+            <v-icon>mdi-sort-reverse-variant</v-icon>
+            <v-icon>mdi-arrow-up-thin</v-icon>
+          </span>
+          <span v-else>
+            <v-icon>mdi-sort-variant</v-icon>
+            <v-icon>mdi-arrow-down-thin</v-icon>
+          </span>
+        </span>
+        <span
+          class="d-none d-sm-inline"
         >
-          {{ option.name }}
-          <v-icon end>
-            <template v-if="sortDir === -1 || sortOption !== i">
-              mdi-sort-variant
-            </template>
-            <template v-else>
-              mdi-sort-reverse-variant
-            </template>
-          </v-icon>
-        </v-chip>
-      </v-chip-group>
-      <DandisetSearchField class="flex-grow-1" />
+          {{ sortingOptions[sortOption].name }}
+        </span>
+        <v-tooltip
+          location="top"
+          activator="parent"
+        >
+          <span>Sorting Options</span>
+        </v-tooltip>
+        <v-menu activator="parent">
+          <v-list>
+            <v-item-group v-model="sortOption">
+              <v-list-subheader
+                class="text-high-emphasis font-weight-bold"
+              >
+                Sort by
+              </v-list-subheader>
+              <v-item
+                v-for="(option, i) in sortingOptions"
+                :key="option.name"
+                v-slot="{ isSelected, toggle }"
+                :value="i"
+              >
+                <v-list-item
+                  class="pl-8"
+                  :active="isSelected"
+                  @click="toggle"
+                >
+                  <template #append>
+                    <v-icon v-if="isSelected">
+                      mdi-check
+                    </v-icon>
+                  </template>
+                  <v-list-item-title>{{ option.name }}</v-list-item-title>
+                </v-list-item>
+              </v-item>
+            </v-item-group>
+            <v-divider />
+            <v-item-group v-model="sortDir">
+              <v-list-subheader
+                class="text-high-emphasis font-weight-bold"
+              >
+                Order
+              </v-list-subheader>
+              <v-item
+                v-slot="{ isSelected, toggle }"
+                :value="1"
+              >
+                <v-list-item
+                  class="pl-8"
+                  :active="isSelected"
+                  @click="toggle"
+                >
+                  <template #append>
+                    <v-icon v-if="sortDir === 1">
+                      mdi-check
+                    </v-icon>
+                  </template>
+                  <v-list-item-title>Ascending</v-list-item-title>
+                </v-list-item>
+              </v-item>
+              <v-item
+                v-slot="{ isSelected, toggle }"
+                :value="-1"
+              >
+                <v-list-item
+                  class="pl-8"
+                  :active="isSelected"
+                  @click="toggle"
+                >
+                  <template #append>
+                    <v-icon v-if="sortDir === -1">
+                      mdi-check
+                    </v-icon>
+                  </template>
+                  <v-list-item-title>Descending</v-list-item-title>
+                </v-list-item>
+              </v-item>
+            </v-item-group>
+          </v-list>
+        </v-menu>
+      </v-btn>
     </v-toolbar>
+    <div
+      v-if="props.search && djangoDandisetRequest"
+      class="mx-4 mx-md-8 mt-4 text-h6"
+    >
+      {{ djangoDandisetRequest.count }} {{ djangoDandisetRequest.count === 1 ? 'result' : 'results' }} found
+    </div>
     <DandisetList
       v-if="dandisets && dandisets.length"
-      class="mx-4 mx-md-8 my-8"
       :dandisets="dandisets"
     />
     <v-container v-else>
@@ -137,7 +216,7 @@ const props = defineProps({
 const route = useRoute();
 
 const showDrafts = ref(true);
-const showEmpty = ref(false);
+const showEmpty = ref(props.search);
 const sortOption = ref(Number(route.query.sortOption) || 0);
 const sortDir = ref(Number(route.query.sortDir || -1));
 const page = ref(Number(route.query.page) || 1);
@@ -197,16 +276,18 @@ watch(queryParams, (params) => {
     },
   });
 });
+</script>
 
-function changeSort(index: number) {
-  if (sortOption.value === index) {
-    sortDir.value *= -1;
-  } else {
-    sortOption.value = index;
-    sortDir.value = -1;
-  }
-
-  page.value = 1;
+<style scoped>
+.btn-group--sort-options {
+  min-width: 84px;
 }
 
-</script>
+.btn--sort-option {
+  min-width: 56px;
+}
+
+.btn--sort-order {
+  min-width: 28px;
+}
+</style>

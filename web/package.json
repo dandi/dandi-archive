@@ -2,22 +2,29 @@
   "name": "dandi-archive",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": "20.x"
-  },
   "version": "0.0.0",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=20"
+    },
+    "packageManager": {
+      "name": "npm"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
-    "lint": "eslint . --fix"
+    "lint": "eslint . --fix --max-warnings=0",
+    "migrate": "tsx src/migrate.ts"
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^11.9.3",
     "@koumoul/vjsf": "^3.12.0",
     "@mdi/font": "7.4.47",
-    "@resonant/oauth-client": "^1.0.2",
+    "@resonant/oauth-client": "^1.0.3",
     "@sentry/vue": "^9.10.0",
     "axios": "^1.8.1",
     "core-js": "^3.41.0",
@@ -46,8 +53,10 @@
     "eslint": "^9.14.0",
     "eslint-plugin-vue": "^9.30.0",
     "eslint-plugin-vuetify": "^2.5.1",
+    "json-schema-to-typescript": "^15.0.4",
     "sass": "1.85.1",
     "sass-embedded": "^1.85.1",
+    "tsx": "^4.19.4",
     "typescript": "~5.7.*",
     "unplugin-fonts": "^1.1.1",
     "unplugin-vue-components": "^28.4.1",

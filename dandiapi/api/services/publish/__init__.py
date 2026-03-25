@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import copy
 import datetime
 from typing import TYPE_CHECKING
 
+from dandischema.conf import get_instance_config
 from dandischema.metadata import aggregate_assets_summary, validate
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -86,24 +88,25 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  #
 
 
 def _build_publishable_version_from_draft(draft_version: Version) -> Version:
-    publishable_version = Version(
-        dandiset=draft_version.dandiset,
-        name=draft_version.name,
-        metadata=draft_version.metadata,
-        status=Version.Status.VALID,
-        version=Version.next_published_version(draft_version.dandiset),
-    )
+    # Make a deep copy of the dict to avoid mutating the draft version's metadata.
+    publishable_version_metadata = copy.deepcopy(draft_version.metadata)
 
     now = datetime.datetime.now(datetime.UTC)
     # inject the publishedBy and datePublished fields
-    publishable_version.metadata.update(
+    publishable_version_metadata.update(
         {
             'publishedBy': draft_version.published_by(now),
             'datePublished': now.isoformat(),
         }
     )
 
-    return publishable_version
+    return Version(
+        dandiset=draft_version.dandiset,
+        name=draft_version.name,
+        metadata=publishable_version_metadata,
+        status=Version.Status.VALID,
+        version=Version.next_published_version(draft_version.dandiset),
+    )
 
 
 def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
@@ -180,7 +183,10 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         old_version.save()
 
         # Inject a dummy DOI so the metadata is valid
-        new_version.metadata['doi'] = '10.80507/dandi.123456/0.123456.1234'
+        schema_config = get_instance_config()
+        new_version.metadata['doi'] = (
+            f'{schema_config.doi_prefix}/{schema_config.instance_name.lower()}.123456/0.123456.1234'
+        )
 
         validate(new_version.metadata, schema_key='PublishedDandiset', json_validation=True)
 

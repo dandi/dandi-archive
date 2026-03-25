@@ -4,11 +4,10 @@ import datetime
 import hashlib
 
 from allauth.socialaccount.models import SocialAccount
-from dandischema.digests.dandietag import DandiETag
+from dandischema.conf import get_instance_config
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from dandischema.models import AccessType
-from django.conf import settings
 from django.contrib.auth.models import User
-from django.core import files as django_files
 import factory
 import faker
 
@@ -20,80 +19,106 @@ from dandiapi.api.models import (
     UserMetadata,
     Version,
 )
-from dandiapi.api.services.publish import publish_asset
-
-
-class UserMetadataFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = UserMetadata
-
-    status = UserMetadata.Status.APPROVED.value
+from dandiapi.api.services.dandiset import star_dandiset
+from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 
 
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
+        skip_postgeneration_save = True
 
     username = factory.SelfAttribute('email')
     email = factory.Faker('free_email')
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
 
-    metadata = factory.RelatedFactory(UserMetadataFactory, factory_related_name='user')
+    metadata = factory.RelatedFactory(
+        'dandiapi.api.tests.factories.UserMetadataFactory', factory_related_name='user'
+    )
+    social_account = factory.RelatedFactory(
+        'dandiapi.api.tests.factories.SocialAccountFactory', factory_related_name='user'
+    )
+
+
+class UserMetadataFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = UserMetadata
+
+    user = factory.SubFactory(UserFactory, metadata=None)
+    status = UserMetadata.Status.APPROVED.value
 
 
 class SocialAccountFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = SocialAccount
 
-    user = factory.SubFactory(UserFactory)
+    user = factory.SubFactory(UserFactory, social_account=None)
     uid = factory.Faker('sha1')
 
-    @factory.lazy_attribute
-    def extra_data(self):
-        first_name = self.user.first_name
-        last_name = self.user.last_name
-        name = f'{first_name} {last_name}'
-
-        # Supply a fake created date at least 1 year before now
-        created = (
-            faker.Faker()
-            .date_time_between(
-                end_date=datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=365)
-            )
-            .isoformat()
-        )
-
-        # Supply different values from User object, since social account values maybe be different
-        return {
-            'login': faker.Faker().user_name(),
-            'name': name,
-            'email': faker.Faker().ascii_email(),
-            'created_at': created,
+    extra_data = factory.Dict(
+        {
+            'name': factory.LazyAttribute(
+                lambda self: (
+                    f'{self.factory_parent.user.first_name} {self.factory_parent.user.last_name}'
+                )
+            ),
+            # Supply a different value from User object, as social account values may be different
+            'login': factory.Faker('user_name'),
+            'email': factory.Faker('ascii_email'),
+            'created_at': factory.Faker('iso8601', end_datetime=datetime.timedelta(days=-365)),
         }
+    )
 
 
 class DandisetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Dandiset
+        skip_postgeneration_save = True
+
+    @factory.post_generation
+    def owners(self, create: bool, extracted: list[User] | None) -> None:  # noqa: FBT001
+        if not create:
+            return
+        if extracted is None:
+            extracted = []
+        for user in extracted:
+            add_dandiset_owner(dandiset=self, user=user)
+
+    @factory.post_generation
+    def starred_by(self, create: bool, extracted: list[User] | None) -> None:  # noqa: FBT001
+        if not create:
+            return
+        if extracted is None:
+            extracted = []
+        for user in extracted:
+            star_dandiset(user=user, dandiset=self)
 
 
 class BaseVersionFactory(factory.django.DjangoModelFactory):
     class Meta:
+        model = Version
+        skip_postgeneration_save = True
         abstract = True
 
     dandiset = factory.SubFactory(DandisetFactory)
     name = factory.Faker('sentence')
+    # Don't use "Version.next_published_version" to create versions, as that will require
+    # additional database queries.
+    version = factory.Sequence(
+        lambda n: Version.datetime_to_version(
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=n)
+        )
+    )
+    status = Version.Status.PENDING
 
     @factory.lazy_attribute
-    def version(self):
-        return Version.next_published_version(self.dandiset)
+    def metadata(self) -> dict:
+        from dandiapi.conftest import get_first_allowed_license
 
-    @factory.lazy_attribute
-    def metadata(self):
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
             'schemaKey': 'Dandiset',
             'description': faker.Faker().sentence(),
             'access': [
@@ -112,75 +137,88 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
                     'schemaKey': 'Person',
                 }
             ],
-            'license': ['spdx:CC0-1.0'],
+            'license': [get_first_allowed_license()],
         }
         # Remove faked data that might conflict with the schema types
         for key in ['about']:
-            if key in metadata:
-                del metadata[key]
+            metadata.pop(key, None)
+        if self.status == Version.Status.PUBLISHED:
+            now = datetime.datetime.now(datetime.UTC)
+            metadata.update(
+                {
+                    'publishedBy': Version.published_by(now),
+                    'datePublished': now.isoformat(),
+                }
+            )
         return metadata
+
+    @factory.post_generation
+    def assets(self, create: bool, extracted: list[Asset]) -> None:  # noqa: FBT001
+        if not create or not extracted:
+            return
+        self.assets.add(*extracted)
 
 
 class DraftVersionFactory(BaseVersionFactory):
-    class Meta:
-        model = Version
-
     version = 'draft'
 
 
 class PublishedVersionFactory(BaseVersionFactory):
-    class Meta:
-        model = Version
-
-    @classmethod
-    def _create(cls, *args, **kwargs):
-        version: Version = super()._create(*args, **kwargs)
-        version.doi = f'10.80507/dandi.{version.dandiset.identifier}/{version.version}'
-        now = datetime.datetime.now(datetime.UTC)
-        version.metadata = {
-            **version.metadata,
-            'publishedBy': version.published_by(now),
-            'datePublished': now.isoformat(),
-        }
-        version.save()
-        return version
+    doi = factory.LazyAttribute(
+        lambda self: f'{get_instance_config().doi_prefix}/'
+        f'{get_instance_config().instance_name}.'
+        f'{self.dandiset.identifier}/{self.version}'
+    )
+    status = Version.Status.PUBLISHED
 
 
 class AssetBlobFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AssetBlob
+        skip_postgeneration_save = True
 
     blob_id = factory.Faker('uuid4')
-    size = 100
+
+    # Override this with:
+    #   AssetBlobFactory.create(blob__filename='...')  # for a specific file name
+    #   AssetBlobFactory.create(blob__data=b'...')  # for specific data
+    #   AssetBlobFactory.create(blob__data__length=...)  # for random data of a specific size
+    blob = factory.django.FileField(
+        filename=factory.Faker('file_name', extension='dat'),
+        data=factory.Faker('binary', length=100),
+    )
+    # Don't try to set "AssetBlobFactory.create(size=...)" directly, let it be read from the blob
+    size = factory.LazyAttribute(lambda self: len(self.blob))
 
     @factory.lazy_attribute
-    def blob(self):
-        return django_files.File(
-            file=django_files.base.ContentFile(faker.Faker().binary(self.size)).file,
-            name=Upload.object_key(self.blob_id),
-        )
-
-    @factory.lazy_attribute
-    def sha256(self):
-        h = hashlib.sha256()
-        h.update(self.blob.read())
+    def sha256(self) -> str:
+        sha256 = hashlib.sha256(self.blob.read()).hexdigest()
         self.blob.seek(0)
-        return h.hexdigest()
+        return sha256
 
     @factory.lazy_attribute
-    def etag(self):
-        etagger = DandiETag(self.size)
-        for part in etagger._part_gen:
-            etagger.update(self.blob.read(part.size))
-
+    def etag(self) -> str:
+        # In production, files would be uploaded with a multipart ETag:
+        # etagger = DandiETag(self.size)
+        # etagger.partial_update(self.blob.read())
+        # self.blob.seek(0)
+        # return etagger.as_str()
+        # In tests, the factories use "Storage.save", which uses S3 put_object,
+        # resulting in an MD5 ETag:
+        etag = hashlib.md5(self.blob.read()).hexdigest()
         self.blob.seek(0)
-        return etagger.as_str()
+        return etag
+
+    @classmethod
+    def _after_postgeneration(cls, obj: AssetBlob, create: bool, results=None) -> None:  # noqa: FBT001
+        super()._after_postgeneration(obj, create, results)
+        if not create:
+            return
+        if obj.embargoed:
+            obj.blob.storage.put_tags(obj.blob.name, {'embargoed': 'true'})
 
 
 class EmbargoedAssetBlobFactory(AssetBlobFactory):
-    class Meta:
-        model = AssetBlob
-
     embargoed = True
 
 
@@ -190,56 +228,72 @@ class DraftAssetFactory(factory.django.DjangoModelFactory):
 
     path = factory.Faker('file_path', absolute=False, extension='nwb')
     blob = factory.SubFactory(AssetBlobFactory)
+    published = False
 
     @factory.lazy_attribute
-    def metadata(self):
+    def metadata(self) -> dict:
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
             'encodingFormat': 'application/x-nwb',
             'schemaKey': 'Asset',
         }
         # Remove faked data that might conflict with the schema types
         for key in ['approach', 'about', 'name']:
-            if key in metadata:
-                del metadata[key]
+            metadata.pop(key, None)
         return metadata
 
 
 class PublishedAssetFactory(DraftAssetFactory):
+    published = True
+    status = Asset.Status.VALID  # published assets are always valid
+
     @classmethod
-    def _create(cls, *args, **kwargs):
-        asset: Asset = super()._create(*args, **kwargs)
-        asset.status = Asset.Status.VALID  # published assets are always valid
+    def _create(cls, model_class: type[Asset], *args, **kwargs) -> Asset:
+        # Call "_build" to create without saving, as a save won't be valid until the metadata is set
+        asset: Asset = super()._build(model_class, *args, **kwargs)
+        asset.metadata = asset.published_metadata()
         asset.save()
-        publish_asset(asset=asset)
-        asset.refresh_from_db()
         return asset
 
 
 class UploadFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Upload
+        skip_postgeneration_save = True
 
     upload_id = factory.Faker('uuid4')
-    multipart_upload_id = factory.Faker('uuid4')
-    blob = factory.django.FileField(data=factory.Faker('binary', length=100))
+    multipart_upload_id = factory.Faker('pystr', min_chars=32, max_chars=96)
+
+    blob = factory.django.FileField(
+        filename=factory.Faker('file_name', extension='dat'),
+        data=factory.Faker('binary', length=100),
+    )
+    size = factory.LazyAttribute(lambda self: len(self.blob))
+
     dandiset = factory.SubFactory(DandisetFactory)
 
     @factory.lazy_attribute
-    def size(self):
-        return self.blob.size
-
-    @factory.lazy_attribute
-    def etag(self):
-        h = hashlib.md5()
-        h.update(self.blob.read())
+    def etag(self) -> str:
+        # In production, files would be uploaded with a multipart ETag:
+        # etagger = DandiETag(self.size)
+        # etagger.partial_update(self.blob.read())
+        # self.blob.seek(0)
+        # return etagger.as_str()
+        # In tests, the factories use "Storage.save", which uses S3 put_object,
+        # resulting in an MD5 ETag:
+        etag = hashlib.md5(self.blob.read()).hexdigest()
         self.blob.seek(0)
-        return h.hexdigest()
+        return etag
+
+    @classmethod
+    def _after_postgeneration(cls, obj: Upload, create: bool, results=None) -> None:  # noqa: FBT001
+        super()._after_postgeneration(obj, create, results)
+        if not create:
+            return
+        if obj.embargoed:
+            obj.blob.storage.put_tags(obj.blob.name, {'embargoed': 'true'})
 
 
 class EmbargoedUploadFactory(UploadFactory):
-    class Meta:
-        model = Upload
-
     embargoed = True

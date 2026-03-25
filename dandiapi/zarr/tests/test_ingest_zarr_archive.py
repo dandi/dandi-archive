@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from django.conf import settings
+from dandischema.consts import DANDI_SCHEMA_VERSION
 import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
 from dandiapi.api.models import AssetPath
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.asset import add_asset_to_version
-from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
+from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_dandiset_zarrs, ingest_zarr_archive
 
@@ -107,9 +107,10 @@ def test_ingest_zarr_archive_assets(zarr_archive_factory, zarr_file_factory, dra
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive_factory, zarr_file_factory):
+def test_ingest_zarr_archive_modified(zarr_archive_factory, zarr_file_factory):
     """Ensure that if the zarr associated to an asset is modified and then ingested, it succeeds."""
-    add_dandiset_owner(draft_version.dandiset, user)
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
 
     # Ensure zarr is ingested with non-zero size
     zarr_archive = zarr_archive_factory(
@@ -126,11 +127,12 @@ def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive_factory,
         zarr_archive=zarr_archive,
         metadata={
             'path': 'sample.zarr',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
     assert asset.size == 100
     ap = AssetPath.objects.filter(version=draft_version, asset=asset).first()
+    assert ap is not None
     assert ap.aggregate_files == 1
     assert ap.aggregate_size == 100
 
@@ -146,11 +148,9 @@ def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive_factory,
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_sets_version_pending(
-    draft_version_factory, zarr_archive_factory, zarr_file_factory
-):
+def test_ingest_zarr_archive_sets_version_pending(zarr_archive_factory, zarr_file_factory):
     """Ensure that when a zarr is ingested, it sets the version back to PENDING."""
-    draft_version = draft_version_factory(status=Version.Status.VALID)
+    draft_version = DraftVersionFactory.create(status=Version.Status.VALID)
     assert draft_version.status == Version.Status.VALID
 
     # Ensure zarr has non-zero size
@@ -169,8 +169,8 @@ def test_ingest_zarr_archive_sets_version_pending(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_dandiset_zarrs(dandiset_factory, zarr_archive_factory, zarr_file_factory):
-    dandiset = dandiset_factory()
+def test_ingest_dandiset_zarrs(zarr_archive_factory, zarr_file_factory):
+    dandiset = DandisetFactory.create()
     for _ in range(10):
         zarr_file_factory(
             path='foo/a',

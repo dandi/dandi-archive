@@ -1,18 +1,22 @@
 <template>
   <div v-if="currentDandiset && meta && stats">
     <v-card
-      class="px-3"
+      class="border-b pa-10"
       color="grey-lighten-5"
-      variant="outlined"
+      style="box-shadow:0 0 16px rgba(0, 0, 0, .2)"
+      flat
+      tile
     >
-      <v-row class="mx-2 my-2 mb-0">
+      <v-row>
         <v-col
-          class="d-flex align-center"
+          class="d-flex align-start justify-space-between py-0"
         >
-          <h1 :class="`font-weight-light ${isXsDisplay ? 'text-h6' : ''}`">
-            <ShareDialog />
-            {{ meta.name }}
-          </h1>
+          <div class="title-container d-flex align-center">
+            <h1 :class="`font-weight-light ${isXsDisplay ? 'text-h6' : ''}`">
+              <ShareDialog />
+              {{ meta.name }}
+            </h1>
+          </div>
           <StarButton
             :identifier="currentDandiset.dandiset.identifier"
             :initial-star-count="currentDandiset.dandiset.star_count"
@@ -54,7 +58,7 @@
           </v-chip>
         </v-col>
       </v-row>
-      <v-row class="mx-1">
+      <v-row>
         <v-col :cols="isXsDisplay ? 12 : 3">
           <v-chip
             class="text-wrap py-1 pl-1"
@@ -126,9 +130,7 @@
           </span>
         </v-col>
       </v-row>
-      <v-row
-        class="mx-1"
-      >
+      <v-row>
         <v-col :cols="isXsDisplay ? 12 : 3">
           <span>
             <v-icon class="text-grey-lighten-1">mdi-calendar-range</v-icon>
@@ -168,25 +170,26 @@
             </span>
           </span>
         </v-col>
+        <v-divider class="ma-3" />
       </v-row>
 
-      <v-divider />
+      <v-row class="font-weight-light">
+        <v-col>
+          <!-- We use DOMPurify to sanitize against XSS -->
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <div v-html="htmlDescription" />
 
-      <v-row class="mx-1 my-4 px-4 font-weight-light">
-        <!-- We use DOMPurify to sanitize against XSS -->
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <div v-html="htmlDescription" />
-
-        <!-- Truncate text if necessary -->
-        <a
-          v-if="meta.description && (meta.description.length > MAX_DESCRIPTION_LENGTH)"
-          @click="showFullDescription = !showFullDescription"
-        > {{ showFullDescription ? "[ - see less ]" : "[ + see more ]" }}</a>
+          <!-- Truncate text if necessary -->
+          <a
+            v-if="meta.description && (meta.description.length > MAX_DESCRIPTION_LENGTH)"
+            @click="showFullDescription = !showFullDescription"
+          > {{ showFullDescription ? "[ - see less ]" : "[ + see more ]" }}</a>
+        </v-col>
       </v-row>
 
       <v-row class="justify-center">
         <v-col
-          cols="11"
+          cols="12"
           class="pb-0"
         >
           <v-card
@@ -225,35 +228,35 @@
           </v-card>
         </v-col>
       </v-row>
-
-      <!-- TODO: Re-enable these tab components when the others are complete -->
-
-      <!-- <v-tabs
-        v-model="currentTab"
-        background-color="grey lighten-5"
-        class="ml-3"
-        show-arrows
-      >
-        <v-tabs-slider />
-
-        <v-tab
-          v-for="(tab, index) in tabs"
-          :key="tab.name"
-          :href="`#${index}`"
-        >
-          <v-icon>{{ tab.icon }}</v-icon>
-          {{ tab.name }}
-        </v-tab>
-      </v-tabs> -->
     </v-card>
+
+    <!-- Tab navigation -->
+    <v-tabs
+      v-model="currentTab"
+      bg-color="grey-lighten-5"
+      class="border-b pl-9"
+      show-arrows
+    >
+      <v-tab
+        v-for="(tab, index) in tabs"
+        :key="tab.name"
+        :value="index"
+      >
+        <v-icon start>
+          {{ tab.icon }}
+        </v-icon>
+        {{ tab.name }}
+      </v-tab>
+    </v-tabs>
 
     <!-- Dynamically render component based on current tab -->
     <v-row class="justify-center">
-      <v-col cols="11">
+      <v-col cols="12">
         <component
           :is="tabs[currentTab].component"
           v-if="tabs[currentTab]"
           v-bind="{ schema, meta }"
+          class="d-flex flex-column pa-9 ga-3 w-100"
         />
       </v-col>
     </v-row>
@@ -278,12 +281,8 @@ import { useDandisetStore } from '@/stores/dandiset';
 import { getDoiMetadata } from '@/utils/doi';
 import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from '@/types';
 
-import AccessInformationTab from '@/components/DLP/AccessInformationTab.vue';
-import AssetSummaryTab from '@/components/DLP/AssetSummaryTab.vue';
-import ContributorsTab from '@/components/DLP/ContributorsTab.vue';
+import HowToCiteTab from '@/components/DLP/HowToCiteTab.vue';
 import OverviewTab from '@/components/DLP/OverviewTab.vue';
-import RelatedResourcesTab from '@/components/DLP/RelatedResourcesTab.vue';
-import SubjectMatterTab from '@/components/DLP/SubjectMatterTab.vue';
 import ShareDialog from './ShareDialog.vue';
 import StarButton from '@/components/StarButton.vue';
 
@@ -294,31 +293,12 @@ const tabs = [
   {
     name: 'Overview',
     component: OverviewTab,
+    icon: 'mdi-information-outline',
   },
   {
-    name: 'Contributors',
-    component: ContributorsTab,
-    icon: 'mdi-account',
-  },
-  {
-    name: 'Subject Matter',
-    component: SubjectMatterTab,
-    icon: 'mdi-notebook-outline',
-  },
-  {
-    name: 'Access Information',
-    component: AccessInformationTab,
-    icon: 'mdi-account-question',
-  },
-  {
-    name: 'Asset Summary',
-    component: AssetSummaryTab,
-    icon: 'mdi-clipboard-list',
-  },
-  {
-    name: 'Related Resources',
-    component: RelatedResourcesTab,
-    icon: 'mdi-book',
+    name: 'How to Cite',
+    component: HowToCiteTab,
+    icon: 'mdi-format-quote-close',
   },
 ];
 

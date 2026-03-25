@@ -175,9 +175,11 @@
       </v-tabs>
       <v-tabs-window
         v-model="tab"
-        eager
       >
-        <v-tabs-window-item value="tab-0">
+        <v-tabs-window-item
+          eager
+          value="tab-0"
+        >
           <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
             <v-form
               v-model="basicModelValid"
@@ -201,12 +203,13 @@
         v-for="(propKey, i) in fieldsToRender"
         :key="`tab-window-${i+1}`"
         v-model="tab"
-        eager
       >
-        <v-tabs-window-item :value="`tab-${i+1}`">
+        <v-tabs-window-item
+          eager
+          :value="`tab-${i+1}`"
+        >
           <v-card class="pa-2 px-1">
             <v-form
-              v-model="complexModelValidation[propKey]"
               class="px-7"
             >
               <v-jsf-wrapper
@@ -226,7 +229,7 @@
 import type { JSONSchema7 } from 'json-schema';
 
 import type { ComputedRef } from 'vue';
-import { ref, computed } from 'vue';
+import { ref, computed, watchEffect } from 'vue';
 
 import jsYaml from 'js-yaml';
 import axios from 'axios';
@@ -238,7 +241,7 @@ import { useDandisetStore } from '@/stores/dandiset';
 import type { DandiModel } from './types';
 import { isJSONSchema } from './types';
 import { EditorInterface } from './editor';
-import { VJSFVuetifyDefaultProps } from './utils';
+import { validateDandisetMetadata, VJSFVuetifyDefaultProps } from './utils';
 
 import {
   clearLocalStorage,
@@ -301,6 +304,13 @@ const CommonVJSFOptions = computed(() => ({
   readOnlyPropertiesMode: 'hide',
 }));
 
+
+watchEffect(() => {
+  if (schema.value && editorInterface.value) {
+    validateDandisetMetadata(editorInterface.value)
+  }
+});
+
 // undo/redo functionality
 function undoChange() {
   transactionTracker.undo();
@@ -314,7 +324,58 @@ const disableUndo = computed(
 const disableRedo = computed(
   () => readonly.value || !transactionTracker.areTransactionsAhead(),
 );
-const vjsfListener = () => transactionTracker.add(basicModel.value, false);
+const vjsfListener = () => {
+  // Since the vjsf form will be re-rendered, retrieve the active element, and store its properties
+  const el = document.activeElement as HTMLInputElement;
+  const curosrPos = el.selectionStart as number;
+  const scrollPos = el.scrollLeft;
+
+  const oldTransactionLength = transactionTracker.getTransactions().length;
+
+  // This will cause the re-render
+  transactionTracker.add(basicModel.value, false)
+
+  // Changes that invalidate the schema don't get recorded, so in that case there's nothing to fix
+  if (transactionTracker.getTransactions().length === oldTransactionLength) {
+    return;
+  }
+
+  // A transaction was recorded, which means the form will be re-rendered.
+  // However, we only care about this behavior on normal strings.
+  const { newValue } = transactionTracker.getTransactions()[transactionTracker.getTransactionPointer()];
+  if (typeof newValue !== 'string') {
+    return;
+  }
+
+  // We choose single quotes to wrap the text, and if the text contains any single quotes itself,
+  // we must use xpath.concat to create the string properly. The string we pass to xpath.concat
+  // has the following format:
+  //    'no single quotes', "<single quote>", 'no single quotes', ...
+  let xpathValue = `'${newValue}'`;
+  if (newValue.includes("'")) {
+    const splitValue = newValue.split("'");
+    const mappedValue = splitValue.map((s) => `'${s}'`);
+    for (let i = 1; i < mappedValue.length; i += 2) {
+      mappedValue.splice(i, 0, `"'"`)
+    }
+    xpathValue = `concat(${mappedValue.join(', ')})`;
+  }
+
+  // A double render may occur, so use a timeout to wait until that's done and retrieve the settled element
+  setTimeout(() => {
+    const newElement = document.evaluate(
+      `//input[@value=${xpathValue}]`,
+      document,
+      null,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+    ).singleNodeValue as HTMLInputElement;
+
+    newElement.focus()
+    newElement.setSelectionRange(curosrPos, curosrPos, 'forward');
+    newElement.scroll({ left: scrollPos });
+  }, 10);
+};
 const modified = computed(() => transactionTracker.isModified());
 
 async function save() {
