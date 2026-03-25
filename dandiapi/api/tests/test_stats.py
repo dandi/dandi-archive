@@ -14,6 +14,7 @@ def test_stats_baseline(api_client):
         'published_dandiset_count': 0,
         'user_count': 0,
         'size': 0,
+        'asset_count': 0,
     }
 
 
@@ -77,6 +78,20 @@ def test_stats_asset(api_client, version, asset):
     stats = api_client.get('/api/stats/').data
 
     assert stats['size'] == asset.size
+    assert stats['asset_count'] == 1
+
+
+@pytest.mark.django_db
+def test_stats_asset_count(api_client, version, asset_factory):
+    """Test that asset_count reflects the number of distinct assets in any version."""
+    assets = [asset_factory() for _ in range(3)]
+    for a in assets:
+        version.assets.add(a)
+
+    compute_application_stats()
+
+    stats = api_client.get('/api/stats/').data
+    assert stats['asset_count'] == 3
 
 
 @pytest.mark.django_db

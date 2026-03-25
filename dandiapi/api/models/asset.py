@@ -353,3 +353,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             or 0
             for cls in (AssetBlob, ZarrArchive)
         )
+
+    @classmethod
+    def total_count(cls):
+        return cls.objects.filter(versions__isnull=False).distinct().count()

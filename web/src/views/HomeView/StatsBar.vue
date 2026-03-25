@@ -10,8 +10,8 @@
       >
         <v-col
           class="py-0 flex-grow-1"
-          md="4"
-          sm="4"
+          md="3"
+          sm="3"
           cols="12"
         >
           <SingleStat
@@ -35,6 +35,7 @@ import SingleStat from '@/views/HomeView/SingleStat.vue';
 const dandisets = ref(0);
 const users = ref(0);
 const size = ref(0);
+const files = ref(0);
 
 const stats = computed(() => [
   {
@@ -43,6 +44,7 @@ const stats = computed(() => [
     description: 'A DANDI dataset including files and dataset-level metadata',
     href: '/dandiset',
   },
+  { name: 'files', value: files.value },
   { name: 'users', value: users.value },
   { name: 'total data size', value: filesize(size.value, { round: 0, base: 10, standard: 'iec' }) },
 ]);
@@ -52,5 +54,6 @@ dandiRest.stats().then((data) => {
   dandisets.value = data.dandiset_count;
   users.value = data.user_count;
   size.value = data.size;
+  files.value = data.asset_count;
 });
 </script>

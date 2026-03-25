@@ -11,6 +11,7 @@ class ApplicationStats(models.Model):  # noqa: DJ008
     published_dandiset_count = models.PositiveIntegerField()
     user_count = models.PositiveIntegerField()
     size = models.PositiveBigIntegerField()
+    asset_count = models.PositiveBigIntegerField(default=0)
 
     class Meta:
         verbose_name_plural = 'Application Stats'

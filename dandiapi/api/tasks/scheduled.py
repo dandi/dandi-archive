@@ -153,6 +153,7 @@ def compute_application_stats() -> None:
         published_dandiset_count=Dandiset.published_count(),
         user_count=User.objects.filter(metadata__status=UserMetadata.Status.APPROVED).count(),
         size=Asset.total_size(),
+        asset_count=Asset.total_count(),
     )
 
 
