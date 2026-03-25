@@ -198,9 +198,7 @@ def _process_new_registration(
 
     # Auto-approve users with eligible GitHub emails, otherwise set to pending
     user_metadata.status = (
-        UserMetadata.Status.APPROVED
-        if github_email_auto_approve
-        else UserMetadata.Status.PENDING
+        UserMetadata.Status.APPROVED if github_email_auto_approve else UserMetadata.Status.PENDING
     )
     user_metadata.save(update_fields=['status'])
 

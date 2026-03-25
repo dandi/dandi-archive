@@ -296,9 +296,7 @@ def test_institutional_email_questionnaire(api_client: APIClient, mailoutbox: li
     assert user.metadata.status == UserMetadata.Status.PENDING
 
     # A verification email should have been sent
-    verification_emails = [
-        m for m in mailoutbox if 'Verify your institutional email' in m.subject
-    ]
+    verification_emails = [m for m in mailoutbox if 'Verify your institutional email' in m.subject]
     assert len(verification_emails) == 1
     assert verification_emails[0].to == ['user@university.edu']
 

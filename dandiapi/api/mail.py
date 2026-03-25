@@ -197,7 +197,7 @@ def send_verification_email(user: User, socialaccount: SocialAccount):
 
     # Create the verification URL with the token
     token = user.metadata.verification_token
-    verification_url = f"{settings.DANDI_API_URL}{reverse('verify-email')}?token={token}"
+    verification_url = f'{settings.DANDI_API_URL}{reverse("verify-email")}?token={token}'
 
     # Set the token creation time
     user.metadata.verification_token_created = datetime.datetime.now(tz=datetime.UTC)
