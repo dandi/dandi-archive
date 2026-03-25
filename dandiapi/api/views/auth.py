@@ -69,7 +69,6 @@ AUTO_APPROVE_EMAIL_SUFFIXES = [
     '.edu',
     '.gov',
     '@alleninstitute.org',
-    '@nih.gov',
     '@janelia.hhmi.org',
     '@ccf.org',
     '.ac.uk',

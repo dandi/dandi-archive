@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import json
 from typing import TYPE_CHECKING, Any
+import uuid
 
 from django.conf import settings
 from django.urls.base import reverse
@@ -304,8 +305,6 @@ def test_institutional_email_questionnaire(api_client: APIClient, mailoutbox: li
 @pytest.mark.django_db
 def test_verify_email_valid_token(client: Client):
     """Test successful email verification with a valid token."""
-    import uuid
-
     token = uuid.uuid4()
     user = UserFactory.create(
         email='personal@gmail.com',
@@ -328,8 +327,6 @@ def test_verify_email_valid_token(client: Client):
 @pytest.mark.django_db
 def test_verify_email_expired_token(client: Client):
     """Test that expired tokens are rejected."""
-    import uuid
-
     token = uuid.uuid4()
     UserFactory.create(
         email='personal@gmail.com',
@@ -360,8 +357,6 @@ def test_verify_email_missing_token(client: Client):
 @pytest.mark.django_db
 def test_verify_email_nonexistent_token(client: Client):
     """Test that nonexistent tokens are rejected."""
-    import uuid
-
     resp = client.get(reverse('verify-email'), {'token': str(uuid.uuid4())})
     assert resp.status_code == 400
 
