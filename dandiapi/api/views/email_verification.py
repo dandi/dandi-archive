@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import datetime
 import logging
-import uuid
 from typing import TYPE_CHECKING
+import uuid
 
 from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect
@@ -42,22 +42,23 @@ def verify_email_view(request: HttpRequest) -> HttpResponseBase:
         return HttpResponseBadRequest('Invalid or expired verification token')
 
     # Check if token is expired (24 hours)
-    if user_metadata.verification_token_created:
-        created_time = user_metadata.verification_token_created
-        token_age = datetime.datetime.now(tz=datetime.UTC) - created_time
-        if token_age.total_seconds() > TOKEN_EXPIRATION_SECONDS:
-            return HttpResponseBadRequest('Verification token has expired')
+    if not user_metadata.verification_token_created:
+        return HttpResponseBadRequest('Invalid or expired verification token')
+    token_age = datetime.datetime.now(tz=datetime.UTC) - user_metadata.verification_token_created
+    if token_age.total_seconds() > TOKEN_EXPIRATION_SECONDS:
+        return HttpResponseBadRequest('Verification token has expired')
 
-    # Mark email as verified and approve user
+    # Mark email as verified, approve user, and invalidate the token
     user_metadata.is_email_verified = True
     user_metadata.status = UserMetadata.Status.APPROVED
-    user_metadata.save(update_fields=['is_email_verified', 'status'])
+    user_metadata.verification_token = None
+    user_metadata.save(update_fields=['is_email_verified', 'status', 'verification_token'])
 
     # Send approval email
     user = user_metadata.user
-    for socialaccount in user.socialaccount_set.all():
+    socialaccount = user.socialaccount_set.first()
+    if socialaccount:
         send_approved_user_message(user, socialaccount)
-        break  # Just send to the first social account
 
     logger.info('User %s email verified and approved', user.username)
 

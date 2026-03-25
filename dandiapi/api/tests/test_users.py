@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import json
 from typing import TYPE_CHECKING, Any
 
@@ -272,6 +273,99 @@ def test_user_edu_auto_approve(api_client: APIClient, email: str, expected_statu
     resp = api_client.post(reverse('user-questionnaire'))
     assert resp.status_code == 302
     assert user.metadata.status == expected_status
+
+
+@pytest.mark.django_db
+def test_institutional_email_questionnaire(api_client: APIClient, mailoutbox: list[EmailMessage]):
+    """Test that providing a .edu institutional email sends a verification email."""
+    user = UserFactory.create(
+        email='personal@gmail.com',
+        metadata__status=UserMetadata.Status.INCOMPLETE,
+    )
+    api_client.force_authenticate(user=user)
+
+    resp = api_client.post(
+        reverse('user-questionnaire'),
+        data={'institutional_email': 'user@university.edu'},
+    )
+    assert resp.status_code == 302
+
+    user.metadata.refresh_from_db()
+    assert user.metadata.institutional_email == 'user@university.edu'
+    assert user.metadata.verification_token is not None
+    assert user.metadata.status == UserMetadata.Status.PENDING
+
+    # A verification email should have been sent
+    verification_emails = [
+        m for m in mailoutbox if 'Verify your institutional email' in m.subject
+    ]
+    assert len(verification_emails) == 1
+    assert verification_emails[0].to == ['user@university.edu']
+
+
+@pytest.mark.django_db
+def test_verify_email_valid_token(client: Client):
+    """Test successful email verification with a valid token."""
+    import uuid
+
+    token = uuid.uuid4()
+    user = UserFactory.create(
+        email='personal@gmail.com',
+        metadata__status=UserMetadata.Status.PENDING,
+        metadata__institutional_email='user@university.edu',
+        metadata__verification_token=token,
+        metadata__verification_token_created=datetime.datetime.now(tz=datetime.UTC),
+        metadata__is_email_verified=False,
+    )
+
+    resp = client.get(reverse('verify-email'), {'token': str(token)})
+    assert resp.status_code == 302  # redirect on success
+
+    user.metadata.refresh_from_db()
+    assert user.metadata.is_email_verified is True
+    assert user.metadata.status == UserMetadata.Status.APPROVED
+    assert user.metadata.verification_token is None  # token should be invalidated
+
+
+@pytest.mark.django_db
+def test_verify_email_expired_token(client: Client):
+    """Test that expired tokens are rejected."""
+    import uuid
+
+    token = uuid.uuid4()
+    UserFactory.create(
+        email='personal@gmail.com',
+        metadata__status=UserMetadata.Status.PENDING,
+        metadata__verification_token=token,
+        metadata__verification_token_created=datetime.datetime.now(tz=datetime.UTC)
+        - datetime.timedelta(hours=25),
+    )
+
+    resp = client.get(reverse('verify-email'), {'token': str(token)})
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_verify_email_invalid_token(client: Client):
+    """Test that invalid tokens are rejected."""
+    resp = client.get(reverse('verify-email'), {'token': 'not-a-uuid'})
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_verify_email_missing_token(client: Client):
+    """Test that missing tokens are rejected."""
+    resp = client.get(reverse('verify-email'))
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_verify_email_nonexistent_token(client: Client):
+    """Test that nonexistent tokens are rejected."""
+    import uuid
+
+    resp = client.get(reverse('verify-email'), {'token': str(uuid.uuid4())})
+    assert resp.status_code == 400
 
 
 @pytest.mark.django_db

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
-
 from django.db import migrations, models
 
 
@@ -26,7 +24,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='usermetadata',
             name='verification_token',
-            field=models.UUIDField(blank=True, default=uuid.uuid4, null=True),
+            field=models.UUIDField(blank=True, default=None, null=True),
         ),
         migrations.AddField(
             model_name='usermetadata',

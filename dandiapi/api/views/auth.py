@@ -163,16 +163,12 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
                 or user_metadata.institutional_email.endswith('.gov')
             )
 
-            # Set status based on email verification requirements
-            if github_email_auto_approve:
-                # Auto-approve users with eligible GitHub emails
-                user_metadata.status = UserMetadata.Status.APPROVED
-            elif needs_institutional_verification:
-                # Set to pending until institutional email is verified
-                user_metadata.status = UserMetadata.Status.PENDING
-            else:
-                # Regular manual approval process
-                user_metadata.status = UserMetadata.Status.PENDING
+            # Auto-approve users with eligible GitHub emails, otherwise set to pending
+            user_metadata.status = (
+                UserMetadata.Status.APPROVED
+                if github_email_auto_approve
+                else UserMetadata.Status.PENDING
+            )
 
             user_metadata.save(update_fields=['status'])
 

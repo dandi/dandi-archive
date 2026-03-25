@@ -6,7 +6,7 @@
   <form method="POST" class="col s12">
     {% csrf_token %}
     {{ form }}
-        <div class="row">
+    <div class="row">
       <div class="col m6 offset-m3 s12">
         {% for question in questions %}
           <div class="input-field">
