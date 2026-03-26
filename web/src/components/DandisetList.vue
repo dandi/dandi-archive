@@ -69,7 +69,7 @@
           >
             mdi-database
           </v-icon>
-          {{ filesize(item.size, { round: 1, base: 10, standard: 'iec' }) }}
+          {{ filesize(item.size, { round: 1, base: 10, standard: 'si' }) }}
         </template>
       </v-list-item-subtitle>
 
