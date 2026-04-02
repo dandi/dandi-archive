@@ -213,9 +213,9 @@ function mapResourceTypeToCFF(resourceType?: string): string {
 /**
  * Convert CFF to BibTeX format
  */
-export function cffToBibTeX(cff: CFF, identifier: string, instanceName: string): string {
+export function cffToBibTeX(cff: CFF, dandisetVersionIdentifier: string, instanceName: string): string {
   const type = '@dataset';
-  const key = `${instanceName.toLowerCase()}:${identifier.replace('/', '_')}`;
+  const key = `${instanceName.toLowerCase()}:${dandisetVersionIdentifier.replace('/', '_')}`;
 
   const authors = cff.authors.map(author => {
     if (author.name) {
@@ -254,7 +254,7 @@ export function cffToBibTeX(cff: CFF, identifier: string, instanceName: string):
   }
 
   bibtex += `  publisher = {${instanceName} Archive},\n`;
-  bibtex += `  note = {${instanceName}:${identifier}}\n`;
+  bibtex += `  note = {${instanceName}:${dandisetVersionIdentifier}}\n`;
   bibtex += '}';
 
   return bibtex;
@@ -460,7 +460,7 @@ export function cffToIEEE(cff: CFF, instanceName: string): string {
 /**
  * Convert CFF to RIS format
  */
-export function cffToRIS(cff: CFF, identifier: string, instanceName: string): string {
+export function cffToRIS(cff: CFF, dandisetVersionIdentifier: string, instanceName: string): string {
   let ris = 'TY  - DATA\n';
   ris += `TI  - ${cff.title}\n`;
 
@@ -497,7 +497,7 @@ export function cffToRIS(cff: CFF, identifier: string, instanceName: string): st
   }
 
   ris += `PB  - ${instanceName} Archive\n`;
-  ris += `N1  - ${instanceName}:${identifier}\n`;
+  ris += `N1  - ${instanceName}:${dandisetVersionIdentifier}\n`;
 
   if (cff.version) {
     ris += `VL  - ${cff.version}\n`;

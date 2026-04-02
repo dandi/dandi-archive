@@ -187,13 +187,13 @@
         </h3>
         <div class="copy-block mb-2">
           <div class="copy-block-content copy-block-inline">
-            <span>{{ dandiIdentifier }}</span>
+            <span>{{ instanceName }}:{{ dandisetVersionIdentifier }}</span>
             <v-btn
               icon
               size="small"
               variant="text"
               class="copy-btn"
-              @click="copyToClipboard(dandiIdentifier)"
+              @click="copyToClipboard(`${instanceName}:${dandisetVersionIdentifier}`)"
             >
               <v-icon size="small">
                 mdi-content-copy
@@ -310,18 +310,18 @@ const formattedCitations = computed<Record<CitationFormat, string>>(() => {
       cff: '',
     };
   }
-  const identifier = dandiIdentifier.value;
-  const name = instanceName.value;
+  const dandiset_version_identifier = dandisetVersionIdentifier.value;
+  const instance_name = instanceName.value;
 
   return {
-    apa: cffToAPA(cffObject.value, name),
-    mla: cffToMLA(cffObject.value, name),
-    chicago: cffToChicago(cffObject.value, name),
-    harvard: cffToHarvard(cffObject.value, name),
-    vancouver: cffToVancouver(cffObject.value, name),
-    ieee: cffToIEEE(cffObject.value, name),
-    bibtex: cffToBibTeX(cffObject.value, identifier, name),
-    ris: cffToRIS(cffObject.value, identifier, name),
+    apa: cffToAPA(cffObject.value, instance_name),
+    mla: cffToMLA(cffObject.value, instance_name),
+    chicago: cffToChicago(cffObject.value, instance_name),
+    harvard: cffToHarvard(cffObject.value, instance_name),
+    vancouver: cffToVancouver(cffObject.value, instance_name),
+    ieee: cffToIEEE(cffObject.value, instance_name),
+    bibtex: cffToBibTeX(cffObject.value, dandiset_version_identifier, instance_name),
+    ris: cffToRIS(cffObject.value, dandiset_version_identifier, instance_name),
     cff: cffToYAML(cffObject.value),
   };
 });
@@ -358,14 +358,14 @@ const isCodeFormat = computed(() => {
   return ['bibtex', 'ris', 'cff'].includes(selectedCitationFormat.value);
 });
 
-const dandiIdentifier = computed(() => {
+const dandisetVersionIdentifier = computed(() => {
   if (!currentDandiset.value) {
     return '';
   }
 
   const { identifier } = currentDandiset.value.dandiset;
   const version = props.meta?.version || currentDandiset.value.version;
-  return `${instanceName.value}:${identifier}/${version}`;
+  return `${identifier}/${version}`;
 });
 
 const dandiUrl = computed(() => {
