@@ -53,6 +53,7 @@
       </v-card-title>
       <v-list class="pa-0">
         <v-list-item density="compact">
+          <!-- TODO: BRANDING(name) - hardcoded "DANDI CLI" name -->
           Use this command in your DANDI CLI
         </v-list-item>
         <v-list-item density="compact">
@@ -110,13 +111,15 @@
           </v-expansion-panel>
           <v-expansion-panel>
             <v-expansion-panel-title>
+              <!-- TODO: BRANDING(name) - hardcoded "DANDI CLI" name -->
               Don't have DANDI CLI?
-            </v-expansion-panel-title>
+                </v-expansion-panel-title>
             <v-expansion-panel-text>
               <v-list>
                 <v-list-item>
+                  <!-- TODO: BRANDING(name) - hardcoded "DANDI CLI" name -->
                   Install the Python client (DANDI CLI)
-                  in a Python {{ cliRequiresPython }} environment using command:
+                          in a Python {{ cliRequiresPython }} environment using command:
                 </v-list-item>
                 <v-list-item>
                   <kbd>pip install "dandi>={{ cliMinimalVersion }}"</kbd>

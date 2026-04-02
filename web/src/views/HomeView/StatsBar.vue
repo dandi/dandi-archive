@@ -40,7 +40,7 @@ const stats = computed(() => [
   {
     name: 'dandisets',
     value: dandisets.value,
-    description: 'A DANDI dataset including files and dataset-level metadata',
+    description: 'A DANDI dataset including files and dataset-level metadata', // TODO: BRANDING(name) - hardcoded archive name
     href: '/dandiset',
   },
   { name: 'users', value: users.value },

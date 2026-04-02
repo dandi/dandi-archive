@@ -1,3 +1,4 @@
+// TODO: BRANDING START - hardcoded instance-specific URLs; should come from backend config
 const dandiUrl = 'https://dandiarchive.org';
 const dandiAboutUrl = 'https://about.dandiarchive.org/';
 const dandiBlogUrl = 'https://about.dandiarchive.org/blog/';
@@ -5,6 +6,7 @@ const dandiDocumentationUrl = 'https://docs.dandiarchive.org';
 const dandiHelpUrl = 'https://docs.dandiarchive.org/support/';
 const dandihubUrl = 'https://hub.dandiarchive.org/';
 const sandboxDocsUrl = `${dandiDocumentationUrl}/getting-started/creating-account/`;
+// TODO: BRANDING END
 
 const draftVersion = 'draft';
 

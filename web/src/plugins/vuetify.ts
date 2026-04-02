@@ -12,6 +12,7 @@ import colors from 'vuetify/util/colors';
 // Composables
 import { createVuetify } from 'vuetify'
 
+// TODO: BRANDING START - hardcoded brand color palette
 const DandiLightTheme = {
   dark: false,
   colors: {
@@ -35,6 +36,7 @@ const DandiDarkTheme = {
     highlight: colors.grey.darken2,
   }
 };
+// TODO: BRANDING END
 
 // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 export default createVuetify({

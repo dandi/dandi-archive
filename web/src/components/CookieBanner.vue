@@ -48,6 +48,7 @@ function setCookie() {
       max-width="60%"
       style="left: 50%; transform: translateX(-50%); z-index: 1;"
     >
+      <!-- TODO: BRANDING(name) - hardcoded archive name -->
       <span v-if="cookiesEnabled">We use cookies to ensure you get the best experience on DANDI.</span>
       <span v-else>We noticed you're blocking cookies - note that certain aspects of the site may not work.</span>
       <v-btn
