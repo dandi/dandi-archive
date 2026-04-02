@@ -90,20 +90,27 @@ test.describe("dandiset landing page", async () => {
       await expect(page.getByRole("heading", { name: "Full Citation" })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Materials and Methods" })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Data Availability Statement" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: `${instanceName} Identifier` })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Dandiset Identifier" })).toBeVisible();
+      if (instanceIdentifier) {
+        await expect(page.getByRole("heading", { name: "Archive Identifier" })).toBeVisible();
+      }
       await expect(page.getByRole("heading", { name: "License" })).toBeVisible();
     });
 
-    test("displays instance-specific identifier with correct format", async ({ page }) => {
+    test("displays dandiset identifier with correct format", async ({ page }) => {
       await page.getByRole("tab", { name: "How to Cite" }).click();
 
-      // The identifier should follow the format <instance_name>:<id>/draft
+      // The dandiset identifier should follow the format <instance_name>:<id>/draft
       await expect(page.getByText(`${instanceName}:${dandisetId}/draft`)).toBeVisible();
-      // The archive info should use the instance name and identifier from the API
-      const expectedArchiveInfo = instanceIdentifier
-        ? `${instanceName} Archive ${instanceIdentifier}`
-        : `${instanceName} Archive`;
-      await expect(page.getByText(expectedArchiveInfo)).toBeVisible();
+    });
+
+    test("displays archive identifier when configured", async ({ page }) => {
+      await page.getByRole("tab", { name: "How to Cite" }).click();
+
+      if (instanceIdentifier) {
+        const expectedArchiveId = `${instanceName} Archive ${instanceIdentifier}`;
+        await expect(page.getByText(expectedArchiveId)).toBeVisible();
+      }
     });
 
     test("displays citation format selector", async ({ page }) => {

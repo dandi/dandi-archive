@@ -181,9 +181,9 @@
 
         <v-divider class="my-4" />
 
-        <!-- DANDI Identifier -->
+        <!-- Dandiset Identifier -->
         <h3 class="text-h6 mb-2">
-          {{ instanceName }} Identifier
+          Dandiset Identifier
         </h3>
         <div class="copy-block mb-2">
           <div class="copy-block-content copy-block-inline">
@@ -207,9 +207,39 @@
             </v-btn>
           </div>
         </div>
-        <p class="text-body-2 text-grey mb-4">
-          {{ instanceName }} Archive{{ instanceIdentifier ? ` ${instanceIdentifier}` : '' }}
-        </p>
+
+        <!-- Archive Identifier -->
+        <h3
+          v-if="archiveIdentifier"
+          class="text-h6 mb-2 mt-4"
+        >
+          Archive Identifier
+        </h3>
+        <div
+          v-if="archiveIdentifier"
+          class="copy-block mb-4"
+        >
+          <div class="copy-block-content copy-block-inline">
+            <span>{{ archiveIdentifier }}</span>
+            <v-btn
+              icon
+              size="small"
+              variant="text"
+              class="copy-btn"
+              @click="copyToClipboard(archiveIdentifier)"
+            >
+              <v-icon size="small">
+                mdi-content-copy
+              </v-icon>
+              <v-tooltip
+                activator="parent"
+                location="top"
+              >
+                Copy archive identifier to clipboard
+              </v-tooltip>
+            </v-btn>
+          </div>
+        </div>
 
         <!-- License Information -->
         <div v-if="licenses && licenses.length">
@@ -259,6 +289,12 @@ const instanceStore = useInstanceStore();
 onMounted(() => instanceStore.fetchInstanceInfo());
 const instanceName = computed(() => instanceStore.instanceName);
 const instanceIdentifier = computed(() => instanceStore.instanceIdentifier);
+const archiveIdentifier = computed(() => {
+  if (!instanceIdentifier.value) {
+    return '';
+  }
+  return `${instanceName.value} Archive ${instanceIdentifier.value}`;
+});
 const currentDandiset = computed(() => store.dandiset);
 const isDraft = computed(() => store.version === 'draft');
 const publishedVersions = computed(() => store.publishedVersions);
