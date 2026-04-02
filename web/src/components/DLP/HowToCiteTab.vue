@@ -68,8 +68,14 @@
         </div>
         <div class="copy-block mb-4">
           <div class="copy-block-content">
-            <pre v-if="isCodeFormat" class="citation-text-code">{{ currentCitation }}</pre>
-            <span v-else class="citation-text">{{ currentCitation }}</span>
+            <pre
+              v-if="isCodeFormat"
+              class="citation-text-code"
+            >{{ currentCitation }}</pre>
+            <span
+              v-else
+              class="citation-text"
+            >{{ currentCitation }}</span>
             <v-btn
               icon
               size="small"
@@ -177,7 +183,7 @@
 
         <!-- DANDI Identifier -->
         <h3 class="text-h6 mb-2">
-          DANDI Identifier
+          {{ instanceName }} Identifier
         </h3>
         <div class="copy-block mb-2">
           <div class="copy-block-content copy-block-inline">
@@ -202,7 +208,7 @@
           </div>
         </div>
         <p class="text-body-2 text-grey mb-4">
-          DANDI Archive RRID: SCR_017571
+          {{ instanceName }} Archive{{ instanceIdentifier ? ` ${instanceIdentifier}` : '' }}
         </p>
 
         <!-- License Information -->
@@ -224,16 +230,16 @@
             </v-chip>
           </p>
         </div>
-
       </v-card-text>
     </v-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, type PropType, ref } from 'vue';
+import { computed, onMounted, type PropType, ref } from 'vue';
 
 import { useDandisetStore } from '@/stores/dandiset';
+import { useInstanceStore } from '@/stores/instance';
 import type { DandisetMetadata } from '@/types';
 import { dandisetToCFF, cffToBibTeX, cffToAPA, cffToMLA, cffToChicago, cffToHarvard, cffToVancouver, cffToIEEE, cffToRIS, cffToYAML } from '@/utils/cff';
 
@@ -249,6 +255,10 @@ const props = defineProps({
 });
 
 const store = useDandisetStore();
+const instanceStore = useInstanceStore();
+onMounted(() => instanceStore.fetchInstanceInfo());
+const instanceName = computed(() => instanceStore.instanceName);
+const instanceIdentifier = computed(() => instanceStore.instanceIdentifier);
 const currentDandiset = computed(() => store.dandiset);
 const isDraft = computed(() => store.version === 'draft');
 const publishedVersions = computed(() => store.publishedVersions);
@@ -282,7 +292,7 @@ const cffObject = computed(() => {
     return null;
   }
 
-  return dandisetToCFF(props.meta, typeof doi.value === 'string' ? doi.value : undefined);
+  return dandisetToCFF(props.meta, typeof doi.value === 'string' ? doi.value : undefined, instanceName.value, instanceStore.instanceUrl || undefined);
 });
 
 // Generate citations in different formats
@@ -301,16 +311,17 @@ const formattedCitations = computed<Record<CitationFormat, string>>(() => {
     };
   }
   const identifier = dandiIdentifier.value;
+  const name = instanceName.value;
 
   return {
-    apa: cffToAPA(cffObject.value),
-    mla: cffToMLA(cffObject.value),
-    chicago: cffToChicago(cffObject.value),
-    harvard: cffToHarvard(cffObject.value),
-    vancouver: cffToVancouver(cffObject.value),
-    ieee: cffToIEEE(cffObject.value),
-    bibtex: cffToBibTeX(cffObject.value, identifier),
-    ris: cffToRIS(cffObject.value, identifier),
+    apa: cffToAPA(cffObject.value, name),
+    mla: cffToMLA(cffObject.value, name),
+    chicago: cffToChicago(cffObject.value, name),
+    harvard: cffToHarvard(cffObject.value, name),
+    vancouver: cffToVancouver(cffObject.value, name),
+    ieee: cffToIEEE(cffObject.value, name),
+    bibtex: cffToBibTeX(cffObject.value, identifier, name),
+    ris: cffToRIS(cffObject.value, identifier, name),
     cff: cffToYAML(cffObject.value),
   };
 });
@@ -354,7 +365,7 @@ const dandiIdentifier = computed(() => {
 
   const { identifier } = currentDandiset.value.dandiset;
   const version = props.meta?.version || currentDandiset.value.version;
-  return `DANDI:${identifier}/${version}`;
+  return `${instanceName.value}:${identifier}/${version}`;
 });
 
 const dandiUrl = computed(() => {
@@ -371,12 +382,14 @@ const dandiUrl = computed(() => {
 
 const methodsText = computed(() => {
   const url = dandiUrl.value;
-  return `Data associated with this study are available on the DANDI Archive (RRID:SCR_017571): ${url}`;
+  const rridPart = instanceIdentifier.value ? ` (${instanceIdentifier.value})` : '';
+  return `Data associated with this study are available on the ${instanceName.value} Archive${rridPart}: ${url}`;
 });
 
 const dataAvailabilityText = computed(() => {
   const url = dandiUrl.value;
-  return `Data are publicly available on the DANDI Archive (RRID:SCR_017571) at the following URL: ${url}`;
+  const rridPart = instanceIdentifier.value ? ` (${instanceIdentifier.value})` : '';
+  return `Data are publicly available on the ${instanceName.value} Archive${rridPart} at the following URL: ${url}`;
 });
 
 function formatLicense(license: string): string {

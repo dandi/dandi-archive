@@ -132,15 +132,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useDandisetStore } from '@/stores/dandiset';
+import { useInstanceStore } from '@/stores/instance';
 import CopyText from '@/components/CopyText.vue';
 import { dandiDocumentationUrl } from '@/utils/constants';
 import { dandiRest } from '@/rest';
 
+const instanceStore = useInstanceStore();
+
 function downloadCommand(identifier: string, version: string): string {
-  // Use the special 'DANDI:' url prefix if appropriate.
+  // Use the special instance identifier url prefix if appropriate.
   const generalUrl = `${window.location.origin}/dandiset/${identifier}`;
-  const dandiUrl = `DANDI:${identifier}`;
-  const url = window.location.origin == 'https://dandiarchive.org' ? dandiUrl : generalUrl;
+  const dandiUrl = `${instanceStore.instanceName}:${identifier}`;
+  const instanceUrl = instanceStore.instanceUrl;
+  const url = instanceUrl && window.location.origin === instanceUrl ? dandiUrl : generalUrl;
 
   // Prepare a url suffix to specify a specific version (or not).
   const versionPath = version ? `/${version}` : '';
@@ -160,6 +164,7 @@ onMounted(async () => {
   const info = await dandiRest.info();
   cliMinimalVersion.value = info['cli-minimal-version'];
   cliRequiresPython.value = info['cli-requires-python'];
+  await instanceStore.fetchInstanceInfo();
 });
 
 const selectedDownloadOption = ref('draft');
