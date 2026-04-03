@@ -28,7 +28,7 @@
             {{ formatDate(item.created, 'LLL') }}
           </template>
           <template #item.size="{ item }">
-            {{ filesize(item.size, { round: 1, base: 10, standard: 'iec' }) }}
+            {{ filesize(item.size, { round: 1, base: 10, standard: 'si' }) }}
           </template>
         </v-data-table>
 

@@ -397,7 +397,7 @@ function assetMetadataURI(asset_id: string) {
 }
 
 function fileSize(item: AssetPath) {
-  return filesize(item.aggregate_size, { round: 1, base: 10, standard: 'iec' });
+  return filesize(item.aggregate_size, { round: 1, base: 10, standard: 'si' });
 }
 
 function showDelete(item: AssetPath) {
