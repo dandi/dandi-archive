@@ -160,9 +160,10 @@ export function dandisetToCFF(metadata: DandisetMetadata, doi?: string): CFF {
     cff.version = metadata.version;
   }
 
-  // Add release date
-  if (metadata.dateModified) {
-    cff['date-released'] = metadata.dateModified.split('T')[0]; // Extract date part
+  // Add release date (prefer datePublished for published versions, fall back to dateModified)
+  const releaseDate = (metadata.datePublished || metadata.dateModified) as string | undefined;
+  if (releaseDate) {
+    cff['date-released'] = releaseDate.split('T')[0]; // Extract date part
   }
 
   // Add related resources as references
