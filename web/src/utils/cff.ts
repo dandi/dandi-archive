@@ -160,8 +160,8 @@ export function dandisetToCFF(metadata: DandisetMetadata, doi?: string, versionM
     cff.version = metadata.version;
   }
 
-  // Add release date (datePublished for published versions, version modified date for drafts)
-  const releaseDate = (metadata.datePublished || versionModified) as string | undefined;
+  // Add release date (version modified date is most current, fall back to datePublished)
+  const releaseDate = (versionModified || metadata.datePublished) as string | undefined;
   if (releaseDate) {
     cff['date-released'] = releaseDate.split('T')[0]; // Extract date part
   }
