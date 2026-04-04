@@ -282,7 +282,7 @@ const cffObject = computed(() => {
     return null;
   }
 
-  return dandisetToCFF(props.meta, typeof doi.value === 'string' ? doi.value : undefined);
+  return dandisetToCFF(props.meta, typeof doi.value === 'string' ? doi.value : undefined, currentDandiset.value?.modified);
 });
 
 // Generate citations in different formats
