@@ -7,6 +7,7 @@
     <v-toolbar class="px-4 bg-grey-darken-2 text-white">
       <DandisetSearchField />
       <v-pagination
+        v-if="hasListingContext"
         v-model="page"
         :length="pages"
         :total-visible="0"
@@ -126,6 +127,7 @@ import { useDisplay } from 'vuetify';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
 import { useDandisetStore } from '@/stores/dandiset';
+import { useListingContextStore } from '@/stores/listingContext';
 import type { Dandiset, Version } from '@/types';
 import { draftVersion, sortingOptions } from '@/utils/constants';
 import { editorInterface } from '@/components/Meditor/state';
@@ -161,6 +163,7 @@ onBeforeRouteLeave((to, from, next) => {
 const route = useRoute();
 const router = useRouter();
 const store = useDandisetStore();
+const listingContext = useListingContextStore();
 const display = useDisplay();
 
 const isSmDisplay = computed(() => display.smAndDown.value);
@@ -234,22 +237,23 @@ watch([() => props.identifier, () => props.version], async () => {
   loading.value = false;
 });
 
-const page = ref(Number(route.query.pos) || 1);
+// Listing pagination — reads context from the Pinia store (not URL params)
+// so that DLP URLs stay clean and shareable.
+const hasListingContext = computed(() => listingContext.pos !== null);
+const page = ref(listingContext.pos || 1);
 const pages = ref(1);
 const nextDandiset: Ref<Partial<Dandiset>[]> = ref([]);
 
 async function fetchNextPage() {
-  const sortOption = Number(route.query.sortOption) || 0;
-  const sortDir = Number(route.query.sortDir || -1);
-  const sortField = sortingOptions[sortOption].djangoField;
-  const ordering = ((sortDir === -1) ? '-' : '') + sortField;
+  const sortField = sortingOptions[listingContext.sortOption].djangoField;
+  const ordering = ((listingContext.sortDir === -1) ? '-' : '') + sortField;
   const response = await dandiRest.dandisets({
     page: page.value,
     page_size: 1,
     ordering,
-    search: route.query.search,
-    draft: route.query.showDrafts || true,
-    empty: route.query.showEmpty,
+    search: listingContext.search,
+    draft: listingContext.showDrafts,
+    empty: listingContext.showEmpty,
   });
 
   pages.value = (response.data?.count) ? response.data?.count : 1;
@@ -267,9 +271,6 @@ function navigateToPage() {
       router.push({
         name: route.name || undefined,
         params: { identifier },
-        query: {
-          ...route.query,
-        },
       });
     }
   }
@@ -277,6 +278,7 @@ function navigateToPage() {
 
 watch(page, async (newValue, oldValue) => {
   if (oldValue !== newValue) {
+    listingContext.setContext({ pos: newValue });
     await fetchNextPage();
     navigateToPage();
   }
@@ -295,6 +297,8 @@ onMounted(async () => {
       e.returnValue = 'You have unsaved changes, are you sure you want to leave?';
     }
   });
-  await fetchNextPage(); // get the current page and total count
+  if (hasListingContext.value) {
+    await fetchNextPage(); // get the current page and total count
+  }
 });
 </script>

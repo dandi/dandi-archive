@@ -187,6 +187,7 @@ import { useRoute } from 'vue-router';
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
+import { useListingContextStore } from '@/stores/listingContext';
 import type { Dandiset, Paginated, Version } from '@/types';
 import { sortingOptions, DANDISETS_PER_PAGE } from '@/utils/constants';
 import router from '@/router';
@@ -276,6 +277,23 @@ watch(queryParams, (params) => {
     },
   });
 });
+
+// Keep the listing context store in sync so the DLP can use it for pagination
+// without needing URL query params.
+const listingContext = useListingContextStore();
+watch(
+  [sortOption, sortDir, showDrafts, showEmpty, () => route.query.search],
+  () => {
+    listingContext.setContext({
+      sortOption: sortOption.value,
+      sortDir: sortDir.value,
+      showDrafts: showDrafts.value,
+      showEmpty: showEmpty.value,
+      search: (route.query.search as string) || null,
+    });
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>

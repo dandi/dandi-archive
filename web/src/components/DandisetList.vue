@@ -10,9 +10,9 @@
       :to="{
         name: 'dandisetLanding',
         params: { identifier: item.dandiset.identifier },
-        query: { ...$route.query, pos: getPos(index) },
       }"
       exact
+      @click="savePos(index)"
     >
       <v-list-item-title class="wrap-text text-h6 text-grey-darken-3 font-weight-medium">
         {{ item.name }}
@@ -85,6 +85,7 @@ import moment from 'moment';
 import { filesize } from 'filesize';
 import StarButton from '@/components/StarButton.vue';
 import { dandiRest } from '@/rest';
+import { useListingContextStore } from '@/stores/listingContext';
 
 import type { Version } from '@/types';
 import { DANDISETS_PER_PAGE } from '@/utils/constants';
@@ -97,6 +98,7 @@ defineProps({
 });
 
 const route = useRoute();
+const listingContext = useListingContextStore();
 const archiveName = ref<string>('');
 
 onMounted(async () => {
@@ -107,6 +109,9 @@ onMounted(async () => {
 // current position in search result set = items on prev pages + position on current page
 function getPos(index: number) {
   return (Number(route.query.page || 1) - 1) * DANDISETS_PER_PAGE + (index + 1);
+}
+function savePos(index: number) {
+  listingContext.setContext({ pos: getPos(index) });
 }
 function formatDate(date: string) {
   return moment(date).format('LL');
