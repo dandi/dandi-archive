@@ -15,7 +15,7 @@ Choosing the right systems is a prerequisite for all downstream tooling. Once th
 
 ## Landscape of available systems
 
-![Ontology landscape diagram showing the relationship between species (Mouse, Human, Macaque, Marmoset, Other species) and ontologies/atlases (Allen CCFv3, HBA, CHARM, HOMBA, UBERON) with existing and proposed bridges](ontology-landscape.png)
+![Ontology landscape diagram showing the relationship between species (Mouse, Rat, Human, Macaque, Marmoset, Other species) and ontologies/atlases (Allen CCFv3, Paxinos-Watson, HBA, CHARM, HOMBA, UBERON) with existing and planned bridges](brain_ontology_species_diagram.svg)
 
 There is no single ontology or atlas that meets all of DANDI's needs. The relevant systems fall into two categories: species-specific atlases (which have spatial data but limited interoperability) and cross-species ontologies (which enable interoperability but lack spatial data). The sections below describe each system and its strengths and limitations.
 
