@@ -242,6 +242,30 @@ test.describe("DLP citation format URL state", () => {
     await expect(page.locator(".citation-format-select")).toContainText("Harvard");
   });
 
+  test("citation format survives page reload", async ({ page }) => {
+    await registerNewUser(page);
+    const dandisetId = await registerDandiset(page, faker.lorem.words(), faker.lorem.sentences());
+
+    await page.goto(`${clientUrl}/dandiset/${dandisetId}?tab=how-to-cite`);
+    await page.waitForLoadState("networkidle");
+
+    // Select Harvard
+    await page.locator(".citation-format-select").click();
+    await page.getByRole("option", { name: "Harvard" }).click();
+    await page.waitForTimeout(500);
+
+    // Reload
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+
+    // Should still be on How to Cite with Harvard selected
+    await expect(page.getByText("How to Cite this Dataset")).toBeVisible();
+    await expect(page.locator(".citation-format-select")).toContainText("Harvard");
+    const url = new URL(page.url());
+    expect(url.searchParams.get("tab")).toBe("how-to-cite");
+    expect(url.searchParams.get("format")).toBe("harvard");
+  });
+
   test("switching back to APA removes format param", async ({ page }) => {
     await registerNewUser(page);
     const dandisetId = await registerDandiset(page, faker.lorem.words(), faker.lorem.sentences());

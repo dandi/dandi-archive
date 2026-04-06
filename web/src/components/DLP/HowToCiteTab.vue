@@ -231,7 +231,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type PropType, ref } from 'vue';
+import { computed, type PropType, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 import { useDandisetStore } from '@/stores/dandiset';
 import type { DandisetMetadata } from '@/types';
@@ -273,8 +274,26 @@ const latestPublishedVersionLink = computed(() => {
 // Define citation format types
 type CitationFormat = 'apa' | 'mla' | 'chicago' | 'harvard' | 'vancouver' | 'ieee' | 'bibtex' | 'ris' | 'cff';
 
-// Citation format state
-const selectedCitationFormat = ref<CitationFormat>('apa'); // For the dropdown in Full Citation section
+// Sync citation format with ?format= URL query param.
+const route = useRoute();
+const router = useRouter();
+const validFormats: CitationFormat[] = ['apa', 'mla', 'chicago', 'harvard', 'vancouver', 'ieee', 'bibtex', 'ris', 'cff'];
+const initialFormat = validFormats.includes(route.query.format as CitationFormat)
+  ? route.query.format as CitationFormat
+  : 'apa';
+const selectedCitationFormat = ref<CitationFormat>(initialFormat);
+
+watch(selectedCitationFormat, (fmt) => {
+  const currentFmt = route.query.format as string | undefined;
+  if (fmt === currentFmt) return;
+  const query = { ...route.query };
+  if (fmt === 'apa') {
+    delete query.format;
+  } else {
+    query.format = fmt;
+  }
+  router.replace({ ...route, query });
+});
 
 // Generate CFF object from metadata
 const cffObject = computed(() => {

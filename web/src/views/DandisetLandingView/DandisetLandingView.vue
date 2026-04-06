@@ -130,7 +130,7 @@ import { useDandisetStore } from '@/stores/dandiset';
 import { useListingContextStore } from '@/stores/listingContext';
 import type { Dandiset, Version } from '@/types';
 import { draftVersion, sortingOptions } from '@/utils/constants';
-import { editorInterface } from '@/components/Meditor/state';
+import { editorInterface, open as meditorOpen } from '@/components/Meditor/state';
 import { dandiRest } from '@/rest';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
@@ -167,6 +167,22 @@ const listingContext = useListingContextStore();
 const display = useDisplay();
 
 const isSmDisplay = computed(() => display.smAndDown.value);
+
+// Sync meditor open/close state with ?overlay=meditor URL query param.
+if (route.query.overlay === 'meditor') {
+  meditorOpen.value = true;
+}
+watch(meditorOpen, (isOpen) => {
+  const hasParam = route.query.overlay === 'meditor';
+  if (isOpen && !hasParam) {
+    router.replace({ ...route, query: { ...route.query, overlay: 'meditor' } });
+  } else if (!isOpen && hasParam) {
+    const query = { ...route.query };
+    delete query.overlay;
+    router.replace({ ...route, query });
+  }
+});
+
 const currentDandiset = computed(() => store.dandiset);
 const loading = ref(false);
 
