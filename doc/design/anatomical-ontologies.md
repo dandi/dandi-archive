@@ -98,6 +98,26 @@ CHARM is a hierarchical cortical parcellation for the rhesus macaque, developed 
 - Uses its own naming conventions (derived from D99/Saleem & Logothetis); no formal mapping to HOMBA or UBERON
 - Surface meshes are in GIFTI format (not .obj), requiring conversion for web-based viewers
 
+### WHS (Waxholm Space Atlas of the Sprague Dawley Rat Brain)
+
+The Waxholm Space Atlas is the primary open, digital, volumetric atlas for the rat brain, developed by the International Neuroinformatics Coordinating Facility (INCF) and hosted at the Norwegian University of Science and Technology (NTNU). It provides a standardized reference space based on high-resolution MRI of the Sprague Dawley rat brain. The atlas uses nomenclature compatible with the Paxinos-Watson atlas ("The Rat Brain in Stereotaxic Coordinates"), the de facto standard for rat neuroanatomy.
+
+**Strengths:**
+
+- Whole-brain volumetric parcellation (222 labeled regions in v4) at 39 µm isotropic resolution
+- Open access (CC-BY-SA) via NITRC and EBRAINS
+- Uses Paxinos-Watson-compatible nomenclature (7th edition), the community standard for rat
+- Available through BrainGlobe's atlas API for programmatic access
+- Actively maintained with progressive refinement (v1 2014 → v4 2023)
+
+**Limitations:**
+
+- Rat only
+- No formal ontology representation (no OWL/OBO files, no resolvable URIs for individual regions)
+- No UBERON bridge
+- Fewer regions (222) than the full Paxinos-Watson nomenclature (~800+ structures)
+- Surface meshes not prominently distributed (available via third-party tools like BrainGlobe or 3D Slicer)
+
 ### HBA / HBAO (Allen Human Brain Atlas Ontology)
 
 The Allen Human Brain Atlas (HBA) defines ~141 brain structures used to annotate the Allen Human Reference Atlas - 3D (2020), a whole-brain volumetric parcellation of the MNI152 template. The BICAN project has ontologized HBA as HBAO, providing OWL/OBO files, resolvable persistent URIs, and UBERON mappings.
@@ -135,6 +155,8 @@ The per-species strategy is:
 
 **Marmoset:** Store HOMBA IDs + UBERON IDs. Several whole-brain marmoset atlases exist with volumetric parcellations and surfaces (Brain/MINDS BMA2.0 with 323 regions per hemisphere, MBM V3 with FreeSurfer/SUMA surfaces), but none have been ontologized or bridged to UBERON. As marmoset-specific atlas support matures, a species-specific atlas ID could be added alongside HOMBA and UBERON, similar to the macaque strategy with CHARM.
 
+**Rat:** Store WHS atlas IDs + UBERON IDs. The WHS atlas (v4) provides the volumetric parcellation using Paxinos-Watson-compatible nomenclature. Both IDs are stored explicitly because no formal bridge exists between WHS and UBERON. HOMBA does not currently include rat.
+
 **Human:** Store HBA IDs + HOMBA IDs. UBERON IDs can be derived from HBA via the existing `uberon-bridge-to-aba.owl` bridge. HOMBA provides finer-grained localization (2,341 vs. 141 terms) and cross-primate alignment. If a term is more specific than what HBA covers but is present in UBERON, store the UBERON ID alongside HBA.
 
 **All other species:** Store UBERON IDs. As species-specific atlases become available (e.g., via BrainGlobe), add support for storing their IDs alongside UBERON.
@@ -157,7 +179,20 @@ This is largely complete (see [dandi-cli PR #1825](https://github.com/dandi/dand
 
 **Status:** In progress. The existing implementation on the `add-brain-area-anatomy` branch handles Allen CCFv3 matching for mouse.
 
-### Phase 2: UBERON
+### Phase 2: WHS Rat Brain Atlas
+
+Add WHS-based matching for rat datasets, analogous to CCFv3 for mouse.
+
+**Scope:**
+
+- Bundle the WHS v4 region lookup table (available from NITRC or via BrainGlobe)
+- Match input location strings against WHS region names and abbreviations (Paxinos-Watson-compatible nomenclature)
+- For rat datasets, resolve each brain region label to a WHS region ID
+- Store the resolved WHS ID in the dandiset metadata
+
+**Outcome:** After this phase, rat datasets carry WHS IDs that link to a whole-brain volumetric parcellation, enabling visualization in a future multi-species DANDI Atlas Explorer.
+
+### Phase 3: UBERON
 
 Add UBERON-based matching as a fallback for all species.
 
@@ -171,7 +206,7 @@ Add UBERON-based matching as a fallback for all species.
 
 **Outcome:** After this phase, every species on DANDI can get at least a coarse brain region annotation. Mouse uses CCFv3 (phase 1); everything else uses UBERON.
 
-### Phase 3: HOMBA
+### Phase 4: HOMBA
 
 Add HOMBA-based matching for primate species (human, macaque, marmoset).
 
@@ -184,7 +219,7 @@ Add HOMBA-based matching for primate species (human, macaque, marmoset).
 
 **Outcome:** After this phase, primate datasets carry HOMBA IDs that enable cross-primate queries (e.g., "find all datasets recording from caudate nucleus in any primate species").
 
-### Phase 4: CHARM
+### Phase 5: CHARM
 
 Add CHARM-based matching for macaque datasets, linking them to the NMT v2 spatial data.
 
@@ -192,12 +227,12 @@ Add CHARM-based matching for macaque datasets, linking them to the NMT v2 spatia
 
 - Bundle or reference the CHARM region table (available from the AFNI distribution)
 - For macaque datasets, attempt to match input location strings against CHARM region names and abbreviations at all six hierarchy levels
-- Store the resolved CHARM region ID alongside the HOMBA and UBERON IDs from phases 2-3
+- Store the resolved CHARM region ID alongside the HOMBA and UBERON IDs from phases 3-4
 - Investigate feasibility of rendering NMT v2 GIFTI surfaces in the DANDI Atlas Explorer (requires GIFTI-to-OBJ or GIFTI-to-glTF conversion)
 
 **Outcome:** After this phase, macaque datasets carry CHARM IDs that link to a whole-brain spatial parcellation, enabling visualization in a future multi-species DANDI Atlas Explorer.
 
-### Phase 5: HBA
+### Phase 6: HBA
 
 Add HBA-based matching for human datasets, providing UBERON-bridged identifiers with resolvable URIs.
 
@@ -205,7 +240,7 @@ Add HBA-based matching for human datasets, providing UBERON-bridged identifiers 
 
 - Bundle or reference the HBAO ontology (available from the brain-bican/human_brain_atlas_ontology repository)
 - For human datasets, attempt to match input location strings against HBA structure names
-- Store the resolved HBA ID (with resolvable `purl.brain-bican.org` URI) alongside the HOMBA ID from phase 3
+- Store the resolved HBA ID (with resolvable `purl.brain-bican.org` URI) alongside the HOMBA ID from phase 4
 - UBERON IDs can be derived from HBA via the existing bridge, so they are not stored explicitly unless the term is more specific than HBA's 141 regions
 
 **Outcome:** After this phase, human datasets carry HBA IDs with resolvable URIs and UBERON interoperability, plus HOMBA IDs for cross-primate alignment. For the DANDI Atlas Explorer, the DHBAv2 volumetric parcellation (which uses HOMBA terms) provides a finer-grained basis for rendering than HBA's 141 regions.
@@ -219,7 +254,7 @@ Rather than phasing NeuroConv support by ontology, the approach is to build unif
 
 Build a shared Python library (usable by NeuroConv, NWB GUIDE, and NWB Inspector) that provides:
 
-- A unified search function across all supported ontologies (CCFv3, UBERON, HOMBA, CHARM, HBA). Given a brain region string and a species, the function returns matches from all applicable ontologies ranked by specificity, along with their IDs and URIs.
+- A unified search function across all supported ontologies (CCFv3, WHS, UBERON, HOMBA, CHARM, HBA). Given a brain region string and a species, the function returns matches from all applicable ontologies ranked by specificity, along with their IDs and URIs.
 - A validation function that checks whether a brain region string resolves to at least one term in the recommended ontologies for the dataset's species. Returns warnings for unmatched terms with suggested close matches.
 - A HERD writer that takes resolved ontology matches and writes them into an NWB file's HERD structure, associating electrode or imaging plane location fields with the appropriate external resource entries.
 
@@ -230,6 +265,7 @@ This library can be used programmatically in NeuroConv conversion scripts, inter
 Publish clear guidance on which ontologies to use for each species, following the strategy outlined in this document:
 
 - Mouse: CCFv3
+- Rat: WHS + UBERON
 - Macaque: CHARM + HOMBA + UBERON
 - Marmoset: HOMBA + UBERON
 - Human: HBA + HOMBA (+ UBERON if more specific than HBA)
@@ -258,19 +294,23 @@ The atlas viewer already renders Allen CCFv3 mouse brain regions using pre-built
 
 ### Phase 2: Human
 
-Two volumetric parcellations are available for the human brain. HBA provides a coarse whole-brain parcellation (141 regions in MNI152 space), while DHBAv2 provides a much finer-grained whole-brain parcellation using HOMBA terminology in the same MNI152 space. Surface meshes can be generated from either annotation volume using marching cubes. The DHBAv2/HOMBA parcellation is preferable for rendering given its higher granularity, and datasets with resolved HOMBA IDs (from dandi-cli phase 3) or HBA IDs (from dandi-cli phase 5) can be plotted. Using the HOMBA parcellation for rendering also aligns the human atlas viewer with the eventual macaque and marmoset HOMBA parcellations as they become available.
+Two volumetric parcellations are available for the human brain. HBA provides a coarse whole-brain parcellation (141 regions in MNI152 space), while DHBAv2 provides a much finer-grained whole-brain parcellation using HOMBA terminology in the same MNI152 space. Surface meshes can be generated from either annotation volume using marching cubes. The DHBAv2/HOMBA parcellation is preferable for rendering given its higher granularity, and datasets with resolved HOMBA IDs (from dandi-cli phase 4) or HBA IDs (from dandi-cli phase 6) can be plotted. Using the HOMBA parcellation for rendering also aligns the human atlas viewer with the eventual macaque and marmoset HOMBA parcellations as they become available.
 
-### Phase 3: Macaque
+### Phase 3: Rat
 
-NMT v2 provides GIFTI surface files for the macaque brain, with CHARM parcellation labels. The GIFTI surfaces need to be converted to a web-friendly format (.obj or glTF). Each surface region is keyed to a CHARM region ID, and datasets with resolved CHARM IDs (from dandi-cli phase 4) can be plotted. The D99 v2 atlas (368 regions) registered to NMT v2 space provides finer-grained parcellation if needed.
+The WHS v4 atlas provides a whole-brain volumetric parcellation (NIfTI) at 39 µm resolution. Surface meshes can be generated from the label volume or obtained via BrainGlobe/3D Slicer. Datasets with resolved WHS IDs (from dandi-cli phase 2) can be plotted. The format conversion needs are similar to macaque (NIfTI/GIFTI to web-friendly .obj or glTF).
 
-### Phase 4: Marmoset
+### Phase 4: Macaque
+
+NMT v2 provides GIFTI surface files for the macaque brain, with CHARM parcellation labels. The GIFTI surfaces need to be converted to a web-friendly format (.obj or glTF). Each surface region is keyed to a CHARM region ID, and datasets with resolved CHARM IDs (from dandi-cli phase 5) can be plotted. The D99 v2 atlas (368 regions) registered to NMT v2 space provides finer-grained parcellation if needed.
+
+### Phase 5: Marmoset
 
 Several marmoset atlases provide surface meshes. The Brain/MINDS BMA2.0 includes pial, mid-thickness, and white matter surfaces with a 323-region whole-brain parcellation. The MBM V3 also provides FreeSurfer and SUMA-compatible surfaces. As with macaque, surface conversion and a mapping from atlas region IDs to renderable geometry is needed. Marmoset atlas support in DANDI Atlas is lower priority given the smaller number of marmoset datasets on DANDI, but the assets exist when demand warrants it.
 
-### Phase 5: Cross-species views
+### Phase 6: Cross-species views
 
-Once multiple species are supported, the atlas viewer can offer cross-species query views. A user searching for "hippocampus" would see matching datasets across species, with each species rendering in its own atlas space. UBERON IDs (derived or stored) provide the glue: the viewer maps a UBERON term to the corresponding species-specific atlas region ID (CCFv3 for mouse, HBA for human, CHARM for macaque) and highlights the appropriate mesh in each species' atlas.
+Once multiple species are supported, the atlas viewer can offer cross-species query views. A user searching for "hippocampus" would see matching datasets across species, with each species rendering in its own atlas space. UBERON IDs (derived or stored) provide the glue: the viewer maps a UBERON term to the corresponding species-specific atlas region ID (CCFv3 for mouse, WHS for rat, HBA for human, CHARM for macaque) and highlights the appropriate mesh in each species' atlas.
 
 
 ## Open questions and future work
@@ -279,6 +319,7 @@ Once multiple species are supported, the atlas viewer can offer cross-species qu
 - **HOMBA-UBERON bridge.** No mapping exists between HOMBA and UBERON. Building one (even a partial mapping at coarse granularity) would close the gap for primate species and reduce the number of IDs that need to be stored explicitly for macaque.
 - **HOMBA mouse support.** The Allen Institute has stated that HOMBA will eventually include harmonized mouse terminology, but this has not shipped. Once available, it would enable cross-species alignment between mouse and primate datasets via HOMBA, complementing the existing UBERON bridges.
 - **CHARM-UBERON bridge.** No formal mapping exists. A pragmatic approach using name matching between CHARM region names and UBERON terms could provide partial coverage.
+- **WHS ontologization.** The WHS rat atlas lacks formal ontology infrastructure (no OWL/OBO, no resolvable URIs, no UBERON bridge). Creating resolvable identifiers for WHS regions and a UBERON bridge would bring rat to parity with mouse (CCFv3). The Paxinos-Watson nomenclature used by WHS is proprietary, which may complicate formal ontologization.
 - **Mesh generation and hosting.** Pre-built .obj meshes only exist for mouse (Allen CCFv3). For human, macaque, and marmoset, meshes need to be generated from volumetric parcellations or converted from GIFTI format. A hosting solution for these derived meshes (similar to how Allen hosts mouse meshes) is needed.
 - **Matching ambiguity.** Many brain region names are shared across species at coarse granularity ("hippocampus", "thalamus") but diverge at finer levels. The matching logic should use species context from the NWB file to select the appropriate ontology and avoid false matches.
 - **Multiple matches.** A single free-text label may match terms in multiple ontologies at different levels of specificity. The system should store the most specific match available in each applicable ontology layer.
