@@ -4,14 +4,15 @@ import { faker } from "@faker-js/faker";
 
 /**
  * Tests that listing query parameters (page, sortOption, sortDir, showDrafts,
- * showEmpty, search, pos) do not leak into Dandiset Landing Page (DLP) URLs,
- * and vice-versa.  See https://github.com/dandi/dandi-archive/issues/1460
+ * showEmpty, search) do not leak into Dandiset Landing Page (DLP) URLs,
+ * and vice-versa.  Note: ?pos= IS allowed on DLP URLs (position in result set).
+ * See https://github.com/dandi/dandi-archive/issues/1460
  */
 
-const LISTING_PARAMS = ["page", "sortOption", "sortDir", "showDrafts", "showEmpty", "search", "pos"];
+const LISTING_PARAMS = ["page", "sortOption", "sortDir", "showDrafts", "showEmpty", "search"];
 
 /** Assert that none of the listing-specific params appear in the current URL. */
-function expectCleanDlpUrl(url: string) {
+function expectNoLeakedParams(url: string) {
   const parsed = new URL(url);
   for (const param of LISTING_PARAMS) {
     expect(parsed.searchParams.has(param), `URL should not contain '${param}': ${url}`).toBeFalsy();
@@ -33,10 +34,12 @@ test.describe("URL parameter isolation (issue #1460)", () => {
     await page.locator(".v-list-item").first().click();
     await page.waitForLoadState("networkidle");
 
-    // DLP URL must be clean
-    expectCleanDlpUrl(page.url());
-    // Should be on a dandiset page
+    // DLP URL must not contain listing params
+    expectNoLeakedParams(page.url());
+    // Should be on a dandiset page with pos param
     expect(page.url()).toMatch(/\/dandiset\/\d+/);
+    const url = new URL(page.url());
+    expect(url.searchParams.has("pos")).toBeTruthy();
   });
 
   test("search params do not leak to DLP", async ({ page }) => {
@@ -58,7 +61,7 @@ test.describe("URL parameter isolation (issue #1460)", () => {
     await page.waitForLoadState("networkidle");
 
     // DLP URL must be clean — no search param
-    expectCleanDlpUrl(page.url());
+    expectNoLeakedParams(page.url());
   });
 
   test("direct DLP navigation produces clean URL", async ({ page }) => {
@@ -71,10 +74,10 @@ test.describe("URL parameter isolation (issue #1460)", () => {
     await page.goto(`${clientUrl}/dandiset/${dandisetId}`);
     await page.waitForLoadState("networkidle");
 
-    expectCleanDlpUrl(page.url());
+    expectNoLeakedParams(page.url());
   });
 
-  test("DLP pagination does not add listing params to URL", async ({ page }) => {
+  test("DLP pagination updates pos but does not add listing params", async ({ page }) => {
     test.slow();
     await registerNewUser(page);
 
@@ -89,12 +92,18 @@ test.describe("URL parameter isolation (issue #1460)", () => {
     await page.locator(".v-list-item").first().click();
     await page.waitForLoadState("networkidle");
 
-    // If pagination is visible, click next and verify URL stays clean
+    const initialPos = new URL(page.url()).searchParams.get("pos");
+    expect(initialPos).toBeTruthy();
+
+    // If pagination is visible, click next and verify pos changes but no listing params leak
     const nextButton = page.locator(".v-pagination__next button");
     if (await nextButton.isVisible()) {
       await nextButton.click();
       await page.waitForLoadState("networkidle");
-      expectCleanDlpUrl(page.url());
+      expectNoLeakedParams(page.url());
+      const newPos = new URL(page.url()).searchParams.get("pos");
+      expect(newPos).toBeTruthy();
+      expect(newPos).not.toBe(initialPos);
     }
   });
 
@@ -128,14 +137,15 @@ test.describe("URL parameter isolation (issue #1460)", () => {
     const description = faker.lorem.sentences();
     const dandisetId = await registerDandiset(page, name, description);
 
-    // Navigate to DLP with manually injected listing params
+    // Navigate to DLP with manually injected listing params (pos is allowed, others are not)
     await page.goto(
       `${clientUrl}/dandiset/${dandisetId}?page=2&sortOption=1&sortDir=-1&showDrafts=true&showEmpty=false&search=test&pos=5`
     );
     await page.waitForLoadState("networkidle");
 
-    // The router guard should have stripped all listing params
-    expectCleanDlpUrl(page.url());
+    // The router guard should have stripped listing params but kept pos
+    expectNoLeakedParams(page.url());
+    expect(new URL(page.url()).searchParams.get("pos")).toBe("5");
   });
 });
 

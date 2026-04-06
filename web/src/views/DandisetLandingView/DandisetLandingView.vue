@@ -119,7 +119,6 @@
 import {
   computed, watch, onMounted, ref,
 } from 'vue';
-import type { Ref } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 import type { RouteLocationRaw } from 'vue-router';
 import { useDisplay } from 'vuetify';
@@ -127,8 +126,7 @@ import { useDisplay } from 'vuetify';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
 import { useDandisetStore } from '@/stores/dandiset';
-import { useListingContextStore } from '@/stores/listingContext';
-import type { Dandiset, Version } from '@/types';
+import type { Version } from '@/types';
 import { draftVersion, sortingOptions } from '@/utils/constants';
 import { editorInterface, open as meditorOpen } from '@/components/Meditor/state';
 import { dandiRest } from '@/rest';
@@ -163,7 +161,6 @@ onBeforeRouteLeave((to, from, next) => {
 const route = useRoute();
 const router = useRouter();
 const store = useDandisetStore();
-const listingContext = useListingContextStore();
 const display = useDisplay();
 
 const isSmDisplay = computed(() => display.smAndDown.value);
@@ -253,50 +250,71 @@ watch([() => props.identifier, () => props.version], async () => {
   loading.value = false;
 });
 
-// Listing pagination — reads context from the Pinia store (not URL params)
-// so that DLP URLs stay clean and shareable.
-const hasListingContext = computed(() => listingContext.pos !== null);
-const page = ref(listingContext.pos || 1);
+// Listing pagination — uses history.state for search context (invisible in URL)
+// and ?pos= for position (visible, survives reload).  Cached identifiers from
+// the listing page allow instant prev/next without additional API calls.
+const historyCtx = window.history.state?.listingContext as {
+  sortOption: number; sortDir: number; search: string | null;
+  showDrafts: boolean; showEmpty: boolean;
+} | undefined;
+const cachedIds = (window.history.state?.cachedIds ?? []) as string[];
+const cachedOffset = (window.history.state?.cachedOffset ?? 0) as number;
+
+const initialPos = Number(route.query.pos) || 0;
+const hasListingContext = computed(() => initialPos > 0 && !!historyCtx);
+const page = ref(initialPos);
 const pages = ref(1);
-const nextDandiset: Ref<Partial<Dandiset>[]> = ref([]);
 
-async function fetchNextPage() {
-  const sortField = sortingOptions[listingContext.sortOption].djangoField;
-  const ordering = ((listingContext.sortDir === -1) ? '-' : '') + sortField;
-  const response = await dandiRest.dandisets({
-    page: page.value,
-    page_size: 1,
-    ordering,
-    search: listingContext.search,
-    draft: listingContext.showDrafts,
-    empty: listingContext.showEmpty,
-  });
-
-  pages.value = (response.data?.count) ? response.data?.count : 1;
-  nextDandiset.value = response.data?.results.map((dandiset) => ({
-    ...(dandiset.most_recent_published_version || dandiset.draft_version),
-    contact_person: dandiset.contact_person,
-    identifier: dandiset.identifier,
-  }));
+// Try to resolve an identifier from the cache (0-based pos → cache index).
+function cachedIdentifierAt(pos: number): string | null {
+  const idx = pos - 1 - cachedOffset; // pos is 1-based
+  if (idx >= 0 && idx < cachedIds.length) {
+    return cachedIds[idx];
+  }
+  return null;
 }
 
-function navigateToPage() {
-  if (nextDandiset.value) {
-    const { identifier } = nextDandiset.value[0];
-    if (identifier !== props.identifier) { // to avoid redundant navigation
-      router.push({
-        name: route.name || undefined,
-        params: { identifier },
-      });
-    }
+// Fallback: fetch one result at the given position from the listing API.
+async function fetchIdentifierAt(pos: number): Promise<string | null> {
+  if (!historyCtx) return null;
+  const sortField = sortingOptions[historyCtx.sortOption].djangoField;
+  const ordering = ((historyCtx.sortDir === -1) ? '-' : '') + sortField;
+  const response = await dandiRest.dandisets({
+    page: pos,
+    page_size: 1,
+    ordering,
+    search: historyCtx.search,
+    draft: historyCtx.showDrafts,
+    empty: historyCtx.showEmpty,
+  });
+  pages.value = response.data?.count ?? 1;
+  const results = response.data?.results;
+  return results?.[0]?.identifier ?? null;
+}
+
+function navigateToDandiset(identifier: string, pos: number) {
+  if (identifier !== props.identifier) {
+    router.push({
+      name: route.name || undefined,
+      params: { identifier },
+      query: { pos: String(pos) },
+      // Carry the same listing context + cache forward.
+      state: {
+        listingContext: historyCtx,
+        cachedIds,
+        cachedOffset,
+      },
+    });
   }
 }
 
-watch(page, async (newValue, oldValue) => {
-  if (oldValue !== newValue) {
-    listingContext.setContext({ pos: newValue });
-    await fetchNextPage();
-    navigateToPage();
+watch(page, async (newPos, oldPos) => {
+  if (oldPos === newPos || newPos < 1) return;
+
+  // Try cache first, then fall back to API.
+  const identifier = cachedIdentifierAt(newPos) ?? await fetchIdentifierAt(newPos);
+  if (identifier) {
+    navigateToDandiset(identifier, newPos);
   }
 });
 
@@ -314,7 +332,9 @@ onMounted(async () => {
     }
   });
   if (hasListingContext.value) {
-    await fetchNextPage(); // get the current page and total count
+    // Fetch total count so the pagination component knows the length.
+    // If we have cache, we might still need the count from the API.
+    await fetchIdentifierAt(page.value);
   }
 });
 </script>

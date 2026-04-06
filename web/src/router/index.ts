@@ -65,7 +65,9 @@ const routes: RouteRecordRaw[] = [
 ];
 
 // Listing-specific query params that must not appear on DLP URLs.
-const LISTING_PARAMS = ['page', 'sortOption', 'sortDir', 'showDrafts', 'showEmpty', 'search', 'pos'];
+// Listing-specific params to strip. Note: 'pos' is intentionally NOT here —
+// it is a legitimate DLP param for position within a result set.
+const LISTING_PARAMS = ['page', 'sortOption', 'sortDir', 'showDrafts', 'showEmpty', 'search'];
 
 const router = createRouter({
   history: createWebHistory(),

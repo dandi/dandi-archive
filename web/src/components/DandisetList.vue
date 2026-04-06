@@ -12,7 +12,7 @@
         params: { identifier: item.dandiset.identifier },
       }"
       exact
-      @click="savePos(index)"
+      @click.prevent="navigateToDandiset(item.dandiset.identifier, index)"
     >
       <v-list-item-title class="wrap-text text-h6 text-grey-darken-3 font-weight-medium">
         {{ item.name }}
@@ -80,17 +80,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted, type PropType } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import moment from 'moment';
 import { filesize } from 'filesize';
 import StarButton from '@/components/StarButton.vue';
 import { dandiRest } from '@/rest';
-import { useListingContextStore } from '@/stores/listingContext';
 
 import type { Version } from '@/types';
 import { DANDISETS_PER_PAGE } from '@/utils/constants';
 
-defineProps({
+const props = defineProps({
   dandisets: {
     type: Array as PropType<Version[]>,
     required: true,
@@ -98,7 +97,7 @@ defineProps({
 });
 
 const route = useRoute();
-const listingContext = useListingContextStore();
+const router = useRouter();
 const archiveName = ref<string>('');
 
 onMounted(async () => {
@@ -110,8 +109,30 @@ onMounted(async () => {
 function getPos(index: number) {
   return (Number(route.query.page || 1) - 1) * DANDISETS_PER_PAGE + (index + 1);
 }
-function savePos(index: number) {
-  listingContext.setContext({ pos: getPos(index) });
+
+// Navigate to a dandiset, carrying listing context in history.state and pos in URL.
+// Cached identifiers from the current page allow instant prev/next without API calls.
+function navigateToDandiset(identifier: string, index: number) {
+  const cachedIds = props.dandisets.map((d) => d.dandiset.identifier);
+  const pageStart = (Number(route.query.page || 1) - 1) * DANDISETS_PER_PAGE;
+
+  router.push({
+    name: 'dandisetLanding',
+    params: { identifier },
+    query: { pos: String(getPos(index)) },
+    state: {
+      listingContext: {
+        sortOption: Number(route.query.sortOption) || 0,
+        sortDir: Number(route.query.sortDir || -1),
+        search: (route.query.search as string) || null,
+        showDrafts: route.query.showDrafts !== 'false',
+        showEmpty: route.query.showEmpty === 'true',
+      },
+      // Cached identifiers with their absolute offset in the result set
+      cachedIds,
+      cachedOffset: pageStart, // 0-based offset of cachedIds[0] in the full result set
+    },
+  });
 }
 function formatDate(date: string) {
   return moment(date).format('LL');
