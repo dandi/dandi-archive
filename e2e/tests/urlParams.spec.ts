@@ -209,3 +209,100 @@ test.describe("DLP tab URL state", () => {
     expect(new URL(page.url()).searchParams.get("tab")).toBe("how-to-cite");
   });
 });
+
+test.describe("DLP citation format URL state", () => {
+  test("selecting a citation format adds ?format= to URL", async ({ page }) => {
+    await registerNewUser(page);
+    const dandisetId = await registerDandiset(page, faker.lorem.words(), faker.lorem.sentences());
+
+    await page.goto(`${clientUrl}/dandiset/${dandisetId}?tab=how-to-cite`);
+    await page.waitForLoadState("networkidle");
+
+    // Default (APA) should have no format param
+    expect(new URL(page.url()).searchParams.has("format")).toBeFalsy();
+
+    // Select BibTeX format
+    await page.locator(".citation-format-select").click();
+    await page.getByRole("option", { name: "BibTeX" }).click();
+    await page.waitForTimeout(500);
+
+    const url = new URL(page.url());
+    expect(url.searchParams.get("format")).toBe("bibtex");
+    expect(url.searchParams.get("tab")).toBe("how-to-cite");
+  });
+
+  test("navigating to ?tab=how-to-cite&format=harvard opens correct format", async ({ page }) => {
+    await registerNewUser(page);
+    const dandisetId = await registerDandiset(page, faker.lorem.words(), faker.lorem.sentences());
+
+    await page.goto(`${clientUrl}/dandiset/${dandisetId}?tab=how-to-cite&format=harvard`);
+    await page.waitForLoadState("networkidle");
+
+    // Harvard should be selected in the dropdown
+    await expect(page.locator(".citation-format-select")).toContainText("Harvard");
+  });
+
+  test("switching back to APA removes format param", async ({ page }) => {
+    await registerNewUser(page);
+    const dandisetId = await registerDandiset(page, faker.lorem.words(), faker.lorem.sentences());
+
+    await page.goto(`${clientUrl}/dandiset/${dandisetId}?tab=how-to-cite&format=bibtex`);
+    await page.waitForLoadState("networkidle");
+
+    // Select APA (default)
+    await page.locator(".citation-format-select").click();
+    await page.getByRole("option", { name: "APA 7th" }).click();
+    await page.waitForTimeout(500);
+
+    // format param should be gone, tab should remain
+    const url = new URL(page.url());
+    expect(url.searchParams.has("format")).toBeFalsy();
+    expect(url.searchParams.get("tab")).toBe("how-to-cite");
+  });
+});
+
+test.describe("DLP meditor overlay URL state", () => {
+  test("opening meditor adds ?overlay=meditor to URL", async ({ page }) => {
+    await registerNewUser(page);
+    await registerDandiset(page, faker.lorem.words(), faker.lorem.sentences());
+    await page.waitForLoadState("networkidle");
+
+    // No overlay param initially
+    expect(new URL(page.url()).searchParams.has("overlay")).toBeFalsy();
+
+    // Click the metadata edit button to open meditor
+    await page.getByRole("button", { name: "Metadata" }).click();
+    await page.waitForTimeout(500);
+
+    expect(new URL(page.url()).searchParams.get("overlay")).toBe("meditor");
+  });
+
+  test("closing meditor removes overlay param", async ({ page }) => {
+    await registerNewUser(page);
+    const dandisetId = await registerDandiset(page, faker.lorem.words(), faker.lorem.sentences());
+
+    await page.goto(`${clientUrl}/dandiset/${dandisetId}?overlay=meditor`);
+    await page.waitForLoadState("networkidle");
+
+    // Meditor dialog should be open
+    await expect(page.locator(".v-dialog--active, .v-overlay--active")).toBeVisible();
+
+    // Close the dialog (press Escape)
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(500);
+
+    // overlay param should be gone
+    expect(new URL(page.url()).searchParams.has("overlay")).toBeFalsy();
+  });
+
+  test("navigating to ?overlay=meditor opens the meditor", async ({ page }) => {
+    await registerNewUser(page);
+    const dandisetId = await registerDandiset(page, faker.lorem.words(), faker.lorem.sentences());
+
+    await page.goto(`${clientUrl}/dandiset/${dandisetId}?overlay=meditor`);
+    await page.waitForLoadState("networkidle");
+
+    // Meditor dialog should be visible
+    await expect(page.locator(".v-dialog--active, .v-overlay--active")).toBeVisible();
+  });
+});
