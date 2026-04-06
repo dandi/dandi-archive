@@ -138,3 +138,74 @@ test.describe("URL parameter isolation (issue #1460)", () => {
     expectCleanDlpUrl(page.url());
   });
 });
+
+test.describe("DLP tab URL state", () => {
+  test("clicking 'How to Cite' tab adds ?tab=how-to-cite to URL", async ({ page }) => {
+    await registerNewUser(page);
+    const dandisetId = await registerDandiset(page, faker.lorem.words(), faker.lorem.sentences());
+
+    await page.goto(`${clientUrl}/dandiset/${dandisetId}`);
+    await page.waitForLoadState("networkidle");
+
+    // URL should have no tab param on Overview (default)
+    expect(new URL(page.url()).searchParams.has("tab")).toBeFalsy();
+
+    // Click "How to Cite" tab
+    await page.getByRole("tab", { name: "How to Cite" }).click();
+    await page.waitForTimeout(500);
+
+    // URL should now have ?tab=how-to-cite
+    const url = new URL(page.url());
+    expect(url.searchParams.get("tab")).toBe("how-to-cite");
+  });
+
+  test("switching back to Overview removes tab param", async ({ page }) => {
+    await registerNewUser(page);
+    const dandisetId = await registerDandiset(page, faker.lorem.words(), faker.lorem.sentences());
+
+    await page.goto(`${clientUrl}/dandiset/${dandisetId}?tab=how-to-cite`);
+    await page.waitForLoadState("networkidle");
+
+    // Should be on How to Cite tab
+    await expect(page.getByText("How to Cite this Dataset")).toBeVisible();
+
+    // Switch to Overview
+    await page.getByRole("tab", { name: "Overview" }).click();
+    await page.waitForTimeout(500);
+
+    // tab param should be gone
+    expect(new URL(page.url()).searchParams.has("tab")).toBeFalsy();
+  });
+
+  test("navigating to ?tab=how-to-cite opens the correct tab", async ({ page }) => {
+    await registerNewUser(page);
+    const dandisetId = await registerDandiset(page, faker.lorem.words(), faker.lorem.sentences());
+
+    // Navigate directly with tab param
+    await page.goto(`${clientUrl}/dandiset/${dandisetId}?tab=how-to-cite`);
+    await page.waitForLoadState("networkidle");
+
+    // The How to Cite content should be visible
+    await expect(page.getByText("How to Cite this Dataset")).toBeVisible();
+  });
+
+  test("tab param survives page reload", async ({ page }) => {
+    await registerNewUser(page);
+    const dandisetId = await registerDandiset(page, faker.lorem.words(), faker.lorem.sentences());
+
+    await page.goto(`${clientUrl}/dandiset/${dandisetId}`);
+    await page.waitForLoadState("networkidle");
+
+    // Click How to Cite
+    await page.getByRole("tab", { name: "How to Cite" }).click();
+    await page.waitForTimeout(500);
+
+    // Reload
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+
+    // Should still be on How to Cite
+    await expect(page.getByText("How to Cite this Dataset")).toBeVisible();
+    expect(new URL(page.url()).searchParams.get("tab")).toBe("how-to-cite");
+  });
+});
