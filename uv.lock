@@ -822,7 +822,7 @@ requires-dist = [
     { name = "django-filter", specifier = "==25.2" },
     { name = "django-guardian", specifier = "==3.2.0" },
     { name = "django-oauth-toolkit", specifier = "==3.1.0" },
-    { name = "django-resonant-settings", extras = ["allauth", "celery"], specifier = "==0.48.1" },
+    { name = "django-resonant-settings", extras = ["allauth", "celery"], specifier = "==0.50.2" },
     { name = "django-resonant-utils", extras = ["allauth", "s3-storage"], specifier = "==0.16.0" },
     { name = "django-s3-file-field", extras = ["s3"], specifier = "==1.1.0" },
     { name = "django-storages", extras = ["s3"], specifier = "==1.14.6" },
@@ -1079,15 +1079,15 @@ wheels = [
 
 [[package]]
 name = "django-resonant-settings"
-version = "0.48.1"
+version = "0.50.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
     { name = "django-environ" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/93/36/70d9e2441a204e138c50c97b7791efa8e8bc15e17dfea2c2413733d2e576/django_resonant_settings-0.48.1.tar.gz", hash = "sha256:c101ccc60e6922e875140eeb3c2f089aac2bf0ebca63c512f826f91286d16983", size = 19231, upload-time = "2026-03-06T05:01:10.797Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f2/e2/ab46f4f23546d24202e081216ddcadae49e8c24bba8d5109f2b00514e122/django_resonant_settings-0.50.2.tar.gz", hash = "sha256:aada679d9843a298910fc9b0037e285e49246850db6aca820d4e1688e13f9db3", size = 19231, upload-time = "2026-03-29T17:28:58.927Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5e/f2/15b8afe28ed7b76e8e7f7d6bac8b49cc977691142659d5468671c0889536/django_resonant_settings-0.48.1-py3-none-any.whl", hash = "sha256:01e494132d05828c4a79b54d1e5013052b4e40cc034e7dd52cf8b4c93a57e4e7", size = 26102, upload-time = "2026-03-06T05:01:09.754Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/31/b642b8c15fd221ce4b717daef5a85180f77e1b75a6be7784dca3f2eb3f87/django_resonant_settings-0.50.2-py3-none-any.whl", hash = "sha256:8c063f98052aa1827302c0c2440dc5e37c23d46cde65a884e6f249562334f5f8", size = 26047, upload-time = "2026-03-29T17:28:57.905Z" },
 ]
 
 [package.optional-dependencies]
