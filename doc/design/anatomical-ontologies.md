@@ -19,16 +19,16 @@ Choosing the right systems is a prerequisite for all downstream tooling. Once th
 
 There is no single ontology or atlas that meets all of DANDI's needs. The relevant systems fall into two categories: species-specific atlases (which have spatial data but limited interoperability) and cross-species ontologies (which enable interoperability but lack spatial data). The sections below describe each system and its strengths and limitations.
 
-### Allen Mouse Brain CCFv3
+### [Allen Mouse Brain CCFv3](https://alleninstitute.org/science-resource/common-coordinate-framework-tutorial/)
 
-The Allen Mouse Brain Common Coordinate Framework version 3 (CCFv3) is the standard reference atlas for the adult mouse brain. It parcellates the entire brain into ~1,327 structures at 10 um isotropic voxel resolution, using the ARA (Allen Reference Atlas) ontology for naming.
+The Allen Mouse Brain Common Coordinate Framework version 3 (CCFv3) is the standard reference atlas for the adult mouse brain. It parcellates the entire brain into ~1,300 structures at 10 µm isotropic voxel resolution, using the ARA (Allen Reference Atlas) ontology for naming.
 
 **Strengths:**
 
 - Complete whole-brain volumetric parcellation
 - Pre-built surface meshes (.obj) for every structure, hosted by the Allen Institute and used by the DANDI Atlas Explorer today
 - Hierarchical ontology with well-established abbreviations (e.g., VISp, CA1, MOp)
-- Formal UBERON bridge exists (`uberon-bridge-to-mba.owl`), enabling cross-species mapping
+- Formal UBERON bridge exists ([`uberon-bridge-to-mba.owl`](https://github.com/obophenotype/uberon/blob/master/src/ontology/bridge/uberon-bridge-to-mba.owl)), enabling cross-species mapping
 - Widely adopted in the mouse neurophysiology community; most mouse datasets on DANDI already use CCFv3 terminology
 - MBA terms have resolvable URIs via OBO PURLs (e.g., `purl.obolibrary.org/obo/MBA_997`) and BICAN has created an ontologized version (MBAO) with persistent URLs
 
@@ -45,8 +45,8 @@ UBERON is a cross-species anatomy ontology maintained by the OBO Foundry. It cov
 
 - Covers all species, making it the only option for organisms without a species-specific brain atlas
 - Resolvable URIs via the OBO PURL system (e.g., `purl.obolibrary.org/obo/UBERON_0001954` for Ammon's horn)
-- Formal bridge ontologies exist to the Allen Mouse Brain Atlas (`uberon-bridge-to-mba.owl`) and the Allen Human Brain Atlas (`uberon-bridge-to-aba.owl`)
-- Well-established in the biomedical ontology ecosystem; used by ENCODE, Bgee, Phenoscape, and others
+- Formal bridge ontologies exist to the Allen Mouse Brain Atlas ([`uberon-bridge-to-mba.owl`](https://github.com/obophenotype/uberon/blob/master/src/ontology/bridge/uberon-bridge-to-mba.owl)) and the Allen Developing Human Brain Atlas ([`uberon-bridge-to-dhba.owl`](https://github.com/obophenotype/uberon/blob/master/src/ontology/bridge/uberon-bridge-to-dhba.owl))
+- Well-established in the biomedical ontology ecosystem; used by [ENCODE](https://www.encodeproject.org/), [Bgee](https://www.bgee.org/), [Phenoscape](https://phenoscape.org/), and others
 - Includes synonyms with scope annotations (EXACT, RELATED, NARROW, BROAD), useful for fuzzy matching
 
 **Limitations:**
@@ -127,7 +127,7 @@ The Allen Human Brain Atlas (HBA) defines ~141 brain structures used to annotate
 - Whole-brain volumetric parcellation (141 regions in MNI152 space)
 - Resolvable persistent URIs via BICAN (`purl.brain-bican.org/ontology/hbao/HBA_XXXX`)
 - Registered on the Ontology Lookup Service (OLS) for browsing and search
-- Formal UBERON bridge (`uberon-bridge-to-aba.owl`)
+- Formal UBERON bridge ([`uberon-bridge-to-dhba.owl`](https://github.com/obophenotype/uberon/blob/master/src/ontology/bridge/uberon-bridge-to-dhba.owl))
 - Each term links directly to the corresponding region in the Allen Human Brain Guide atlas viewer
 
 **Limitations:**
@@ -157,7 +157,7 @@ The per-species strategy is:
 
 **Rat:** Store WHS atlas IDs + UBERON IDs. The WHS atlas (v4) provides the volumetric parcellation using Paxinos-Watson-compatible nomenclature. Both IDs are stored explicitly because no formal bridge exists between WHS and UBERON. HOMBA does not currently include rat.
 
-**Human:** Store HBA IDs + HOMBA IDs. UBERON IDs can be derived from HBA via the existing `uberon-bridge-to-aba.owl` bridge. HOMBA provides finer-grained localization (2,341 vs. 141 terms) and cross-primate alignment. If a term is more specific than what HBA covers but is present in UBERON, store the UBERON ID alongside HBA.
+**Human:** Store HBA IDs + HOMBA IDs. UBERON IDs can be derived from HBA via the existing `uberon-bridge-to-dhba.owl` bridge. HOMBA provides finer-grained localization (2,341 vs. 141 terms) and cross-primate alignment. If a term is more specific than what HBA covers but is present in UBERON, store the UBERON ID alongside HBA.
 
 **All other species:** Store UBERON IDs. As species-specific atlases become available (e.g., via BrainGlobe), add support for storing their IDs alongside UBERON.
 
