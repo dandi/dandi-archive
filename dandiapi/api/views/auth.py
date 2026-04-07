@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING
+import uuid
 
 from django.conf import settings
 from django.db import transaction
@@ -21,11 +22,13 @@ from dandiapi.api.mail import (
     send_approved_user_message,
     send_new_user_message_email,
     send_registered_notice_email,
+    send_verification_email,
 )
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.permissions import AuthenticatedRequest, IsApproved
 
 if TYPE_CHECKING:
+    from django.contrib.auth.models import User
     from django.http import HttpRequest, HttpResponse
 
 
@@ -60,6 +63,22 @@ NEW_USER_QUESTIONS = QUESTIONS
 
 # questions for existing users who have no first/last name
 COLLECT_USER_NAME_QUESTIONS = QUESTIONS[:2]
+
+# Email suffixes that qualify for auto-approval
+AUTO_APPROVE_EMAIL_SUFFIXES = [
+    '.edu',
+    '.gov',
+    '@alleninstitute.org',
+    '@janelia.hhmi.org',
+    '@ccf.org',
+    '.ac.uk',
+    '.mcgill.ca',
+]
+
+
+def _has_auto_approve_email(email: str) -> bool:
+    """Check if an email address matches any auto-approve suffix."""
+    return any(email.endswith(suffix) for suffix in AUTO_APPROVE_EMAIL_SUFFIXES)
 
 
 @require_http_methods(['GET'])
@@ -108,7 +127,20 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
             else None
             for question in QUESTIONS
         }
-        user_metadata.save(update_fields=['questionnaire_form'])
+
+        # Process institutional email if provided
+        institutional_email = req_body.get('institutional_email')
+        needs_verification = False
+
+        if institutional_email:
+            user_metadata.institutional_email = institutional_email
+
+            # Generate verification token
+            user_metadata.verification_token = uuid.uuid4()
+            user_metadata.is_email_verified = False
+            needs_verification = True
+
+        user_metadata.save()
 
         # Save first and last name if applicable
         if req_body.get('First Name'):
@@ -126,34 +158,9 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
             not questionnaire_already_filled_out
             and user_metadata.status == UserMetadata.Status.INCOMPLETE
         ):
-            should_auto_approve: bool = any(
-                request.user.email.endswith(suffix)
-                for suffix in [
-                    '.edu',
-                    '@alleninstitute.org',
-                    '@nih.gov',
-                    '@janelia.hhmi.org',
-                    '@ccf.org',
-                    '.ac.uk',
-                    '.mcgill.ca',
-                ]
+            _process_new_registration(
+                request.user, user_metadata, needs_verification=needs_verification
             )
-
-            # auto-approve users with edu emails, otherwise require manual approval
-            user_metadata.status = (
-                UserMetadata.Status.APPROVED if should_auto_approve else UserMetadata.Status.PENDING
-            )
-            user_metadata.save(update_fields=['status'])
-
-            # send email indicating the user has signed up
-            for socialaccount in request.user.socialaccount_set.all():
-                # Send approved email if they have been auto-approved
-                if user_metadata.status == UserMetadata.Status.APPROVED:
-                    send_approved_user_message(request.user, socialaccount)
-                # otherwise, send "awaiting approval" email
-                else:
-                    send_registered_notice_email(request.user, socialaccount)
-                    send_new_user_message_email(request.user, socialaccount)
 
         # pass on OAuth query string params to auth endpoint
         return HttpResponseRedirect(
@@ -175,3 +182,39 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
             'dandi_web_app_url': settings.DANDI_WEB_APP_URL,
         },
     )
+
+
+def _process_new_registration(
+    user: User, user_metadata: UserMetadata, *, needs_verification: bool
+) -> None:
+    """Handle status assignment and email sending for new user registrations."""
+    github_email_auto_approve = _has_auto_approve_email(user.email)
+
+    # Check if user provided an institutional email that should be verified
+    needs_institutional_verification = bool(
+        user_metadata.institutional_email
+    ) and _has_auto_approve_email(user_metadata.institutional_email)
+
+    # Auto-approve users with eligible GitHub emails, otherwise set to pending
+    user_metadata.status = (
+        UserMetadata.Status.APPROVED if github_email_auto_approve else UserMetadata.Status.PENDING
+    )
+    user_metadata.save(update_fields=['status'])
+
+    # Send appropriate emails
+    for socialaccount in user.socialaccount_set.all():
+        # Send verification email if institutional email was provided
+        if (
+            needs_verification
+            and needs_institutional_verification
+            and not github_email_auto_approve
+        ):
+            send_verification_email(user, socialaccount)
+
+        # Send approved email if they have been auto-approved
+        if user_metadata.status == UserMetadata.Status.APPROVED:
+            send_approved_user_message(user, socialaccount)
+        # otherwise, send "awaiting approval" email for regular cases
+        elif not needs_institutional_verification:
+            send_registered_notice_email(user, socialaccount)
+            send_new_user_message_email(user, socialaccount)
