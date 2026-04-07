@@ -34,6 +34,7 @@
         </span>
         <br><br>
         <span class="text-body-2">
+          <!-- TODO: BRANDING - hardcoded support email -->
           For further assistance, please contact <a href="mailto:help@dandiarchive.org">help@dandiarchive.org</a>.
         </span>
       </div>

@@ -35,6 +35,7 @@ from dandiapi.zarr.tasks import ingest_dandiset_zarrs
 if TYPE_CHECKING:
     from django.http.request import HttpRequest
 
+# TODO: BRANDING(name) - hardcoded admin site header/title
 admin.site.site_header = 'DANDI Admin'
 admin.site.site_title = 'DANDI Admin'
 

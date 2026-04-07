@@ -154,6 +154,19 @@ This creates a dummy dandiset with valid metadata and a single dummy asset.
 The dandiset should be valid and publishable out of the box.
 This script is a simple way to get test data into your DB without having to use dandi-cli.
 
+## Branding Annotations
+
+All locations where instance-specific branding is hardcoded are marked with
+`TODO: BRANDING` comments (`TODO: BRANDING START`/`TODO: BRANDING END` for
+multi-line blocks). To find all branding touchpoints:
+
+```bash
+git grep -rn "TODO: BRANDING"
+```
+
+See [doc/design/branding.md](doc/design/branding.md) for the full inventory,
+annotation conventions, and design notes.
+
 ## Abbreviations
 
 - DLP: Dataset Landing Page (e.g. https://dandiarchive.org/dandiset/000027)

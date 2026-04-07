@@ -20,10 +20,12 @@ def update_default_site(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor
     # object already.
     Site.objects.update_or_create(
         pk=settings.SITE_ID,
+        # TODO: BRANDING START - hardcoded site domain and name
         defaults={
             'domain': 'api.dandiarchive.org',
             'name': 'DANDI Archive',
         },
+        # TODO: BRANDING END
     )
 
 

@@ -90,7 +90,7 @@ api_urlpatterns = [
 ]
 schema_view = get_schema_view(
     openapi.Info(
-        title='DANDI Archive',
+        title='DANDI Archive',  # TODO: BRANDING(name) - hardcoded archive name in API schema
         default_version='v1',
         description='The BRAIN Initiative archive for publishing and sharing '
         'cellular neurophysiology data',

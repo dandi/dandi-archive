@@ -21,6 +21,7 @@
             align="center"
           >
             <v-col class="splash-text my-12">
+              <!-- TODO: BRANDING START - hardcoded archive name and tagline -->
               <div class="text-h2 font-weight-thin text-center text-light-blue-darken-1">
                 The DANDI Archive
               </div>
@@ -30,6 +31,7 @@
                 optophysiology, and behavioral time-series, and images from
                 immunostaining experiments.
               </div>
+              <!-- TODO: BRANDING END -->
             </v-col>
           </v-row>
         </v-container>
@@ -50,7 +52,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useDisplay } from 'vuetify';
 import StatsBar from '@/views/HomeView/StatsBar.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import logo from '@/assets/logo.svg';
+import logo from '@/assets/logo.svg'; // TODO: BRANDING - hardcoded logo asset
 
 const display = useDisplay();
 const isSmAndUpDisplay = computed(() => display.smAndUp.value);
