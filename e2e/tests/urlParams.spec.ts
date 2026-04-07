@@ -9,7 +9,9 @@ import { faker } from "@faker-js/faker";
  * See https://github.com/dandi/dandi-archive/issues/1460
  */
 
-const LISTING_PARAMS = ["page", "sortOption", "sortDir", "showDrafts", "showEmpty", "search"];
+// These listing-specific params must NOT appear on DLP URLs.
+// Note: 'pos' and 'search' are allowed — pos for result set position, search for context.
+const LISTING_PARAMS = ["page", "sortOption", "sortDir", "showDrafts", "showEmpty"];
 
 /** Assert that none of the listing-specific params appear in the current URL. */
 function expectNoLeakedParams(url: string) {
@@ -42,7 +44,7 @@ test.describe("URL parameter isolation (issue #1460)", () => {
     expect(url.searchParams.has("pos")).toBeTruthy();
   });
 
-  test("search params do not leak to DLP", async ({ page }) => {
+  test("search context is preserved but listing params do not leak to DLP", async ({ page }) => {
     await registerNewUser(page);
     const name = `searchtest-${faker.lorem.word()}`;
     const description = faker.lorem.sentences();
@@ -60,8 +62,12 @@ test.describe("URL parameter isolation (issue #1460)", () => {
     await items.first().click();
     await page.waitForLoadState("networkidle");
 
-    // DLP URL must be clean — no search param
+    // DLP URL must not have listing params
     expectNoLeakedParams(page.url());
+    // But search and pos should be present for context
+    const url = new URL(page.url());
+    expect(url.searchParams.get("search")).toBe(name);
+    expect(url.searchParams.has("pos")).toBeTruthy();
   });
 
   test("direct DLP navigation produces clean URL", async ({ page }) => {
@@ -137,15 +143,18 @@ test.describe("URL parameter isolation (issue #1460)", () => {
     const description = faker.lorem.sentences();
     const dandisetId = await registerDandiset(page, name, description);
 
-    // Navigate to DLP with manually injected listing params (pos is allowed, others are not)
+    // Navigate to DLP with manually injected listing params
+    // pos and search are allowed; page/sortOption/sortDir/showDrafts/showEmpty are not
     await page.goto(
       `${clientUrl}/dandiset/${dandisetId}?page=2&sortOption=1&sortDir=-1&showDrafts=true&showEmpty=false&search=test&pos=5`
     );
     await page.waitForLoadState("networkidle");
 
-    // The router guard should have stripped listing params but kept pos
+    // The router guard should have stripped listing params but kept pos and search
     expectNoLeakedParams(page.url());
-    expect(new URL(page.url()).searchParams.get("pos")).toBe("5");
+    const url = new URL(page.url());
+    expect(url.searchParams.get("pos")).toBe("5");
+    expect(url.searchParams.get("search")).toBe("test");
   });
 });
 

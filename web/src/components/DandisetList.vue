@@ -7,12 +7,7 @@
       v-for="(item, index) in dandisets"
       :key="item.dandiset.identifier"
       class="py-3"
-      :to="{
-        name: 'dandisetLanding',
-        params: { identifier: item.dandiset.identifier },
-      }"
-      exact
-      @click.prevent="navigateToDandiset(item.dandiset.identifier, index)"
+      @click="navigateToDandiset(item.dandiset.identifier, index)"
     >
       <v-list-item-title class="wrap-text text-h6 text-grey-darken-3 font-weight-medium">
         {{ item.name }}
@@ -116,10 +111,11 @@ function navigateToDandiset(identifier: string, index: number) {
   const cachedIds = props.dandisets.map((d) => d.dandiset.identifier);
   const pageStart = (Number(route.query.page || 1) - 1) * DANDISETS_PER_PAGE;
 
+  const search = (route.query.search as string) || undefined;
   router.push({
     name: 'dandisetLanding',
     params: { identifier },
-    query: { pos: String(getPos(index)) },
+    query: { pos: String(getPos(index)), ...(search ? { search } : {}) },
     state: {
       listingContext: {
         sortOption: Number(route.query.sortOption) || 0,

@@ -253,21 +253,41 @@ watch([() => props.identifier, () => props.version], async () => {
 // Listing pagination — uses history.state for search context (invisible in URL)
 // and ?pos= for position (visible, survives reload).  Cached identifiers from
 // the listing page allow instant prev/next without additional API calls.
-const historyCtx = window.history.state?.listingContext as {
+
+interface ListingCtx {
   sortOption: number; sortDir: number; search: string | null;
   showDrafts: boolean; showEmpty: boolean;
-} | undefined;
-const cachedIds = (window.history.state?.cachedIds ?? []) as string[];
-const cachedOffset = (window.history.state?.cachedOffset ?? 0) as number;
+}
 
-const initialPos = Number(route.query.pos) || 0;
-const hasListingContext = computed(() => initialPos > 0 && !!historyCtx);
-const page = ref(initialPos);
+// Read listing context reactively from history.state on each route change.
+const listingState = computed(() => {
+  // Access route.fullPath to create a reactive dependency on route changes.
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  route.fullPath;
+  return {
+    ctx: window.history.state?.listingContext as ListingCtx | undefined,
+    cachedIds: (window.history.state?.cachedIds ?? []) as string[],
+    cachedOffset: (window.history.state?.cachedOffset ?? 0) as number,
+  };
+});
+
+const hasListingContext = computed(
+  () => Number(route.query.pos) > 0 && !!listingState.value.ctx,
+);
+const page = ref(Number(route.query.pos) || 0);
 const pages = ref(1);
 
-// Try to resolve an identifier from the cache (0-based pos → cache index).
+// Keep `page` in sync when the route's ?pos= changes (e.g. after navigateToDandiset).
+watch(() => Number(route.query.pos) || 0, (newPos) => {
+  if (newPos !== page.value) {
+    page.value = newPos;
+  }
+});
+
+// Try to resolve an identifier from the cache (pos is 1-based).
 function cachedIdentifierAt(pos: number): string | null {
-  const idx = pos - 1 - cachedOffset; // pos is 1-based
+  const { cachedIds, cachedOffset } = listingState.value;
+  const idx = pos - 1 - cachedOffset;
   if (idx >= 0 && idx < cachedIds.length) {
     return cachedIds[idx];
   }
@@ -276,16 +296,17 @@ function cachedIdentifierAt(pos: number): string | null {
 
 // Fallback: fetch one result at the given position from the listing API.
 async function fetchIdentifierAt(pos: number): Promise<string | null> {
-  if (!historyCtx) return null;
-  const sortField = sortingOptions[historyCtx.sortOption].djangoField;
-  const ordering = ((historyCtx.sortDir === -1) ? '-' : '') + sortField;
+  const ctx = listingState.value.ctx;
+  if (!ctx) return null;
+  const sortField = sortingOptions[ctx.sortOption].djangoField;
+  const ordering = ((ctx.sortDir === -1) ? '-' : '') + sortField;
   const response = await dandiRest.dandisets({
     page: pos,
     page_size: 1,
     ordering,
-    search: historyCtx.search,
-    draft: historyCtx.showDrafts,
-    empty: historyCtx.showEmpty,
+    search: ctx.search,
+    draft: ctx.showDrafts,
+    empty: ctx.showEmpty,
   });
   pages.value = response.data?.count ?? 1;
   const results = response.data?.results;
@@ -293,25 +314,25 @@ async function fetchIdentifierAt(pos: number): Promise<string | null> {
 }
 
 function navigateToDandiset(identifier: string, pos: number) {
-  if (identifier !== props.identifier) {
-    router.push({
-      name: route.name || undefined,
-      params: { identifier },
-      query: { pos: String(pos) },
-      // Carry the same listing context + cache forward.
-      state: {
-        listingContext: historyCtx,
-        cachedIds,
-        cachedOffset,
-      },
-    });
-  }
+  if (identifier === props.identifier) return;
+  const { ctx, cachedIds, cachedOffset } = listingState.value;
+  const search = (route.query.search as string) || undefined;
+  router.push({
+    name: route.name || undefined,
+    params: { identifier },
+    query: { pos: String(pos), ...(search ? { search } : {}) },
+    state: {
+      listingContext: ctx ? { ...ctx } : undefined,
+      cachedIds,
+      cachedOffset,
+    },
+  });
 }
 
+// When the user clicks prev/next, resolve the identifier and navigate.
 watch(page, async (newPos, oldPos) => {
   if (oldPos === newPos || newPos < 1) return;
 
-  // Try cache first, then fall back to API.
   const identifier = cachedIdentifierAt(newPos) ?? await fetchIdentifierAt(newPos);
   if (identifier) {
     navigateToDandiset(identifier, newPos);
