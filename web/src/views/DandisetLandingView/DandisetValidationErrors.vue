@@ -27,7 +27,7 @@
       <ValidationErrorDialog
         :selected-tab="selectedTab"
         :asset-validation-errors="dandiset.asset_validation_errors"
-        :version-validation-errors="dandiset.version_validation_errors"
+        :version-validation-errors="dandiset.validation_errors"
         :owner="isOwner"
         @open-meditor="openMeditor"
       />
@@ -35,7 +35,7 @@
 
     <!-- Version Validation Errors Button -->
     <v-alert
-      v-if="dandiset.version_validation_errors.length"
+      v-if="dandiset.validation_errors.length"
       class="my-1"
       density="compact"
       icon="mdi-playlist-remove"
@@ -44,7 +44,7 @@
       @click="openErrorDialog('metadata')"
     >
       <v-alert-content class="text-body-2">
-        This Dandiset has {{ dandiset.version_validation_errors.length }} metadata validation error(s).
+        This Dandiset has {{ dandiset.validation_errors.length }} metadata validation error(s).
       </v-alert-content>
     </v-alert>
 
@@ -84,7 +84,7 @@ const props = defineProps({
   },
 });
 
-const numAssetValidationErrors = computed(() => props.dandiset.asset_validation_errors.length);
+const numAssetValidationErrors = computed(() => props.dandiset.asset_validation_errors?.length);
 
 // Error dialog
 const errorDialogOpen = ref(false);

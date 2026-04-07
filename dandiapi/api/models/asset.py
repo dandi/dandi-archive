@@ -45,7 +45,6 @@ ASSET_COMPUTED_FIELDS = [
 
 class AssetStatus(models.TextChoices):
     PENDING = 'Pending'
-    VALIDATING = 'Validating'
     VALID = 'Valid'
     INVALID = 'Invalid'
 

@@ -649,7 +649,6 @@ def test_asset_rest_info(api_client, version, asset):
     ('status', 'validation_error'),
     [
         (Asset.Status.PENDING, ''),
-        (Asset.Status.VALIDATING, ''),
         (Asset.Status.VALID, ''),
         (Asset.Status.INVALID, 'error'),
     ],
