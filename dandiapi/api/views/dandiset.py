@@ -73,10 +73,11 @@ if TYPE_CHECKING:
 
 
 class DandisetOrderingFilter(filters.OrderingFilter):
-    ordering_fields = ['id', 'name', 'modified', 'size', 'stars']
+    ordering_fields = ['id', 'name', 'modified', 'content_modified', 'size', 'stars']
     ordering_description = (
         'Which field to use when ordering the results. '
-        'Options are id, -id, name, -name, modified, -modified, size, -size, stars, -stars.'
+        'Options are id, -id, name, -name, modified, -modified, '
+        'content_modified, -content_modified, size, -size, stars, -stars.'
     )
 
     def filter_queryset(self, request, queryset, view):
@@ -96,17 +97,17 @@ class DandisetOrderingFilter(filters.OrderingFilter):
             queryset = queryset.annotate(
                 name=Subquery(latest_version.values('metadata__name'))
             ).order_by(ordering)
-        elif ordering.endswith('modified'):
-            # modified refers to the modification timestamp of the most
+        elif ordering.endswith('content_modified') or ordering.endswith('modified'):
+            # content_modified/modified refers to the modification timestamp of the most
             # recent version, so a subquery is required
             latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[
                 :1
             ]
             # get the `modified` field of the most recent version.
-            # '_version' is appended because the Dandiset model already has a `modified` field
+            prefix = '-' if ordering.startswith('-') else ''
             queryset = queryset.annotate(
-                modified_version=Subquery(latest_version.values('modified'))
-            ).order_by(f'{ordering}_version')
+                _content_modified=Subquery(latest_version.values('modified'))
+            ).order_by(f'{prefix}_content_modified')
         elif ordering.endswith('size'):
             latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[
                 :1
