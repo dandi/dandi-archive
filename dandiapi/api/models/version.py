@@ -11,6 +11,7 @@ from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.query_utils import Q
+from django.utils import timezone
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.asset_paths import get_root_paths
@@ -216,13 +217,26 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         # Ensure that every item in access is a dict
         access = [x for x in access if isinstance(x, dict)] or default_access
 
+        new_status = (
+            AccessType.EmbargoedAccess.value
+            if self.dandiset.embargoed
+            else AccessType.OpenAccess.value
+        )
+
+        # When transitioning from embargoed to open access, record the actual
+        # unembargo timestamp in embargoedUntil.
+        # See https://github.com/dandi/dandi-schema/pull/143 for the field semantics.
+        if (
+            access[0].get('status') == AccessType.EmbargoedAccess.value
+            and new_status == AccessType.OpenAccess.value
+        ):
+            access[0]['embargoedUntil'] = timezone.now().isoformat()
+
         # Set first access item
         access[0] = {
             **access[0],
             'schemaKey': 'AccessRequirements',
-            'status': AccessType.EmbargoedAccess.value
-            if self.dandiset.embargoed
-            else AccessType.OpenAccess.value,
+            'status': new_status,
         }
 
         return access
