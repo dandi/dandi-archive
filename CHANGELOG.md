@@ -1,3 +1,25 @@
+# v0.23.0 (Thu Apr 09 2026)
+
+#### 🚀 Enhancement
+
+- Add `embargo_end_date` field to Dandiset model [#2731](https://github.com/dandi/dandi-archive/pull/2731) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🐛 Bug Fix
+
+- Merge pull request #2775 from dandi/renovate/major-7-github-artifact-actions [#2775](https://github.com/dandi/dandi-archive/pull/2775) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2774 from dandi/renovate/major-8-github-artifact-actions [#2774](https://github.com/dandi/dandi-archive/pull/2774) ([@brianhelba](https://github.com/brianhelba))
+- Apply text wrapping to publish checklist items [#2751](https://github.com/dandi/dandi-archive/pull/2751) ([@bendichter](https://github.com/bendichter))
+- Display data sizes on the front-end using the decimal system [#2755](https://github.com/dandi/dandi-archive/pull/2755) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 4
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v0.22.0 (Tue Mar 24 2026)
 
 #### 🚀 Enhancement
