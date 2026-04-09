@@ -1,0 +1,145 @@
+<svg width="100%" viewBox="0 0 680 580" xmlns="http://www.w3.org/2000/svg">
+<style>
+  text { font-family: Arial, Helvetica, sans-serif; }
+  .heading { font-size: 14px; font-weight: 500; fill: #2C2C2A; }
+  .label { font-size: 14px; font-weight: 500; }
+  .sublabel { font-size: 12px; }
+  .legend-text { font-size: 12px; fill: #2C2C2A; }
+  .legend-heading { font-size: 14px; font-weight: 500; fill: #2C2C2A; }
+  .planned-text { font-size: 12px; fill: #085041; }
+
+  .teal-box { fill: #E1F5EE; stroke: #0F6E56; }
+  .teal-title { fill: #085041; }
+
+  .purple-box { fill: #EEEDFE; stroke: #534AB7; }
+  .purple-title { fill: #3C3489; }
+  .purple-sub { fill: #534AB7; }
+
+  .coral-box { fill: #FAECE7; stroke: #993C1D; }
+  .coral-title { fill: #712B13; }
+  .coral-sub { fill: #993C1D; }
+
+  .gray-box { fill: #F1EFE8; stroke: #5F5E5A; }
+  .gray-title { fill: #444441; }
+  .gray-sub { fill: #5F5E5A; }
+</style>
+
+<text class="heading" x="100" y="22" text-anchor="middle">Species</text>
+<text class="heading" x="445" y="22" text-anchor="middle">Ontologies / atlases</text>
+
+<!-- Species boxes -->
+<rect class="teal-box" x="40" y="40" width="120" height="44" rx="8" stroke-width="0.5"/>
+<text class="label teal-title" x="100" y="66" text-anchor="middle">Mouse</text>
+
+<rect class="teal-box" x="40" y="110" width="120" height="44" rx="8" stroke-width="0.5"/>
+<text class="label teal-title" x="100" y="136" text-anchor="middle">Rat</text>
+
+<rect class="teal-box" x="40" y="180" width="120" height="44" rx="8" stroke-width="0.5"/>
+<text class="label teal-title" x="100" y="206" text-anchor="middle">Human</text>
+
+<rect class="teal-box" x="40" y="250" width="120" height="44" rx="8" stroke-width="0.5"/>
+<text class="label teal-title" x="100" y="276" text-anchor="middle">Macaque</text>
+
+<rect class="teal-box" x="40" y="320" width="120" height="44" rx="8" stroke-width="0.5"/>
+<text class="label teal-title" x="100" y="346" text-anchor="middle">Marmoset</text>
+
+<rect class="teal-box" x="40" y="390" width="120" height="44" rx="8" stroke-width="0.5"/>
+<text class="label teal-title" x="100" y="416" text-anchor="middle">Other species</text>
+
+<!-- Ontology boxes -->
+<rect class="purple-box" x="370" y="40" width="150" height="56" rx="8" stroke-width="0.5"/>
+<text class="label purple-title" x="445" y="62" text-anchor="middle">Allen CCFv3</text>
+<text class="sublabel purple-sub" x="445" y="78" text-anchor="middle">1,327 regions</text>
+
+<rect class="purple-box" x="370" y="116" width="150" height="56" rx="8" stroke-width="0.5"/>
+<text class="label purple-title" x="445" y="138" text-anchor="middle">Paxinos-Watson</text>
+<text class="sublabel purple-sub" x="445" y="154" text-anchor="middle">222 regions</text>
+
+<rect class="purple-box" x="370" y="192" width="150" height="56" rx="8" stroke-width="0.5"/>
+<text class="label purple-title" x="445" y="214" text-anchor="middle">HBA</text>
+<text class="sublabel purple-sub" x="445" y="230" text-anchor="middle">141 regions</text>
+
+<rect class="purple-box" x="370" y="268" width="150" height="56" rx="8" stroke-width="0.5"/>
+<text class="label purple-title" x="445" y="290" text-anchor="middle">CHARM</text>
+<text class="sublabel purple-sub" x="445" y="306" text-anchor="middle">6-level hierarchy</text>
+
+<rect class="coral-box" x="370" y="344" width="150" height="56" rx="8" stroke-width="0.5"/>
+<text class="label coral-title" x="445" y="366" text-anchor="middle">HOMBA</text>
+<text class="sublabel coral-sub" x="445" y="382" text-anchor="middle">2,341 terms</text>
+
+<rect class="gray-box" x="370" y="420" width="150" height="56" rx="8" stroke-width="0.5"/>
+<text class="label gray-title" x="445" y="442" text-anchor="middle">UBERON</text>
+<text class="sublabel gray-sub" x="445" y="458" text-anchor="middle">all species</text>
+
+<!-- Species to ontology lines -->
+<!-- Mouse -> CCFv3 -->
+<line x1="160" y1="62" x2="368" y2="62" stroke="#534AB7" stroke-width="1"/>
+
+<!-- Rat -> Paxinos-Watson -->
+<line x1="160" y1="132" x2="368" y2="140" stroke="#534AB7" stroke-width="1"/>
+<!-- Rat -> UBERON -->
+<line x1="160" y1="132" x2="368" y2="448" stroke="#5F5E5A" stroke-width="1"/>
+
+<!-- Human -> HBA -->
+<line x1="160" y1="202" x2="368" y2="216" stroke="#534AB7" stroke-width="1"/>
+<!-- Human -> HOMBA -->
+<line x1="160" y1="202" x2="368" y2="368" stroke="#993C1D" stroke-width="1"/>
+
+<!-- Macaque -> CHARM -->
+<line x1="160" y1="272" x2="368" y2="290" stroke="#534AB7" stroke-width="1"/>
+<!-- Macaque -> HOMBA -->
+<line x1="160" y1="272" x2="368" y2="368" stroke="#993C1D" stroke-width="1"/>
+<!-- Macaque -> UBERON -->
+<line x1="160" y1="272" x2="368" y2="448" stroke="#5F5E5A" stroke-width="1"/>
+
+<!-- Marmoset -> HOMBA -->
+<line x1="160" y1="342" x2="368" y2="370" stroke="#993C1D" stroke-width="1"/>
+<!-- Marmoset -> UBERON -->
+<line x1="160" y1="342" x2="368" y2="448" stroke="#5F5E5A" stroke-width="1"/>
+
+<!-- Other -> UBERON -->
+<line x1="160" y1="412" x2="368" y2="448" stroke="#5F5E5A" stroke-width="1"/>
+
+<!-- Bridges on right side -->
+<!-- CCFv3 -> UBERON (existing) -->
+<line x1="520" y1="68" x2="556" y2="68" stroke="#0F6E56" stroke-width="2"/>
+<path d="M556 68 L556 432 L522 432" fill="none" stroke="#0F6E56" stroke-width="2"/>
+<circle cx="520" cy="68" r="3" fill="#0F6E56"/>
+<circle cx="522" cy="432" r="3" fill="#0F6E56"/>
+
+<!-- HBA -> UBERON (existing) -->
+<line x1="520" y1="220" x2="536" y2="220" stroke="#0F6E56" stroke-width="2"/>
+<path d="M536 220 L536 452 L522 452" fill="none" stroke="#0F6E56" stroke-width="2"/>
+<circle cx="520" cy="220" r="3" fill="#0F6E56"/>
+<circle cx="522" cy="452" r="3" fill="#0F6E56"/>
+
+<!-- CCFv3 -> HOMBA (planned) -->
+<line x1="520" y1="80" x2="576" y2="80" stroke="#0F6E56" stroke-width="1.5" stroke-dasharray="4 4"/>
+<path d="M576 80 L576 366 L522 366" fill="none" stroke="#0F6E56" stroke-width="1.5" stroke-dasharray="4 4"/>
+<circle cx="520" cy="80" r="3" fill="none" stroke="#0F6E56" stroke-width="1.5"/>
+<circle cx="522" cy="366" r="3" fill="none" stroke="#0F6E56" stroke-width="1.5"/>
+<text class="planned-text" x="582" y="220">planned</text>
+
+<!-- Legend -->
+<text class="legend-heading" x="120" y="500">Legend</text>
+
+<line x1="120" y1="516" x2="150" y2="516" stroke="#534AB7" stroke-width="1.5"/>
+<text class="legend-text" x="156" y="520">species-specific atlas</text>
+
+<line x1="120" y1="534" x2="150" y2="534" stroke="#993C1D" stroke-width="1.5"/>
+<text class="legend-text" x="156" y="538">cross-primate (HOMBA)</text>
+
+<line x1="120" y1="552" x2="150" y2="552" stroke="#5F5E5A" stroke-width="1.5"/>
+<text class="legend-text" x="156" y="556">cross-species (UBERON)</text>
+
+<line x1="380" y1="516" x2="410" y2="516" stroke="#0F6E56" stroke-width="2"/>
+<circle cx="380" cy="516" r="3" fill="#0F6E56"/>
+<circle cx="410" cy="516" r="3" fill="#0F6E56"/>
+<text class="legend-text" x="416" y="520">existing bridge</text>
+
+<line x1="380" y1="534" x2="410" y2="534" stroke="#0F6E56" stroke-width="1.5" stroke-dasharray="4 4"/>
+<circle cx="380" cy="534" r="3" fill="none" stroke="#0F6E56" stroke-width="1.5"/>
+<circle cx="410" cy="534" r="3" fill="none" stroke="#0F6E56" stroke-width="1.5"/>
+<text class="legend-text" x="416" y="538">planned bridge</text>
+
+</svg>
