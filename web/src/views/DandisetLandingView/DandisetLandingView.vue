@@ -7,6 +7,7 @@
     <v-toolbar class="px-4 bg-grey-darken-2 text-white">
       <DandisetSearchField />
       <v-pagination
+        v-if="hasListingContext"
         v-model="page"
         :length="pages"
         :total-visible="0"
@@ -118,7 +119,6 @@
 import {
   computed, watch, onMounted, ref,
 } from 'vue';
-import type { Ref } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 import type { RouteLocationRaw } from 'vue-router';
 import { useDisplay } from 'vuetify';
@@ -126,9 +126,9 @@ import { useDisplay } from 'vuetify';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
 import { useDandisetStore } from '@/stores/dandiset';
-import type { Dandiset, Version } from '@/types';
+import type { Version } from '@/types';
 import { draftVersion, sortingOptions } from '@/utils/constants';
-import { editorInterface } from '@/components/Meditor/state';
+import { editorInterface, open as meditorOpen } from '@/components/Meditor/state';
 import { dandiRest } from '@/rest';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
@@ -164,6 +164,22 @@ const store = useDandisetStore();
 const display = useDisplay();
 
 const isSmDisplay = computed(() => display.smAndDown.value);
+
+// Sync meditor open/close state with ?overlay=meditor URL query param.
+if (route.query.overlay === 'meditor') {
+  meditorOpen.value = true;
+}
+watch(meditorOpen, (isOpen) => {
+  const hasParam = route.query.overlay === 'meditor';
+  if (isOpen && !hasParam) {
+    router.replace({ ...route, query: { ...route.query, overlay: 'meditor' } });
+  } else if (!isOpen && hasParam) {
+    const query = { ...route.query };
+    delete query.overlay;
+    router.replace({ ...route, query });
+  }
+});
+
 const currentDandiset = computed(() => store.dandiset);
 const loading = ref(false);
 
@@ -234,51 +250,92 @@ watch([() => props.identifier, () => props.version], async () => {
   loading.value = false;
 });
 
-const page = ref(Number(route.query.pos) || 1);
-const pages = ref(1);
-const nextDandiset: Ref<Partial<Dandiset>[]> = ref([]);
+// Listing pagination — uses history.state for search context (invisible in URL)
+// and ?pos= for position (visible, survives reload).  Cached identifiers from
+// the listing page allow instant prev/next without additional API calls.
 
-async function fetchNextPage() {
-  const sortOption = Number(route.query.sortOption) || 0;
-  const sortDir = Number(route.query.sortDir || -1);
-  const sortField = sortingOptions[sortOption].djangoField;
-  const ordering = ((sortDir === -1) ? '-' : '') + sortField;
+interface ListingCtx {
+  sortOption: number; sortDir: number; search: string | null;
+  showDrafts: boolean; showEmpty: boolean;
+}
+
+// Read listing context reactively from history.state on each route change.
+const listingState = computed(() => {
+  // Access route.fullPath to create a reactive dependency on route changes.
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  route.fullPath;
+  return {
+    ctx: window.history.state?.listingContext as ListingCtx | undefined,
+    cachedIds: (window.history.state?.cachedIds ?? []) as string[],
+    cachedOffset: (window.history.state?.cachedOffset ?? 0) as number,
+  };
+});
+
+const hasListingContext = computed(
+  () => Number(route.query.pos) > 0 && !!listingState.value.ctx,
+);
+const page = ref(Number(route.query.pos) || 0);
+const pages = ref(1);
+
+// Keep `page` in sync when the route's ?pos= changes (e.g. after navigateToDandiset).
+watch(() => Number(route.query.pos) || 0, (newPos) => {
+  if (newPos !== page.value) {
+    page.value = newPos;
+  }
+});
+
+// Try to resolve an identifier from the cache (pos is 1-based).
+function cachedIdentifierAt(pos: number): string | null {
+  const { cachedIds, cachedOffset } = listingState.value;
+  const idx = pos - 1 - cachedOffset;
+  if (idx >= 0 && idx < cachedIds.length) {
+    return cachedIds[idx];
+  }
+  return null;
+}
+
+// Fallback: fetch one result at the given position from the listing API.
+async function fetchIdentifierAt(pos: number): Promise<string | null> {
+  const ctx = listingState.value.ctx;
+  if (!ctx) return null;
+  const sortField = sortingOptions[ctx.sortOption].djangoField;
+  const ordering = ((ctx.sortDir === -1) ? '-' : '') + sortField;
   const response = await dandiRest.dandisets({
-    page: page.value,
+    page: pos,
     page_size: 1,
     ordering,
-    search: route.query.search,
-    draft: route.query.showDrafts || true,
-    empty: route.query.showEmpty,
+    search: ctx.search,
+    draft: ctx.showDrafts,
+    empty: ctx.showEmpty,
   });
-
-  pages.value = (response.data?.count) ? response.data?.count : 1;
-  nextDandiset.value = response.data?.results.map((dandiset) => ({
-    ...(dandiset.most_recent_published_version || dandiset.draft_version),
-    contact_person: dandiset.contact_person,
-    identifier: dandiset.identifier,
-  }));
+  pages.value = response.data?.count ?? 1;
+  const results = response.data?.results;
+  return results?.[0]?.identifier ?? null;
 }
 
-function navigateToPage() {
-  if (nextDandiset.value) {
-    const { identifier } = nextDandiset.value[0];
-    if (identifier !== props.identifier) { // to avoid redundant navigation
-      router.push({
-        name: route.name || undefined,
-        params: { identifier },
-        query: {
-          ...route.query,
-        },
-      });
-    }
-  }
+function navigateToDandiset(identifier: string, pos: number) {
+  if (identifier === props.identifier) return;
+  const { ctx, cachedIds, cachedOffset } = listingState.value;
+  const search = (route.query.search as string) || undefined;
+  router.push({
+    name: route.name || undefined,
+    params: { identifier },
+    query: { pos: String(pos), ...(search ? { search } : {}) },
+    state: {
+      listingContext: ctx ? { ...ctx } : undefined,
+      cachedIds,
+      cachedOffset,
+    },
+  });
 }
 
-watch(page, async (newValue, oldValue) => {
-  if (oldValue !== newValue) {
-    await fetchNextPage();
-    navigateToPage();
+// When the user clicks prev/next, resolve the identifier and navigate.
+watch(page, async (newPos, oldPos) => {
+  if (oldPos === newPos || newPos < 1) return;
+
+  const identifier = cachedIdentifierAt(newPos) ?? await fetchIdentifierAt(newPos);
+  if (identifier) {
+    navigateToDandiset(identifier, newPos);
   }
 });
 
@@ -295,6 +352,10 @@ onMounted(async () => {
       e.returnValue = 'You have unsaved changes, are you sure you want to leave?';
     }
   });
-  await fetchNextPage(); // get the current page and total count
+  if (hasListingContext.value) {
+    // Fetch total count so the pagination component knows the length.
+    // If we have cache, we might still need the count from the API.
+    await fetchIdentifierAt(page.value);
+  }
 });
 </script>

@@ -64,7 +64,34 @@ const routes: RouteRecordRaw[] = [
   },
 ];
 
-export default createRouter({
+// Listing-specific query params that must not appear on DLP URLs.
+// Listing-specific params to strip from DLP URLs.
+// Note: 'pos' and 'search' are intentionally NOT here — pos indicates position
+// in a result set, and search populates the search bar for context.
+const LISTING_PARAMS = ['page', 'sortOption', 'sortDir', 'showDrafts', 'showEmpty'];
+
+const router = createRouter({
   history: createWebHistory(),
   routes,
 });
+
+// Safety net: strip leaked listing params from DLP routes.
+router.beforeEach((to, _from, next) => {
+  if (to.name === 'dandisetLanding') {
+    const cleanQuery = { ...to.query };
+    let modified = false;
+    for (const param of LISTING_PARAMS) {
+      if (param in cleanQuery) {
+        delete cleanQuery[param];
+        modified = true;
+      }
+    }
+    if (modified) {
+      next({ ...to, query: cleanQuery });
+      return;
+    }
+  }
+  next();
+});
+
+export default router;
