@@ -784,6 +784,20 @@ def test_version_rest_update_access_valid(api_client):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize('embargo_status', [c[0] for c in Dandiset.EmbargoStatus.choices])
+def test_version_populate_access_metadata_embargo_end_date(embargo_status: Dandiset.EmbargoStatus):
+    draft_version = DraftVersionFactory.create(
+        dandiset__embargo_status=embargo_status,
+    )
+    access = draft_version.metadata['access']
+    if embargo_status == Dandiset.EmbargoStatus.OPEN:
+        assert 'embargoedUntil' not in access[0]
+    else:
+        assert 'embargoedUntil' in access[0]
+        assert access[0]['embargoedUntil'] == draft_version.dandiset.embargo_end_date.isoformat()
+
+
+@pytest.mark.django_db
 def test_version_rest_publish(
     api_client: APIClient,
     draft_asset_factory,

@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from django.db import transaction
+from django.utils import timezone
 
 from dandiapi.api.mail import send_dandiset_unembargoed_message
 from dandiapi.api.models import AssetBlob, Dandiset, Version
@@ -57,8 +58,11 @@ def unembargo_dandiset(ds: Dandiset, user: User):
     logger.info('Set %s assets to PENDING', updated_assets)
     logger.info('Updated %s asset blobs', updated_blobs)
 
-    # Set status to OPEN
-    Dandiset.objects.filter(pk=ds.pk).update(embargo_status=Dandiset.EmbargoStatus.OPEN)
+    # Set status to OPEN, update embargo end date
+    Dandiset.objects.filter(pk=ds.pk).update(
+        embargo_status=Dandiset.EmbargoStatus.OPEN,
+        embargo_end_date=timezone.now().date(),
+    )
     logger.info('Dandiset embargo status updated')
 
     # Fetch version to ensure changed embargo_status is included
