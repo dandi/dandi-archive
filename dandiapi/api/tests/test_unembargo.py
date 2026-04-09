@@ -126,7 +126,7 @@ def test_unembargo_dandiset_uploads_exist(upload_factory, api_client):
 
 @pytest.mark.django_db
 def test_remove_dandiset_embargo_tags_chunks(
-    asset_factory,
+    draft_asset_factory,
     embargoed_asset_blob_factory,
     mocker,
 ):
@@ -140,7 +140,7 @@ def test_remove_dandiset_embargo_tags_chunks(
     )
     ds: Dandiset = draft_version.dandiset
     for _ in range(chunk_size + 1):
-        asset = asset_factory(blob=embargoed_asset_blob_factory())
+        asset = draft_asset_factory(blob=embargoed_asset_blob_factory())
         draft_version.assets.add(asset)
 
     remove_dandiset_embargo_tags(dandiset=ds)
@@ -152,7 +152,7 @@ def test_remove_dandiset_embargo_tags_chunks(
 
 @pytest.mark.django_db
 def test_remove_dandiset_embargo_tags_fails_remove_tags(
-    asset_factory,
+    draft_asset_factory,
     embargoed_asset_blob_factory,
     mocker,
 ):
@@ -165,7 +165,7 @@ def test_remove_dandiset_embargo_tags_fails_remove_tags(
     )
     ds: Dandiset = draft_version.dandiset
     for _ in range(2):
-        asset = asset_factory(blob=embargoed_asset_blob_factory())
+        asset = draft_asset_factory(blob=embargoed_asset_blob_factory())
         draft_version.assets.add(asset)
 
     # Remove tags
@@ -226,7 +226,7 @@ def test_remove_dandiset_manifest_tags():
 
 @pytest.mark.django_db
 def test_unembargo_dandiset(
-    asset_factory,
+    draft_asset_factory,
     embargoed_asset_blob_factory,
     embargoed_zarr_archive_factory,
     zarr_file_factory,
@@ -240,7 +240,7 @@ def test_unembargo_dandiset(
     dandiset: Dandiset = draft_version.dandiset
 
     embargoed_blob: AssetBlob = embargoed_asset_blob_factory()
-    blob_asset = asset_factory(blob=embargoed_blob, status=Asset.Status.VALID)
+    blob_asset = draft_asset_factory(blob=embargoed_blob, status=Asset.Status.VALID)
     draft_version.assets.add(blob_asset)
 
     zarr_archive: ZarrArchive = embargoed_zarr_archive_factory(
@@ -251,7 +251,7 @@ def test_unembargo_dandiset(
     ]
     ingest_zarr_archive(zarr_id=zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
-    zarr_asset = asset_factory(zarr=zarr_archive, blob=None, status=Asset.Status.VALID)
+    zarr_asset = draft_asset_factory(zarr=zarr_archive, blob=None, status=Asset.Status.VALID)
     draft_version.assets.add(zarr_asset)
 
     write_manifest_files(draft_version.id)
