@@ -1,13 +1,19 @@
 import type { App, DirectiveBinding } from 'vue'
 
-const TITLE = 'DANDI Archive';
+import { useInstanceStore } from '@/stores/instance';
+
+function getTitle(): string {
+  const instanceStore = useInstanceStore();
+  return instanceStore.instanceName ? `${instanceStore.instanceName} Archive` : 'DANDI Archive';
+}
 
 // Function to set the page title based on the directive's binding value
 const setPageTitle = (el: HTMLElement, binding: DirectiveBinding) => {
+  const title = getTitle();
   if (binding?.value) {
-    document.title = `${binding.value} - ${TITLE}`;
+    document.title = `${binding.value} - ${title}`;
   } else {
-    document.title = TITLE;
+    document.title = title;
   }
 };
 
@@ -17,7 +23,7 @@ const directives = {
     mounted: setPageTitle,
     updated: setPageTitle,
     beforeUnmount: () => {
-      document.title = TITLE;
+      document.title = getTitle();
     },
   }
 }
