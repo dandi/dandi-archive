@@ -161,10 +161,10 @@ const currentVersion = computed(() => store.version);
 const cliMinimalVersion = ref<string>();
 const cliRequiresPython = ref<string>();
 onMounted(async () => {
+  await instanceStore.fetchInstanceInfo();
   const info = await dandiRest.info();
   cliMinimalVersion.value = info['cli-minimal-version'];
   cliRequiresPython.value = info['cli-requires-python'];
-  await instanceStore.fetchInstanceInfo();
 });
 
 const selectedDownloadOption = ref('draft');

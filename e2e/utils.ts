@@ -14,7 +14,11 @@ interface InstanceConfig {
 }
 
 async function fetchInstanceConfig(): Promise<InstanceConfig> {
-  const resp = await fetch(`${apiUrl}/info/`);
+  const url = `${apiUrl}/info/`;
+  const resp = await fetch(url);
+  if (!resp.ok) {
+    throw new Error(`Failed to fetch instance config from ${url}: ${resp.status} ${resp.statusText}`);
+  }
   const data = await resp.json();
   return data.instance_config;
 }

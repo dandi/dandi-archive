@@ -346,18 +346,15 @@ const formattedCitations = computed<Record<CitationFormat, string>>(() => {
       cff: '',
     };
   }
-  const dandiset_version_identifier = dandisetVersionIdentifier.value;
-  const instance_name = instanceName.value;
-
   return {
-    apa: cffToAPA(cffObject.value, instance_name),
-    mla: cffToMLA(cffObject.value, instance_name),
-    chicago: cffToChicago(cffObject.value, instance_name),
-    harvard: cffToHarvard(cffObject.value, instance_name),
-    vancouver: cffToVancouver(cffObject.value, instance_name),
-    ieee: cffToIEEE(cffObject.value, instance_name),
-    bibtex: cffToBibTeX(cffObject.value, dandiset_version_identifier, instance_name),
-    ris: cffToRIS(cffObject.value, dandiset_version_identifier, instance_name),
+    apa: cffToAPA(cffObject.value, instanceName.value),
+    mla: cffToMLA(cffObject.value, instanceName.value),
+    chicago: cffToChicago(cffObject.value, instanceName.value),
+    harvard: cffToHarvard(cffObject.value, instanceName.value),
+    vancouver: cffToVancouver(cffObject.value, instanceName.value),
+    ieee: cffToIEEE(cffObject.value, instanceName.value),
+    bibtex: cffToBibTeX(cffObject.value, dandisetVersionIdentifier.value, instanceName.value),
+    ris: cffToRIS(cffObject.value, dandisetVersionIdentifier.value, instanceName.value),
     cff: cffToYAML(cffObject.value),
   };
 });
@@ -413,7 +410,8 @@ const dandiUrl = computed(() => {
   }
 
   const { identifier } = currentDandiset.value.dandiset;
-  return `https://dandiarchive.org/dandiset/${identifier}`;
+  const baseUrl = instanceStore.instanceUrl || window.location.origin;
+  return `${baseUrl}/dandiset/${identifier}`;
 });
 
 const methodsText = computed(() => {

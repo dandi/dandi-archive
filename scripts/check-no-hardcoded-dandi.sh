@@ -30,22 +30,22 @@ for file in "$@"; do
 
     # Check for DANDI: as identifier prefix in string/template literals
     # Match patterns like `DANDI:${...}`, "DANDI:", 'DANDI:'
-    if grep -nE '("|'\''|`)\s*DANDI:' "$file" >/dev/null 2>&1; then
+    if grep -nE '("|'\''|`)[[:space:]]*DANDI:' "$file" >/dev/null 2>&1; then
         echo "$file: found hardcoded 'DANDI:' identifier prefix — use instanceName from the instance store"
         ERRORS=$((ERRORS + 1))
     fi
 
     # Check for lowercase dandi: used as citation key prefix (followed by digits or ${)
     # Excludes schema URIs like dandi:OpenAccess, dandi:EmbargoedAccess
-    if grep -nE '("|'\''|`)\s*dandi:\$\{' "$file" >/dev/null 2>&1 || \
-       grep -nE '("|'\''|`)\s*dandi:[0-9]' "$file" >/dev/null 2>&1; then
+    if grep -nE '("|'\''|`)[[:space:]]*dandi:\$\{' "$file" >/dev/null 2>&1 || \
+       grep -nE '("|'\''|`)[[:space:]]*dandi:[0-9]' "$file" >/dev/null 2>&1; then
         echo "$file: found hardcoded 'dandi:' identifier prefix — use instanceName.toLowerCase() from the instance store"
         ERRORS=$((ERRORS + 1))
     fi
 
     # Check for "DANDI Archive" as publisher name in string literals
     # Exclude HTML comments (<!-- ... -->)
-    if grep -nE "(\"|\`|').*DANDI Archive" "$file" | grep -vE '^\s*<!--' >/dev/null 2>&1; then
+    if grep -nE "(\"|\`|').*DANDI Archive" "$file" | grep -vE '^[[:space:]]*<!--' >/dev/null 2>&1; then
         echo "$file: found hardcoded 'DANDI Archive' — use instanceName from the instance store"
         ERRORS=$((ERRORS + 1))
     fi
