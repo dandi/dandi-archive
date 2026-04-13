@@ -24,7 +24,7 @@ dependencies = [
   "django-filter==25.2",
   "django-guardian==3.2.0",
   "django-oauth-toolkit==3.1.0",
-  "django-resonant-settings[allauth,celery]==0.48.1",
+  "django-resonant-settings[allauth,celery]==0.50.3",
   "django-resonant-utils[allauth,s3_storage]==0.16.0",
   "django-stubs-ext==5.2.7",
   # TODO: pin djangorestframework until we figure out what the cause of
