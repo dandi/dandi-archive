@@ -21,7 +21,7 @@
     "migrate": "tsx src/migrate.ts"
   },
   "dependencies": {
-    "@apidevtools/json-schema-ref-parser": "^11.9.3",
+    "@apidevtools/json-schema-ref-parser": "^13.0.0",
     "@koumoul/vjsf": "^3.12.0",
     "@mdi/font": "7.4.47",
     "@resonant/oauth-client": "^1.0.3",
