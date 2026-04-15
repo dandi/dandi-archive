@@ -314,7 +314,7 @@ test.describe("DLP meditor overlay URL state", () => {
     expect(new URL(page.url()).searchParams.has("overlay")).toBeFalsy();
 
     // Click the metadata edit button to open meditor
-    await page.getByRole("button", { name: "Metadata" }).click();
+    await page.getByText("Metadata", { exact: true }).click();
     await page.waitForTimeout(500);
 
     expect(new URL(page.url()).searchParams.get("overlay")).toBe("meditor");
@@ -328,7 +328,7 @@ test.describe("DLP meditor overlay URL state", () => {
     await page.waitForLoadState("networkidle");
 
     // Meditor dialog should be open
-    await expect(page.locator(".v-dialog--active, .v-overlay--active")).toBeVisible();
+    await expect(page.locator(".v-overlay--active .v-card")).toBeVisible();
 
     // Close the dialog (press Escape)
     await page.keyboard.press("Escape");
@@ -346,6 +346,6 @@ test.describe("DLP meditor overlay URL state", () => {
     await page.waitForLoadState("networkidle");
 
     // Meditor dialog should be visible
-    await expect(page.locator(".v-dialog--active, .v-overlay--active")).toBeVisible();
+    await expect(page.locator(".v-overlay--active .v-card")).toBeVisible();
   });
 });
