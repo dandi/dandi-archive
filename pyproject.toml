@@ -26,7 +26,7 @@ dependencies = [
   "django-oauth-toolkit==3.1.0",
   "django-resonant-settings[allauth,celery]==0.48.1",
   "django-resonant-utils[allauth,s3_storage]==0.16.0",
-  "django-stubs-ext==5.2.7",
+  "django-stubs-ext==5.2.9",
   # TODO: pin djangorestframework until we figure out what the cause of
   # https://github.com/dandi/dandi-archive/issues/1896 is.
   "djangorestframework==3.14.0",
@@ -68,28 +68,28 @@ dev = [
   # The "dev" dependency group is installed by default,
   # so use this to install "development" extras by default too
   "dandiapi[development]",
-  "pre-commit==4.3.0",
-  "tox==4.31.0",
-  "tox-uv==1.29.0",
+  "pre-commit==4.5.1",
+  "tox==4.53.0",
+  "tox-uv==1.35.1",
 ]
 lint = [
-  "ruff==0.14.0",
+  "ruff==0.15.11",
 ]
 type = [
-  "mypy==1.18.2",
-  "boto3-stubs[s3]==1.40.51",
-  "celery-types==0.23.0",
-  "django-stubs[compatible-mypy]==5.2.7",
-  "djangorestframework-stubs[compatible-mypy]==3.16.4",
+  "mypy==1.20.1",
+  "boto3-stubs[s3]==1.42.90",
+  "celery-types==0.26.0",
+  "django-stubs[compatible-mypy]==5.2.9",
+  "djangorestframework-stubs[compatible-mypy]==3.16.9",
 ]
 test = [
   "djangorestframework-yaml==2.0.0",
-  "Faker==37.11.0",
+  "Faker==37.12.0",
   "factory-boy==3.3.3",
   "freezegun==1.5.5",
   "pytest==8.4.2",
-  "pytest-cov==7.0.0",
-  "pytest-django==4.11.1",
+  "pytest-cov==7.1.0",
+  "pytest-django==4.12.0",
   "pytest-factoryboy==2.8.1",
   # Enable with "pytest --memray ..."
   "pytest-memray==1.8.0",
