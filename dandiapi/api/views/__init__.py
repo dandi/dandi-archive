@@ -15,6 +15,9 @@ from .upload import (
     upload_complete_view,
     upload_initialize_view,
     upload_validate_view,
+    zarr_upload_complete_view,
+    zarr_upload_initialize_view,
+    zarr_upload_validate_view,
 )
 from .users import users_list_view, users_me_view, users_search_view
 from .version import VersionViewSet
@@ -44,4 +47,7 @@ __all__ = [
     'users_list_view',
     'users_me_view',
     'users_search_view',
+    'zarr_upload_complete_view',
+    'zarr_upload_initialize_view',
+    'zarr_upload_validate_view',
 ]
