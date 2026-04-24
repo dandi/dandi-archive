@@ -14,7 +14,7 @@ dependencies = [
   "celery==5.5.3",
   # Pin dandischema to exact version to make explicit which schema version is being used
   "dandischema==0.12.1", # schema version 0.7.0
-  "django[argon2]==5.2.7",
+  "django[argon2]==6.0.4",
   "django-allauth==65.12.0",
   "django-auth-style==0.12.0",
   "django-click==2.4.1",
@@ -26,7 +26,7 @@ dependencies = [
   "django-oauth-toolkit==3.1.0",
   "django-resonant-settings[allauth,celery]==0.48.1",
   "django-resonant-utils[allauth,s3_storage]==0.16.0",
-  "django-stubs-ext==5.2.7",
+  "django-stubs-ext==6.0.3",
   # TODO: pin djangorestframework until we figure out what the cause of
   # https://github.com/dandi/dandi-archive/issues/1896 is.
   "djangorestframework==3.14.0",
@@ -79,7 +79,7 @@ type = [
   "mypy==1.18.2",
   "boto3-stubs[s3]==1.40.51",
   "celery-types==0.23.0",
-  "django-stubs[compatible-mypy]==5.2.7",
+  "django-stubs[compatible-mypy]==6.0.3",
   "djangorestframework-stubs[compatible-mypy]==3.16.4",
 ]
 test = [
