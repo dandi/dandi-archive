@@ -14,14 +14,14 @@ from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from s3_file_field._multipart import TransferredPart, TransferredParts
 
-from dandiapi.api.models import AssetBlob, Dandiset, Upload
+from dandiapi.api.models import AssetBlob, Upload
 from dandiapi.api.multipart import DandiS3MultipartManager
 from dandiapi.api.permissions import AuthenticatedRequest, IsApproved
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.tasks import calculate_sha256
-from dandiapi.api.views.serializers import AssetBlobSerializer
+from dandiapi.api.views.serializers import AssetBlobSerializer, DandisetIdentifierField
 
 if TYPE_CHECKING:
     from rest_framework.request import Request
@@ -39,7 +39,7 @@ class DigestSerializer(serializers.Serializer):
 class UploadInitializationRequestSerializer(serializers.Serializer):
     contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
     digest = DigestSerializer()
-    dandiset = serializers.RegexField(f'^{Dandiset.IDENTIFIER_REGEX}$')
+    dandiset = DandisetIdentifierField()
 
 
 class PartInitializationResponseSerializer(serializers.Serializer):
@@ -131,10 +131,9 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
     if digest['algorithm'] != 'dandi:dandi-etag':
         return Response('Unsupported Digest Type', status=400)
     etag = digest['value']
-    dandiset_id = int(request_serializer.validated_data['dandiset'])
     dandiset = get_object_or_404(
         get_visible_dandisets(request.user),
-        id=dandiset_id,
+        id=request_serializer.validated_data['dandiset'],
     )
     if not is_dandiset_owner(dandiset, request.user):
         raise NotAllowedError
