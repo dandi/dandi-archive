@@ -7,3 +7,5 @@ project_slug: dandiapi
 python_package_name: dandiapi
 site_domain: api.dandiarchive.org
 use_asgi: false
+
+#copier updated
