@@ -187,6 +187,8 @@ SWAGGER_SETTINGS = {
 CELERY_BROKER_HEARTBEAT = 20
 # Allow this to be configurable, but keep the default as the number of CPU cores
 CELERY_WORKER_CONCURRENCY: int | None = env.int('DJANGO_CELERY_WORKER_CONCURRENCY', default=None)
+# Work around https://github.com/celery/kombu/issues/2237
+CELERY_WORKER_ENABLE_REMOTE_CONTROL = False
 
 _dandi_log_level: str = env.str('DJANGO_DANDI_LOG_LEVEL', default='INFO')
 # Configure the logging level on all DANDI loggers.
