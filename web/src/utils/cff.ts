@@ -101,7 +101,7 @@ export function dandisetToCFF(metadata: DandisetMetadata, doi?: string): CFF {
 
   // Convert contributors who should be included in citation
   metadata.contributor.forEach(contributor => {
-    if (contributor.includeInCitation !== false) {
+    if (contributor.includeInCitation === true) {
       if (contributor.schemaKey === 'Person') {
         cff.authors.push(personToCFFAuthor(contributor as Person));
       } else if (contributor.schemaKey === 'Organization') {
@@ -224,7 +224,9 @@ export function cffToBibTeX(cff: CFF, identifier: string): string {
 
   let bibtex = `${type}{${key},\n`;
   bibtex += `  title = {${cff.title}},\n`;
-  bibtex += `  author = {${authors}},\n`;
+  if (authors) {
+    bibtex += `  author = {${authors}},\n`;
+  }
 
   if (cff.doi) {
     bibtex += `  doi = {${cff.doi}},\n`;
@@ -276,7 +278,9 @@ export function cffToAPA(cff: CFF): string {
   });
 
   let authorString = '';
-  if (authors.length === 1) {
+  if (authors.length === 0) {
+    authorString = cff.title;
+  } else if (authors.length === 1) {
     authorString = authors[0];
   } else if (authors.length === 2) {
     authorString = `${authors[0]} & ${authors[1]}`;
@@ -288,7 +292,9 @@ export function cffToAPA(cff: CFF): string {
   const version = cff.version ? ` (Version ${cff.version})` : '';
   const doi = cff.doi ? ` https://doi.org/${cff.doi}` : '';
 
-  return `${authorString}${year}. ${cff.title}${version} [Data set]. DANDI Archive.${doi}`;
+  const title = authors.length === 0 ? '' : ` ${cff.title}`;
+
+  return `${authorString}${year}.${title}${version} [Data set]. DANDI Archive.${doi}`;
 }
 
 /**
@@ -309,7 +315,9 @@ export function cffToMLA(cff: CFF): string {
   });
 
   let authorString = '';
-  if (authors.length === 1) {
+  if (authors.length === 0) {
+    authorString = `"${cff.title}"`;
+  } else if (authors.length === 1) {
     authorString = authors[0];
   } else if (authors.length === 2) {
     authorString = `${authors[0]}, and ${authors[1]}`;
@@ -322,7 +330,9 @@ export function cffToMLA(cff: CFF): string {
   const year = cff['date-released'] ? cff['date-released'].split('-')[0] : 'n.d.';
   const doi = cff.doi ? ` doi:${cff.doi}` : '';
 
-  return `${authorString}. "${cff.title}." DANDI Archive, ${year}.${doi}`;
+  const title = authors.length === 0 ? '' : ` "${cff.title}."`;
+
+  return `${authorString}.${title} DANDI Archive, ${year}.${doi}`;
 }
 
 /**
@@ -343,7 +353,9 @@ export function cffToChicago(cff: CFF): string {
   });
 
   let authorString = '';
-  if (authors.length === 1) {
+  if (authors.length === 0) {
+    authorString = cff.title;
+  } else if (authors.length === 1) {
     authorString = authors[0];
   } else if (authors.length <= 3) {
     authorString = authors.slice(0, -1).join(', ') + ', and ' + authors[authors.length - 1];
@@ -355,7 +367,9 @@ export function cffToChicago(cff: CFF): string {
   const version = cff.version ? `, version ${cff.version}` : '';
   const doi = cff.doi ? ` https://doi.org/${cff.doi}` : '';
 
-  return `${authorString}. ${year}. "${cff.title}." Data set${version}. DANDI Archive.${doi}`;
+  const title = authors.length === 0 ? '' : ` "${cff.title}."`;
+
+  return `${authorString}. ${year}.${title} Data set${version}. DANDI Archive.${doi}`;
 }
 
 /**
@@ -376,7 +390,9 @@ export function cffToHarvard(cff: CFF): string {
   });
 
   let authorString = '';
-  if (authors.length === 1) {
+  if (authors.length === 0) {
+    authorString = cff.title;
+  } else if (authors.length === 1) {
     authorString = authors[0];
   } else if (authors.length === 2) {
     authorString = `${authors[0]} and ${authors[1]}`;
@@ -389,7 +405,9 @@ export function cffToHarvard(cff: CFF): string {
   const year = cff['date-released'] ? cff['date-released'].split('-')[0] : 'n.d.';
   const doi = cff.doi ? ` Available at: https://doi.org/${cff.doi}` : '';
 
-  return `${authorString} (${year}) '${cff.title}', DANDI Archive. Data set.${doi}`;
+  const title = authors.length === 0 ? '' : ` '${cff.title}',`;
+
+  return `${authorString} (${year})${title} DANDI Archive. Data set.${doi}`;
 }
 
 /**
@@ -411,7 +429,9 @@ export function cffToVancouver(cff: CFF): string {
 
   // Vancouver limits to 6 authors, then "et al."
   let authorString = '';
-  if (authors.length <= 6) {
+  if (authors.length === 0) {
+    authorString = cff.title;
+  } else if (authors.length <= 6) {
     authorString = authors.join(', ');
   } else {
     authorString = authors.slice(0, 6).join(', ') + ', et al';
@@ -420,7 +440,9 @@ export function cffToVancouver(cff: CFF): string {
   const year = cff['date-released'] ? cff['date-released'].split('-')[0] : '';
   const doi = cff.doi ? ` doi: ${cff.doi}` : '';
 
-  return `${authorString}. ${cff.title} [Data set]. DANDI Archive; ${year}.${doi}`;
+  const title = authors.length === 0 ? '' : ` ${cff.title}`;
+
+  return `${authorString}.${title} [Data set]. DANDI Archive; ${year}.${doi}`;
 }
 
 /**
@@ -441,7 +463,9 @@ export function cffToIEEE(cff: CFF): string {
   });
 
   let authorString = '';
-  if (authors.length === 1) {
+  if (authors.length === 0) {
+    authorString = `"${cff.title}"`;
+  } else if (authors.length === 1) {
     authorString = authors[0];
   } else if (authors.length === 2) {
     authorString = `${authors[0]} and ${authors[1]}`;
@@ -452,7 +476,9 @@ export function cffToIEEE(cff: CFF): string {
   const year = cff['date-released'] ? cff['date-released'].split('-')[0] : '';
   const doi = cff.doi ? ` doi: ${cff.doi}` : '';
 
-  return `${authorString}, "${cff.title}," DANDI Archive, ${year}.${doi}`;
+  const title = authors.length === 0 ? '' : `, "${cff.title},"`;
+
+  return `${authorString}${title} DANDI Archive, ${year}.${doi}`;
 }
 
 /**
