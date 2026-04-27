@@ -675,15 +675,25 @@ def test_upload_complete_zarr(api_client):
 @pytest.mark.django_db(transaction=True)
 def test_upload_validate_zarr(api_client):
     """Validating a zarr upload returns 200 with no body."""
+    from zarr_checksum.checksum import EMPTY_CHECKSUM
+
+    from dandiapi.zarr.models import ZarrArchiveStatus
+
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    zarr_upload = ZarrUploadFactory.create()
+    zarr = ZarrArchiveFactory.create(status=ZarrArchiveStatus.COMPLETE, checksum=EMPTY_CHECKSUM)
+    zarr_upload = ZarrUploadFactory.create(zarr=zarr)
 
     resp = api_client.post(f'/api/uploads/zarr/{zarr_upload.upload_id}/validate/')
     assert resp.status_code == 200
     assert resp.data is None
 
     assert not Upload.objects.exists()
+
+    # Check that zarr is now in a `PENDING` state
+    zarr.refresh_from_db()
+    assert zarr.status == ZarrArchiveStatus.PENDING
+    assert zarr.checksum is None
 
 
 @pytest.mark.django_db(transaction=True)
