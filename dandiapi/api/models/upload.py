@@ -3,10 +3,10 @@ from __future__ import annotations
 from uuid import uuid4
 
 from dandischema.digests.dandietag import DandiETag
-from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import CreationDateTimeField
+from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.multipart import DandiS3MultipartManager
 from dandiapi.zarr.models import ZarrArchive
