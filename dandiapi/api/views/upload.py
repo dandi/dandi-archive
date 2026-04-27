@@ -352,6 +352,12 @@ def zarr_upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> 
 
     # This raises an exception if unsuccessful
     upload.validate_successful()
-    upload.delete()
+
+    with transaction.atomic():
+        upload.delete()
+
+        # Zarr must be marked pending since a new file is now added
+        zarr.mark_pending()
+        zarr.save()
 
     return Response(None, status=status.HTTP_200_OK)
