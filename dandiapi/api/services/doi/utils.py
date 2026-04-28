@@ -107,7 +107,14 @@ def generate_doi_data(
 
     # Pass concept_doi for IsVersionOf relation when generating version DOI payloads
     concept_doi = dandiset.concept_doi if version else None
-    datacite_payload = to_datacite(metadata, publish=publish, concept_doi=concept_doi)
+    kwargs: dict = {'publish': publish}
+    if concept_doi is not None:
+        # Only pass concept_doi if the installed dandischema supports it
+        import inspect
+
+        if 'concept_doi' in inspect.signature(to_datacite).parameters:
+            kwargs['concept_doi'] = concept_doi
+    datacite_payload = to_datacite(metadata, **kwargs)
 
     _validate_datacite_configuration(datacite_payload)
 

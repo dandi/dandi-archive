@@ -34,6 +34,10 @@ logger = logging.getLogger(__name__)
 
 def _create_version_doi(version: Version) -> None:
     """Create a Findable DOI for a published dandiset version."""
+    if not doi_configured():
+        logger.debug('Skipping version DOI creation — DOI not configured')
+        return
+
     version_doi, datacite_payload = generate_doi_data(
         version.dandiset, version=version, publish=True
     )
@@ -59,6 +63,10 @@ def create_dandiset_doi(dandiset: Dandiset) -> None:
     Called during dandiset creation for public dandisets.
     For embargoed dandisets, no DOI is created until unembargo.
     """
+    if not doi_configured():
+        logger.debug('Skipping concept DOI creation — DOI not configured')
+        return
+
     dandiset_doi, datacite_payload = generate_doi_data(dandiset, version=None, publish=False)
 
     with datacite_session() as session:
@@ -81,6 +89,10 @@ def update_dandiset_doi(dandiset: Dandiset, *, publish: bool = False) -> None:
 
     When publish=True, promotes the concept DOI from Draft to Findable.
     """
+    if not doi_configured():
+        logger.debug('Skipping concept DOI update — DOI not configured')
+        return
+
     # Don't continue for dandisets with published versions, unless this is a publish event
     if not publish and dandiset.most_recent_published_version is not None:
         raise DOIOperationNotPermittedError(
