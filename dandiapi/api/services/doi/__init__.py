@@ -1,9 +1,8 @@
 """
 DataCite service functions.
 
-This module provides service functions for interacting with the DataCite API,
-refactored from the original datacite.py implementation and incorporating
-DOI management functions from doi.py.
+This module provides service functions for interacting with the DataCite API.
+All HTTP calls use datacite_session() as a context manager with timeouts and retry.
 """
 
 from __future__ import annotations
@@ -18,7 +17,13 @@ from dandiapi.api.services.doi.exceptions import (
     VersionDOIMissingError,
 )
 
-from .utils import datacite_session, generate_doi_data, get_doi_url, raise_datacite_exception
+from .utils import (
+    DATACITE_TIMEOUT,
+    datacite_session,
+    generate_doi_data,
+    get_doi_url,
+    raise_datacite_exception,
+)
 
 if TYPE_CHECKING:
     from dandiapi.api.models import Dandiset, Version
@@ -32,7 +37,10 @@ def _create_version_doi(version: Version) -> None:
         version.dandiset, version=version, publish=True
     )
 
-    response = datacite_session().post(settings.DANDI_DOI_API_URL, json=datacite_payload)
+    with datacite_session() as session:
+        response = session.post(
+            settings.DANDI_DOI_API_URL, json=datacite_payload, timeout=DATACITE_TIMEOUT
+        )
     if not response.ok:
         raise_datacite_exception(
             desc=f'Failed to create findable DOI {version_doi}',
@@ -45,13 +53,17 @@ def _create_version_doi(version: Version) -> None:
 
 def create_dandiset_doi(dandiset: Dandiset) -> None:
     """
-    Create a Draft DOI for a dandiset.
+    Create a Draft DOI for a dandiset (concept DOI).
 
-    This is called during dandiset creation for public dandisets.
+    Called during dandiset creation for public dandisets.
     For embargoed dandisets, no DOI is created until unembargo.
     """
     dandiset_doi, datacite_payload = generate_doi_data(dandiset, version=None, publish=False)
-    response = datacite_session().post(settings.DANDI_DOI_API_URL, json=datacite_payload)
+
+    with datacite_session() as session:
+        response = session.post(
+            settings.DANDI_DOI_API_URL, json=datacite_payload, timeout=DATACITE_TIMEOUT
+        )
     if not response.ok:
         raise_datacite_exception(
             desc=f'Failed to create DOI {dandiset_doi}',
@@ -59,14 +71,14 @@ def create_dandiset_doi(dandiset: Dandiset) -> None:
             payload=datacite_payload,
         )
 
-    logger.info('Created Draft DOI %s with new metadata', dandiset_doi)
+    logger.info('Created Draft concept DOI %s', dandiset_doi)
 
 
 def update_dandiset_doi(dandiset: Dandiset, *, publish: bool = False) -> None:
     """
-    Update a Draft DOI for a dandiset with the latest metadata.
+    Update a concept DOI for a dandiset with the latest metadata.
 
-    This is called when a draft version's metadata is updated.
+    When publish=True, promotes the concept DOI from Draft to Findable.
     """
     # Don't continue for dandisets with published versions, unless this is a publish event
     if not publish and dandiset.most_recent_published_version is not None:
@@ -85,56 +97,63 @@ def update_dandiset_doi(dandiset: Dandiset, *, publish: bool = False) -> None:
         raise VersionDOIMissingError
 
     dandiset_doi, datacite_payload = generate_doi_data(dandiset, version=None, publish=publish)
-    response = datacite_session().put(get_doi_url(dandiset_doi), json=datacite_payload)
+
+    with datacite_session() as session:
+        response = session.put(
+            get_doi_url(dandiset_doi), json=datacite_payload, timeout=DATACITE_TIMEOUT
+        )
     if not response.ok:
         raise_datacite_exception(
-            desc=f'Failed to update DOI {dandiset_doi}', response=response, payload=datacite_payload
+            desc=f'Failed to update DOI {dandiset_doi}',
+            response=response,
+            payload=datacite_payload,
         )
 
-    logger.info('Updated Draft DOI %s with new metadata', dandiset_doi)
+    logger.info('Updated concept DOI %s (publish=%s)', dandiset_doi, publish)
 
 
-def delete_dandiset_doi(doi: str):
+def delete_dandiset_doi(doi: str) -> None:
     """
-    Delete the draft DOI of a dandiset.
+    Delete the Draft concept DOI of a dandiset.
 
-    This function only accepts the raw DOI string, as the
-    dandiset itself will be deleted by the time it's called.
+    Only Draft DOIs can be deleted. Findable DOIs must be hidden instead.
     """
-    response = datacite_session().delete(get_doi_url(doi))
+    with datacite_session() as session:
+        response = session.delete(get_doi_url(doi), timeout=DATACITE_TIMEOUT)
     if not response.ok:
         raise_datacite_exception(
             desc=f'Failed to delete draft DOI {doi}', response=response, payload={}
         )
 
-    logger.info('Successfully deleted draft DOI: %s', doi)
+    logger.info('Deleted draft concept DOI: %s', doi)
 
 
 def create_published_version_doi(version: Version) -> None:
     """
-    Create a DOI for a published version.
+    Create a Findable DOI for a published version.
 
-    As a side effect, this also updates the DOI of the version's
-    dandiset to match this version's DOI metadata.
+    Also promotes/updates the concept DOI to Findable with HasVersion link.
     """
     _create_version_doi(version)
     update_dandiset_doi(version.dandiset, publish=True)
 
 
-def hide_published_version_doi(version: Version):
+def hide_published_version_doi(version: Version) -> None:
+    """Hide (retract) a Findable version DOI by transitioning to Registered state."""
     if version.version == 'draft':
         raise DOIOperationNotPermittedError(message='Cannot hide a draft dandiset DOI')
 
-    # TODO: DOI: Remove once DOI is required in all versions
     doi = version.doi
     if doi is None:
         raise VersionDOIMissingError
 
     payload = {'data': {'id': doi, 'type': 'dois', 'attributes': {'event': 'hide'}}}
-    response = datacite_session().put(get_doi_url(doi), json=payload)
+
+    with datacite_session() as session:
+        response = session.put(get_doi_url(doi), json=payload, timeout=DATACITE_TIMEOUT)
     if not response.ok:
         raise_datacite_exception(
             desc=f'Failed to hide findable DOI {doi}', response=response, payload=payload
         )
 
-    logger.info('Successfully hid findable DOI: %s', doi)
+    logger.info('Hid findable DOI: %s', doi)

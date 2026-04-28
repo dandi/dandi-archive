@@ -92,28 +92,51 @@ def delete_doi_task(doi: str) -> None:
     delete_doi(doi)
 
 
-@shared_task(soft_time_limit=60)
+@shared_task(
+    soft_time_limit=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    max_retries=5,
+)
 def create_dandiset_doi_task(dandiset_id: int) -> None:
     """Register a Draft concept DOI on DataCite for a dandiset."""
     dandiset = Dandiset.objects.get(id=dandiset_id)
     create_dandiset_doi(dandiset)
 
 
-@shared_task(soft_time_limit=60)
+@shared_task(
+    soft_time_limit=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    max_retries=5,
+)
 def create_published_version_doi_task(version_id: int) -> None:
     """Create a Findable version DOI and update the concept DOI on DataCite."""
     version = Version.objects.get(id=version_id)
     create_published_version_doi(version)
 
 
-@shared_task(soft_time_limit=60)
+@shared_task(
+    soft_time_limit=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    max_retries=5,
+)
 def update_dandiset_doi_task(dandiset_id: int) -> None:
     """Update the Draft concept DOI metadata on DataCite."""
     dandiset = Dandiset.objects.get(id=dandiset_id)
     update_dandiset_doi(dandiset)
 
 
-@shared_task
+@shared_task(
+    soft_time_limit=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    max_retries=3,
+)
 def delete_dandiset_doi_task(doi: str) -> None:
     """Delete a Draft concept DOI from DataCite."""
     delete_dandiset_doi(doi)

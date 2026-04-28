@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from contextlib import contextmanager
 from functools import wraps
 import logging
 import sys
@@ -20,19 +21,23 @@ from .exceptions import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from dandiapi.api.models import Version
     from dandiapi.api.models.dandiset import Dandiset
 
 logger = logging.getLogger(__name__)
 
 # All of the required DOI configuration settings
-# Cannot be in doi.py to avoid circular imports
 DANDI_DOI_SETTINGS = [
     (settings.DANDI_DOI_API_URL, 'DANDI_DOI_API_URL'),
     (settings.DANDI_DOI_API_USER, 'DANDI_DOI_API_USER'),
     (settings.DANDI_DOI_API_PASSWORD, 'DANDI_DOI_API_PASSWORD'),
     (settings.DANDI_DOI_API_PREFIX, 'DANDI_DOI_API_PREFIX'),
 ]
+
+# Default timeout for DataCite API calls: (connect, read) in seconds
+DATACITE_TIMEOUT = (5, 30)
 
 
 def block_during_test(fn):
@@ -100,10 +105,10 @@ def generate_doi_data(
 
     metadata['doi'] = doi
 
-    # Generate the datacite payload using dandi-schema
-    datacite_payload = to_datacite(metadata, publish=publish)
+    # Pass concept_doi for IsVersionOf relation when generating version DOI payloads
+    concept_doi = dandiset.concept_doi if version else None
+    datacite_payload = to_datacite(metadata, publish=publish, concept_doi=concept_doi)
 
-    # TODO: DOI: Find better spot for this and/or break apart that function
     _validate_datacite_configuration(datacite_payload)
 
     return (doi, datacite_payload)
@@ -118,15 +123,23 @@ def raise_datacite_exception(desc: str, response: requests.Response, payload: di
     raise DataCiteAPIError(error_details)
 
 
-def datacite_session():
-    """Pre-configured session for all datacite requests."""
+@contextmanager
+def datacite_session() -> Generator[requests.Session, None, None]:
+    """Pre-configured session for all DataCite requests. Use as context manager."""
     session = requests.Session()
     session.auth = HTTPBasicAuth(settings.DANDI_DOI_API_USER, settings.DANDI_DOI_API_PASSWORD)
-    session.headers = {'Accept': 'application/vnd.api+json'}
-    # TODO: Timeout?
+    session.headers.update({'Accept': 'application/vnd.api+json'})
 
-    retries = Retry(total=3, backoff_factor=0.1)
+    retries = Retry(
+        total=3,
+        backoff_factor=1.0,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=['GET', 'PUT', 'POST', 'DELETE'],
+    )
     session.mount('http://', HTTPAdapter(max_retries=retries))
     session.mount('https://', HTTPAdapter(max_retries=retries))
 
-    return session
+    try:
+        yield session
+    finally:
+        session.close()
