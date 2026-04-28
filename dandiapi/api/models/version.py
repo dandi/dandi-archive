@@ -49,6 +49,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
     class DoiState(models.TextChoices):
         DRAFT = 'draft'
+        REGISTERED = 'registered'  # Hidden/retracted — metadata not public
         FINDABLE = 'findable'
         PENDING = 'pending'
         FAILED = 'failed'

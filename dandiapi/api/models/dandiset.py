@@ -25,7 +25,7 @@ class Dandiset(TimeStampedModel):
     )
     embargo_end_date = models.DateField(null=True, blank=True, default=None)
     concept_doi = models.CharField(  # noqa: DJ001
-        max_length=64, null=True, default=None, blank=True
+        max_length=64, null=True, default=None, blank=True, unique=True
     )
     starred_users = models.ManyToManyField(
         to=User, through='DandisetStar', related_name='starred_dandisets'

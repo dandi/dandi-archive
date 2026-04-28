@@ -87,13 +87,14 @@ def validate_version_metadata_task(version_id: int) -> None:
     validate_version_metadata(version=version)
 
 
-@shared_task(soft_time_limit=60)
+@shared_task(queue='doi', soft_time_limit=60)
 def delete_doi_task(doi: str) -> None:
     """Legacy wrapper — use delete_dandiset_doi_task for new code."""
     delete_dandiset_doi(doi)
 
 
 @shared_task(
+    queue='doi',
     soft_time_limit=60,
     autoretry_for=(requests.exceptions.RequestException,),
     retry_backoff=True,
@@ -111,6 +112,7 @@ def create_dandiset_doi_task(dandiset_id: int) -> None:
 
 
 @shared_task(
+    queue='doi',
     soft_time_limit=60,
     autoretry_for=(requests.exceptions.RequestException,),
     retry_backoff=True,
@@ -131,6 +133,7 @@ def create_published_version_doi_task(version_id: int) -> None:
 
 
 @shared_task(
+    queue='doi',
     soft_time_limit=60,
     autoretry_for=(requests.exceptions.RequestException,),
     retry_backoff=True,
@@ -144,8 +147,9 @@ def update_dandiset_doi_task(dandiset_id: int) -> None:
 
 
 @shared_task(
+    queue='doi',
     soft_time_limit=60,
-    autoretry_for=(Exception,),
+    autoretry_for=(requests.exceptions.RequestException,),
     retry_backoff=True,
     max_retries=3,
 )

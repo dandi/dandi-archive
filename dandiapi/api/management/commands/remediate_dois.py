@@ -9,6 +9,7 @@ for dandisets that don't have them.
 from __future__ import annotations
 
 import logging
+import time
 
 from django.core.management.base import BaseCommand
 
@@ -32,6 +33,12 @@ class Command(BaseCommand):
             action='store_true',
             help='Report what would be remediated without making changes.',
         )
+        parser.add_argument(
+            '--delay',
+            type=float,
+            default=2.0,
+            help='Seconds to wait between DataCite API calls (default: 2.0).',
+        )
 
     def handle(self, *args, **options):
         dry_run = options['dry_run']
@@ -43,15 +50,17 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write('=== DRY RUN — no changes will be made ===\n')
 
+        delay = options['delay']
+
         # Phase 1: Fix published versions with fake or null DOIs
-        self._remediate_version_dois(dry_run)
+        self._remediate_version_dois(dry_run, delay)
 
         # Phase 2: Backfill concept DOIs for dandisets
-        self._backfill_concept_dois(dry_run)
+        self._backfill_concept_dois(dry_run, delay)
 
         self.stdout.write('\nRemediation complete.')
 
-    def _remediate_version_dois(self, dry_run: bool):
+    def _remediate_version_dois(self, dry_run: bool, delay: float = 2.0):
         """Find and fix published versions with bad DOIs."""
         self.stdout.write('\n--- Remediating version DOIs ---')
 
@@ -96,7 +105,10 @@ class Command(BaseCommand):
                     version.save(update_fields=['doi_state'])
                     self.stderr.write(f'    FAILED — {e}')
 
-    def _backfill_concept_dois(self, dry_run: bool):
+                # Rate limit between DataCite API calls
+                time.sleep(delay)
+
+    def _backfill_concept_dois(self, dry_run: bool, delay: float = 2.0):
         """Backfill concept DOIs for dandisets that don't have them."""
         self.stdout.write('\n--- Backfilling concept DOIs ---')
 
@@ -131,3 +143,5 @@ class Command(BaseCommand):
                     self.stdout.write(f'    OK — Draft concept DOI registered')
                 except Exception as e:
                     self.stderr.write(f'    FAILED — {e}')
+
+                time.sleep(delay)
