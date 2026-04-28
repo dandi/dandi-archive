@@ -185,6 +185,7 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         real_doi = format_doi(new_version.dandiset.identifier, new_version.version)
         new_version.metadata['doi'] = real_doi
         new_version.doi = real_doi
+        new_version.doi_state = 'pending'
         new_version.save()
 
         validate(new_version.metadata, schema_key='PublishedDandiset', json_validation=True)

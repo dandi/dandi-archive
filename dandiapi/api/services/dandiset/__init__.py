@@ -84,9 +84,10 @@ def create_open_dandiset(
         dandiset.concept_doi = concept_doi
         dandiset.save(update_fields=['concept_doi'])
 
-        # Set the concept DOI in the draft version metadata too
+        # Set the concept DOI in the draft version metadata and mark as pending
         draft_version.doi = concept_doi
-        draft_version.save(update_fields=['doi'])
+        draft_version.doi_state = 'pending'
+        draft_version.save(update_fields=['doi', 'doi_state'])
 
         # Schedule async DOI registration on DataCite
         transaction.on_commit(lambda: create_dandiset_doi_task.delay(dandiset.id))

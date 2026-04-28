@@ -7,7 +7,6 @@ from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
 
-from dandiapi.api.doi import delete_doi
 from dandiapi.api.mail import send_dandiset_unembargo_failed_message
 from dandiapi.api.services.doi import (
     create_dandiset_doi,
@@ -87,9 +86,10 @@ def validate_version_metadata_task(version_id: int) -> None:
     validate_version_metadata(version=version)
 
 
-@shared_task
+@shared_task(soft_time_limit=60)
 def delete_doi_task(doi: str) -> None:
-    delete_doi(doi)
+    """Legacy wrapper — use delete_dandiset_doi_task for new code."""
+    delete_dandiset_doi(doi)
 
 
 @shared_task(
@@ -102,7 +102,19 @@ def delete_doi_task(doi: str) -> None:
 def create_dandiset_doi_task(dandiset_id: int) -> None:
     """Register a Draft concept DOI on DataCite for a dandiset."""
     dandiset = Dandiset.objects.get(id=dandiset_id)
-    create_dandiset_doi(dandiset)
+    try:
+        create_dandiset_doi(dandiset)
+        # Update doi_state on the draft version to 'draft' (registered on DataCite)
+        draft_version = dandiset.versions.filter(version='draft').first()
+        if draft_version and draft_version.doi_state == 'pending':
+            draft_version.doi_state = 'draft'
+            draft_version.save(update_fields=['doi_state'])
+    except Exception:
+        draft_version = dandiset.versions.filter(version='draft').first()
+        if draft_version:
+            draft_version.doi_state = 'failed'
+            draft_version.save(update_fields=['doi_state'])
+        raise
 
 
 @shared_task(
@@ -115,7 +127,15 @@ def create_dandiset_doi_task(dandiset_id: int) -> None:
 def create_published_version_doi_task(version_id: int) -> None:
     """Create a Findable version DOI and update the concept DOI on DataCite."""
     version = Version.objects.get(id=version_id)
-    create_published_version_doi(version)
+    try:
+        create_published_version_doi(version)
+        version.doi_state = 'findable'
+        version.save(update_fields=['doi_state'])
+    except Exception:
+        if version.doi_state != 'pending':
+            version.doi_state = 'pending'
+            version.save(update_fields=['doi_state'])
+        raise
 
 
 @shared_task(

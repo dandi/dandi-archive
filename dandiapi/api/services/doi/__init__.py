@@ -20,6 +20,7 @@ from dandiapi.api.services.doi.exceptions import (
 from .utils import (
     DATACITE_TIMEOUT,
     datacite_session,
+    doi_configured,
     generate_doi_data,
     get_doi_url,
     raise_datacite_exception,
@@ -118,6 +119,10 @@ def delete_dandiset_doi(doi: str) -> None:
 
     Only Draft DOIs can be deleted. Findable DOIs must be hidden instead.
     """
+    if not doi_configured():
+        logger.debug('Skipping DOI deletion for %s since not configured', doi)
+        return
+
     with datacite_session() as session:
         response = session.delete(get_doi_url(doi), timeout=DATACITE_TIMEOUT)
     if not response.ok:
