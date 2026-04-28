@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import copy
 from contextlib import contextmanager
+import copy
 import logging
 from typing import TYPE_CHECKING
 
@@ -95,9 +95,12 @@ def generate_doi_data(
     concept_doi = dandiset.concept_doi if version else None
     try:
         datacite_payload = to_datacite(metadata, publish=publish, concept_doi=concept_doi)
-    except TypeError:
-        # Fallback for dandischema versions that don't support concept_doi parameter
-        datacite_payload = to_datacite(metadata, publish=publish)
+    except TypeError as e:
+        if 'concept_doi' in str(e):
+            # Fallback for dandischema versions that don't support concept_doi parameter
+            datacite_payload = to_datacite(metadata, publish=publish)
+        else:
+            raise
 
     _validate_datacite_configuration(datacite_payload)
 
@@ -114,14 +117,16 @@ def raise_datacite_exception(desc: str, response: requests.Response, payload: di
 
 
 @contextmanager
-def datacite_session() -> Generator[requests.Session, None, None]:
+def datacite_session() -> Generator[requests.Session]:
     """Pre-configured session for all DataCite requests. Use as context manager."""
     session = requests.Session()
     session.auth = HTTPBasicAuth(settings.DANDI_DOI_API_USER, settings.DANDI_DOI_API_PASSWORD)
-    session.headers.update({
-        'Accept': 'application/vnd.api+json',
-        'Content-Type': 'application/vnd.api+json',
-    })
+    session.headers.update(
+        {
+            'Accept': 'application/vnd.api+json',
+            'Content-Type': 'application/vnd.api+json',
+        }
+    )
 
     retries = Retry(
         total=3,

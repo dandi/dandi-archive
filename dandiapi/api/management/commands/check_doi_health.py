@@ -47,37 +47,33 @@ class Command(BaseCommand):
             embargo_status=Dandiset.EmbargoStatus.OPEN,
         )
 
-        self.stdout.write(f'\n--- DOI Health Check ---')
+        self.stdout.write('\n--- DOI Health Check ---')
         self.stdout.write(f'Threshold: {options["threshold_minutes"]} minutes\n')
 
         if stuck_pending.exists():
-            self.stdout.write(self.style.WARNING(
-                f'STUCK PENDING: {stuck_pending.count()} versions'
-            ))
+            self.stdout.write(
+                self.style.WARNING(f'STUCK PENDING: {stuck_pending.count()} versions')
+            )
             for v in stuck_pending[:20]:
                 self.stdout.write(
-                    f'  {v.dandiset.identifier}/{v.version} '
-                    f'doi={v.doi} modified={v.modified}'
+                    f'  {v.dandiset.identifier}/{v.version} doi={v.doi} modified={v.modified}'
                 )
         else:
             self.stdout.write(self.style.SUCCESS('No stuck pending DOIs'))
 
         if failed.exists():
-            self.stdout.write(self.style.WARNING(
-                f'FAILED: {failed.count()} versions'
-            ))
+            self.stdout.write(self.style.WARNING(f'FAILED: {failed.count()} versions'))
             for v in failed[:20]:
                 self.stdout.write(
-                    f'  {v.dandiset.identifier}/{v.version} '
-                    f'doi={v.doi} modified={v.modified}'
+                    f'  {v.dandiset.identifier}/{v.version} doi={v.doi} modified={v.modified}'
                 )
         else:
             self.stdout.write(self.style.SUCCESS('No failed DOIs'))
 
         if missing_concept.exists():
-            self.stdout.write(self.style.WARNING(
-                f'MISSING CONCEPT DOI: {missing_concept.count()} open dandisets'
-            ))
+            self.stdout.write(
+                self.style.WARNING(f'MISSING CONCEPT DOI: {missing_concept.count()} open dandisets')
+            )
             for d in missing_concept[:20]:
                 self.stdout.write(f'  {d.identifier}')
         else:
@@ -85,8 +81,6 @@ class Command(BaseCommand):
 
         total_issues = stuck_pending.count() + failed.count() + missing_concept.count()
         if total_issues > 0:
-            self.stdout.write(
-                self.style.ERROR(f'\nTotal issues: {total_issues}')
-            )
+            self.stdout.write(self.style.ERROR(f'\nTotal issues: {total_issues}'))
         else:
             self.stdout.write(self.style.SUCCESS('\nAll DOIs healthy'))

@@ -12,10 +12,12 @@ import logging
 import time
 
 from django.core.management.base import BaseCommand
+import requests
 
 from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.doi import create_dandiset_doi, create_published_version_doi
+from dandiapi.api.services.doi.exceptions import DataCiteAPIError
 from dandiapi.api.services.doi.utils import doi_configured, format_doi
 from dandiapi.api.tasks import write_manifest_files
 
@@ -53,14 +55,14 @@ class Command(BaseCommand):
         delay = options['delay']
 
         # Phase 1: Fix published versions with fake or null DOIs
-        self._remediate_version_dois(dry_run, delay)
+        self._remediate_version_dois(dry_run=dry_run, delay=delay)
 
         # Phase 2: Backfill concept DOIs for dandisets
-        self._backfill_concept_dois(dry_run, delay)
+        self._backfill_concept_dois(dry_run=dry_run, delay=delay)
 
         self.stdout.write('\nRemediation complete.')
 
-    def _remediate_version_dois(self, dry_run: bool, delay: float = 2.0):
+    def _remediate_version_dois(self, *, dry_run: bool, delay: float = 2.0):
         """Find and fix published versions with bad DOIs."""
         self.stdout.write('\n--- Remediating version DOIs ---')
 
@@ -80,8 +82,7 @@ class Command(BaseCommand):
         for version in affected:
             real_doi = format_doi(version.dandiset.identifier, version.version)
             self.stdout.write(
-                f'  {version.dandiset.identifier}/{version.version}: '
-                f'{version.doi!r} -> {real_doi}'
+                f'  {version.dandiset.identifier}/{version.version}: {version.doi!r} -> {real_doi}'
             )
 
             if not dry_run:
@@ -99,8 +100,8 @@ class Command(BaseCommand):
                     # Regenerate manifests
                     write_manifest_files.delay(version.id)
 
-                    self.stdout.write(f'    OK — DOI minted and manifests queued')
-                except Exception as e:
+                    self.stdout.write('    OK — DOI minted and manifests queued')
+                except (DataCiteAPIError, requests.exceptions.RequestException) as e:
                     version.doi_state = 'failed'
                     version.save(update_fields=['doi_state'])
                     self.stderr.write(f'    FAILED — {e}')
@@ -108,7 +109,7 @@ class Command(BaseCommand):
                 # Rate limit between DataCite API calls
                 time.sleep(delay)
 
-    def _backfill_concept_dois(self, dry_run: bool, delay: float = 2.0):
+    def _backfill_concept_dois(self, *, dry_run: bool, delay: float = 2.0):
         """Backfill concept DOIs for dandisets that don't have them."""
         self.stdout.write('\n--- Backfilling concept DOIs ---')
 
@@ -140,8 +141,8 @@ class Command(BaseCommand):
                     # Register on DataCite
                     create_dandiset_doi(dandiset)
 
-                    self.stdout.write(f'    OK — Draft concept DOI registered')
-                except Exception as e:
+                    self.stdout.write('    OK — Draft concept DOI registered')
+                except (DataCiteAPIError, requests.exceptions.RequestException) as e:
                     self.stderr.write(f'    FAILED — {e}')
 
                 time.sleep(delay)

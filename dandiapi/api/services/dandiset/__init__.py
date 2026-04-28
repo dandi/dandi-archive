@@ -15,13 +15,13 @@ from dandiapi.api.models.dandiset import Dandiset, DandisetStar
 from dandiapi.api.models.version import Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset.exceptions import DandisetAlreadyExistsError
+from dandiapi.api.services.doi.utils import format_doi
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.exceptions import (
     AdminOnlyOperationError,
     NotAllowedError,
     NotAuthenticatedError,
 )
-from dandiapi.api.services.doi.utils import format_doi
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, is_dandiset_owner
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
 from dandiapi.api.tasks import create_dandiset_doi_task, delete_dandiset_doi_task

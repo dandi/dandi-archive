@@ -9,12 +9,6 @@ from django.contrib.auth.models import User
 import requests
 
 from dandiapi.api.mail import send_dandiset_unembargo_failed_message
-from dandiapi.api.services.doi import (
-    create_dandiset_doi,
-    create_published_version_doi,
-    delete_dandiset_doi,
-    update_dandiset_doi,
-)
 from dandiapi.api.manifests import (
     write_assets_jsonld,
     write_assets_yaml,
@@ -24,6 +18,12 @@ from dandiapi.api.manifests import (
 )
 from dandiapi.api.models import Asset, AssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.services.doi import (
+    create_dandiset_doi,
+    create_published_version_doi,
+    delete_dandiset_doi,
+    update_dandiset_doi,
+)
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -94,6 +94,7 @@ def delete_doi_task(doi: str) -> None:
 
 
 @shared_task(
+    bind=True,
     queue='doi',
     soft_time_limit=60,
     autoretry_for=(requests.exceptions.RequestException,),
@@ -101,17 +102,25 @@ def delete_doi_task(doi: str) -> None:
     retry_backoff_max=300,
     max_retries=5,
 )
-def create_dandiset_doi_task(dandiset_id: int) -> None:
+def create_dandiset_doi_task(self, dandiset_id: int) -> None:
     """Register a Draft concept DOI on DataCite for a dandiset."""
     dandiset = Dandiset.objects.get(id=dandiset_id)
-    create_dandiset_doi(dandiset)
-    # Atomic state update to 'draft' — avoids race with concurrent modifications
-    Version.objects.filter(
-        dandiset=dandiset, version='draft', doi_state='pending'
-    ).update(doi_state='draft')
+    try:
+        create_dandiset_doi(dandiset)
+        Version.objects.filter(dandiset=dandiset, version='draft', doi_state='pending').update(
+            doi_state='draft'
+        )
+    except Exception:
+        # Only mark as 'failed' on the final retry attempt
+        if self.request.retries >= self.max_retries:
+            Version.objects.filter(dandiset=dandiset, version='draft', doi_state='pending').update(
+                doi_state='failed'
+            )
+        raise
 
 
 @shared_task(
+    bind=True,
     queue='doi',
     soft_time_limit=60,
     autoretry_for=(requests.exceptions.RequestException,),
@@ -119,16 +128,16 @@ def create_dandiset_doi_task(dandiset_id: int) -> None:
     retry_backoff_max=300,
     max_retries=5,
 )
-def create_published_version_doi_task(version_id: int) -> None:
+def create_published_version_doi_task(self, version_id: int) -> None:
     """Create a Findable version DOI and update the concept DOI on DataCite."""
     version = Version.objects.get(id=version_id)
     try:
         create_published_version_doi(version)
-        # Atomic state update to 'findable'
         Version.objects.filter(id=version_id).update(doi_state='findable')
     except Exception:
-        # On final failure (after all retries), mark as 'failed'
-        Version.objects.filter(id=version_id, doi_state='pending').update(doi_state='failed')
+        # Only mark as 'failed' on the final retry attempt
+        if self.request.retries >= self.max_retries:
+            Version.objects.filter(id=version_id, doi_state='pending').update(doi_state='failed')
         raise
 
 

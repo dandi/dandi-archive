@@ -162,6 +162,10 @@ def create_published_version_doi(version: Version) -> None:
 
 def hide_published_version_doi(version: Version) -> None:
     """Hide (retract) a Findable version DOI by transitioning to Registered state."""
+    if not doi_configured():
+        logger.debug('Skipping DOI hide — DOI not configured')
+        return
+
     if version.version == 'draft':
         raise DOIOperationNotPermittedError(message='Cannot hide a draft dandiset DOI')
 
