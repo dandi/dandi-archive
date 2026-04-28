@@ -6,6 +6,7 @@ from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
+import requests
 
 from dandiapi.api.mail import send_dandiset_unembargo_failed_message
 from dandiapi.api.services.doi import (
@@ -94,7 +95,7 @@ def delete_doi_task(doi: str) -> None:
 
 @shared_task(
     soft_time_limit=60,
-    autoretry_for=(Exception,),
+    autoretry_for=(requests.exceptions.RequestException,),
     retry_backoff=True,
     retry_backoff_max=300,
     max_retries=5,
@@ -102,24 +103,16 @@ def delete_doi_task(doi: str) -> None:
 def create_dandiset_doi_task(dandiset_id: int) -> None:
     """Register a Draft concept DOI on DataCite for a dandiset."""
     dandiset = Dandiset.objects.get(id=dandiset_id)
-    try:
-        create_dandiset_doi(dandiset)
-        # Update doi_state on the draft version to 'draft' (registered on DataCite)
-        draft_version = dandiset.versions.filter(version='draft').first()
-        if draft_version and draft_version.doi_state == 'pending':
-            draft_version.doi_state = 'draft'
-            draft_version.save(update_fields=['doi_state'])
-    except Exception:
-        draft_version = dandiset.versions.filter(version='draft').first()
-        if draft_version:
-            draft_version.doi_state = 'failed'
-            draft_version.save(update_fields=['doi_state'])
-        raise
+    create_dandiset_doi(dandiset)
+    # Atomic state update to 'draft' — avoids race with concurrent modifications
+    Version.objects.filter(
+        dandiset=dandiset, version='draft', doi_state='pending'
+    ).update(doi_state='draft')
 
 
 @shared_task(
     soft_time_limit=60,
-    autoretry_for=(Exception,),
+    autoretry_for=(requests.exceptions.RequestException,),
     retry_backoff=True,
     retry_backoff_max=300,
     max_retries=5,
@@ -129,18 +122,17 @@ def create_published_version_doi_task(version_id: int) -> None:
     version = Version.objects.get(id=version_id)
     try:
         create_published_version_doi(version)
-        version.doi_state = 'findable'
-        version.save(update_fields=['doi_state'])
+        # Atomic state update to 'findable'
+        Version.objects.filter(id=version_id).update(doi_state='findable')
     except Exception:
-        if version.doi_state != 'pending':
-            version.doi_state = 'pending'
-            version.save(update_fields=['doi_state'])
+        # On final failure (after all retries), mark as 'failed'
+        Version.objects.filter(id=version_id, doi_state='pending').update(doi_state='failed')
         raise
 
 
 @shared_task(
     soft_time_limit=60,
-    autoretry_for=(Exception,),
+    autoretry_for=(requests.exceptions.RequestException,),
     retry_backoff=True,
     retry_backoff_max=300,
     max_retries=5,

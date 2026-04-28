@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import copy
 from contextlib import contextmanager
-from functools import wraps
 import logging
-import sys
 from typing import TYPE_CHECKING
 
 from dandischema.datacite import to_datacite
@@ -38,18 +36,6 @@ DANDI_DOI_SETTINGS = [
 
 # Default timeout for DataCite API calls: (connect, read) in seconds
 DATACITE_TIMEOUT = (5, 30)
-
-
-def block_during_test(fn):
-    """Datacite API should not be called during tests."""
-
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        if 'pytest' in sys.modules:
-            raise RuntimeError(f'DOI calls to {fn.__name__} blocked during test.')
-        return fn(*args, **kwargs)
-
-    return wrapper
 
 
 def doi_configured() -> bool:
@@ -107,14 +93,11 @@ def generate_doi_data(
 
     # Pass concept_doi for IsVersionOf relation when generating version DOI payloads
     concept_doi = dandiset.concept_doi if version else None
-    kwargs: dict = {'publish': publish}
-    if concept_doi is not None:
-        # Only pass concept_doi if the installed dandischema supports it
-        import inspect
-
-        if 'concept_doi' in inspect.signature(to_datacite).parameters:
-            kwargs['concept_doi'] = concept_doi
-    datacite_payload = to_datacite(metadata, **kwargs)
+    try:
+        datacite_payload = to_datacite(metadata, publish=publish, concept_doi=concept_doi)
+    except TypeError:
+        # Fallback for dandischema versions that don't support concept_doi parameter
+        datacite_payload = to_datacite(metadata, publish=publish)
 
     _validate_datacite_configuration(datacite_payload)
 
@@ -126,7 +109,7 @@ def raise_datacite_exception(desc: str, response: requests.Response, payload: di
     if response and hasattr(response, 'text'):
         error_details += f'\nResponse: {response.text}'
     error_details += f'\nPayload: {payload}'
-    logger.exception(error_details)
+    logger.error(error_details)
     raise DataCiteAPIError(error_details)
 
 
@@ -135,7 +118,10 @@ def datacite_session() -> Generator[requests.Session, None, None]:
     """Pre-configured session for all DataCite requests. Use as context manager."""
     session = requests.Session()
     session.auth = HTTPBasicAuth(settings.DANDI_DOI_API_USER, settings.DANDI_DOI_API_PASSWORD)
-    session.headers.update({'Accept': 'application/vnd.api+json'})
+    session.headers.update({
+        'Accept': 'application/vnd.api+json',
+        'Content-Type': 'application/vnd.api+json',
+    })
 
     retries = Retry(
         total=3,

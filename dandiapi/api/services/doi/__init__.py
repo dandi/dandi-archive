@@ -33,7 +33,11 @@ logger = logging.getLogger(__name__)
 
 
 def _create_version_doi(version: Version) -> None:
-    """Create a Findable DOI for a published dandiset version."""
+    """Create or update a Findable DOI for a published dandiset version.
+
+    Uses PUT (upsert) for idempotency — safe to retry even if the DOI
+    was already created by a previous attempt that failed after the API call.
+    """
     if not doi_configured():
         logger.debug('Skipping version DOI creation — DOI not configured')
         return
@@ -43,17 +47,18 @@ def _create_version_doi(version: Version) -> None:
     )
 
     with datacite_session() as session:
-        response = session.post(
-            settings.DANDI_DOI_API_URL, json=datacite_payload, timeout=DATACITE_TIMEOUT
+        # Use PUT for idempotency — creates if new, updates if exists
+        response = session.put(
+            get_doi_url(version_doi), json=datacite_payload, timeout=DATACITE_TIMEOUT
         )
     if not response.ok:
         raise_datacite_exception(
-            desc=f'Failed to create findable DOI {version_doi}',
+            desc=f'Failed to create/update findable DOI {version_doi}',
             response=response,
             payload=datacite_payload,
         )
 
-    logger.info('Created findable DOI %s', version_doi)
+    logger.info('Created/updated findable DOI %s', version_doi)
 
 
 def create_dandiset_doi(dandiset: Dandiset) -> None:
