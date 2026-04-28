@@ -21,8 +21,10 @@ from dandiapi.api.services.exceptions import (
     NotAllowedError,
     NotAuthenticatedError,
 )
+from dandiapi.api.services.doi.utils import format_doi
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, is_dandiset_owner
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
+from dandiapi.api.tasks import create_dandiset_doi_task, delete_dandiset_doi_task
 
 
 def _create_dandiset(
@@ -76,6 +78,18 @@ def create_open_dandiset(
             version_name=version_name,
             version_metadata=version_metadata,
         )
+
+        # Register a Draft concept DOI on DataCite for the new dandiset
+        concept_doi = format_doi(dandiset_id=dandiset.identifier)
+        dandiset.concept_doi = concept_doi
+        dandiset.save(update_fields=['concept_doi'])
+
+        # Set the concept DOI in the draft version metadata too
+        draft_version.doi = concept_doi
+        draft_version.save(update_fields=['doi'])
+
+        # Schedule async DOI registration on DataCite
+        transaction.on_commit(lambda: create_dandiset_doi_task.delay(dandiset.id))
 
         audit.create_dandiset(dandiset=dandiset, user=user, metadata=draft_version.metadata)
 
@@ -153,6 +167,11 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
         # Record the audit event first so that the AuditRecord instance has a
         # chance to grab the Dandiset information before it is destroyed.
         audit.delete_dandiset(dandiset=dandiset, user=user)
+
+        # Record concept DOI before deletion for cleanup on DataCite
+        concept_doi = dandiset.concept_doi
+        if concept_doi:
+            transaction.on_commit(lambda: delete_dandiset_doi_task.delay(concept_doi))
 
         dandiset.versions.all().delete()
         dandiset.delete()

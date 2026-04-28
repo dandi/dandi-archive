@@ -9,6 +9,12 @@ from django.contrib.auth.models import User
 
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.mail import send_dandiset_unembargo_failed_message
+from dandiapi.api.services.doi import (
+    create_dandiset_doi,
+    create_published_version_doi,
+    delete_dandiset_doi,
+    update_dandiset_doi,
+)
 from dandiapi.api.manifests import (
     write_assets_jsonld,
     write_assets_yaml,
@@ -84,6 +90,33 @@ def validate_version_metadata_task(version_id: int) -> None:
 @shared_task
 def delete_doi_task(doi: str) -> None:
     delete_doi(doi)
+
+
+@shared_task(soft_time_limit=60)
+def create_dandiset_doi_task(dandiset_id: int) -> None:
+    """Register a Draft concept DOI on DataCite for a dandiset."""
+    dandiset = Dandiset.objects.get(id=dandiset_id)
+    create_dandiset_doi(dandiset)
+
+
+@shared_task(soft_time_limit=60)
+def create_published_version_doi_task(version_id: int) -> None:
+    """Create a Findable version DOI and update the concept DOI on DataCite."""
+    version = Version.objects.get(id=version_id)
+    create_published_version_doi(version)
+
+
+@shared_task(soft_time_limit=60)
+def update_dandiset_doi_task(dandiset_id: int) -> None:
+    """Update the Draft concept DOI metadata on DataCite."""
+    dandiset = Dandiset.objects.get(id=dandiset_id)
+    update_dandiset_doi(dandiset)
+
+
+@shared_task
+def delete_dandiset_doi_task(doi: str) -> None:
+    """Delete a Draft concept DOI from DataCite."""
+    delete_dandiset_doi(doi)
 
 
 @shared_task

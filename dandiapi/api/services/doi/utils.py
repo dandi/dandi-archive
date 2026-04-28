@@ -53,8 +53,11 @@ def doi_configured() -> bool:
 
 
 def format_doi(dandiset_id: str, version_str: str | None = None) -> str:
-    """Format a DOI string for a dandiset or version."""
-    doi = f'{settings.DANDI_DOI_API_PREFIX}/dandi.{dandiset_id}'
+    """Format a DOI string for a dandiset or version, using the instance name from config."""
+    from dandischema.conf import get_instance_config
+
+    instance_name = get_instance_config().instance_name.lower()
+    doi = f'{settings.DANDI_DOI_API_PREFIX}/{instance_name}.{dandiset_id}'
     if version_str:
         doi += f'/{version_str}'
 
