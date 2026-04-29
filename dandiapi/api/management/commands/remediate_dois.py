@@ -4,6 +4,8 @@ Management command to remediate historical fake/null DOIs.
 Finds published versions with missing, null, or fake DOIs and
 registers correct DOIs on DataCite. Also backfills concept DOIs
 for dandisets that don't have them.
+
+Note: This command was AI-generated (Claude Code).
 """
 
 from __future__ import annotations

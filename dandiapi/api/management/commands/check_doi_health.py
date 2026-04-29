@@ -3,6 +3,8 @@ Management command to check DOI health — find stuck or failed DOI states.
 
 Run periodically (e.g., via cron or Celery beat) to detect DOIs that
 are stuck in 'pending' or 'failed' state.
+
+Note: This command was AI-generated (Claude Code).
 """
 
 from __future__ import annotations
