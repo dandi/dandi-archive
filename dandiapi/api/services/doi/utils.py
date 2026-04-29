@@ -5,6 +5,7 @@ import copy
 import logging
 from typing import TYPE_CHECKING
 
+from dandischema.conf import get_instance_config
 from dandischema.datacite import to_datacite
 from django.conf import settings
 import requests
@@ -45,8 +46,6 @@ def doi_configured() -> bool:
 
 def format_doi(dandiset_id: str, version_str: str | None = None) -> str:
     """Format a DOI string for a dandiset or version, using the instance name from config."""
-    from dandischema.conf import get_instance_config
-
     instance_name = get_instance_config().instance_name.lower()
     doi = f'{settings.DANDI_DOI_API_PREFIX}/{instance_name}.{dandiset_id}'
     if version_str:
@@ -93,14 +92,7 @@ def generate_doi_data(
 
     # Pass concept_doi for IsVersionOf relation when generating version DOI payloads
     concept_doi = dandiset.concept_doi if version else None
-    try:
-        datacite_payload = to_datacite(metadata, publish=publish, concept_doi=concept_doi)
-    except TypeError as e:
-        if 'concept_doi' in str(e):
-            # Fallback for dandischema versions that don't support concept_doi parameter
-            datacite_payload = to_datacite(metadata, publish=publish)
-        else:
-            raise
+    datacite_payload = to_datacite(metadata, publish=publish, concept_doi=concept_doi)
 
     _validate_datacite_configuration(datacite_payload)
 

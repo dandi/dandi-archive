@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from django.db import transaction
 from django_filters import rest_framework as filters
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -28,6 +30,8 @@ from dandiapi.api.views.serializers import (
     VersionMetadataSerializer,
     VersionSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class VersionFilter(filters.FilterSet):
@@ -184,11 +188,9 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         if version.doi is not None:
             try:
                 hide_published_version_doi(version)
+                version.doi_state = 'registered'
+                version.save(update_fields=['doi_state'])
             except Exception:
-                import logging
-
-                logging.getLogger(__name__).exception(
-                    'Failed to hide DOI %s during version deletion', version.doi
-                )
+                logger.exception('Failed to hide DOI %s during version deletion', version.doi)
         version.delete()
         return Response(None, status=status.HTTP_204_NO_CONTENT)

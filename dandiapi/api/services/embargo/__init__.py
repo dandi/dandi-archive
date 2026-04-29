@@ -80,6 +80,7 @@ def unembargo_dandiset(ds: Dandiset, user: User):
     Version.objects.filter(pk=v.pk).update(doi=concept_doi, doi_state=doi_state)
 
     if doi_configured():
+        # Inline import to avoid circular: tasks → services.embargo → tasks
         from dandiapi.api.tasks import create_dandiset_doi_task
 
         transaction.on_commit(lambda: create_dandiset_doi_task.delay(ds.id))

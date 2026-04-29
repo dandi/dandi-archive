@@ -87,12 +87,6 @@ def validate_version_metadata_task(version_id: int) -> None:
     validate_version_metadata(version=version)
 
 
-@shared_task(queue='doi', soft_time_limit=60)
-def delete_doi_task(doi: str) -> None:
-    """Legacy wrapper — use delete_dandiset_doi_task for new code."""
-    delete_dandiset_doi(doi)
-
-
 @shared_task(
     bind=True,
     queue='doi',
@@ -110,12 +104,18 @@ def create_dandiset_doi_task(self, dandiset_id: int) -> None:
         Version.objects.filter(dandiset=dandiset, version='draft', doi_state='pending').update(
             doi_state='draft'
         )
-    except Exception:
-        # Only mark as 'failed' on the final retry attempt
+    except requests.exceptions.RequestException:
+        # Transient network error — mark failed only on final retry (Celery will autoretry)
         if self.request.retries >= self.max_retries:
             Version.objects.filter(dandiset=dandiset, version='draft', doi_state='pending').update(
                 doi_state='failed'
             )
+        raise
+    except Exception:
+        # Non-retryable error (e.g., DataCiteAPIError from 4xx) — mark failed immediately
+        Version.objects.filter(dandiset=dandiset, version='draft', doi_state='pending').update(
+            doi_state='failed'
+        )
         raise
 
 
@@ -134,10 +134,14 @@ def create_published_version_doi_task(self, version_id: int) -> None:
     try:
         create_published_version_doi(version)
         Version.objects.filter(id=version_id).update(doi_state='findable')
-    except Exception:
-        # Only mark as 'failed' on the final retry attempt
+    except requests.exceptions.RequestException:
+        # Transient — mark failed only on final retry
         if self.request.retries >= self.max_retries:
             Version.objects.filter(id=version_id, doi_state='pending').update(doi_state='failed')
+        raise
+    except Exception:
+        # Non-retryable (4xx, validation error) — mark failed immediately
+        Version.objects.filter(id=version_id, doi_state='pending').update(doi_state='failed')
         raise
 
 
