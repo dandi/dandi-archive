@@ -45,7 +45,7 @@ dependencies = [
   "django-s3-file-field[s3]==1.1.0",
   "django-storages[s3]==1.14.6",
   "sentry-sdk[celery,django,pure_eval]==2.41.0",
-  "gunicorn==23.0.0",
+  "gunicorn==25.3.0",
   # Development-only, but required
   "tqdm==4.67.1",
 ]
