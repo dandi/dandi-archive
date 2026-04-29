@@ -13,13 +13,14 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services import audit
+from dandiapi.api.services.doi import hide_published_version_doi
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.permissions.dandiset import (
     is_dandiset_owner,
     require_dandiset_owner_or_403,
 )
 from dandiapi.api.services.publish import publish_dandiset
-from dandiapi.api.tasks import delete_doi_task
+from dandiapi.api.tasks import update_dandiset_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
@@ -131,6 +132,12 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                     metadata=locked_version.metadata,
                 )
 
+                # Update Draft concept DOI metadata on DataCite for open,
+                # unpublished dandisets (per design doc section 2)
+                ds = locked_version.dandiset
+                if not ds.embargoed and ds.most_recent_published_version is None and ds.concept_doi:
+                    transaction.on_commit(lambda: update_dandiset_doi_task.delay(ds.id))
+
         serializer = VersionDetailSerializer(instance=locked_version)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -172,8 +179,16 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 'Cannot delete published versions',
                 status=status.HTTP_403_FORBIDDEN,
             )
-        doi = version.doi
+        # Hide (not delete) the Findable version DOI per design doc —
+        # Findable DOIs cannot be deleted, only transitioned to Registered
+        if version.doi is not None:
+            try:
+                hide_published_version_doi(version)
+            except Exception:
+                import logging
+
+                logging.getLogger(__name__).exception(
+                    'Failed to hide DOI %s during version deletion', version.doi
+                )
         version.delete()
-        if doi is not None:
-            delete_doi_task.delay(doi)
         return Response(None, status=status.HTTP_204_NO_CONTENT)

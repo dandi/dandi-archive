@@ -169,7 +169,9 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
         # chance to grab the Dandiset information before it is destroyed.
         audit.delete_dandiset(dandiset=dandiset, user=user)
 
-        # Record concept DOI before deletion for cleanup on DataCite
+        # Clean up concept DOI on DataCite.
+        # At this point, dandiset has no published versions (checked above),
+        # so the concept DOI should be Draft and deletable.
         concept_doi = dandiset.concept_doi
         if concept_doi:
             transaction.on_commit(lambda: delete_dandiset_doi_task.delay(concept_doi))
