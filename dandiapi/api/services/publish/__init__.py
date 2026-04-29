@@ -12,7 +12,7 @@ from more_itertools import ichunked
 from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import Asset, Dandiset, Version
 from dandiapi.api.services import audit
-from dandiapi.api.services.doi.utils import format_doi
+from dandiapi.api.services.doi.utils import doi_configured, format_doi
 from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.api.services.publish.exceptions import (
@@ -181,18 +181,22 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         old_version.status = Version.Status.PUBLISHED
         old_version.save()
 
-        # Compute the real version DOI deterministically and set in metadata
+        # Always compute and set the real version DOI (deterministic, needed for validation).
+        # The DOI string is always present; DataCite registration is gated by doi_configured().
         real_doi = format_doi(new_version.dandiset.identifier, new_version.version)
         new_version.metadata['doi'] = real_doi
         new_version.doi = real_doi
-        new_version.doi_state = 'pending'
+        if doi_configured():
+            new_version.doi_state = 'pending'
         new_version.save()
 
         validate(new_version.metadata, schema_key='PublishedDandiset', json_validation=True)
 
-        # Write manifest files and create DOI on DataCite after DB commit
+        # Write manifest files after DB commit
         transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
-        transaction.on_commit(lambda: create_published_version_doi_task.delay(new_version.id))
+        # Register DOI on DataCite after DB commit (only if configured)
+        if doi_configured():
+            transaction.on_commit(lambda: create_published_version_doi_task.delay(new_version.id))
 
         user = User.objects.get(id=user_id)
         audit.publish_dandiset(

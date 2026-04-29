@@ -135,6 +135,7 @@ def delete_dandiset_doi(doi: str) -> None:
     Delete the Draft concept DOI of a dandiset.
 
     Only Draft DOIs can be deleted. Findable DOIs must be hidden instead.
+    Gracefully handles 404 (DOI never registered or already deleted).
     """
     if not doi_configured():
         logger.debug('Skipping DOI deletion for %s since not configured', doi)
@@ -142,6 +143,11 @@ def delete_dandiset_doi(doi: str) -> None:
 
     with datacite_session() as session:
         response = session.delete(get_doi_url(doi), timeout=DATACITE_TIMEOUT)
+
+    if response.status_code == 404:
+        logger.warning('DOI %s not found on DataCite (may never have been registered)', doi)
+        return
+
     if not response.ok:
         raise_datacite_exception(
             desc=f'Failed to delete draft DOI {doi}', response=response, payload={}

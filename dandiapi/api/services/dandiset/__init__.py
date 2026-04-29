@@ -15,7 +15,7 @@ from dandiapi.api.models.dandiset import Dandiset, DandisetStar
 from dandiapi.api.models.version import Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset.exceptions import DandisetAlreadyExistsError
-from dandiapi.api.services.doi.utils import format_doi
+from dandiapi.api.services.doi.utils import doi_configured, format_doi
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.exceptions import (
     AdminOnlyOperationError,
@@ -79,18 +79,19 @@ def create_open_dandiset(
             version_metadata=version_metadata,
         )
 
-        # Register a Draft concept DOI on DataCite for the new dandiset
+        # Always compute and set the concept DOI string (deterministic).
+        # DataCite registration is gated by doi_configured().
         concept_doi = format_doi(dandiset_id=dandiset.identifier)
         dandiset.concept_doi = concept_doi
         dandiset.save(update_fields=['concept_doi'])
 
-        # Set the concept DOI in the draft version metadata and mark as pending
         draft_version.doi = concept_doi
-        draft_version.doi_state = 'pending'
+        if doi_configured():
+            draft_version.doi_state = 'pending'
         draft_version.save(update_fields=['doi', 'doi_state'])
 
-        # Schedule async DOI registration on DataCite
-        transaction.on_commit(lambda: create_dandiset_doi_task.delay(dandiset.id))
+        if doi_configured():
+            transaction.on_commit(lambda: create_dandiset_doi_task.delay(dandiset.id))
 
         audit.create_dandiset(dandiset=dandiset, user=user, metadata=draft_version.metadata)
 
