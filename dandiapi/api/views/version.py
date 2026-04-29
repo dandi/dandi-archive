@@ -5,6 +5,7 @@ import logging
 from django.db import transaction
 from django_filters import rest_framework as filters
 from drf_yasg.utils import no_body, swagger_auto_schema
+import requests
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
@@ -16,6 +17,7 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.doi import hide_published_version_doi
+from dandiapi.api.services.doi.exceptions import DataCiteAPIError
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.permissions.dandiset import (
     is_dandiset_owner,
@@ -190,7 +192,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 hide_published_version_doi(version)
                 version.doi_state = 'registered'
                 version.save(update_fields=['doi_state'])
-            except Exception:
+            except (DataCiteAPIError, requests.exceptions.RequestException):
                 logger.exception('Failed to hide DOI %s during version deletion', version.doi)
         version.delete()
         return Response(None, status=status.HTTP_204_NO_CONTENT)
