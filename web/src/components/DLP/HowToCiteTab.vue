@@ -329,13 +329,13 @@ const citationFormats: Array<{ value: CitationFormat; text: string; icon: string
 
 const citation = computed(() => props.meta?.citation);
 const doi = computed(() => {
-  const rawDoi = props.meta?.doi;
+  const rawDoi = props.meta?.doi as string | undefined;
   // Filter out placeholder/fake DOIs that were historically injected
   if (rawDoi && rawDoi.includes('.123456/0.123456.1234')) {
     return null;
   }
   // Don't display concept DOIs for draft versions — they may not resolve
-  const version = props.meta?.version;
+  const version = props.meta?.version as string | undefined;
   if (version === 'draft') {
     return null;
   }
