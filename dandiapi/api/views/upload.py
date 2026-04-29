@@ -294,7 +294,7 @@ def upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
 @permission_classes([IsApproved])
 def zarr_upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
     """
-    Initialize a multipart zarr upload.
+    Initialize a multipart upload of a zarr file.
 
     A list of parts will be returned, each of which has a presigned upload URL and a size.
     This URL communicates directly with the object store so the client can upload bytes directly.
@@ -328,8 +328,28 @@ def zarr_upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBa
     return Response(response_serializer.data)
 
 
-# These two endpoints are functionally identical
-zarr_upload_complete_view = upload_complete_view
+@swagger_auto_schema(
+    method='POST',
+    request_body=UploadCompletionRequestSerializer,
+    responses={200: UploadCompletionResponseSerializer},
+)
+@api_view(['POST'])
+@parser_classes([JSONParser])
+@permission_classes([IsApproved])
+def zarr_upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
+    """
+    Complete a multipart upload of a zarr file.
+
+    After all data has been uploaded using the URLs provided by initialize, this endpoint must
+    be called to create the object in the object store. A presigned URL that performs the
+    completion is returned, as the completion might take several minutes for large files.
+    """
+    # The underlying upload complete view accepts an HttpRequest, not an AuthenticatedRequest
+    _request = request._request  # noqa: SLF001
+
+    # These two endpoints are functionally identical, and the redefinition of this view only exists
+    # to modify the endpoint description in the swagger page.
+    return upload_complete_view(request=_request, upload_id=upload_id)
 
 
 @swagger_auto_schema(
@@ -340,11 +360,7 @@ zarr_upload_complete_view = upload_complete_view
 @parser_classes([JSONParser])
 @permission_classes([IsApproved])
 def zarr_upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
-    """
-    Verify that an upload completed successfully and mint a new AssetBlob.
-
-    Also starts the asynchronous checksum calculation process.
-    """
+    """Verify that a multipart zarr file upload completed successfully."""
     upload = get_object_or_404(Upload, upload_id=upload_id, zarr__isnull=False)
     zarr = typing.cast('ZarrArchive', upload.zarr)
     if upload.embargoed and not is_dandiset_owner(zarr.dandiset, request.user):
