@@ -84,7 +84,7 @@ type = [
 ]
 test = [
   "djangorestframework-yaml==2.0.0",
-  "Faker==37.11.0",
+  "Faker==40.15.0",
   "factory-boy==3.3.3",
   "freezegun==1.5.5",
   "pytest==8.4.2",
