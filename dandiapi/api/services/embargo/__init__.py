@@ -16,7 +16,7 @@ from dandiapi.api.services.embargo.utils import remove_dandiset_embargo_tags
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.metadata import validate_version_metadata
 from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
-from dandiapi.api.tasks import unembargo_dandiset_task
+from dandiapi.api.tasks import create_dandiset_doi_task, unembargo_dandiset_task
 
 from .exceptions import (
     AssetBlobEmbargoedError,
@@ -80,9 +80,6 @@ def unembargo_dandiset(ds: Dandiset, user: User):
     Version.objects.filter(pk=v.pk).update(doi=concept_doi, doi_state=doi_state)
 
     if doi_configured():
-        # Inline import to avoid circular: tasks → services.embargo → tasks
-        from dandiapi.api.tasks import create_dandiset_doi_task
-
         transaction.on_commit(lambda: create_dandiset_doi_task.delay(ds.id))
         logger.info('Concept DOI %s scheduled for unembargoed dandiset', concept_doi)
 

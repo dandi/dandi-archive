@@ -124,15 +124,11 @@ def test_publish_creates_version_doi(doi_is_configured, asset):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    ('has_doi', 'hide_succeeds'),
-    [
-        (True, True),
-        (True, False),  # Hide fails — version still deleted, error logged
-        (False, True),  # No DOI — skip hide
-    ],
-    ids=['hide-success', 'hide-failure', 'no-doi'],
+    'has_doi',
+    [True, False],
+    ids=['has-doi', 'no-doi'],
 )
-def test_version_destroy_hides_doi(api_client, has_doi, hide_succeeds):
+def test_version_destroy_hides_doi(api_client, has_doi):
     """Verify version deletion hides DOI and handles failures gracefully."""
     from dandiapi.api.tests.factories import PublishedVersionFactory
 
@@ -144,11 +140,7 @@ def test_version_destroy_hides_doi(api_client, has_doi, hide_succeeds):
     admin = UserFactory.create(is_superuser=True)
     api_client.force_authenticate(user=admin)
 
-    side_effect = None if hide_succeeds else DataCiteAPIError('503 unavailable')
-
-    with patch(
-        'dandiapi.api.views.version.hide_published_version_doi', side_effect=side_effect
-    ) as mock_hide:
+    with patch('dandiapi.api.views.version.hide_published_version_doi_task') as mock_hide_task:
         response = api_client.delete(
             f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/',
         )
@@ -157,9 +149,9 @@ def test_version_destroy_hides_doi(api_client, has_doi, hide_succeeds):
     assert not Version.objects.filter(id=version.id).exists()
 
     if has_doi:
-        mock_hide.assert_called_once()
+        mock_hide_task.delay.assert_called_once_with(version.doi)
     else:
-        mock_hide.assert_not_called()
+        mock_hide_task.delay.assert_not_called()
 
 
 # =============================================================================

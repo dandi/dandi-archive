@@ -5,7 +5,6 @@ import logging
 from django.db import transaction
 from django_filters import rest_framework as filters
 from drf_yasg.utils import no_body, swagger_auto_schema
-import requests
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
@@ -16,15 +15,13 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services import audit
-from dandiapi.api.services.doi import hide_published_version_doi
-from dandiapi.api.services.doi.exceptions import DataCiteAPIError
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.permissions.dandiset import (
     is_dandiset_owner,
     require_dandiset_owner_or_403,
 )
 from dandiapi.api.services.publish import publish_dandiset
-from dandiapi.api.tasks import update_dandiset_doi_task
+from dandiapi.api.tasks import hide_published_version_doi_task, update_dandiset_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
@@ -185,14 +182,11 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 'Cannot delete published versions',
                 status=status.HTTP_403_FORBIDDEN,
             )
-        # Hide (not delete) the Findable version DOI per design doc —
-        # Findable DOIs cannot be deleted, only transitioned to Registered
-        if version.doi is not None:
-            try:
-                hide_published_version_doi(version)
-                version.doi_state = 'registered'
-                version.save(update_fields=['doi_state'])
-            except (DataCiteAPIError, requests.exceptions.RequestException):
-                logger.exception('Failed to hide DOI %s during version deletion', version.doi)
+        # Schedule async DOI hide (Findable → Registered) before deleting the version.
+        # The version ID is captured before deletion; the task will handle 404 gracefully
+        # if the version is gone by the time it runs.
+        version_doi = version.doi
         version.delete()
+        if version_doi is not None:
+            hide_published_version_doi_task.delay(version_doi)
         return Response(None, status=status.HTTP_204_NO_CONTENT)

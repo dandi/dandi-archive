@@ -156,7 +156,53 @@ def create_published_version_doi_task(self, version_id: int) -> None:
 def update_dandiset_doi_task(dandiset_id: int) -> None:
     """Update the Draft concept DOI metadata on DataCite."""
     dandiset = Dandiset.objects.get(id=dandiset_id)
-    update_dandiset_doi(dandiset)
+    try:
+        update_dandiset_doi(dandiset)
+        logger.info('Updated concept DOI metadata for dandiset %s', dandiset.identifier)
+    except Exception:
+        logger.exception(
+            'Failed to update concept DOI metadata for dandiset %s', dandiset.identifier
+        )
+        raise
+
+
+@shared_task(
+    queue='doi',
+    soft_time_limit=60,
+    autoretry_for=(requests.exceptions.RequestException,),
+    retry_backoff=True,
+    max_retries=3,
+)
+def hide_published_version_doi_task(doi: str) -> None:
+    """Hide (retract) a Findable DOI by transitioning to Registered on DataCite."""
+    # Call DataCite directly since the version may already be deleted
+    from dandiapi.api.services.doi.utils import (
+        DATACITE_TIMEOUT,
+        datacite_session,
+        doi_configured,
+        get_doi_url,
+    )
+
+    if not doi_configured():
+        logger.debug('Skipping DOI hide for %s — DOI not configured', doi)
+        return
+
+    payload = {'data': {'id': doi, 'type': 'dois', 'attributes': {'event': 'hide'}}}
+    with datacite_session() as session:
+        response = session.put(get_doi_url(doi), json=payload, timeout=DATACITE_TIMEOUT)
+
+    if response.status_code == 404:
+        logger.warning('DOI %s not found on DataCite during hide', doi)
+        return
+
+    if not response.ok:
+        from dandiapi.api.services.doi.utils import raise_datacite_exception
+
+        raise_datacite_exception(
+            desc=f'Failed to hide DOI {doi}', response=response, payload=payload
+        )
+
+    logger.info('Hid DOI %s (Findable → Registered)', doi)
 
 
 @shared_task(
