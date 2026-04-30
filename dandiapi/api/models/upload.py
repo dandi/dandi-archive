@@ -14,6 +14,10 @@ from dandiapi.zarr.models import ZarrArchive
 from .asset import AssetBlob
 from .dandiset import Dandiset
 
+# Zarr files below or equal in size to this threshold must use single part upload, and above this
+# size, must use multipart upload
+ZARR_MULTIPART_UPLOAD_THRESHOLD = 5 * 1024 * 1024 * 1024  # 5 GB
+
 
 class Upload(models.Model):  # noqa: DJ008
     ETAG_REGEX = DandiETag.REGEX
@@ -68,6 +72,12 @@ class Upload(models.Model):  # noqa: DJ008
         upload, attrs = cls.initialize_multipart_upload(
             etag=etag, size=size, dandiset=zarr.dandiset, object_key=object_key
         )
+
+        if size <= ZARR_MULTIPART_UPLOAD_THRESHOLD:
+            raise ValidationError(
+                f'Zarr files below {ZARR_MULTIPART_UPLOAD_THRESHOLD} bytes in size'
+                ' must be uploaded via single part upload.'
+            )
 
         # Tack on zarr and remove dandiset from instantiated (but not yet saved) Upload
         upload.dandiset = None
