@@ -192,15 +192,9 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
     return Response(response_serializer.data)
 
 
-@swagger_auto_schema(
-    method='POST',
-    request_body=UploadCompletionRequestSerializer,
-    responses={200: UploadCompletionResponseSerializer},
-)
-@api_view(['POST'])
-@parser_classes([JSONParser])
-@permission_classes([IsApproved])
-def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
+# This view is used identically in two separate views. The reason for this is solely so that the
+# swagger page can add "of a zarr file" to the description of the zarr multipart upload endpoint.
+def _upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
     """
     Complete a multipart upload.
 
@@ -231,6 +225,25 @@ def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
         }
     )
     return Response(response_serializer.data)
+
+
+@swagger_auto_schema(
+    method='POST',
+    request_body=UploadCompletionRequestSerializer,
+    responses={200: UploadCompletionResponseSerializer},
+)
+@api_view(['POST'])
+@parser_classes([JSONParser])
+@permission_classes([IsApproved])
+def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
+    """
+    Complete a multipart upload.
+
+    After all data has been uploaded using the URLs provided by initialize, this endpoint must
+    be called to create the object in the object store. A presigned URL that performs the
+    completion is returned, as the completion might take several minutes for large files.
+    """
+    return _upload_complete_view(request=request, upload_id=upload_id)
 
 
 @swagger_auto_schema(
@@ -344,12 +357,7 @@ def zarr_upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> 
     be called to create the object in the object store. A presigned URL that performs the
     completion is returned, as the completion might take several minutes for large files.
     """
-    # The underlying upload complete view accepts an HttpRequest, not an AuthenticatedRequest
-    _request = request._request  # noqa: SLF001
-
-    # These two endpoints are functionally identical, and the redefinition of this view only exists
-    # to modify the endpoint description in the swagger page.
-    return upload_complete_view(request=_request, upload_id=upload_id)
+    return _upload_complete_view(request=request, upload_id=upload_id)
 
 
 @swagger_auto_schema(
