@@ -175,9 +175,11 @@ class DraftVersionFactory(BaseVersionFactory):
 
 class PublishedVersionFactory(BaseVersionFactory):
     doi = factory.LazyAttribute(
-        lambda self: f'{get_instance_config().doi_prefix}/'
-        f'{get_instance_config().instance_name}.'
-        f'{self.dandiset.identifier}/{self.version}'
+        lambda self: (
+            f'{get_instance_config().doi_prefix}/'
+            f'{get_instance_config().instance_name}.'
+            f'{self.dandiset.identifier}/{self.version}'
+        )
     )
     status = Version.Status.PUBLISHED
 
