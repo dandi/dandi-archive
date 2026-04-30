@@ -37,6 +37,7 @@ dependencies = [
   "more_itertools==11.0.2",
   "psycopg[binary]==3.2.10",
   "pyyaml==6.0.3",
+  "qrcode==8.2",
   "requests==2.32.5",
   "rich==15.0.0",
   "whitenoise[brotli]==6.11.0",
