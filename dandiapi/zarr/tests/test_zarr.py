@@ -58,13 +58,14 @@ def test_zarr_rest_dandiset_malformed(api_client):
         },
     )
     assert resp.status_code == 400
-    assert resp.json() == {'dandiset': ['This value does not match the required pattern.']}
+    assert resp.json() == {'dandiset': ['A valid Dandiset identifier is required.']}
 
 
 @pytest.mark.django_db
 def test_zarr_rest_create_not_an_owner(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
+    # Don't make the user an owner
     dandiset = DandisetFactory.create()
     resp = api_client.post(
         '/api/zarr/',
@@ -89,7 +90,9 @@ def test_zarr_rest_create_duplicate(api_client):
         },
     )
     assert resp.status_code == 400
-    assert resp.json() == ['Zarr already exists']
+    assert resp.json() == {
+        'non_field_errors': ['The fields dandiset, name must make a unique set.']
+    }
 
 
 @pytest.mark.django_db

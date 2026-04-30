@@ -22,7 +22,7 @@ from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgress
 from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.tasks import calculate_sha256
-from dandiapi.api.views.serializers import AssetBlobSerializer
+from dandiapi.api.views.serializers import AssetBlobSerializer, DandisetIdentifierField
 from dandiapi.zarr.models import ZarrArchive
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ class ZarrUploadInitializationRequestSerializer(CommonUploadSerializer):
 
 
 class UploadInitializationRequestSerializer(CommonUploadSerializer):
-    dandiset = serializers.RegexField(f'^{Dandiset.IDENTIFIER_REGEX}$')
+    dandiset = DandisetIdentifierField()
 
 
 class PartInitializationResponseSerializer(serializers.Serializer):
@@ -153,10 +153,9 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
 
     etag, content_size = request_serializer.get_digest_data()
 
-    dandiset_id = int(request_serializer.validated_data['dandiset'])
     dandiset = get_object_or_404(
         get_visible_dandisets(request.user),
-        id=dandiset_id,
+        id=request_serializer.validated_data['dandiset'],
     )
     if not is_dandiset_owner(dandiset, request.user):
         raise NotAllowedError
