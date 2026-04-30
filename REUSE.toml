@@ -1,0 +1,10 @@
+version = 1
+
+# Single-license project: everything is licensed under Apache-2.0,
+# matching the LICENSE and NOTICE files at the repo root. See
+# CLAUDE.md / DEVELOPMENT.md for contributor guidance.
+[[annotations]]
+path = "**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2019-2026 Kitware, Inc. and DANDI Archive contributors"
+SPDX-License-Identifier = "Apache-2.0"
