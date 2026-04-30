@@ -411,7 +411,6 @@ class DandisetUploadSerializer(serializers.ModelSerializer):
         model = Upload
         exclude = [
             'dandiset',
-            'embargoed',
             'id',
             'multipart_upload_id',
         ]

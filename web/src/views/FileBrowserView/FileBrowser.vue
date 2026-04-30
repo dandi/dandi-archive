@@ -110,8 +110,8 @@
                   >
                     mdi-folder
                   </v-icon>
-                  ..
                 </template>
+                <v-list-item-title>..</v-list-item-title>
               </v-list-item>
 
               <v-list-item
@@ -132,8 +132,10 @@
                       mdi-file
                     </template>
                   </v-icon>
-                  {{ item.name }}
                 </template>
+                <v-list-item-title :title="item.name">
+                  {{ item.name }}
+                </v-list-item-title>
 
                 <template #append>
                   <v-list-item-action>
