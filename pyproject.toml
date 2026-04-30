@@ -26,7 +26,7 @@ dependencies = [
   "django-oauth-toolkit==3.1.0",
   "django-resonant-settings[allauth,celery]==0.48.1",
   "django-resonant-utils[allauth,s3_storage]==0.16.0",
-  "django-stubs-ext==5.2.7",
+  "django-stubs-ext==6.0.3",
   # TODO: pin djangorestframework until we figure out what the cause of
   # https://github.com/dandi/dandi-archive/issues/1896 is.
   "djangorestframework==3.14.0",
@@ -76,11 +76,12 @@ lint = [
   "ruff==0.14.0",
 ]
 type = [
-  "mypy==1.18.2",
-  "boto3-stubs[s3]==1.40.51",
-  "celery-types==0.23.0",
-  "django-stubs[compatible-mypy]==5.2.7",
-  "djangorestframework-stubs[compatible-mypy]==3.16.4",
+  "mypy==1.20.2",
+  "boto3-stubs[s3]==1.43.0",
+  "celery-types==0.26.0",
+  "django-stubs[compatible-mypy]==6.0.3",
+  "djangorestframework-stubs[compatible-mypy]==3.16.9",
+  "types-requests==2.33.0.20260408",
 ]
 test = [
   "djangorestframework-yaml==2.0.0",
