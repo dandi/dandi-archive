@@ -5,6 +5,23 @@ const TEST_USER_INITIALS = "AA";
 const LOGOUT_BUTTON_TEXT = "Logout";
 const LOGIN_BUTTON_TEXT = "Log In with GitHub";
 const clientUrl = "http://localhost:8085";
+const apiUrl = "http://localhost:8000/api";
+
+interface InstanceConfig {
+  instance_name: string;
+  instance_identifier: string | null;
+  instance_url: string | null;
+}
+
+async function fetchInstanceConfig(): Promise<InstanceConfig> {
+  const url = `${apiUrl}/info/`;
+  const resp = await fetch(url);
+  if (!resp.ok) {
+    throw new Error(`Failed to fetch instance config from ${url}: ${resp.status} ${resp.statusText}`);
+  }
+  const data = await resp.json();
+  return data.instance_config;
+}
 
 function uniqueId() {
   return Date.now().toString();
@@ -80,6 +97,7 @@ export {
   LOGOUT_BUTTON_TEXT,
   LOGIN_BUTTON_TEXT,
   dismissCookieBanner,
+  fetchInstanceConfig,
   gotoAndLogin,
   registerDandiset,
   registerNewUser,

@@ -13,3 +13,11 @@ repos:
   rev: v2.3.0
   hooks:
   - id: codespell
+- repo: local
+  hooks:
+  - id: no-hardcoded-dandi-identifiers
+    name: Check for hardcoded DANDI identifiers in frontend
+    entry: scripts/check-no-hardcoded-dandi.sh
+    language: script
+    files: '\.(vue|ts)$'
+    exclude: '(node_modules|__tests__|\.test\.|\.spec\.)'

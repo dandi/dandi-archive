@@ -16,9 +16,14 @@ import App from './App.vue'
 // Composables
 import { createApp } from 'vue'
 
+import { useInstanceStore } from '@/stores/instance'
+
 const app = createApp(App)
 
 registerPlugins(app)
 registerDirectives(app)
+
+// Fetch instance config early so page titles and identifiers are available
+useInstanceStore().fetchInstanceInfo();
 
 app.mount('#app')

@@ -1,9 +1,16 @@
 import { expect, test } from "@playwright/test";
-import { registerDandiset, registerNewUser, uniqueId } from "../utils.ts";
+import { registerDandiset, registerNewUser, uniqueId, fetchInstanceConfig } from "../utils.ts";
 import moment from "moment";
 import { faker } from "@faker-js/faker";
 
 test.describe("dandisets page", async () => {
+    let instanceName: string;
+
+    test.beforeAll(async () => {
+        const config = await fetchInstanceConfig();
+        instanceName = config.instance_name;
+    });
+
     test("search for Dandisets", async ({ page }) => {
         test.slow();
         await registerNewUser(page);
@@ -28,7 +35,7 @@ test.describe("dandisets page", async () => {
             await page.getByLabel(searchFieldText).fill(name);
             await page.keyboard.press("Enter");
 
-            await expect(page.getByText(`DANDI:${id}`)).toHaveCount(1);
+            await expect(page.getByText(`${instanceName}:${id}`)).toHaveCount(1);
 
             // Clear search bar
             await page.keyboard.down("ControlLeft");
@@ -48,7 +55,7 @@ test.describe("dandisets page", async () => {
         const identifier = await registerDandiset(page, name, description);
         await page.getByRole("tab", { name: "My Dandisets" }).click();
         await expect(page.getByText(name)).toHaveCount(1);
-        await expect(page.getByText(`DANDI:${identifier}`)).toHaveCount(1);
+        await expect(page.getByText(`${instanceName}:${identifier}`)).toHaveCount(1);
         await expect(page.getByText(`Contact ${lastname}, ${firstname}`)).toHaveCount(1);
         await expect(page.getByText(`Updated on ${moment(new Date()).format("LL")}`)).toHaveCount(1);
     });
