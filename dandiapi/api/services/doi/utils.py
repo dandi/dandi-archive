@@ -27,21 +27,24 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# All of the required DOI configuration settings
-DANDI_DOI_SETTINGS = [
-    (settings.DANDI_DOI_API_URL, 'DANDI_DOI_API_URL'),
-    (settings.DANDI_DOI_API_USER, 'DANDI_DOI_API_USER'),
-    (settings.DANDI_DOI_API_PASSWORD, 'DANDI_DOI_API_PASSWORD'),
-    (settings.DANDI_DOI_API_PREFIX, 'DANDI_DOI_API_PREFIX'),
-]
+# Names of the required DOI configuration settings
+_DANDI_DOI_SETTING_NAMES = (
+    'DANDI_DOI_API_URL',
+    'DANDI_DOI_API_USER',
+    'DANDI_DOI_API_PASSWORD',
+    'DANDI_DOI_API_PREFIX',
+)
 
 # Default timeout for DataCite API calls: (connect, read) in seconds
 DATACITE_TIMEOUT = (5, 30)
 
 
 def doi_configured() -> bool:
-    """Check if the DOI client is properly configured."""
-    return all(setting is not None for setting, _ in DANDI_DOI_SETTINGS)
+    """Check if the DOI client is properly configured.
+
+    Reads settings at call time (not import time) so test overrides work.
+    """
+    return all(getattr(settings, name, None) is not None for name in _DANDI_DOI_SETTING_NAMES)
 
 
 def format_doi(dandiset_id: str, version_str: str | None = None) -> str:

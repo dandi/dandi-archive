@@ -10,8 +10,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from django.conf import settings
-
 from dandiapi.api.services.doi.exceptions import (
     DOIOperationNotPermittedError,
     VersionDOIMissingError,
@@ -67,6 +65,9 @@ def create_dandiset_doi(dandiset: Dandiset) -> None:
 
     Called during dandiset creation for public dandisets.
     For embargoed dandisets, no DOI is created until unembargo.
+
+    Uses PUT (upsert) for idempotency — safe to retry even if DataCite
+    accepted a previous attempt that failed before the DB write landed.
     """
     if not doi_configured():
         logger.debug('Skipping concept DOI creation — DOI not configured')
@@ -75,8 +76,8 @@ def create_dandiset_doi(dandiset: Dandiset) -> None:
     dandiset_doi, datacite_payload = generate_doi_data(dandiset, version=None, publish=False)
 
     with datacite_session() as session:
-        response = session.post(
-            settings.DANDI_DOI_API_URL, json=datacite_payload, timeout=DATACITE_TIMEOUT
+        response = session.put(
+            get_doi_url(dandiset_doi), json=datacite_payload, timeout=DATACITE_TIMEOUT
         )
     if not response.ok:
         raise_datacite_exception(

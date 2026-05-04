@@ -101,6 +101,7 @@ test = [
   "pytest-random-order==1.2.0",
   # Enable with "pytest --count=... ..."
   "pytest-repeat==0.9.4",
+  "responses==0.25.7",
 ]
 
 # TODO: BEFORE MERGE — remove this once dandischema is pinned to a released version

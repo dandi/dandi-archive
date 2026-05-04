@@ -24,7 +24,9 @@ class Dandiset(TimeStampedModel):
         default=EmbargoStatus.OPEN,
     )
     embargo_end_date = models.DateField(null=True, blank=True, default=None)
-    concept_doi = models.CharField(max_length=64, null=True, default=None, blank=True, unique=True)
+    # NULL distinguishes "concept DOI not yet derived/scheduled" from a real DOI string;
+    # empty string would be ambiguous and complicates the DOI lifecycle queries.
+    concept_doi = models.CharField(max_length=64, null=True, default=None, blank=True)  # noqa: DJ001
     starred_users = models.ManyToManyField(
         to=User, through='DandisetStar', related_name='starred_dandisets'
     )

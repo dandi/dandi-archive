@@ -24,6 +24,13 @@ from dandiapi.api.services.doi import (
     delete_dandiset_doi,
     update_dandiset_doi,
 )
+from dandiapi.api.services.doi.utils import (
+    DATACITE_TIMEOUT,
+    datacite_session,
+    doi_configured,
+    get_doi_url,
+    raise_datacite_exception,
+)
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -174,15 +181,11 @@ def update_dandiset_doi_task(dandiset_id: int) -> None:
     max_retries=3,
 )
 def hide_published_version_doi_task(doi: str) -> None:
-    """Hide (retract) a Findable DOI by transitioning to Registered on DataCite."""
-    # Call DataCite directly since the version may already be deleted
-    from dandiapi.api.services.doi.utils import (
-        DATACITE_TIMEOUT,
-        datacite_session,
-        doi_configured,
-        get_doi_url,
-    )
+    """Hide (retract) a Findable DOI by transitioning to Registered on DataCite.
 
+    Calls DataCite directly (bypassing the service layer) since the Version
+    row has typically been deleted by the time this task runs.
+    """
     if not doi_configured():
         logger.debug('Skipping DOI hide for %s — DOI not configured', doi)
         return
@@ -196,8 +199,6 @@ def hide_published_version_doi_task(doi: str) -> None:
         return
 
     if not response.ok:
-        from dandiapi.api.services.doi.utils import raise_datacite_exception
-
         raise_datacite_exception(
             desc=f'Failed to hide DOI {doi}', response=response, payload=payload
         )

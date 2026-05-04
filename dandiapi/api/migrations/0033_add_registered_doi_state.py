@@ -11,11 +11,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterField(
-            model_name='dandiset',
-            name='concept_doi',
-            field=models.CharField(blank=True, default=None, max_length=64, null=True, unique=True),
-        ),
-        migrations.AlterField(
             model_name='version',
             name='doi_state',
             field=models.CharField(
