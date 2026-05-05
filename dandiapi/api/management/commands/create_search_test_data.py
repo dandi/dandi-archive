@@ -180,7 +180,7 @@ _SCENARIOS: list[dict] = [
 ]
 
 
-def _delete_existing(owner: User) -> int:  # noqa: ARG001
+def _delete_existing() -> int:
     """Drop dandisets named with the test prefix so reruns are idempotent.
 
     Bypasses ``delete_dandiset`` (which forbids deleting published-version
@@ -197,7 +197,7 @@ def _delete_existing(owner: User) -> int:  # noqa: ARG001
 def create_search_test_data(email: str) -> None:
     owner = User.objects.get(email=email)
 
-    removed = _delete_existing(owner)
+    removed = _delete_existing()
     if removed:
         click.echo(f'Removed {removed} existing test dandiset(s).')
 
