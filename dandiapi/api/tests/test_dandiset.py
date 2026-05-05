@@ -1861,8 +1861,8 @@ def test_advanced_search_unbalanced_quote_returns_400(api_client):
 @pytest.mark.django_db
 def test_advanced_search_species_substring_match(api_client):
     # Real DANDI species are like "Mus musculus - House mouse". A short token
-    # like "mouse" should match by case-insensitive substring on the
-    # denormalized species column.
+    # like "mouse" should match by case-insensitive substring against the
+    # `wasAttributedTo[*].species.name` jsonpath.
     mouse = _seed_dandiset_with_asset(
         asset_metadata={'wasAttributedTo': [{'species': {'name': 'Mus musculus - House mouse'}}]},
     )
@@ -1876,6 +1876,31 @@ def test_advanced_search_species_substring_match(api_client):
     assert _search_ids(api_client, 'species:mouse') == {mouse.identifier}
     assert _search_ids(api_client, 'species:musculus') == {mouse.identifier}
     assert _search_ids(api_client, 'species:Rattus') == {rat.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_species_matches_any_attributed_subject(api_client):
+    # An asset can be attributed to multiple subjects of different species
+    # (e.g. xenotransplantation, multi-species recordings). The filter must
+    # scan every wasAttributedTo entry, not just the first.
+    multi = _seed_dandiset_with_asset(
+        asset_metadata={
+            'wasAttributedTo': [
+                {'species': {'name': 'House mouse'}},
+                {'species': {'name': 'Human'}},
+            ],
+        },
+    )
+    rat = _seed_dandiset_with_asset(
+        asset_metadata={'wasAttributedTo': [{'species': {'name': 'Norway rat'}}]},
+    )
+    _refresh_asset_search()
+
+    # `multi` matches both queries because every array element is scanned.
+    assert _search_ids(api_client, 'species:Human') == {multi.identifier}
+    assert _search_ids(api_client, 'species:mouse') == {multi.identifier}
+    assert _search_ids(api_client, 'species:rat') == {rat.identifier}
 
 
 @pytest.mark.ai_generated

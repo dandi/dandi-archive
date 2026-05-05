@@ -66,38 +66,43 @@ def _annotate_latest_published_created(queryset):
     )
 
 
-_NAME_ARRAY_FIELDS = {
-    'approach': 'approach',
-    'technique': 'measurementTechnique',
-    'standard': 'dataStandard',
+# Each entry maps an operator to a Postgres jsonpath that selects the names
+# we want to match against. `[*]` wildcards mean we match if ANY element of
+# the array satisfies the predicate — important for assets that list
+# multiple species, approaches, etc. Paths MUST be trusted constants:
+# they're interpolated into the SQL.
+_NAME_PATH_OPS = {
+    'species': '$.wasAttributedTo[*].species.name',
+    'approach': '$.approach[*].name',
+    'technique': '$.measurementTechnique[*].name',
+    'standard': '$.dataStandard[*].name',
 }
 
 
-def _name_array_jsonpath(field: str, value: str) -> tuple[str, list[str]]:
+def _jsonpath_name_match(path: str, value: str) -> tuple[str, list[str]]:
     """Build a parameterized Postgres `jsonb_path_exists` predicate.
 
-    Matches case-insensitively against the `.name` of *any* element of the
-    asset_metadata.<field> JSON array. `field` MUST come from a trusted
-    allowlist (it's interpolated into the SQL); `value` is parameterized.
+    Matches `value` case-insensitively as a substring against any node
+    selected by `path`. `path` MUST come from a trusted allowlist; `value`
+    is parameterized and regex-escaped.
     """
     # No table prefix on `asset_metadata`: Django may alias the AssetSearch
     # table (e.g. inside a subquery), and qualifying the column would break
     # those queries. The unqualified column is unambiguous in our usage.
     where = (
         'jsonb_path_exists(asset_metadata, '
-        f'(\'$."{field}"[*].name ? (@ like_regex \' '
-        '|| to_jsonb(%s::text)::text || \' flag "i")\')::jsonpath)'
+        f"('{path} ? (@ like_regex ' "
+        '|| to_jsonb(%s::text)::text || '
+        '\' flag "i")\')::jsonpath)'
     )
     return where, [re.escape(value)]
 
 
 def _apply_asset_filter(queryset, operator: str, value: str):
     """Apply one parsed asset operator to an AssetSearch queryset."""
-    if operator == 'species':
-        return queryset.filter(species__icontains=value)
-    if operator in _NAME_ARRAY_FIELDS:
-        where, params = _name_array_jsonpath(_NAME_ARRAY_FIELDS[operator], value)
-        # `where` interpolates only an allowlisted field name; the user value
+    if operator in _NAME_PATH_OPS:
+        where, params = _jsonpath_name_match(_NAME_PATH_OPS[operator], value)
+        # `where` interpolates only an allowlisted jsonpath; the user value
         # is bound via params (and re-escaped against regex injection).
         return queryset.extra(where=[where], params=params)  # noqa: S610
     if operator == 'file_type':
