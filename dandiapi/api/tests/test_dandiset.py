@@ -2004,8 +2004,11 @@ def test_advanced_search_file_type_alias_and_mime(api_client):
 @pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_repeated_asset_operators_intersect(api_client):
-    # species:mouse + approach:electrophysiological should intersect:
-    # only the dandiset that satisfies BOTH on a single asset is returned.
+    # Cross-key semantics: a SINGLE asset must satisfy ALL constraints. So
+    # `species:mouse approach:electrophysiological` requires one asset that
+    # is both attributed to a mouse AND uses an electrophysiological approach.
+    # An asset that has the species but a different approach (and vice versa
+    # for a sibling dandiset) does NOT qualify.
     mouse_ephys = _seed_dandiset_with_asset(
         asset_metadata={
             'wasAttributedTo': [{'species': {'name': 'House mouse'}}],
@@ -2028,6 +2031,44 @@ def test_advanced_search_repeated_asset_operators_intersect(api_client):
 
     query = 'species:mouse approach:electrophysiological'
     assert _search_ids(api_client, query) == {mouse_ephys.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_repeated_same_key_operator_combines_with_and(api_client):
+    # Same-key semantics: `species:mouse species:rat` requires a single
+    # asset whose species set contains BOTH "mouse" and "rat" (matches
+    # GitHub's default for repeated keys). Pinning this so a future change
+    # to OR-within-key is a deliberate decision, not a regression.
+    multi = _seed_dandiset_with_asset(
+        asset_metadata={
+            'wasAttributedTo': [
+                {'species': {'name': 'House mouse'}},
+                {'species': {'name': 'Norway rat'}},
+            ],
+        },
+    )
+    _seed_dandiset_with_asset(
+        asset_metadata={'wasAttributedTo': [{'species': {'name': 'House mouse'}}]},
+    )
+    _seed_dandiset_with_asset(
+        asset_metadata={'wasAttributedTo': [{'species': {'name': 'Norway rat'}}]},
+    )
+    _refresh_asset_search()
+
+    assert _search_ids(api_client, 'species:mouse species:rat') == {multi.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_empty_operator_value_returns_400(api_client):
+    response = api_client.get(
+        '/api/dandisets/',
+        # Trailing space → empty value after strip()
+        {'draft': 'true', 'empty': 'true', 'search': 'species:" "'},
+    )
+    assert response.status_code == 400
+    assert 'requires a value' in response.json()['search']
 
 
 @pytest.mark.ai_generated

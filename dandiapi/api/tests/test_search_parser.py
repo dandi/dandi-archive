@@ -75,8 +75,8 @@ def test_parse_search(query, expected_free_text, expected_operators):
         # Unknown operator (typo) close to a real one
         ('createdafter:2024-01-01', 'Did you mean "created_after"'),
         # Unbalanced quote
-        ('hello "world species:mouse', 'Unbalanced quote'),
-        ('foo "bar', 'Unbalanced quote'),
+        ('hello "world species:mouse', 'Remove the stray quote'),
+        ('foo "bar', 'Remove the stray quote'),
         # Length cap (DoS hardening)
         ('a' * 5000, 'too long'),
     ],

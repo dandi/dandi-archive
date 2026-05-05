@@ -300,7 +300,21 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
     )
     search = serializers.CharField(
         required=False,
-        help_text='Search terms to filter the results.',
+        help_text=(
+            'Free-text search across dandiset metadata, plus Gmail-style '
+            'key:value operators that filter on structured fields. Operators '
+            'and free text combine with AND. Multi-word operator values must '
+            'be quoted (e.g. technique:"spike sorting"). Wrapping a token in '
+            'double quotes opts out of operator parsing for that token. '
+            'Available operators: '
+            'created_before, created_after, modified_before, modified_after, '
+            'published_before, published_after (all take YYYY-MM-DD); '
+            'species, approach, technique, standard (case-insensitive '
+            'substring against the corresponding asset_metadata array); '
+            'file_type (nwb, image, text, video — or any MIME prefix). '
+            'Invalid syntax returns HTTP 400 with the offending token; '
+            'unknown operators get a "Did you mean?" suggestion.'
+        ),
     )
 
 

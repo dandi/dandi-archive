@@ -166,7 +166,7 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
             q_filter &= Q(search_field__icontains=word)
 
         # We must formulate the filter using a separate query first, as otherwise
-        # the generated SQL is incompatible previously generated clauses
+        # the generated SQL is incompatible with previously generated clauses
         matching_dandiset_ids = (
             Version.objects.alias(search_field=Unaccent(Cast('metadata', TextField())))
             .filter(q_filter)

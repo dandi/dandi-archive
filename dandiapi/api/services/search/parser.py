@@ -47,7 +47,7 @@ _TOKEN_RE = re.compile(
     r'|"(?P<free_quoted>[^"]*)"'
     r'|(?P<bare>\S+)'
 )
-_BARE_OP_RE = re.compile(r'^([a-z_]+):(.+)$', re.DOTALL)
+_BARE_OP_RE = re.compile(r'^([a-z_]+):(.+)$')
 
 
 # Defense-in-depth: cap search-term length so an unauthenticated caller can't
@@ -69,8 +69,8 @@ class ParsedSearch:
 def _check_balanced_quotes(query: str) -> None:
     if query.count('"') % 2 != 0:
         raise SearchSyntaxError(
-            'Unbalanced quote in search query. Use \\" to include a literal double quote, '
-            'or remove the stray one.'
+            'Unbalanced quote in search query. Remove the stray quote, or wrap '
+            'the intended phrase in matched quotes.'
         )
 
 
