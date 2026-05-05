@@ -16,8 +16,10 @@ test.describe("dandisets page", async () => {
             dandisetIdentifierNameMapping[identifier || ""] = name;
         }
 
-        const searchFieldText = "Search Dandisets by name,";
-        await page.getByRole('textbox', { name: 'Search Dandisets by name,' }).click();
+        // Match a stable substring of the search field's placeholder so this
+        // doesn't break when the placeholder copy is tweaked.
+        const searchFieldText = "Search Dandisets";
+        await page.getByRole('textbox', { name: 'Search Dandisets' }).click();
         await page.keyboard.press("Enter");
         await page.getByRole("button", { name: "󰒓" }).click();
         await page.waitForTimeout(500);
