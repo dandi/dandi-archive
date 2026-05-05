@@ -85,7 +85,7 @@ function organizationToCFFAuthor(org: Organization): CFFAuthor {
 /**
  * Convert DANDI dandiset metadata to CFF format
  */
-export function dandisetToCFF(metadata: DandisetMetadata, doi?: string): CFF {
+export function dandisetToCFF(metadata: DandisetMetadata, doi?: string, isDraft?: boolean, draftModifiedDate?: string): CFF {
   const cff: CFF = {
     'cff-version': '1.2.0',
     message: 'If you use this dataset, please cite it as below.',
@@ -161,8 +161,9 @@ export function dandisetToCFF(metadata: DandisetMetadata, doi?: string): CFF {
   }
 
   // Add release date
-  if (metadata.dateModified) {
-    cff['date-released'] = metadata.dateModified.split('T')[0]; // Extract date part
+  const releaseDate = isDraft ? draftModifiedDate : metadata.datePublished as string | undefined;
+  if (releaseDate) {
+    cff['date-released'] = releaseDate.split('T')[0];
   }
 
   // Add related resources as references
