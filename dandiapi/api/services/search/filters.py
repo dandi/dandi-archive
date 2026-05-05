@@ -38,9 +38,7 @@ _DATE_OPS = frozenset(
         'published_after',
     }
 )
-_ASSET_OPS = frozenset(
-    {'has_species', 'has_approach', 'has_technique', 'has_standard', 'has_file_type'}
-)
+_ASSET_OPS = frozenset({'species', 'approach', 'technique', 'standard', 'file_type'})
 
 
 def _parse_date(value: str) -> datetime | None:
@@ -69,9 +67,9 @@ def _annotate_latest_published_created(queryset):
 
 
 _NAME_ARRAY_FIELDS = {
-    'has_approach': 'approach',
-    'has_technique': 'measurementTechnique',
-    'has_standard': 'dataStandard',
+    'approach': 'approach',
+    'technique': 'measurementTechnique',
+    'standard': 'dataStandard',
 }
 
 
@@ -95,14 +93,14 @@ def _name_array_jsonpath(field: str, value: str) -> tuple[str, list[str]]:
 
 def _apply_asset_filter(queryset, operator: str, value: str):
     """Apply one parsed asset operator to an AssetSearch queryset."""
-    if operator == 'has_species':
+    if operator == 'species':
         return queryset.filter(species__icontains=value)
     if operator in _NAME_ARRAY_FIELDS:
         where, params = _name_array_jsonpath(_NAME_ARRAY_FIELDS[operator], value)
         # `where` interpolates only an allowlisted field name; the user value
         # is bound via params (and re-escaped against regex injection).
         return queryset.extra(where=[where], params=params)  # noqa: S610
-    if operator == 'has_file_type':
+    if operator == 'file_type':
         mime_prefix = _FILE_TYPE_ALIASES.get(value.lower(), value)
         return queryset.filter(asset_metadata__encodingFormat__istartswith=mime_prefix)
     raise ValueError(f'unknown asset operator: {operator}')  # pragma: no cover

@@ -20,28 +20,28 @@ pytestmark = pytest.mark.ai_generated
         ('hippocampus place cells', ['hippocampus', 'place', 'cells'], []),
         # Operators only
         (
-            'has_species:mouse created_after:2024-01-01',
+            'species:mouse created_after:2024-01-01',
             [],
-            [('has_species', 'mouse'), ('created_after', '2024-01-01')],
+            [('species', 'mouse'), ('created_after', '2024-01-01')],
         ),
         # Mixed
         (
-            'place cells has_species:mouse created_after:2024-01-01 ca1',
+            'place cells species:mouse created_after:2024-01-01 ca1',
             ['place', 'cells', 'ca1'],
-            [('has_species', 'mouse'), ('created_after', '2024-01-01')],
+            [('species', 'mouse'), ('created_after', '2024-01-01')],
         ),
         # Quoted phrase as free text
         ('"place cells" hippocampus', ['place cells', 'hippocampus'], []),
         # Quoted operator value (multi-word)
-        ('has_technique:"patch clamp"', [], [('has_technique', 'patch clamp')]),
+        ('technique:"patch clamp"', [], [('technique', 'patch clamp')]),
         # Repeated operator keeps every entry (AND'd downstream)
         (
-            'has_species:mouse has_species:rat',
+            'species:mouse species:rat',
             [],
-            [('has_species', 'mouse'), ('has_species', 'rat')],
+            [('species', 'mouse'), ('species', 'rat')],
         ),
         # Special characters preserved inside quoted operator value
-        ('has_species:"C57BL/6"', [], [('has_species', 'C57BL/6')]),
+        ('species:"C57BL/6"', [], [('species', 'C57BL/6')]),
         # Quoted token that *looks* like an operator is treated as free text —
         # this is the documented escape hatch for searching for a literal colon.
         ('"foo:bar" hippocampus', ['foo:bar', 'hippocampus'], []),
@@ -71,11 +71,11 @@ def test_parse_search(query, expected_free_text, expected_operators):
         # Unknown operator — generic
         ('foo:bar', 'Unknown search operator "foo"'),
         # Unknown operator close to a real one — should suggest
-        ('has_specie:mouse', 'Did you mean "has_species"'),
+        ('specie:mouse', 'Did you mean "species"'),
         # Unknown operator (typo) close to a real one
         ('createdafter:2024-01-01', 'Did you mean "created_after"'),
         # Unbalanced quote
-        ('hello "world has_species:mouse', 'Unbalanced quote'),
+        ('hello "world species:mouse', 'Unbalanced quote'),
         ('foo "bar', 'Unbalanced quote'),
         # Length cap (DoS hardening)
         ('a' * 5000, 'too long'),

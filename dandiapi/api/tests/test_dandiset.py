@@ -1666,7 +1666,7 @@ def test_advanced_search_created_before_filters_dandisets(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_has_species_matches(api_client):
+def test_advanced_search_species_matches(api_client):
     mouse_dandiset = DandisetFactory.create()
     rat_dandiset = DandisetFactory.create()
     mouse_version = DraftVersionFactory.create(dandiset=mouse_dandiset)
@@ -1696,7 +1696,7 @@ def test_advanced_search_has_species_matches(api_client):
 
     response = api_client.get(
         '/api/dandisets/',
-        {'draft': 'true', 'empty': 'true', 'search': 'has_species:mouse'},
+        {'draft': 'true', 'empty': 'true', 'search': 'species:mouse'},
     )
     assert response.status_code == 200
     ids = {r['identifier'] for r in response.json()['results']}
@@ -1710,10 +1710,10 @@ def test_advanced_search_unknown_operator_returns_400_with_suggestion(api_client
     # names get a "Did you mean?" hint via difflib.
     response = api_client.get(
         '/api/dandisets/',
-        {'draft': 'true', 'empty': 'true', 'search': 'has_specie:mouse'},
+        {'draft': 'true', 'empty': 'true', 'search': 'specie:mouse'},
     )
     assert response.status_code == 400
-    assert 'has_species' in response.json()['search']
+    assert 'species' in response.json()['search']
 
 
 @pytest.mark.ai_generated
@@ -1762,7 +1762,7 @@ def test_advanced_search_combines_free_text_and_operator(api_client):
         {
             'draft': 'true',
             'empty': 'true',
-            'search': 'unique_search_marker_xyz has_species:mouse',
+            'search': 'unique_search_marker_xyz species:mouse',
         },
     )
     assert response.status_code == 200
@@ -1851,7 +1851,7 @@ def test_advanced_search_malformed_date_returns_400(api_client):
 def test_advanced_search_unbalanced_quote_returns_400(api_client):
     response = api_client.get(
         '/api/dandisets/',
-        {'draft': 'true', 'empty': 'true', 'search': 'hello "world has_species:mouse'},
+        {'draft': 'true', 'empty': 'true', 'search': 'hello "world species:mouse'},
     )
     assert response.status_code == 400
     assert 'Unbalanced quote' in response.json()['search']
@@ -1859,7 +1859,7 @@ def test_advanced_search_unbalanced_quote_returns_400(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_has_species_substring_match(api_client):
+def test_advanced_search_species_substring_match(api_client):
     # Real DANDI species are like "Mus musculus - House mouse". A short token
     # like "mouse" should match by case-insensitive substring on the
     # denormalized species column.
@@ -1873,14 +1873,14 @@ def test_advanced_search_has_species_substring_match(api_client):
     )
     _refresh_asset_search()
 
-    assert _search_ids(api_client, 'has_species:mouse') == {mouse.identifier}
-    assert _search_ids(api_client, 'has_species:musculus') == {mouse.identifier}
-    assert _search_ids(api_client, 'has_species:Rattus') == {rat.identifier}
+    assert _search_ids(api_client, 'species:mouse') == {mouse.identifier}
+    assert _search_ids(api_client, 'species:musculus') == {mouse.identifier}
+    assert _search_ids(api_client, 'species:Rattus') == {rat.identifier}
 
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_has_approach_matches_any_array_element(api_client):
+def test_advanced_search_approach_matches_any_array_element(api_client):
     # Real DANDI assets often have multiple approach entries (e.g. dandiset
     # 000017 lists both "electrophysiological approach" and "behavioral
     # approach"). The filter must match if ANY element's name matches —
@@ -1902,11 +1902,11 @@ def test_advanced_search_has_approach_matches_any_array_element(api_client):
     _refresh_asset_search()
 
     # `multi` matches both queries because every array element is scanned.
-    assert _search_ids(api_client, 'has_approach:electrophysiological') == {
+    assert _search_ids(api_client, 'approach:electrophysiological') == {
         ephys_only.identifier,
         multi.identifier,
     }
-    assert _search_ids(api_client, 'has_approach:behavioral') == {
+    assert _search_ids(api_client, 'approach:behavioral') == {
         behav_only.identifier,
         multi.identifier,
     }
@@ -1914,7 +1914,7 @@ def test_advanced_search_has_approach_matches_any_array_element(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_has_approach_handles_regex_metacharacters(api_client):
+def test_advanced_search_approach_handles_regex_metacharacters(api_client):
     # Postgres jsonpath like_regex would otherwise interpret `[`, `*`, etc. as
     # regex metacharacters. The filter must escape them so a search for `[pilot]`
     # matches a literal `[pilot]` in the name.
@@ -1923,14 +1923,14 @@ def test_advanced_search_has_approach_handles_regex_metacharacters(api_client):
     )
     _refresh_asset_search()
 
-    assert _search_ids(api_client, 'has_approach:[pilot]') == {bracket.identifier}
+    assert _search_ids(api_client, 'approach:[pilot]') == {bracket.identifier}
     # An unrelated metacharacter shouldn't match this name.
-    assert _search_ids(api_client, 'has_approach:*') == set()
+    assert _search_ids(api_client, 'approach:*') == set()
 
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_has_technique_with_quoted_phrase(api_client):
+def test_advanced_search_technique_with_quoted_phrase(api_client):
     # Quoted multi-word values must be parsed as a single token.
     spike = _seed_dandiset_with_asset(
         asset_metadata={'measurementTechnique': [{'name': 'spike sorting technique'}]},
@@ -1940,13 +1940,13 @@ def test_advanced_search_has_technique_with_quoted_phrase(api_client):
     )
     _refresh_asset_search()
 
-    assert _search_ids(api_client, 'has_technique:"spike sorting"') == {spike.identifier}
-    assert _search_ids(api_client, 'has_technique:surgical') == {surg.identifier}
+    assert _search_ids(api_client, 'technique:"spike sorting"') == {spike.identifier}
+    assert _search_ids(api_client, 'technique:surgical') == {surg.identifier}
 
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_has_standard_matches(api_client):
+def test_advanced_search_standard_matches(api_client):
     nwb = _seed_dandiset_with_asset(
         asset_metadata={'dataStandard': [{'name': 'Neurodata Without Borders (NWB)'}]},
     )
@@ -1955,31 +1955,31 @@ def test_advanced_search_has_standard_matches(api_client):
     )
     _refresh_asset_search()
 
-    assert _search_ids(api_client, 'has_standard:NWB') == {nwb.identifier}
-    assert _search_ids(api_client, 'has_standard:BIDS') == {bids.identifier}
+    assert _search_ids(api_client, 'standard:NWB') == {nwb.identifier}
+    assert _search_ids(api_client, 'standard:BIDS') == {bids.identifier}
 
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_has_file_type_alias_and_mime(api_client):
+def test_advanced_search_file_type_alias_and_mime(api_client):
     nwb = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'application/x-nwb'})
     image = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'image/tiff'})
     text = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'text/plain'})
     _refresh_asset_search()
 
     # The short alias `nwb` resolves to the application/x-nwb mime prefix.
-    assert _search_ids(api_client, 'has_file_type:nwb') == {nwb.identifier}
+    assert _search_ids(api_client, 'file_type:nwb') == {nwb.identifier}
     # The `image` alias matches anything starting with `image/`.
-    assert _search_ids(api_client, 'has_file_type:image') == {image.identifier}
-    assert _search_ids(api_client, 'has_file_type:text') == {text.identifier}
+    assert _search_ids(api_client, 'file_type:image') == {image.identifier}
+    assert _search_ids(api_client, 'file_type:text') == {text.identifier}
     # Direct MIME prefixes also work.
-    assert _search_ids(api_client, 'has_file_type:application/x-nwb') == {nwb.identifier}
+    assert _search_ids(api_client, 'file_type:application/x-nwb') == {nwb.identifier}
 
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_repeated_asset_operators_intersect(api_client):
-    # has_species:mouse + has_approach:electrophysiological should intersect:
+    # species:mouse + approach:electrophysiological should intersect:
     # only the dandiset that satisfies BOTH on a single asset is returned.
     mouse_ephys = _seed_dandiset_with_asset(
         asset_metadata={
@@ -2001,13 +2001,13 @@ def test_advanced_search_repeated_asset_operators_intersect(api_client):
     )
     _refresh_asset_search()
 
-    query = 'has_species:mouse has_approach:electrophysiological'
+    query = 'species:mouse approach:electrophysiological'
     assert _search_ids(api_client, query) == {mouse_ephys.identifier}
 
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_has_species_respects_embargo_visibility(api_client):
+def test_advanced_search_species_respects_embargo_visibility(api_client):
     # An anonymous user must not be able to surface embargoed dandisets via has_*.
     open_ds = _seed_dandiset_with_asset(
         asset_metadata={'wasAttributedTo': [{'species': {'name': 'House mouse'}}]},
@@ -2019,4 +2019,4 @@ def test_advanced_search_has_species_respects_embargo_visibility(api_client):
     _refresh_asset_search()
 
     # Anonymous request: embargoed must be filtered out.
-    assert _search_ids(api_client, 'has_species:mouse') == {open_ds.identifier}
+    assert _search_ids(api_client, 'species:mouse') == {open_ds.identifier}

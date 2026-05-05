@@ -147,7 +147,7 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
         if not search_term:
             return queryset
 
-        # Parse Gmail-style operators (e.g. has_species:mouse, created_after:2024-01-01)
+        # Parse Gmail-style operators (e.g. species:mouse, created_after:2024-01-01)
         # out of the search string, and apply them as structured filters. Anything
         # left over (free text, including quoted phrases) flows through the existing
         # full-text path unchanged. Surface any parse / validation problems as 400.

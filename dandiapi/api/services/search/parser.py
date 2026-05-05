@@ -2,7 +2,7 @@
 
 Recognizes ``key:value`` operators interleaved with free-text terms.
 Quoted phrases (``"like this"``) are kept together — they can be used as
-operator values (``has_technique:"spike sorting"``) or to escape a token
+operator values (``technique:"spike sorting"``) or to escape a token
 that looks like an operator (``"foo:bar"`` is treated as free text).
 
 Errors are raised explicitly via :class:`SearchSyntaxError`:
@@ -26,11 +26,11 @@ OPERATOR_KEYS: frozenset[str] = frozenset(
         'modified_after',
         'published_before',
         'published_after',
-        'has_species',
-        'has_approach',
-        'has_technique',
-        'has_standard',
-        'has_file_type',
+        'species',
+        'approach',
+        'technique',
+        'standard',
+        'file_type',
     }
 )
 
