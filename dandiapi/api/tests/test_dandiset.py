@@ -8,6 +8,7 @@ from dandischema.conf import get_instance_config
 from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
+from django.db import connection
 from django.utils import timezone
 import pytest
 
@@ -1589,8 +1590,6 @@ def test_dandiset_list_starred_unauthenticated(api_client):
 
 
 def _refresh_asset_search():
-    from django.db import connection
-
     with connection.cursor() as cursor:
         cursor.execute('REFRESH MATERIALIZED VIEW asset_search;')
 
@@ -1623,6 +1622,7 @@ def _search_ids(api_client, query: str) -> set[str]:
     return {r['identifier'] for r in response.json()['results']}
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_created_after_filters_dandisets(api_client):
     old = DandisetFactory.create()
@@ -1643,6 +1643,7 @@ def test_advanced_search_created_after_filters_dandisets(api_client):
     assert ids == {new.identifier}
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_created_before_filters_dandisets(api_client):
     old = DandisetFactory.create()
@@ -1663,6 +1664,7 @@ def test_advanced_search_created_before_filters_dandisets(api_client):
     assert ids == {old.identifier}
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_has_species_matches(api_client):
     mouse_dandiset = DandisetFactory.create()
@@ -1701,21 +1703,36 @@ def test_advanced_search_has_species_matches(api_client):
     assert ids == {mouse_dandiset.identifier}
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_unknown_operator_falls_through_to_free_text(api_client):
-    # Unknown operator is treated as a free-text token, so it's matched against
-    # version metadata as-is. With no metadata containing this string, expect 0 results.
+def test_advanced_search_unknown_operator_returns_400_with_suggestion(api_client):
+    # Unknown operators raise SearchSyntaxError → DRF 400. Close-by operator
+    # names get a "Did you mean?" hint via difflib.
+    response = api_client.get(
+        '/api/dandisets/',
+        {'draft': 'true', 'empty': 'true', 'search': 'has_specie:mouse'},
+    )
+    assert response.status_code == 400
+    assert 'has_species' in response.json()['search']
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_quoted_operator_like_token_is_free_text(api_client):
+    # Wrapping an operator-like token in quotes opts out of operator parsing,
+    # letting users search for a literal colon when needed.
     DandisetFactory.create()
     DraftVersionFactory.create()
 
     response = api_client.get(
         '/api/dandisets/',
-        {'draft': 'true', 'empty': 'true', 'search': 'foo:bar_no_such_string_here'},
+        {'draft': 'true', 'empty': 'true', 'search': '"foo:bar_no_such_string_here"'},
     )
     assert response.status_code == 200
     assert response.json()['count'] == 0
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_combines_free_text_and_operator(api_client):
     # A dandiset whose metadata contains a unique token, plus a matching species.
@@ -1753,6 +1770,7 @@ def test_advanced_search_combines_free_text_and_operator(api_client):
     assert ids == {target.identifier}
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_modified_after_uses_latest_version(api_client):
     # The most-recent version (by created order) determines the "modified" timestamp.
@@ -1769,6 +1787,7 @@ def test_advanced_search_modified_after_uses_latest_version(api_client):
     assert _search_ids(api_client, f'modified_after:{after_str}') == {new.identifier}
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_published_filters_use_published_versions_only(api_client):
     # A draft-only dandiset is invisible to published_* operators, even if its
@@ -1789,6 +1808,7 @@ def test_advanced_search_published_filters_use_published_versions_only(api_clien
     assert _search_ids(api_client, f'published_before:{before_str}') == {published_ds.identifier}
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_repeated_date_operators_combine(api_client):
     # modified_before AND modified_after applied together — exercises the
@@ -1811,16 +1831,33 @@ def test_advanced_search_repeated_date_operators_combine(api_client):
     assert _search_ids(api_client, query) == {in_range.identifier}
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_malformed_date_returns_no_results(api_client):
-    # A bad date in a date operator fails closed (queryset.none()) so the user
-    # notices the typo instead of silently getting unfiltered results.
+def test_advanced_search_malformed_date_returns_400(api_client):
+    # A bad date in a date operator now raises so the user sees the typo.
     DandisetFactory.create()
     DraftVersionFactory.create()
 
-    assert _search_ids(api_client, 'created_after:not-a-date') == set()
+    response = api_client.get(
+        '/api/dandisets/',
+        {'draft': 'true', 'empty': 'true', 'search': 'created_after:not-a-date'},
+    )
+    assert response.status_code == 400
+    assert 'YYYY-MM-DD' in response.json()['search']
 
 
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_unbalanced_quote_returns_400(api_client):
+    response = api_client.get(
+        '/api/dandisets/',
+        {'draft': 'true', 'empty': 'true', 'search': 'hello "world has_species:mouse'},
+    )
+    assert response.status_code == 400
+    assert 'Unbalanced quote' in response.json()['search']
+
+
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_has_species_substring_match(api_client):
     # Real DANDI species are like "Mus musculus - House mouse". A short token
@@ -1841,6 +1878,7 @@ def test_advanced_search_has_species_substring_match(api_client):
     assert _search_ids(api_client, 'has_species:Rattus') == {rat.identifier}
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_has_approach_matches_any_array_element(api_client):
     # Real DANDI assets often have multiple approach entries (e.g. dandiset
@@ -1874,6 +1912,7 @@ def test_advanced_search_has_approach_matches_any_array_element(api_client):
     }
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_has_approach_handles_regex_metacharacters(api_client):
     # Postgres jsonpath like_regex would otherwise interpret `[`, `*`, etc. as
@@ -1889,6 +1928,7 @@ def test_advanced_search_has_approach_handles_regex_metacharacters(api_client):
     assert _search_ids(api_client, 'has_approach:*') == set()
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_has_technique_with_quoted_phrase(api_client):
     # Quoted multi-word values must be parsed as a single token.
@@ -1904,6 +1944,7 @@ def test_advanced_search_has_technique_with_quoted_phrase(api_client):
     assert _search_ids(api_client, 'has_technique:surgical') == {surg.identifier}
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_has_standard_matches(api_client):
     nwb = _seed_dandiset_with_asset(
@@ -1918,6 +1959,7 @@ def test_advanced_search_has_standard_matches(api_client):
     assert _search_ids(api_client, 'has_standard:BIDS') == {bids.identifier}
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_has_file_type_alias_and_mime(api_client):
     nwb = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'application/x-nwb'})
@@ -1934,6 +1976,7 @@ def test_advanced_search_has_file_type_alias_and_mime(api_client):
     assert _search_ids(api_client, 'has_file_type:application/x-nwb') == {nwb.identifier}
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_repeated_asset_operators_intersect(api_client):
     # has_species:mouse + has_approach:electrophysiological should intersect:
@@ -1962,6 +2005,7 @@ def test_advanced_search_repeated_asset_operators_intersect(api_client):
     assert _search_ids(api_client, query) == {mouse_ephys.identifier}
 
 
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_has_species_respects_embargo_visibility(api_client):
     # An anonymous user must not be able to surface embargoed dandisets via has_*.

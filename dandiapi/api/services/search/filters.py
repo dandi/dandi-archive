@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from django.db.models import OuterRef, Subquery
 
 from dandiapi.api.models import Version
+from dandiapi.api.services.search.parser import SearchSyntaxError
 from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
@@ -161,9 +162,7 @@ def apply_search_filters(
 
         if key in _DATE_OPS:
             if (ts := _parse_date(value)) is None:
-                # Malformed date — fail closed (return nothing) rather than
-                # silently dropping the filter and returning everything.
-                return queryset.none()
+                raise SearchSyntaxError(f'Invalid date for "{key}": {value!r}. Use YYYY-MM-DD.')
             queryset = _apply_date_filter(queryset, key, ts, annotated)
         elif key in _ASSET_OPS:
             if asset_qs is None:

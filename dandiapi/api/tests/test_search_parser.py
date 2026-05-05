@@ -2,85 +2,93 @@ from __future__ import annotations
 
 import pytest
 
-from dandiapi.api.services.search.parser import parse_search
+from dandiapi.api.services.search.parser import (
+    SearchSyntaxError,
+    parse_search,
+)
 
-
-def test_empty_string():
-    parsed = parse_search('')
-    assert parsed.free_text == []
-    assert parsed.operators == []
-
-
-def test_only_free_text():
-    parsed = parse_search('hippocampus place cells')
-    assert parsed.free_text == ['hippocampus', 'place', 'cells']
-    assert parsed.operators == []
-
-
-def test_only_operators():
-    parsed = parse_search('has_species:mouse created_after:2024-01-01')
-    assert parsed.free_text == []
-    assert parsed.operators == [
-        ('has_species', 'mouse'),
-        ('created_after', '2024-01-01'),
-    ]
-
-
-def test_mixed():
-    parsed = parse_search('place cells has_species:mouse created_after:2024-01-01 ca1')
-    assert parsed.free_text == ['place', 'cells', 'ca1']
-    assert parsed.operators == [
-        ('has_species', 'mouse'),
-        ('created_after', '2024-01-01'),
-    ]
-
-
-def test_quoted_phrase_in_free_text():
-    parsed = parse_search('"place cells" hippocampus')
-    assert parsed.free_text == ['place cells', 'hippocampus']
-    assert parsed.operators == []
-
-
-def test_quoted_operator_value():
-    parsed = parse_search('has_technique:"patch clamp"')
-    assert parsed.free_text == []
-    assert parsed.operators == [('has_technique', 'patch clamp')]
-
-
-def test_unknown_operator_falls_through_to_free_text():
-    parsed = parse_search('foo:bar has_species:mouse')
-    assert parsed.free_text == ['foo:bar']
-    assert parsed.operators == [('has_species', 'mouse')]
-
-
-def test_unbalanced_quote_does_not_raise():
-    # shlex would raise ValueError; we fall back to plain split.
-    parsed = parse_search('hello "world has_species:mouse')
-    # In fallback mode, the operator-looking token is still recognized.
-    assert ('has_species', 'mouse') in parsed.operators
-
-
-def test_malformed_date_value_is_kept_in_operators():
-    # The parser only tokenizes — date validation happens in the filter layer,
-    # which fails closed on malformed dates. Here we just verify the parser
-    # treats a malformed value as a normal operator value.
-    parsed = parse_search('created_after:not-a-date')
-    assert parsed.operators == [('created_after', 'not-a-date')]
-    assert parsed.free_text == []
+pytestmark = pytest.mark.ai_generated
 
 
 @pytest.mark.parametrize(
-    'value',
-    ['mouse', 'Mus musculus', 'C57BL/6'],
+    ('query', 'expected_free_text', 'expected_operators'),
+    [
+        # Empty / whitespace
+        ('', [], []),
+        ('   ', [], []),
+        # Free text only
+        ('hippocampus place cells', ['hippocampus', 'place', 'cells'], []),
+        # Operators only
+        (
+            'has_species:mouse created_after:2024-01-01',
+            [],
+            [('has_species', 'mouse'), ('created_after', '2024-01-01')],
+        ),
+        # Mixed
+        (
+            'place cells has_species:mouse created_after:2024-01-01 ca1',
+            ['place', 'cells', 'ca1'],
+            [('has_species', 'mouse'), ('created_after', '2024-01-01')],
+        ),
+        # Quoted phrase as free text
+        ('"place cells" hippocampus', ['place cells', 'hippocampus'], []),
+        # Quoted operator value (multi-word)
+        ('has_technique:"patch clamp"', [], [('has_technique', 'patch clamp')]),
+        # Repeated operator keeps every entry (AND'd downstream)
+        (
+            'has_species:mouse has_species:rat',
+            [],
+            [('has_species', 'mouse'), ('has_species', 'rat')],
+        ),
+        # Special characters preserved inside quoted operator value
+        ('has_species:"C57BL/6"', [], [('has_species', 'C57BL/6')]),
+        # Quoted token that *looks* like an operator is treated as free text —
+        # this is the documented escape hatch for searching for a literal colon.
+        ('"foo:bar" hippocampus', ['foo:bar', 'hippocampus'], []),
+    ],
+    ids=[
+        'empty',
+        'whitespace-only',
+        'free-text-only',
+        'operators-only',
+        'mixed-operators-and-free-text',
+        'quoted-phrase-free-text',
+        'quoted-operator-value',
+        'repeated-operator-key',
+        'special-chars-in-quoted-value',
+        'quoted-operator-like-token-is-free-text',
+    ],
 )
-def test_has_species_preserves_value(value):
-    parsed = parse_search(f'has_species:"{value}"')
-    assert parsed.operators == [('has_species', value)]
+def test_parse_search(query, expected_free_text, expected_operators):
+    parsed = parse_search(query)
+    assert parsed.free_text == expected_free_text
+    assert parsed.operators == expected_operators
 
 
-def test_repeated_operator_keeps_all():
-    parsed = parse_search('has_species:mouse has_species:rat')
-    assert parsed.operators == [
-        ('has_species', 'mouse'),
-        ('has_species', 'rat'),
-    ]
+@pytest.mark.parametrize(
+    ('query', 'expected_message_fragment'),
+    [
+        # Unknown operator — generic
+        ('foo:bar', 'Unknown search operator "foo"'),
+        # Unknown operator close to a real one — should suggest
+        ('has_specie:mouse', 'Did you mean "has_species"'),
+        # Unknown operator (typo) close to a real one
+        ('createdafter:2024-01-01', 'Did you mean "created_after"'),
+        # Unbalanced quote
+        ('hello "world has_species:mouse', 'Unbalanced quote'),
+        ('foo "bar', 'Unbalanced quote'),
+        # Length cap (DoS hardening)
+        ('a' * 5000, 'too long'),
+    ],
+    ids=[
+        'unknown-operator-no-suggestion',
+        'unknown-operator-typo-suggests',
+        'unknown-operator-missing-underscore-suggests',
+        'unbalanced-quote-mid-string',
+        'unbalanced-quote-trailing',
+        'over-length-cap',
+    ],
+)
+def test_parse_search_raises_on_invalid_query(query, expected_message_fragment):
+    with pytest.raises(SearchSyntaxError, match=expected_message_fragment):
+        parse_search(query)

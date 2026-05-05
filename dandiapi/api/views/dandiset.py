@@ -49,7 +49,7 @@ from dandiapi.api.services.permissions.dandiset import (
     replace_dandiset_owners,
     require_dandiset_owner_or_403,
 )
-from dandiapi.api.services.search import parse_search
+from dandiapi.api.services.search import SearchSyntaxError, parse_search
 from dandiapi.api.services.search.filters import apply_search_filters
 from dandiapi.api.views.common import DANDISET_PK_PARAM
 from dandiapi.api.views.pagination import DandiPagination
@@ -150,9 +150,12 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
         # Parse Gmail-style operators (e.g. has_species:mouse, created_after:2024-01-01)
         # out of the search string, and apply them as structured filters. Anything
         # left over (free text, including quoted phrases) flows through the existing
-        # full-text path unchanged.
-        parsed = parse_search(search_term)
-        queryset = apply_search_filters(queryset, parsed, user=request.user)
+        # full-text path unchanged. Surface any parse / validation problems as 400.
+        try:
+            parsed = parse_search(search_term)
+            queryset = apply_search_filters(queryset, parsed, user=request.user)
+        except SearchSyntaxError as exc:
+            raise ValidationError({'search': str(exc)}) from exc
 
         if not parsed.free_text:
             return queryset

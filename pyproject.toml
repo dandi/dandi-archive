@@ -249,3 +249,6 @@ filterwarnings = [
   # TODO: Remove this with pytest_factoryboy
   "ignore:Using a <class 'dict'> as model type:UserWarning:pytest_factoryboy.fixture",
 ]
+markers = [
+  "ai_generated: test was authored (or substantially authored) by an AI assistant; review extra carefully",
+]
