@@ -5,7 +5,7 @@
   >
     <v-text-field
       :model-value="$route.query.search"
-      placeholder="Search Dandisets by name, description, identifier, or contributor name"
+      placeholder="Search Dandisets — try has_species:mouse created_after:2024-01-01"
       variant="outlined"
       hide-details
       :density="dense ? 'compact' : undefined"
@@ -17,6 +17,49 @@
         <v-icon @click="performSearch">
           mdi-magnify
         </v-icon>
+      </template>
+      <template #append-inner>
+        <v-menu
+          :close-on-content-click="false"
+          location="bottom end"
+          offset="8"
+        >
+          <template #activator="{ props: activatorProps }">
+            <v-icon
+              v-bind="activatorProps"
+              size="small"
+              color="grey-darken-1"
+              aria-label="Show advanced search syntax help"
+            >
+              mdi-help-circle-outline
+            </v-icon>
+          </template>
+          <v-card
+            max-width="420"
+            class="pa-3"
+          >
+            <div class="text-subtitle-2 mb-2">
+              Advanced search operators
+            </div>
+            <div class="text-body-2 mb-2">
+              Combine free text with <code>key:value</code> filters.
+              Quote multi-word values: <code>has_technique:"patch clamp"</code>.
+            </div>
+            <v-table density="compact">
+              <tbody>
+                <tr
+                  v-for="op in operatorHelp"
+                  :key="op.example"
+                >
+                  <td><code>{{ op.example }}</code></td>
+                  <td class="text-caption">
+                    {{ op.description }}
+                  </td>
+                </tr>
+              </tbody>
+            </v-table>
+          </v-card>
+        </v-menu>
       </template>
     </v-text-field>
   </v-form>
@@ -38,6 +81,20 @@ defineProps({
 
 const route = useRoute();
 const currentSearch = ref(route.query.search || '');
+
+const operatorHelp = [
+  { example: 'created_after:2024-01-01', description: 'Created on or after a date' },
+  { example: 'created_before:2024-01-01', description: 'Created before a date' },
+  { example: 'modified_after:2024-01-01', description: 'Last modified on or after a date' },
+  { example: 'modified_before:2024-01-01', description: 'Last modified before a date' },
+  { example: 'published_after:2024-01-01', description: 'Most recent publication on or after' },
+  { example: 'published_before:2024-01-01', description: 'Most recent publication before' },
+  { example: 'has_species:mouse', description: 'Has assets attributed to a species' },
+  { example: 'has_approach:electrophysiology', description: 'Has assets using an approach' },
+  { example: 'has_technique:"patch clamp"', description: 'Has assets using a measurement technique' },
+  { example: 'has_standard:nwb', description: 'Has assets in a data standard' },
+  { example: 'has_file_type:nwb', description: 'Has assets of a file type (nwb, image, text, video)' },
+];
 
 function updateSearch(search: string) {
   currentSearch.value = search;

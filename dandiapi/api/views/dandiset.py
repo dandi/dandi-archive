@@ -49,6 +49,8 @@ from dandiapi.api.services.permissions.dandiset import (
     replace_dandiset_owners,
     require_dandiset_owner_or_403,
 )
+from dandiapi.api.services.search import parse_search
+from dandiapi.api.services.search.filters import apply_search_filters
 from dandiapi.api.views.common import DANDISET_PK_PARAM
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
@@ -145,13 +147,19 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
         if not search_term:
             return queryset
 
-        # Split search term into individual words and apply AND logic
-        # so that all words must be present (in any order)
-        search_words = search_term.split()
+        # Parse Gmail-style operators (e.g. has_species:mouse, created_after:2024-01-01)
+        # out of the search string, and apply them as structured filters. Anything
+        # left over (free text, including quoted phrases) flows through the existing
+        # full-text path unchanged.
+        parsed = parse_search(search_term)
+        queryset = apply_search_filters(queryset, parsed, user=request.user)
 
-        # Build a Q object that requires all words to be present
+        if not parsed.free_text:
+            return queryset
+
+        # Build a Q object that requires all free-text words to be present
         q_filter = Q()
-        for word in search_words:
+        for word in parsed.free_text:
             q_filter &= Q(search_field__icontains=word)
 
         # We must formulate the filter using a separate query first, as otherwise
