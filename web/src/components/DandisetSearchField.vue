@@ -5,7 +5,7 @@
   >
     <v-text-field
       :model-value="$route.query.search"
-      placeholder="Search Dandisets — try species:mouse created_after:2024-01-01"
+      placeholder="Search Dandisets free form or with operators, e.g. try neuropixels species:mouse created_after:2024-01-01"
       variant="outlined"
       hide-details
       :density="dense ? 'compact' : undefined"
