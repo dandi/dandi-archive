@@ -41,13 +41,6 @@ _DATE_OPS = frozenset(
 _ASSET_OPS = frozenset({'species', 'approach', 'technique', 'standard', 'file_type'})
 
 
-def _parse_date(value: str) -> datetime | None:
-    try:
-        return datetime.strptime(value, '%Y-%m-%d').replace(tzinfo=UTC)
-    except ValueError:
-        return None
-
-
 def _annotate_latest_version_modified(queryset):
     latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[:1]
     return queryset.annotate(
@@ -170,8 +163,12 @@ def apply_search_filters(
             raise SearchSyntaxError(f'Operator "{key}" requires a value (e.g. {key}:something).')
 
         if key in _DATE_OPS:
-            if (ts := _parse_date(value)) is None:
-                raise SearchSyntaxError(f'Invalid date for "{key}": {value!r}. Use YYYY-MM-DD.')
+            try:
+                ts = datetime.strptime(value, '%Y-%m-%d').replace(tzinfo=UTC)
+            except ValueError as exc:
+                raise SearchSyntaxError(
+                    f'Invalid date for "{key}": {value!r}. Use YYYY-MM-DD.'
+                ) from exc
             queryset = _apply_date_filter(queryset, key, ts, annotated)
         elif key in _ASSET_OPS:
             if asset_qs is None:
