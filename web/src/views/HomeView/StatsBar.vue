@@ -49,8 +49,11 @@ const stats = computed(() => [
 
 // equivalent of async created method in options API
 dandiRest.stats().then((data) => {
-  dandisets.value = data.dandiset_count;
   users.value = data.user_count;
   size.value = data.size;
+});
+
+dandiRest.dandisets({ page_size: 1, empty: false }).then((response) => {
+  dandisets.value = response.data.count;
 });
 </script>
