@@ -35,8 +35,7 @@
             </v-icon>
           </template>
           <v-card
-            max-width="420"
-            class="pa-3"
+            class="pa-3 advanced-search-help"
           >
             <div class="text-subtitle-2 mb-2">
               Advanced search operators
@@ -51,7 +50,9 @@
                   v-for="op in operatorHelp"
                   :key="op.example"
                 >
-                  <td><code>{{ op.example }}</code></td>
+                  <td class="example-cell">
+                    <code>{{ op.example }}</code>
+                  </td>
                   <td class="text-caption">
                     {{ op.description }}
                   </td>
@@ -125,3 +126,16 @@ function performSearch(evt: Event) {
   }
 }
 </script>
+
+<style scoped>
+.advanced-search-help {
+  /* Sized responsively: wide enough for the longest example without wrapping,
+   * but capped so it doesn't fill very wide monitors. */
+  min-width: 420px;
+  max-width: min(80vw, 720px);
+}
+.advanced-search-help .example-cell {
+  /* Keep operator examples on a single line so they read like code. */
+  white-space: nowrap;
+}
+</style>
