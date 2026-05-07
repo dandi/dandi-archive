@@ -2086,3 +2086,114 @@ def test_advanced_search_species_respects_embargo_visibility(api_client):
 
     # Anonymous request: embargoed must be filtered out.
     assert _search_ids(api_client, 'species:mouse') == {open_ds.identifier}
+
+
+# --- owner: operator -----------------------------------------------------------------------------
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_by_username_returns_owned_dandisets(api_client):
+    alice = UserFactory.create(username='alice', email='alice@example.com')
+    bob = UserFactory.create(username='bob', email='bob@example.com')
+    alice_ds = DandisetFactory.create(owners=[alice])
+    bob_ds = DandisetFactory.create(owners=[bob])
+    DraftVersionFactory.create(dandiset=alice_ds)
+    DraftVersionFactory.create(dandiset=bob_ds)
+
+    assert _search_ids(api_client, 'owner:alice') == {alice_ds.identifier}
+    assert _search_ids(api_client, 'owner:bob') == {bob_ds.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_by_email_matches(api_client):
+    alice = UserFactory.create(username='alice', email='alice@example.com')
+    alice_ds = DandisetFactory.create(owners=[alice])
+    DraftVersionFactory.create(dandiset=alice_ds)
+
+    assert _search_ids(api_client, 'owner:alice@example.com') == {alice_ds.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_lookup_is_case_insensitive(api_client):
+    alice = UserFactory.create(username='Alice', email='Alice@Example.com')
+    alice_ds = DandisetFactory.create(owners=[alice])
+    DraftVersionFactory.create(dandiset=alice_ds)
+
+    assert _search_ids(api_client, 'owner:alice') == {alice_ds.identifier}
+    assert _search_ids(api_client, 'owner:ALICE@example.COM') == {alice_ds.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_unknown_user_returns_zero(api_client):
+    DraftVersionFactory.create(dandiset=DandisetFactory.create())
+    # No SearchSyntaxError — a search for a nonexistent owner is a valid
+    # zero-hit query, not a malformed query.
+    assert _search_ids(api_client, 'owner:no_such_user_anywhere') == set()
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_me_resolves_to_authenticated_user(api_client):
+    alice = UserFactory.create()
+    bob = UserFactory.create()
+    alice_ds = DandisetFactory.create(owners=[alice])
+    bob_ds = DandisetFactory.create(owners=[bob])
+    DraftVersionFactory.create(dandiset=alice_ds)
+    DraftVersionFactory.create(dandiset=bob_ds)
+
+    api_client.force_authenticate(user=alice)
+    assert _search_ids(api_client, 'owner:me') == {alice_ds.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_me_anonymous_returns_400(api_client):
+    response = api_client.get(
+        '/api/dandisets/',
+        {'draft': 'true', 'empty': 'true', 'search': 'owner:me'},
+    )
+    assert response.status_code == 400
+    assert 'requires authentication' in response.json()['search']
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_does_not_inflate_to_superuser_archive(api_client):
+    # Guardian's get_objects_for_user(with_superuser=True) returns ALL objects
+    # for superusers — wrong semantics for owner: searches. We pass
+    # with_superuser=False so `owner:admin` returns only what admin
+    # explicitly owns, not the entire archive.
+    admin = UserFactory.create(username='admin', is_superuser=True)
+    other = UserFactory.create()
+    DraftVersionFactory.create(dandiset=DandisetFactory.create(owners=[other]))
+    admin_owned = DandisetFactory.create(owners=[admin])
+    DraftVersionFactory.create(dandiset=admin_owned)
+
+    assert _search_ids(api_client, 'owner:admin') == {admin_owned.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_combines_with_other_operators(api_client):
+    alice = UserFactory.create(username='alice')
+    bob = UserFactory.create(username='bob')
+    alice_old = DandisetFactory.create(owners=[alice])
+    alice_new = DandisetFactory.create(owners=[alice])
+    bob_new = DandisetFactory.create(owners=[bob])
+    for ds in (alice_old, alice_new, bob_new):
+        DraftVersionFactory.create(dandiset=ds)
+
+    cutoff = timezone.now() - datetime.timedelta(days=1)
+    Dandiset.objects.filter(pk=alice_old.pk).update(
+        created=cutoff - datetime.timedelta(days=30)
+    )
+
+    after_str = (cutoff + datetime.timedelta(seconds=1)).date().isoformat()
+    # Only alice_new satisfies BOTH owner:alice AND created_after.
+    assert _search_ids(api_client, f'owner:alice created_after:{after_str}') == {
+        alice_new.identifier
+    }

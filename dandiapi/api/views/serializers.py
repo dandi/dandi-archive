@@ -311,7 +311,9 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
             'published_before, published_after (all take YYYY-MM-DD); '
             'species, approach, technique, standard (case-insensitive '
             'substring against the corresponding asset_metadata array); '
-            'file_type (nwb, image, text, video — or any MIME prefix). '
+            'file_type (nwb, image, text, video — or any MIME prefix); '
+            'owner (exact username or email; "owner:me" resolves to the '
+            'requesting user). '
             'Invalid syntax returns HTTP 400 with the offending token; '
             'unknown operators get a "Did you mean?" suggestion.'
         ),

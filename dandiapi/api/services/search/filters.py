@@ -6,14 +6,16 @@ from datetime import UTC, datetime
 import re
 from typing import TYPE_CHECKING
 
-from django.db.models import OuterRef, Subquery
+from django.contrib.auth.models import User
+from django.db.models import OuterRef, Q, Subquery
 
 from dandiapi.api.models import Version
+from dandiapi.api.services.permissions.dandiset import get_owned_dandisets
 from dandiapi.api.services.search.parser import SearchSyntaxError
 from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
-    from django.contrib.auth.models import AnonymousUser, User
+    from django.contrib.auth.models import AnonymousUser
     from django.db.models import QuerySet
 
     from dandiapi.api.models import Dandiset
@@ -39,6 +41,7 @@ _DATE_OPS = frozenset(
     }
 )
 _ASSET_OPS = frozenset({'species', 'approach', 'technique', 'standard', 'file_type'})
+_OWNER_OPS = frozenset({'owner'})
 
 
 def _annotate_latest_version_modified(queryset):
@@ -102,6 +105,32 @@ def _apply_asset_filter(queryset, operator: str, value: str):
         mime_prefix = _FILE_TYPE_ALIASES.get(value.lower(), value)
         return queryset.filter(asset_metadata__encodingFormat__istartswith=mime_prefix)
     raise ValueError(f'unknown asset operator: {operator}')  # pragma: no cover
+
+
+def _apply_owner_filter(
+    queryset: QuerySet[Dandiset], value: str, *, request_user: User | AnonymousUser
+) -> QuerySet[Dandiset]:
+    """Filter dandisets to those owned by the given username/email.
+
+    `owner:me` resolves to the requesting user; otherwise we look up the User
+    by exact (case-insensitive) username or email. Unknown user → empty result
+    (not an error — searching for a nonexistent owner is a valid 0-hit query).
+    `with_superuser=False` so `owner:some_admin` returns only what they
+    actually own, not the entire archive.
+    """
+    if value.lower() == 'me':
+        if request_user.is_anonymous:
+            raise SearchSyntaxError(
+                'owner:me requires authentication. Sign in or specify a username.'
+            )
+        owner_pks = get_owned_dandisets(request_user, include_superusers=False).values('pk')
+        return queryset.filter(pk__in=owner_pks)
+
+    matched_user = User.objects.filter(Q(username__iexact=value) | Q(email__iexact=value)).first()
+    if matched_user is None:
+        return queryset.none()
+    owner_pks = get_owned_dandisets(matched_user, include_superusers=False).values('pk')
+    return queryset.filter(pk__in=owner_pks)
 
 
 _MODIFIED_ALIAS = '_search_latest_version_modified'
@@ -174,6 +203,8 @@ def apply_search_filters(
             if asset_qs is None:
                 asset_qs = AssetSearch.objects.visible_to(user)
             asset_qs = _apply_asset_filter(asset_qs, key, value)
+        elif key in _OWNER_OPS:
+            queryset = _apply_owner_filter(queryset, value, request_user=user)
 
     if asset_qs is not None:
         # NOTE perf: jsonb_path_exists with a runtime-built jsonpath cannot

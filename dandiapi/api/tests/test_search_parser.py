@@ -45,6 +45,10 @@ pytestmark = pytest.mark.ai_generated
         # Quoted token that *looks* like an operator is treated as free text —
         # this is the documented escape hatch for searching for a literal colon.
         ('"foo:bar" hippocampus', ['foo:bar', 'hippocampus'], []),
+        # Owner operator
+        ('owner:jdoe', [], [('owner', 'jdoe')]),
+        # Owner with email value (the parser doesn't validate the value shape)
+        ('owner:user@example.com', [], [('owner', 'user@example.com')]),
     ],
     ids=[
         'empty',
@@ -57,6 +61,8 @@ pytestmark = pytest.mark.ai_generated
         'repeated-operator-key',
         'special-chars-in-quoted-value',
         'quoted-operator-like-token-is-free-text',
+        'owner-username',
+        'owner-email',
     ],
 )
 def test_parse_search(query, expected_free_text, expected_operators):
