@@ -7,9 +7,11 @@ import re
 from typing import TYPE_CHECKING
 
 from django.contrib.auth.models import User
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import OuterRef, Q, Subquery, Value
+from django.db.models.functions import Concat
 
 from dandiapi.api.models import Version
+from dandiapi.api.models.dandiset import DandisetUserObjectPermission
 from dandiapi.api.services.permissions.dandiset import get_owned_dandisets
 from dandiapi.api.services.search.parser import SearchSyntaxError
 from dandiapi.search.models import AssetSearch
@@ -110,13 +112,23 @@ def _apply_asset_filter(queryset, operator: str, value: str):
 def _apply_owner_filter(
     queryset: QuerySet[Dandiset], value: str, *, request_user: User | AnonymousUser
 ) -> QuerySet[Dandiset]:
-    """Filter dandisets to those owned by the given username/email.
+    """Filter dandisets to those owned by the given user identifier.
 
-    `owner:me` resolves to the requesting user; otherwise we look up the User
-    by exact (case-insensitive) username or email. Unknown user → empty result
-    (not an error — searching for a nonexistent owner is a valid 0-hit query).
-    `with_superuser=False` so `owner:some_admin` returns only what they
-    actually own, not the entire archive.
+    `owner:me` resolves to the requesting user; otherwise we match `value`
+    case-insensitively against:
+      - User.username
+      - User.email
+      - User.first_name
+      - User.last_name
+      - "first_name last_name"  (so the display name shown in the UI works)
+
+    Multiple users may match (common when only a first or last name is given);
+    we union dandisets owned by any of them. Unknown user → empty result (not
+    an error — a search for a nonexistent owner is a valid 0-hit query).
+
+    Direct query against `DandisetUserObjectPermission` rather than guardian's
+    `get_objects_for_user` so we can intersect across multiple matched users
+    in a single query, and to bypass the superuser-sees-everything default.
     """
     if value.lower() == 'me':
         if request_user.is_anonymous:
@@ -126,11 +138,21 @@ def _apply_owner_filter(
         owner_pks = get_owned_dandisets(request_user, include_superusers=False).values('pk')
         return queryset.filter(pk__in=owner_pks)
 
-    matched_user = User.objects.filter(Q(username__iexact=value) | Q(email__iexact=value)).first()
-    if matched_user is None:
-        return queryset.none()
-    owner_pks = get_owned_dandisets(matched_user, include_superusers=False).values('pk')
-    return queryset.filter(pk__in=owner_pks)
+    matched_user_pks = (
+        User.objects.annotate(_full_name=Concat('first_name', Value(' '), 'last_name'))
+        .filter(
+            Q(username__iexact=value)
+            | Q(email__iexact=value)
+            | Q(first_name__iexact=value)
+            | Q(last_name__iexact=value)
+            | Q(_full_name__iexact=value)
+        )
+        .values_list('pk', flat=True)
+    )
+    owned_pks = DandisetUserObjectPermission.objects.filter(
+        user__in=matched_user_pks, permission__codename='owner'
+    ).values('content_object')
+    return queryset.filter(pk__in=owned_pks)
 
 
 _MODIFIED_ALIAS = '_search_latest_version_modified'

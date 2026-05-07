@@ -2197,3 +2197,41 @@ def test_advanced_search_owner_combines_with_other_operators(api_client):
     assert _search_ids(api_client, f'owner:alice created_after:{after_str}') == {
         alice_new.identifier
     }
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_by_full_name_matches(api_client):
+    # The dandiset list shows owners by display name (first + ' ' + last).
+    # `owner:"Super User"` should match a user with that full name even
+    # though their username is an email address.
+    user = UserFactory.create(
+        username='ben.dichter@gmail.com',
+        email='ben.dichter@gmail.com',
+        first_name='Super',
+        last_name='User',
+    )
+    user_ds = DandisetFactory.create(owners=[user])
+    DraftVersionFactory.create(dandiset=user_ds)
+
+    assert _search_ids(api_client, 'owner:"Super User"') == {user_ds.identifier}
+    # First-name-only and last-name-only also work.
+    assert _search_ids(api_client, 'owner:Super') == {user_ds.identifier}
+    assert _search_ids(api_client, 'owner:User') == {user_ds.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_unions_multiple_matched_users(api_client):
+    # Two distinct users share a last name. `owner:Smith` should return
+    # dandisets owned by either of them.
+    alice = UserFactory.create(username='alice', last_name='Smith')
+    bob = UserFactory.create(username='bob', last_name='Smith')
+    eve = UserFactory.create(username='eve', last_name='Jones')
+    alice_ds = DandisetFactory.create(owners=[alice])
+    bob_ds = DandisetFactory.create(owners=[bob])
+    DandisetFactory.create(owners=[eve])
+    for ds in Dandiset.objects.all():
+        DraftVersionFactory.create(dandiset=ds)
+
+    assert _search_ids(api_client, 'owner:Smith') == {alice_ds.identifier, bob_ds.identifier}
