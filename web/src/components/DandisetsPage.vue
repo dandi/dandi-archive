@@ -141,8 +141,17 @@
         </v-menu>
       </v-btn>
     </v-toolbar>
+    <v-alert
+      v-if="props.search && searchError"
+      type="error"
+      variant="tonal"
+      class="mx-4 mx-md-8 mt-4"
+      density="compact"
+    >
+      {{ searchError }}
+    </v-alert>
     <div
-      v-if="props.search && djangoDandisetRequest"
+      v-else-if="props.search && djangoDandisetRequest"
       class="mx-4 mx-md-8 mt-4 text-h6"
     >
       {{ djangoDandisetRequest.count }} {{ djangoDandisetRequest.count === 1 ? 'result' : 'results' }} found
@@ -182,6 +191,7 @@ import {
   ref, computed, watch, watchEffect,
 } from 'vue';
 
+import axios from 'axios';
 import omit from 'lodash/omit';
 import { useRoute } from 'vue-router';
 import DandisetList from '@/components/DandisetList.vue';
@@ -227,20 +237,40 @@ const sortField = computed(() => sortingOptions[sortOption.value].djangoField);
 // Django dandiset listing
 
 const djangoDandisetRequest: Ref<Paginated<Dandiset> | null> = ref(null);
+const searchError: Ref<string | null> = ref(null);
 watchEffect(async () => {
   const ordering = ((sortDir.value === -1) ? '-' : '') + sortField.value;
-  const response = await dandiRest.dandisets({
-    page: page.value,
-    page_size: DANDISETS_PER_PAGE,
-    ordering,
-    user: props.user ? 'me' : null,
-    search: props.search ? route.query.search : null,
-    starred: props.starred ? true : null,
-    draft: props.user ? true : showDrafts.value,
-    empty: props.user ? true : showEmpty.value,
-    embargoed: props.user,
-  });
-  djangoDandisetRequest.value = response.data;
+  try {
+    const response = await dandiRest.dandisets({
+      page: page.value,
+      page_size: DANDISETS_PER_PAGE,
+      ordering,
+      user: props.user ? 'me' : null,
+      search: props.search ? route.query.search : null,
+      starred: props.starred ? true : null,
+      draft: props.user ? true : showDrafts.value,
+      empty: props.user ? true : showEmpty.value,
+      embargoed: props.user,
+    });
+    djangoDandisetRequest.value = response.data;
+    searchError.value = null;
+  } catch (err) {
+    // The advanced-search backend returns 400 with `{ search: "..." }` when
+    // the query syntax is invalid. Surface that inline instead of letting
+    // it bubble up to the global "something went wrong" snackbar.
+    if (axios.isAxiosError(err) && err.response?.status === 400) {
+      const data = err.response.data as { search?: string | string[] } | undefined;
+      const message = Array.isArray(data?.search) ? data?.search[0] : data?.search;
+      if (message) {
+        searchError.value = message;
+        djangoDandisetRequest.value = {
+          count: 0, next: '', previous: '', results: [],
+        };
+        return;
+      }
+    }
+    throw err;
+  }
 });
 
 const dandisets = computed(
