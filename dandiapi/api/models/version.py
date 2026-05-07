@@ -270,7 +270,11 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
                 'numberOfFiles': 0,
             }
 
-        if self.doi:
+        # Drafts cite the dandiset URL; only published versions expose the DOI.
+        # The concept DOI lives on Dandiset.concept_doi and on Version.doi (DB),
+        # but a draft's *published-shape* metadata keeps the URL citation that
+        # downstream consumers (dandi-cli snapshot tests, UI) expect.
+        if self.doi and self.version != 'draft':
             metadata['doi'] = self.doi
         metadata['citation'] = self.citation(metadata)
 
