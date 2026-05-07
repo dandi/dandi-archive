@@ -6,8 +6,8 @@ from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
+import requests
 
-from dandiapi.api.doi import delete_doi
 from dandiapi.api.mail import send_dandiset_unembargo_failed_message
 from dandiapi.api.manifests import (
     write_assets_jsonld,
@@ -18,6 +18,19 @@ from dandiapi.api.manifests import (
 )
 from dandiapi.api.models import Asset, AssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.services.doi import (
+    create_dandiset_doi,
+    create_published_version_doi,
+    delete_dandiset_doi,
+    update_dandiset_doi,
+)
+from dandiapi.api.services.doi.utils import (
+    DATACITE_TIMEOUT,
+    datacite_session,
+    doi_configured,
+    get_doi_url,
+    raise_datacite_exception,
+)
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -81,9 +94,128 @@ def validate_version_metadata_task(version_id: int) -> None:
     validate_version_metadata(version=version)
 
 
-@shared_task
-def delete_doi_task(doi: str) -> None:
-    delete_doi(doi)
+@shared_task(
+    bind=True,
+    queue='doi',
+    soft_time_limit=60,
+    autoretry_for=(requests.exceptions.RequestException,),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    max_retries=5,
+)
+def create_dandiset_doi_task(self, dandiset_id: int) -> None:
+    """Register a Draft concept DOI on DataCite for a dandiset."""
+    dandiset = Dandiset.objects.get(id=dandiset_id)
+    try:
+        create_dandiset_doi(dandiset)
+        Version.objects.filter(dandiset=dandiset, version='draft', doi_state='pending').update(
+            doi_state='draft'
+        )
+    except requests.exceptions.RequestException:
+        # Transient network error — mark failed only on final retry (Celery will autoretry)
+        if self.request.retries >= self.max_retries:
+            Version.objects.filter(dandiset=dandiset, version='draft', doi_state='pending').update(
+                doi_state='failed'
+            )
+        raise
+    except Exception:
+        # Non-retryable error (e.g., DataCiteAPIError from 4xx) — mark failed immediately
+        Version.objects.filter(dandiset=dandiset, version='draft', doi_state='pending').update(
+            doi_state='failed'
+        )
+        raise
+
+
+@shared_task(
+    bind=True,
+    queue='doi',
+    soft_time_limit=60,
+    autoretry_for=(requests.exceptions.RequestException,),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    max_retries=5,
+)
+def create_published_version_doi_task(self, version_id: int) -> None:
+    """Create a Findable version DOI and update the concept DOI on DataCite."""
+    version = Version.objects.get(id=version_id)
+    try:
+        create_published_version_doi(version)
+        Version.objects.filter(id=version_id).update(doi_state='findable')
+    except requests.exceptions.RequestException:
+        # Transient — mark failed only on final retry
+        if self.request.retries >= self.max_retries:
+            Version.objects.filter(id=version_id, doi_state='pending').update(doi_state='failed')
+        raise
+    except Exception:
+        # Non-retryable (4xx, validation error) — mark failed immediately
+        Version.objects.filter(id=version_id, doi_state='pending').update(doi_state='failed')
+        raise
+
+
+@shared_task(
+    queue='doi',
+    soft_time_limit=60,
+    autoretry_for=(requests.exceptions.RequestException,),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    max_retries=5,
+)
+def update_dandiset_doi_task(dandiset_id: int) -> None:
+    """Update the Draft concept DOI metadata on DataCite."""
+    dandiset = Dandiset.objects.get(id=dandiset_id)
+    try:
+        update_dandiset_doi(dandiset)
+        logger.info('Updated concept DOI metadata for dandiset %s', dandiset.identifier)
+    except Exception:
+        logger.exception(
+            'Failed to update concept DOI metadata for dandiset %s', dandiset.identifier
+        )
+        raise
+
+
+@shared_task(
+    queue='doi',
+    soft_time_limit=60,
+    autoretry_for=(requests.exceptions.RequestException,),
+    retry_backoff=True,
+    max_retries=3,
+)
+def hide_published_version_doi_task(doi: str) -> None:
+    """Hide (retract) a Findable DOI by transitioning to Registered on DataCite.
+
+    Calls DataCite directly (bypassing the service layer) since the Version
+    row has typically been deleted by the time this task runs.
+    """
+    if not doi_configured():
+        logger.debug('Skipping DOI hide for %s — DOI not configured', doi)
+        return
+
+    payload = {'data': {'id': doi, 'type': 'dois', 'attributes': {'event': 'hide'}}}
+    with datacite_session() as session:
+        response = session.put(get_doi_url(doi), json=payload, timeout=DATACITE_TIMEOUT)
+
+    if response.status_code == 404:
+        logger.warning('DOI %s not found on DataCite during hide', doi)
+        return
+
+    if not response.ok:
+        raise_datacite_exception(
+            desc=f'Failed to hide DOI {doi}', response=response, payload=payload
+        )
+
+    logger.info('Hid DOI %s (Findable → Registered)', doi)
+
+
+@shared_task(
+    queue='doi',
+    soft_time_limit=60,
+    autoretry_for=(requests.exceptions.RequestException,),
+    retry_backoff=True,
+    max_retries=3,
+)
+def delete_dandiset_doi_task(doi: str) -> None:
+    """Delete a Draft concept DOI from DataCite."""
+    delete_dandiset_doi(doi)
 
 
 @shared_task
