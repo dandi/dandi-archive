@@ -110,30 +110,35 @@ def _apply_asset_filter(queryset, operator: str, value: str):
 
 
 def _apply_owner_filter(
-    queryset: QuerySet[Dandiset], value: str, *, request_user: User | AnonymousUser
+    queryset: QuerySet[Dandiset],
+    value: str,
+    *,
+    quoted: bool,
+    request_user: User | AnonymousUser,
 ) -> QuerySet[Dandiset]:
     """Filter dandisets to those owned by the given user identifier.
 
-    `owner:me` resolves to the requesting user; otherwise we match `value`
-    case-insensitively against:
-      - User.username
-      - User.email
-      - User.first_name
-      - User.last_name
-      - "first_name last_name"  (so the display name shown in the UI works)
+    The unquoted token `owner:me` resolves to the requesting user. To search
+    for a literal user named "Me" instead, quote the value: `owner:"me"`.
+    The quoted form bypasses the magic alias and goes straight to the
+    case-insensitive lookup.
 
+    Lookups (for any non-magic value) match case-insensitively against
+    `User.username`, `User.email`, `User.first_name`, `User.last_name`, or
+    `"first_name last_name"` (so the display name shown in the UI works).
     Multiple users may match (common when only a first or last name is given);
     we union dandisets owned by any of them. Unknown user → empty result (not
     an error — a search for a nonexistent owner is a valid 0-hit query).
 
     Direct query against `DandisetUserObjectPermission` rather than guardian's
-    `get_objects_for_user` so we can intersect across multiple matched users
-    in a single query, and to bypass the superuser-sees-everything default.
+    `get_objects_for_user` so we can union across multiple matched users in a
+    single query, and to bypass the superuser-sees-everything default.
     """
-    if value.lower() == 'me':
+    if not quoted and value.lower() == 'me':
         if request_user.is_anonymous:
             raise SearchSyntaxError(
-                'owner:me requires authentication. Sign in or specify a username.'
+                'owner:me requires authentication. Sign in, or use owner:"me" '
+                'to search for a literal user named Me.'
             )
         owner_pks = get_owned_dandisets(request_user, include_superusers=False).values('pk')
         return queryset.filter(pk__in=owner_pks)
@@ -208,8 +213,9 @@ def apply_search_filters(
     asset_qs = None
     annotated: set[str] = set()
 
-    for key, raw_value in parsed.operators:
-        value = raw_value.strip()
+    for op in parsed.operators:
+        key = op.key
+        value = op.value.strip()
         if not value:
             raise SearchSyntaxError(f'Operator "{key}" requires a value (e.g. {key}:something).')
 
@@ -226,7 +232,7 @@ def apply_search_filters(
                 asset_qs = AssetSearch.objects.visible_to(user)
             asset_qs = _apply_asset_filter(asset_qs, key, value)
         elif key in _OWNER_OPS:
-            queryset = _apply_owner_filter(queryset, value, request_user=user)
+            queryset = _apply_owner_filter(queryset, value, quoted=op.quoted, request_user=user)
 
     if asset_qs is not None:
         # NOTE perf: jsonb_path_exists with a runtime-built jsonpath cannot

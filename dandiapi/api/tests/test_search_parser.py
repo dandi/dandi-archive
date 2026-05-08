@@ -3,11 +3,23 @@ from __future__ import annotations
 import pytest
 
 from dandiapi.api.services.search.parser import (
+    Operator,
     SearchSyntaxError,
     parse_search,
 )
 
 pytestmark = pytest.mark.ai_generated
+
+
+# Convenience aliases so the parametrize table stays readable.
+def _u(key: str, value: str) -> Operator:
+    """Unquoted operator (e.g. parsed from `key:value`)."""
+    return Operator(key, value, quoted=False)
+
+
+def _q(key: str, value: str) -> Operator:
+    """Quoted operator (e.g. parsed from `key:"value"`)."""
+    return Operator(key, value, quoted=True)
 
 
 @pytest.mark.parametrize(
@@ -22,33 +34,36 @@ pytestmark = pytest.mark.ai_generated
         (
             'species:mouse created_after:2024-01-01',
             [],
-            [('species', 'mouse'), ('created_after', '2024-01-01')],
+            [_u('species', 'mouse'), _u('created_after', '2024-01-01')],
         ),
         # Mixed
         (
             'place cells species:mouse created_after:2024-01-01 ca1',
             ['place', 'cells', 'ca1'],
-            [('species', 'mouse'), ('created_after', '2024-01-01')],
+            [_u('species', 'mouse'), _u('created_after', '2024-01-01')],
         ),
         # Quoted phrase as free text
         ('"place cells" hippocampus', ['place cells', 'hippocampus'], []),
-        # Quoted operator value (multi-word)
-        ('technique:"patch clamp"', [], [('technique', 'patch clamp')]),
+        # Quoted operator value (multi-word) — `quoted=True`
+        ('technique:"patch clamp"', [], [_q('technique', 'patch clamp')]),
         # Repeated operator keeps every entry (AND'd downstream)
         (
             'species:mouse species:rat',
             [],
-            [('species', 'mouse'), ('species', 'rat')],
+            [_u('species', 'mouse'), _u('species', 'rat')],
         ),
         # Special characters preserved inside quoted operator value
-        ('species:"C57BL/6"', [], [('species', 'C57BL/6')]),
+        ('species:"C57BL/6"', [], [_q('species', 'C57BL/6')]),
         # Quoted token that *looks* like an operator is treated as free text —
-        # this is the documented escape hatch for searching for a literal colon.
+        # documented escape hatch for searching for a literal colon.
         ('"foo:bar" hippocampus', ['foo:bar', 'hippocampus'], []),
-        # Owner operator
-        ('owner:jdoe', [], [('owner', 'jdoe')]),
+        # Owner operator (unquoted vs quoted distinguished — used by the
+        # `owner:me` magic alias which `owner:"me"` opts out of).
+        ('owner:jdoe', [], [_u('owner', 'jdoe')]),
+        ('owner:me', [], [_u('owner', 'me')]),
+        ('owner:"me"', [], [_q('owner', 'me')]),
         # Owner with email value (the parser doesn't validate the value shape)
-        ('owner:user@example.com', [], [('owner', 'user@example.com')]),
+        ('owner:user@example.com', [], [_u('owner', 'user@example.com')]),
     ],
     ids=[
         'empty',
@@ -62,6 +77,8 @@ pytestmark = pytest.mark.ai_generated
         'special-chars-in-quoted-value',
         'quoted-operator-like-token-is-free-text',
         'owner-username',
+        'owner-me-unquoted',
+        'owner-me-quoted',
         'owner-email',
     ],
 )

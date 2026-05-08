@@ -2093,71 +2093,100 @@ def test_advanced_search_species_respects_embargo_visibility(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_owner_by_username_returns_owned_dandisets(api_client):
-    alice = UserFactory.create(username='alice', email='alice@example.com')
-    bob = UserFactory.create(username='bob', email='bob@example.com')
-    alice_ds = DandisetFactory.create(owners=[alice])
+def test_advanced_search_owner_lookup_paths_and_combinations(api_client):
+    """One setup, many assertions for the owner: operator.
+
+    Resolves users by every documented lookup path, unions across multiple
+    matched users, returns 0 for unknown values, is case-insensitive, and
+    combines correctly with other operators (cross-key AND on the same
+    dandiset).
+    """
+    # Three users with overlapping last names so we can exercise every lookup
+    # path AND the multi-user union in a single setup.
+    alice = UserFactory.create(
+        username='Alice', email='Alice@Example.com', first_name='Alice', last_name='Smith'
+    )
+    bob = UserFactory.create(
+        username='bob', email='bob@example.com', first_name='Bob', last_name='Smith'
+    )
+    carol = UserFactory.create(
+        username='carol', email='carol@example.com', first_name='Carol', last_name='Jones'
+    )
+    alice_old = DandisetFactory.create(owners=[alice])
+    alice_new = DandisetFactory.create(owners=[alice])
     bob_ds = DandisetFactory.create(owners=[bob])
-    DraftVersionFactory.create(dandiset=alice_ds)
-    DraftVersionFactory.create(dandiset=bob_ds)
+    carol_ds = DandisetFactory.create(owners=[carol])
+    for ds in (alice_old, alice_new, bob_ds, carol_ds):
+        DraftVersionFactory.create(dandiset=ds)
 
-    assert _search_ids(api_client, 'owner:alice') == {alice_ds.identifier}
-    assert _search_ids(api_client, 'owner:bob') == {bob_ds.identifier}
+    # Backdate alice_old so we can intersect with a date operator below.
+    cutoff = timezone.now() - datetime.timedelta(days=1)
+    Dandiset.objects.filter(pk=alice_old.pk).update(created=cutoff - datetime.timedelta(days=30))
+    after_str = (cutoff + datetime.timedelta(seconds=1)).date().isoformat()
 
+    alice_dsets = {alice_old.identifier, alice_new.identifier}
 
-@pytest.mark.ai_generated
-@pytest.mark.django_db
-def test_advanced_search_owner_by_email_matches(api_client):
-    alice = UserFactory.create(username='alice', email='alice@example.com')
-    alice_ds = DandisetFactory.create(owners=[alice])
-    DraftVersionFactory.create(dandiset=alice_ds)
+    # username (case-insensitive)
+    assert _search_ids(api_client, 'owner:alice') == alice_dsets
+    assert _search_ids(api_client, 'owner:ALICE') == alice_dsets
 
-    assert _search_ids(api_client, 'owner:alice@example.com') == {alice_ds.identifier}
+    # email (case-insensitive)
+    assert _search_ids(api_client, 'owner:alice@example.com') == alice_dsets
+    assert _search_ids(api_client, 'owner:ALICE@Example.com') == alice_dsets
 
+    # first / last / full name
+    assert _search_ids(api_client, 'owner:Bob') == {bob_ds.identifier}
+    assert _search_ids(api_client, 'owner:Jones') == {carol_ds.identifier}
+    assert _search_ids(api_client, 'owner:"Carol Jones"') == {carol_ds.identifier}
 
-@pytest.mark.ai_generated
-@pytest.mark.django_db
-def test_advanced_search_owner_lookup_is_case_insensitive(api_client):
-    alice = UserFactory.create(username='Alice', email='Alice@Example.com')
-    alice_ds = DandisetFactory.create(owners=[alice])
-    DraftVersionFactory.create(dandiset=alice_ds)
+    # union: shared last name returns dandisets from both users
+    assert _search_ids(api_client, 'owner:Smith') == alice_dsets | {bob_ds.identifier}
 
-    assert _search_ids(api_client, 'owner:alice') == {alice_ds.identifier}
-    assert _search_ids(api_client, 'owner:ALICE@example.COM') == {alice_ds.identifier}
-
-
-@pytest.mark.ai_generated
-@pytest.mark.django_db
-def test_advanced_search_owner_unknown_user_returns_zero(api_client):
-    DraftVersionFactory.create(dandiset=DandisetFactory.create())
-    # No SearchSyntaxError — a search for a nonexistent owner is a valid
-    # zero-hit query, not a malformed query.
+    # unknown user → 0 results, not 400 (a valid 0-hit query)
     assert _search_ids(api_client, 'owner:no_such_user_anywhere') == set()
 
+    # combines with other operators: cross-key AND on the same dandiset.
+    # Only alice_new satisfies BOTH owner:alice AND created_after.
+    assert _search_ids(api_client, f'owner:alice created_after:{after_str}') == {
+        alice_new.identifier
+    }
+
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_owner_me_resolves_to_authenticated_user(api_client):
-    alice = UserFactory.create()
-    bob = UserFactory.create()
+def test_advanced_search_owner_me_magic_and_literal_escape(api_client):
+    """`owner:me` (unquoted) is the magic alias for "the current user".
+
+    Anonymous → 400. To search for a real user named "Me" instead, quote
+    the value (`owner:"me"`) — the quoted form opts out of the magic and
+    falls back to the case-insensitive lookup against username / email /
+    first / last / full name.
+    """
+    alice = UserFactory.create(username='alice')
+    me_user = UserFactory.create(username='me_actual_user', first_name='Me', last_name='Someoneyou')
     alice_ds = DandisetFactory.create(owners=[alice])
-    bob_ds = DandisetFactory.create(owners=[bob])
+    me_ds = DandisetFactory.create(owners=[me_user])
     DraftVersionFactory.create(dandiset=alice_ds)
-    DraftVersionFactory.create(dandiset=bob_ds)
+    DraftVersionFactory.create(dandiset=me_ds)
 
-    api_client.force_authenticate(user=alice)
-    assert _search_ids(api_client, 'owner:me') == {alice_ds.identifier}
-
-
-@pytest.mark.ai_generated
-@pytest.mark.django_db
-def test_advanced_search_owner_me_anonymous_returns_400(api_client):
+    # Anonymous + `owner:me` → 400 with explicit message
     response = api_client.get(
         '/api/dandisets/',
         {'draft': 'true', 'empty': 'true', 'search': 'owner:me'},
     )
     assert response.status_code == 400
     assert 'requires authentication' in response.json()['search']
+
+    # Authenticated + unquoted `owner:me` → only alice's dandisets
+    # (does NOT match the literal user named "Me").
+    api_client.force_authenticate(user=alice)
+    assert _search_ids(api_client, 'owner:me') == {alice_ds.identifier}
+
+    # Authenticated + quoted `owner:"me"` → escapes the magic and matches
+    # the literal user "Me" by first_name (NOT alice).
+    assert _search_ids(api_client, 'owner:"me"') == {me_ds.identifier}
+    # Full display name lookup also works for that user.
+    assert _search_ids(api_client, 'owner:"Me Someoneyou"') == {me_ds.identifier}
 
 
 @pytest.mark.ai_generated
@@ -2174,62 +2203,3 @@ def test_advanced_search_owner_does_not_inflate_to_superuser_archive(api_client)
     DraftVersionFactory.create(dandiset=admin_owned)
 
     assert _search_ids(api_client, 'owner:admin') == {admin_owned.identifier}
-
-
-@pytest.mark.ai_generated
-@pytest.mark.django_db
-def test_advanced_search_owner_combines_with_other_operators(api_client):
-    alice = UserFactory.create(username='alice')
-    bob = UserFactory.create(username='bob')
-    alice_old = DandisetFactory.create(owners=[alice])
-    alice_new = DandisetFactory.create(owners=[alice])
-    bob_new = DandisetFactory.create(owners=[bob])
-    for ds in (alice_old, alice_new, bob_new):
-        DraftVersionFactory.create(dandiset=ds)
-
-    cutoff = timezone.now() - datetime.timedelta(days=1)
-    Dandiset.objects.filter(pk=alice_old.pk).update(created=cutoff - datetime.timedelta(days=30))
-
-    after_str = (cutoff + datetime.timedelta(seconds=1)).date().isoformat()
-    # Only alice_new satisfies BOTH owner:alice AND created_after.
-    assert _search_ids(api_client, f'owner:alice created_after:{after_str}') == {
-        alice_new.identifier
-    }
-
-
-@pytest.mark.ai_generated
-@pytest.mark.django_db
-def test_advanced_search_owner_by_full_name_matches(api_client):
-    # The dandiset list shows owners by display name (first + ' ' + last).
-    # `owner:"Super User"` should match a user with that full name even
-    # though their username is an email address.
-    user = UserFactory.create(
-        username='ben.dichter@gmail.com',
-        email='ben.dichter@gmail.com',
-        first_name='Super',
-        last_name='User',
-    )
-    user_ds = DandisetFactory.create(owners=[user])
-    DraftVersionFactory.create(dandiset=user_ds)
-
-    assert _search_ids(api_client, 'owner:"Super User"') == {user_ds.identifier}
-    # First-name-only and last-name-only also work.
-    assert _search_ids(api_client, 'owner:Super') == {user_ds.identifier}
-    assert _search_ids(api_client, 'owner:User') == {user_ds.identifier}
-
-
-@pytest.mark.ai_generated
-@pytest.mark.django_db
-def test_advanced_search_owner_unions_multiple_matched_users(api_client):
-    # Two distinct users share a last name. `owner:Smith` should return
-    # dandisets owned by either of them.
-    alice = UserFactory.create(username='alice', last_name='Smith')
-    bob = UserFactory.create(username='bob', last_name='Smith')
-    eve = UserFactory.create(username='eve', last_name='Jones')
-    alice_ds = DandisetFactory.create(owners=[alice])
-    bob_ds = DandisetFactory.create(owners=[bob])
-    DandisetFactory.create(owners=[eve])
-    for ds in Dandiset.objects.all():
-        DraftVersionFactory.create(dandiset=ds)
-
-    assert _search_ids(api_client, 'owner:Smith') == {alice_ds.identifier, bob_ds.identifier}
