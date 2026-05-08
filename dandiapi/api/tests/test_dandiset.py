@@ -2188,9 +2188,7 @@ def test_advanced_search_owner_combines_with_other_operators(api_client):
         DraftVersionFactory.create(dandiset=ds)
 
     cutoff = timezone.now() - datetime.timedelta(days=1)
-    Dandiset.objects.filter(pk=alice_old.pk).update(
-        created=cutoff - datetime.timedelta(days=30)
-    )
+    Dandiset.objects.filter(pk=alice_old.pk).update(created=cutoff - datetime.timedelta(days=30))
 
     after_str = (cutoff + datetime.timedelta(seconds=1)).date().isoformat()
     # Only alice_new satisfies BOTH owner:alice AND created_after.
