@@ -102,6 +102,7 @@ const operatorHelp = [
   { example: 'funder:NIH', description: 'Listed as a Funder' },
   { example: 'contact_person:Doe', description: 'Listed as the Contact Person' },
   { example: 'maintainer:Doe', description: 'Listed as a Maintainer (and many more — see API docs)' },
+  { example: 'affiliation:Stanford', description: 'Has a contributor affiliated with the named organization (or ROR ID)' },
 ];
 
 function updateSearch(search: string) {

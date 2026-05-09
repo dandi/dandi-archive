@@ -323,9 +323,11 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
             'investigation, methodology, producer, project_manager, '
             'project_member, project_administration, researcher, resources, '
             'software, supervision, validation, visualization, '
-            'study_participant, affiliation, ethics_approval, other — each '
-            'matches a contributor by name/email/identifier AND requires that '
+            'study_participant, ethics_approval, other — each matches a '
+            'contributor by name/email/identifier AND requires that '
             'contributor to hold that role. '
+            'affiliation (matches the nested Person.affiliation[] field by '
+            'organization name or ROR identifier — e.g. affiliation:Stanford). '
             'Invalid syntax returns HTTP 400 with the offending token; '
             'unknown operators get a "Did you mean?" suggestion.'
         ),

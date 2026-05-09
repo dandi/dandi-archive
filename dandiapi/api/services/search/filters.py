@@ -81,10 +81,22 @@ _CONTRIBUTOR_ROLE_OPS: dict[str, str | None] = {
     'funder': 'Funder',
     'sponsor': 'Sponsor',
     'study_participant': 'StudyParticipant',
-    'affiliation': 'Affiliation',
     'ethics_approval': 'EthicsApproval',
     'other': 'Other',
+    # Note: `affiliation` is intentionally NOT here. Despite `dcite:Affiliation`
+    # existing as a RoleType, in real DANDI data affiliations live in a
+    # separate nested field — `Person.affiliation[]` — not as a contributor's
+    # role. The `affiliation:` operator queries that nested path; see
+    # `_AFFILIATION_JSONPATH` below.
 }
+
+# Affiliation has its own jsonpath because it lives at
+# `contributor[].affiliation[]`, not `contributor[].roleName[]`.
+_AFFILIATION_JSONPATH = (
+    '$.contributor[*].affiliation[*] ? '
+    '(@.name like_regex $val flag "i" '
+    ' || @.identifier like_regex $val flag "i")'
+)
 
 
 def _annotate_latest_version_modified(queryset):
@@ -175,8 +187,8 @@ def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Da
     return queryset.filter(pk__in=owned_pks)
 
 
-def _contributor_jsonpath(value: str, role: str | None) -> tuple[str, list[str]]:
-    """Build a (where_clause, params) for a single contributor element predicate.
+def _contributor_role_jsonpath(value: str, role: str | None) -> tuple[str, dict[str, str]]:
+    """Jsonpath + vars for a contributor[] element predicate.
 
     Matches a `contributor[]` element whose `name`, `email`, OR `identifier`
     contains `value` (case-insensitive). The identifier covers ORCIDs for
@@ -186,10 +198,6 @@ def _contributor_jsonpath(value: str, role: str | None) -> tuple[str, list[str]]
 
     If `role` is given, additionally requires that element's `roleName` array
     to contain a string matching `role` (also case-insensitive substring).
-
-    Uses the third argument of `jsonb_path_exists` to bind named variables
-    (`$val`, `$role`) so the user values are properly quoted by Postgres
-    rather than concatenated into the path string.
     """
     name_or_email_or_id = (
         '@.name like_regex $val flag "i" '
@@ -197,38 +205,43 @@ def _contributor_jsonpath(value: str, role: str | None) -> tuple[str, list[str]]
         ' || @.identifier like_regex $val flag "i"'
     )
     if role is None:
-        jsonpath = f'$.contributor[*] ? ({name_or_email_or_id})'
-        vars_obj = {'val': re.escape(value)}
-    else:
-        jsonpath = (
-            '$.contributor[*] ? '
-            f'(({name_or_email_or_id}) '
-            '  && exists(@.roleName[*] ? (@ like_regex $role flag "i")))'
-        )
-        vars_obj = {'val': re.escape(value), 'role': re.escape(role)}
+        return f'$.contributor[*] ? ({name_or_email_or_id})', {'val': re.escape(value)}
+    return (
+        '$.contributor[*] ? '
+        f'(({name_or_email_or_id}) '
+        '  && exists(@.roleName[*] ? (@ like_regex $role flag "i")))',
+        {'val': re.escape(value), 'role': re.escape(role)},
+    )
+
+
+def _build_jsonpath_where(jsonpath: str, vars_obj: dict[str, str]) -> tuple[str, list[str]]:
+    """Wrap a jsonpath + vars into a `jsonb_path_exists(metadata, ...)` predicate.
+
+    Uses the third argument of `jsonb_path_exists` to bind named variables
+    so user values are properly quoted by Postgres rather than concatenated
+    into the path string.
+    """
     where = f"jsonb_path_exists(metadata, '{jsonpath}'::jsonpath, %s::jsonb)"
     return where, [json.dumps(vars_obj)]
 
 
 def _apply_contributor_filters(
-    queryset: QuerySet[Dandiset], specs: list[tuple[str, str | None]]
+    queryset: QuerySet[Dandiset], wheres: list[tuple[str, list[str]]]
 ) -> QuerySet[Dandiset]:
-    """Filter dandisets by contributor / per-role operators.
+    """Filter dandisets by accumulated contributor predicates.
 
-    `specs` is a list of `(value, role_or_None)` pairs. The returned queryset
-    is restricted to dandisets that have at least ONE Version whose
-    `metadata.contributor[]` satisfies ALL the predicates simultaneously.
-    Multiple operators thus AND on the same Version (so a draft and a
-    published version with disjoint contributor lists never combine into a
-    spurious match).
+    `wheres` is a list of `(where_clause, params)` pairs (one per operator).
+    The returned queryset is restricted to dandisets that have at least ONE
+    Version whose `metadata` satisfies ALL the predicates simultaneously.
+    Operators thus AND on the same Version (a draft and a published version
+    with disjoint contributor lists never combine into a spurious match).
 
-    Each operator is independent: `author:Baker funder:NIH` matches if SOME
-    contributor element has Baker as Author AND SOME contributor element (the
+    Each operator is independent: `author:Doe funder:NIH` matches if SOME
+    contributor element has Doe as Author AND SOME contributor element (the
     same OR a different one) has NIH as Funder.
     """
     matching_versions = Version.objects.all()
-    for value, role in specs:
-        where, params = _contributor_jsonpath(value, role)
+    for where, params in wheres:
         # Trusted jsonpath template (no user value interpolated); user value
         # is bound via the jsonb vars param and additionally regex-escaped.
         matching_versions = matching_versions.extra(  # noqa: S610
@@ -289,11 +302,11 @@ def apply_search_filters(  # noqa: C901  (one branch per operator category — s
     # single asset to match both substrings — same as GitHub's default.
     asset_qs = None
     annotated: set[str] = set()
-    # Contributor specs collected here, then applied in a single batch so all
-    # operators AND on the same Version (avoids cross-version weirdness when
-    # a dandiset has both a draft and a published version with disjoint
+    # Contributor predicates collected here, then applied in a single batch so
+    # all operators AND on the same Version (avoids cross-version weirdness
+    # when a dandiset has both a draft and a published version with disjoint
     # contributor lists).
-    contributor_specs: list[tuple[str, str | None]] = []
+    contributor_wheres: list[tuple[str, list[str]]] = []
 
     for op in parsed.operators:
         key = op.key
@@ -316,10 +329,15 @@ def apply_search_filters(  # noqa: C901  (one branch per operator category — s
         elif key in _OWNER_OPS:
             queryset = _apply_owner_filter(queryset, value)
         elif key in _CONTRIBUTOR_ROLE_OPS:
-            contributor_specs.append((value, _CONTRIBUTOR_ROLE_OPS[key]))
+            jsonpath, vars_obj = _contributor_role_jsonpath(value, _CONTRIBUTOR_ROLE_OPS[key])
+            contributor_wheres.append(_build_jsonpath_where(jsonpath, vars_obj))
+        elif key == 'affiliation':
+            contributor_wheres.append(
+                _build_jsonpath_where(_AFFILIATION_JSONPATH, {'val': re.escape(value)})
+            )
 
-    if contributor_specs:
-        queryset = _apply_contributor_filters(queryset, contributor_specs)
+    if contributor_wheres:
+        queryset = _apply_contributor_filters(queryset, contributor_wheres)
 
     if asset_qs is not None:
         # NOTE perf: jsonb_path_exists with a runtime-built jsonpath cannot

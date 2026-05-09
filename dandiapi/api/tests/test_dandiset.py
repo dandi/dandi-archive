@@ -2244,9 +2244,7 @@ def test_advanced_search_contributor_and_role_operators(api_client):
         ds_baker_curator.identifier
     }
     # Email lookup also works via the catch-all.
-    assert _search_ids(api_client, 'contributor:jane.doe.com') == {
-        ds_baker_curator.identifier
-    }
+    assert _search_ids(api_client, 'contributor:jane.doe.com') == {ds_baker_curator.identifier}
 
     # role-specific: author:Doe matches the two dandisets where Doe has Author role
     assert _search_ids(api_client, 'author:Doe') == {
@@ -2329,3 +2327,57 @@ def test_advanced_search_unknown_role_operator_returns_400_with_suggestion(api_c
     )
     assert response.status_code == 400
     assert 'data_curator' in response.json()['search']
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_affiliation_operator(api_client):
+    """`affiliation:` queries the nested Person.affiliation[] field, not roleName.
+
+    Real DANDI data stores affiliations on the Person object itself (e.g.
+    `Doe, Jane` is affiliated with Stanford via `Doe.affiliation[0].name`),
+    not as a `dcite:Affiliation` roleName entry. Match by org name OR by
+    the affiliation's ROR identifier; substring forms work for both.
+    """
+    ds_stanford = _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Doe, Jane',
+                'roleName': ['dcite:Author'],
+                'schemaKey': 'Person',
+                'affiliation': [
+                    {
+                        'name': 'Stanford University',
+                        'identifier': 'https://ror.org/00f54p054',
+                        'schemaKey': 'Affiliation',
+                    },
+                ],
+            },
+        ],
+    )
+    ds_ucl = _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Doe, Jane',
+                'roleName': ['dcite:Author'],
+                'schemaKey': 'Person',
+                'affiliation': [
+                    {
+                        'name': 'University College London',
+                        'schemaKey': 'Affiliation',
+                    },
+                ],
+            },
+        ],
+    )
+
+    # Affiliation by organization name
+    assert _search_ids(api_client, 'affiliation:Stanford') == {ds_stanford.identifier}
+    assert _search_ids(api_client, 'affiliation:"University College London"') == {ds_ucl.identifier}
+    # Affiliation by ROR identifier (full URL or bare ID via substring)
+    assert _search_ids(api_client, 'affiliation:00f54p054') == {ds_stanford.identifier}
+
+    # Composes with role/contributor operators on the same Version (different
+    # contributor elements OK — but here both must match Doe, who is the only
+    # contributor in each fixture, so the joint constraint is just an AND).
+    assert _search_ids(api_client, 'author:Doe affiliation:Stanford') == {ds_stanford.identifier}
