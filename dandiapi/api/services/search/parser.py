@@ -64,8 +64,6 @@ OPERATOR_KEYS: frozenset[str] = frozenset(
         'sponsor',
         'study_participant',
         'affiliation',
-        'ethics_approval',
-        'other',
     }
 )
 

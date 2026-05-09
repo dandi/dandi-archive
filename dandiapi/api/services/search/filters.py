@@ -81,8 +81,6 @@ _CONTRIBUTOR_ROLE_OPS: dict[str, str | None] = {
     'funder': 'Funder',
     'sponsor': 'Sponsor',
     'study_participant': 'StudyParticipant',
-    'ethics_approval': 'EthicsApproval',
-    'other': 'Other',
     # Note: `affiliation` is intentionally NOT here. Despite `dcite:Affiliation`
     # existing as a RoleType, in real DANDI data affiliations live in a
     # separate nested field — `Person.affiliation[]` — not as a contributor's
