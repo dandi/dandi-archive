@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+import json
 import re
 from typing import TYPE_CHECKING
 
@@ -43,6 +44,47 @@ _DATE_OPS = frozenset(
 )
 _ASSET_OPS = frozenset({'species', 'approach', 'technique', 'standard', 'file_type'})
 _OWNER_OPS = frozenset({'owner'})
+
+# Contributor / per-role operators. The catch-all `contributor:` matches any
+# role; each named operator additionally requires the matched contributor's
+# `roleName` array to contain the corresponding `dcite:Role` value. Keys MUST
+# be in OPERATOR_KEYS (parser allowlist) — keep the two in sync.
+#
+# Independent-operator semantics: each operator constrains a single
+# `contributor[]` element, but two operators (e.g. `author:Baker funder:NIH`)
+# are AND'd against the same Version's metadata — they may match the same OR
+# different contributor elements. Same composability as the asset operators.
+_CONTRIBUTOR_ROLE_OPS: dict[str, str | None] = {
+    'contributor': None,  # catch-all, no role constraint
+    'author': 'Author',
+    'conceptualization': 'Conceptualization',
+    'contact_person': 'ContactPerson',
+    'data_collector': 'DataCollector',
+    'data_curator': 'DataCurator',
+    'data_manager': 'DataManager',
+    'formal_analysis': 'FormalAnalysis',
+    'funding_acquisition': 'FundingAcquisition',
+    'investigation': 'Investigation',
+    'maintainer': 'Maintainer',
+    'methodology': 'Methodology',
+    'producer': 'Producer',
+    'project_leader': 'ProjectLeader',
+    'project_manager': 'ProjectManager',
+    'project_member': 'ProjectMember',
+    'project_administration': 'ProjectAdministration',
+    'researcher': 'Researcher',
+    'resources': 'Resources',
+    'software': 'Software',
+    'supervision': 'Supervision',
+    'validation': 'Validation',
+    'visualization': 'Visualization',
+    'funder': 'Funder',
+    'sponsor': 'Sponsor',
+    'study_participant': 'StudyParticipant',
+    'affiliation': 'Affiliation',
+    'ethics_approval': 'EthicsApproval',
+    'other': 'Other',
+}
 
 
 def _annotate_latest_version_modified(queryset):
@@ -133,6 +175,68 @@ def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Da
     return queryset.filter(pk__in=owned_pks)
 
 
+def _contributor_jsonpath(value: str, role: str | None) -> tuple[str, list[str]]:
+    """Build a (where_clause, params) for a single contributor element predicate.
+
+    Matches a `contributor[]` element whose `name`, `email`, OR `identifier`
+    contains `value` (case-insensitive). The identifier covers ORCIDs for
+    Person contributors (e.g. `0000-0002-2990-9889`) and ROR URLs for
+    Organization contributors (e.g. `https://ror.org/01cwqze88`); the
+    substring match means bare-ID forms like `01cwqze88` work too.
+
+    If `role` is given, additionally requires that element's `roleName` array
+    to contain a string matching `role` (also case-insensitive substring).
+
+    Uses the third argument of `jsonb_path_exists` to bind named variables
+    (`$val`, `$role`) so the user values are properly quoted by Postgres
+    rather than concatenated into the path string.
+    """
+    name_or_email_or_id = (
+        '@.name like_regex $val flag "i" '
+        ' || @.email like_regex $val flag "i" '
+        ' || @.identifier like_regex $val flag "i"'
+    )
+    if role is None:
+        jsonpath = f'$.contributor[*] ? ({name_or_email_or_id})'
+        vars_obj = {'val': re.escape(value)}
+    else:
+        jsonpath = (
+            '$.contributor[*] ? '
+            f'(({name_or_email_or_id}) '
+            '  && exists(@.roleName[*] ? (@ like_regex $role flag "i")))'
+        )
+        vars_obj = {'val': re.escape(value), 'role': re.escape(role)}
+    where = f"jsonb_path_exists(metadata, '{jsonpath}'::jsonpath, %s::jsonb)"
+    return where, [json.dumps(vars_obj)]
+
+
+def _apply_contributor_filters(
+    queryset: QuerySet[Dandiset], specs: list[tuple[str, str | None]]
+) -> QuerySet[Dandiset]:
+    """Filter dandisets by contributor / per-role operators.
+
+    `specs` is a list of `(value, role_or_None)` pairs. The returned queryset
+    is restricted to dandisets that have at least ONE Version whose
+    `metadata.contributor[]` satisfies ALL the predicates simultaneously.
+    Multiple operators thus AND on the same Version (so a draft and a
+    published version with disjoint contributor lists never combine into a
+    spurious match).
+
+    Each operator is independent: `author:Baker funder:NIH` matches if SOME
+    contributor element has Baker as Author AND SOME contributor element (the
+    same OR a different one) has NIH as Funder.
+    """
+    matching_versions = Version.objects.all()
+    for value, role in specs:
+        where, params = _contributor_jsonpath(value, role)
+        # Trusted jsonpath template (no user value interpolated); user value
+        # is bound via the jsonb vars param and additionally regex-escaped.
+        matching_versions = matching_versions.extra(  # noqa: S610
+            where=[where], params=params
+        )
+    return queryset.filter(versions__pk__in=matching_versions.values('pk'))
+
+
 _MODIFIED_ALIAS = '_search_latest_version_modified'
 _PUBLISHED_ALIAS = '_search_latest_published_created'
 
@@ -163,7 +267,7 @@ def _apply_date_filter(queryset, operator: str, ts: datetime, annotated: set[str
     raise ValueError(f'unknown date operator: {operator}')  # pragma: no cover
 
 
-def apply_search_filters(
+def apply_search_filters(  # noqa: C901  (one branch per operator category — splitting the dispatch loop wouldn't make it more readable)
     queryset: QuerySet[Dandiset],
     parsed: ParsedSearch,
     *,
@@ -185,6 +289,11 @@ def apply_search_filters(
     # single asset to match both substrings — same as GitHub's default.
     asset_qs = None
     annotated: set[str] = set()
+    # Contributor specs collected here, then applied in a single batch so all
+    # operators AND on the same Version (avoids cross-version weirdness when
+    # a dandiset has both a draft and a published version with disjoint
+    # contributor lists).
+    contributor_specs: list[tuple[str, str | None]] = []
 
     for op in parsed.operators:
         key = op.key
@@ -206,6 +315,11 @@ def apply_search_filters(
             asset_qs = _apply_asset_filter(asset_qs, key, value)
         elif key in _OWNER_OPS:
             queryset = _apply_owner_filter(queryset, value)
+        elif key in _CONTRIBUTOR_ROLE_OPS:
+            contributor_specs.append((value, _CONTRIBUTOR_ROLE_OPS[key]))
+
+    if contributor_specs:
+        queryset = _apply_contributor_filters(queryset, contributor_specs)
 
     if asset_qs is not None:
         # NOTE perf: jsonb_path_exists with a runtime-built jsonpath cannot

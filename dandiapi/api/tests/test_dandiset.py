@@ -2166,3 +2166,166 @@ def test_advanced_search_owner_does_not_inflate_to_superuser_archive(api_client)
     DraftVersionFactory.create(dandiset=admin_owned)
 
     assert _search_ids(api_client, 'owner:admin') == {admin_owned.identifier}
+
+
+# --- contributor / role operators ----------------------------------------------------------------
+
+
+def _seed_dandiset_with_contributors(*, contributors: list[dict]) -> Dandiset:
+    """Create a draft dandiset with the given contributor list on its version.
+
+    Used by the contributor/role tests below.
+    """
+    dandiset = DandisetFactory.create()
+    version = DraftVersionFactory.create(dandiset=dandiset)
+    version.metadata = {**version.metadata, 'contributor': contributors}
+    version.save()
+    return dandiset
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_contributor_and_role_operators(api_client):
+    """One setup, many assertions for the contributor + role operators.
+
+    Covers the catch-all `contributor:`, several role-specific operators
+    (author/data_curator/funder/contact_person), independent-operator AND
+    semantics across roles, name vs email lookup, case-insensitive substring,
+    role substring (`data_curator:` matches `dcite:DataCurator`), and the
+    "different elements may satisfy different operators" composability that
+    distinguishes Option D from same-element semantics.
+    """
+    # Three dandisets with overlapping names but different role assignments.
+    # Realistic identifiers: ORCID for Persons, ROR URL for Organizations.
+    ds_baker_curator = _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Doe, Jane',
+                'email': 'jane.doe.com',
+                'identifier': '0000-0002-2990-9889',
+                'roleName': ['dcite:DataCurator', 'dcite:Author'],
+                'schemaKey': 'Person',
+            },
+            {
+                'name': 'National Institutes of Health',
+                'identifier': 'https://ror.org/01cwqze88',
+                'roleName': ['dcite:Funder'],
+                'schemaKey': 'Organization',
+            },
+        ],
+    )
+    ds_baker_author_only = _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Doe, Jane',
+                'identifier': '0000-0001-2222-3333',
+                'roleName': ['dcite:Author'],
+                'schemaKey': 'Person',
+            },
+        ],
+    )
+    ds_smith_curator = _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Smith, Alice',
+                'roleName': ['dcite:DataCurator'],
+                'schemaKey': 'Person',
+            },
+        ],
+    )
+
+    # `contributor:` (catch-all) — any role
+    assert _search_ids(api_client, 'contributor:Doe') == {
+        ds_baker_curator.identifier,
+        ds_baker_author_only.identifier,
+    }
+    assert _search_ids(api_client, 'contributor:NIH') == set()  # full org name only
+    assert _search_ids(api_client, 'contributor:"National Institutes"') == {
+        ds_baker_curator.identifier
+    }
+    # Email lookup also works via the catch-all.
+    assert _search_ids(api_client, 'contributor:jane.doe.com') == {
+        ds_baker_curator.identifier
+    }
+
+    # role-specific: author:Doe matches the two dandisets where Doe has Author role
+    assert _search_ids(api_client, 'author:Doe') == {
+        ds_baker_curator.identifier,
+        ds_baker_author_only.identifier,
+    }
+    # data_curator:Doe matches only the dandiset where Doe is also a curator
+    assert _search_ids(api_client, 'data_curator:Doe') == {ds_baker_curator.identifier}
+    # data_curator:Smith matches the smith dandiset
+    assert _search_ids(api_client, 'data_curator:Smith') == {ds_smith_curator.identifier}
+    # funder:"National Institutes" only the one with NIH funder
+    assert _search_ids(api_client, 'funder:"National Institutes"') == {ds_baker_curator.identifier}
+
+    # Case-insensitive on both name and role
+    assert _search_ids(api_client, 'AUTHOR:baker') == {
+        ds_baker_curator.identifier,
+        ds_baker_author_only.identifier,
+    }
+
+    # Identifier lookup: full ORCID for Person, full ROR URL for Org, AND
+    # bare-id substring forms (`01cwqze88` matches the ROR URL via icontains).
+    assert _search_ids(api_client, 'contributor:0000-0002-2990-9889') == {
+        ds_baker_curator.identifier
+    }
+    assert _search_ids(api_client, 'contributor:"https://ror.org/01cwqze88"') == {
+        ds_baker_curator.identifier
+    }
+    assert _search_ids(api_client, 'contributor:01cwqze88') == {ds_baker_curator.identifier}
+    # Identifier lookup composes with role: a role-specific operator with an
+    # ORCID also requires the matched contributor to hold that role.
+    assert _search_ids(api_client, 'data_curator:0000-0002-2990-9889') == {
+        ds_baker_curator.identifier
+    }
+    # Wrong role for that ORCID → 0 (Doe @ ds_baker_curator IS a curator,
+    # but Doe @ ds_baker_author_only has a different ORCID).
+    assert _search_ids(api_client, 'data_curator:0000-0001-2222-3333') == set()
+
+    # Independent-operator AND across DIFFERENT contributor elements:
+    # `author:Doe funder:"National Institutes"` matches the dandiset where
+    # one contributor element is Doe-as-Author AND a different contributor
+    # element is NIH-as-Funder. (This is the Option D semantic the user
+    # specifically wanted — with same-element semantics the query would
+    # require Doe to himself be a Funder, which is wrong.)
+    assert _search_ids(api_client, 'author:Doe funder:"National Institutes"') == {
+        ds_baker_curator.identifier
+    }
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_contributor_role_substring_match(api_client):
+    """Role substring matches the dcite:-prefixed stored value.
+
+    `data_curator:` should match the stored value `dcite:DataCurator` via
+    case-insensitive substring on `roleName` — users don't have to type
+    the `dcite:` prefix.
+    """
+    ds = _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Curator, Connie',
+                'roleName': ['dcite:DataCurator'],  # stored with dcite: prefix
+                'schemaKey': 'Person',
+            },
+        ],
+    )
+
+    # The operator name maps to the substring "DataCurator" (without the
+    # "dcite:" prefix) and matches the stored "dcite:DataCurator" via
+    # case-insensitive regex inside the jsonpath.
+    assert _search_ids(api_client, 'data_curator:Curator') == {ds.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_unknown_role_operator_returns_400_with_suggestion(api_client):
+    response = api_client.get(
+        '/api/dandisets/',
+        {'draft': 'true', 'empty': 'true', 'search': 'data_curatr:Doe'},
+    )
+    assert response.status_code == 400
+    assert 'data_curator' in response.json()['search']

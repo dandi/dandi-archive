@@ -20,18 +20,52 @@ import re
 
 OPERATOR_KEYS: frozenset[str] = frozenset(
     {
+        # Date-range
         'created_before',
         'created_after',
         'modified_before',
         'modified_after',
         'published_before',
         'published_after',
+        # Asset metadata
         'species',
         'approach',
         'technique',
         'standard',
         'file_type',
+        # Permissions
         'owner',
+        # Contributor (catch-all + one operator per dandi-schema RoleType,
+        # snake_cased and stripped of the "dcite:" prefix)
+        'contributor',
+        'author',
+        'conceptualization',
+        'contact_person',
+        'data_collector',
+        'data_curator',
+        'data_manager',
+        'formal_analysis',
+        'funding_acquisition',
+        'investigation',
+        'maintainer',
+        'methodology',
+        'producer',
+        'project_leader',
+        'project_manager',
+        'project_member',
+        'project_administration',
+        'researcher',
+        'resources',
+        'software',
+        'supervision',
+        'validation',
+        'visualization',
+        'funder',
+        'sponsor',
+        'study_participant',
+        'affiliation',
+        'ethics_approval',
+        'other',
     }
 )
 

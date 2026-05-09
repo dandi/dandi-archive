@@ -96,6 +96,12 @@ const operatorHelp = [
   { example: 'standard:nwb', description: 'Has assets in a data standard' },
   { example: 'file_type:nwb', description: 'Has assets of a file type (nwb, image, text, video)' },
   { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, username, or email)' },
+  { example: 'contributor:"Doe, Jane"', description: 'Listed as a contributor (any role; matches name, email, ORCID, or ROR ID)' },
+  { example: 'author:Doe', description: 'Listed as an Author (matches name, email, ORCID, or ROR ID)' },
+  { example: 'data_curator:Doe', description: 'Listed as a Data Curator' },
+  { example: 'funder:NIH', description: 'Listed as a Funder' },
+  { example: 'contact_person:Doe', description: 'Listed as the Contact Person' },
+  { example: 'maintainer:Doe', description: 'Listed as a Maintainer (and many more — see API docs)' },
 ];
 
 function updateSearch(search: string) {
