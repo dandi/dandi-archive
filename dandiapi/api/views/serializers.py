@@ -319,7 +319,7 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
             'role-restricting shortcuts that match a contributor by '
             'name/email/identifier AND require that contributor to hold a '
             'specific role: author, contact_person, data_collector, '
-            'data_curator, data_manager, maintainer, project_lead, funder, '
+            'data_curator, data_manager, maintainer, project_leader, funder, '
             'sponsor. '
             'affiliation (matches the nested Person.affiliation[] field by '
             'organization name or ROR identifier — e.g. affiliation:Stanford). '

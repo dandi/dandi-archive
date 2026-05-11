@@ -48,8 +48,7 @@ CONTRIBUTOR_ROLE_OPS: dict[str, str | None] = {
     'data_curator': 'DataCurator',
     'data_manager': 'DataManager',
     'maintainer': 'Maintainer',
-    # Operator name intentionally shorter than the schema name (`ProjectLeader`).
-    'project_lead': 'ProjectLeader',
+    'project_leader': 'ProjectLeader',
     'funder': 'Funder',
     'sponsor': 'Sponsor',
     # The other RoleType values exist on `dandischema` but aren't exposed as

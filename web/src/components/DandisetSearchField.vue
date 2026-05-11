@@ -101,7 +101,8 @@ const operatorHelp = [
   { example: 'data_curator:Doe', description: 'Listed as a Data Curator' },
   { example: 'funder:NIH', description: 'Listed as a Funder' },
   { example: 'contact_person:Doe', description: 'Listed as the Contact Person' },
-  { example: 'maintainer:Doe', description: 'Listed as a Maintainer (and many more — see API docs)' },
+  { example: 'maintainer:Doe', description: 'Listed as a Maintainer' },
+  { example: 'project_leader:Doe', description: 'Listed as the Project Leader (also: data_collector, data_manager, sponsor)' },
   { example: 'affiliation:Stanford', description: 'Has a contributor affiliated with the named organization (or ROR ID)' },
 ];
 
