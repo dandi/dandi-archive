@@ -80,7 +80,11 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         if asset_id is None:
             return
 
-        asset = get_object_or_404(Asset.objects.select_related('blob', 'zarr'), asset_id=asset_id)
+        asset = get_object_or_404(
+            # Filter out assets that don't have any versions (orphaned assets)
+            Asset.objects.filter(versions__isnull=False).select_related('blob', 'zarr'),
+            asset_id=asset_id,
+        )
         if not asset.is_embargoed:
             return
 
