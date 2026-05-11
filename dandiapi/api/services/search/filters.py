@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-import json
 import re
 from typing import TYPE_CHECKING
 
@@ -14,7 +13,6 @@ from django.db.models.functions import Concat
 from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
 from dandiapi.api.services.search.operators import (
-    AFFILIATION_JSONPATH,
     AFFILIATION_OPS,
     ASSET_NAME_PATH_OPS,
     ASSET_OPS,
@@ -93,27 +91,54 @@ def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Da
     return queryset.filter(pk__in=owned_pks)
 
 
-def _contributor_role_jsonpath(value: str, role: str | None) -> tuple[str, dict[str, str]]:
-    """Jsonpath + vars for a contributor[] predicate (optional role constraint)."""
-    name_or_email_or_id = (
-        '@.name like_regex $val flag "i" '
-        ' || @.email like_regex $val flag "i" '
-        ' || @.identifier like_regex $val flag "i"'
+# Postgres jsonpath quirk: `like_regex` requires its pattern to be a STRING
+# LITERAL inside the jsonpath text — not a `$variable`. So we can't use the
+# `vars` arg of `jsonb_path_exists` for the regex pattern; we have to build
+# the jsonpath at SQL execution time by concatenating `to_jsonb(?::text)::text`
+# (a properly-quoted JSON string literal) into the path. The user value is
+# still bound as a parameter — never inlined into the SQL — so the value
+# remains SQL-injection-safe. `re.escape` neutralizes regex metachars.
+_LIKE_REGEX_PATTERN = ' like_regex \' || to_jsonb(%s::text)::text || \' flag "i"'
+
+
+def _contributor_where(value: str, role: str | None) -> tuple[str, list[str]]:
+    """Build a `jsonb_path_exists(metadata, ...)` where clause for a contributor[] predicate.
+
+    Matches a `contributor[]` element whose `name`, `email`, OR `identifier`
+    contains `value` (case-insensitive). If `role` is given, additionally
+    requires that element's `roleName` array to contain a string matching
+    `role` (also case-insensitive substring).
+    """
+    val_clause = (
+        f'@.name{_LIKE_REGEX_PATTERN}'
+        f' || @.email{_LIKE_REGEX_PATTERN}'
+        f' || @.identifier{_LIKE_REGEX_PATTERN}'
     )
+    params = [re.escape(value)] * 3
     if role is None:
-        return f'$.contributor[*] ? ({name_or_email_or_id})', {'val': re.escape(value)}
-    return (
-        '$.contributor[*] ? '
-        f'(({name_or_email_or_id}) '
-        '  && exists(@.roleName[*] ? (@ like_regex $role flag "i")))',
-        {'val': re.escape(value), 'role': re.escape(role)},
+        jsonpath_expr = f"'$.contributor[*] ? ({val_clause})'"
+    else:
+        jsonpath_expr = (
+            f"'$.contributor[*] ? (({val_clause})"
+            f" && exists(@.roleName[*] ? (@{_LIKE_REGEX_PATTERN})))'"
+        )
+        params.append(re.escape(role))
+    where = f'jsonb_path_exists(metadata, ({jsonpath_expr})::jsonpath)'
+    return where, params
+
+
+def _affiliation_where(value: str) -> tuple[str, list[str]]:
+    """Build a `jsonb_path_exists(metadata, ...)` where clause for the affiliation predicate.
+
+    Affiliations live at `contributor[].affiliation[]`, each with a `name` and
+    optionally an `identifier` (ROR URL). Matches case-insensitive substring
+    on either.
+    """
+    clause = f'@.name{_LIKE_REGEX_PATTERN} || @.identifier{_LIKE_REGEX_PATTERN}'
+    where = (
+        f"jsonb_path_exists(metadata, ('$.contributor[*].affiliation[*] ? ({clause})')::jsonpath)"
     )
-
-
-def _build_jsonpath_where(jsonpath: str, vars_obj: dict[str, str]) -> tuple[str, list[str]]:
-    """Wrap a jsonpath + vars into a `jsonb_path_exists(metadata, ...)` predicate."""
-    where = f"jsonb_path_exists(metadata, '{jsonpath}'::jsonpath, %s::jsonb)"
-    return where, [json.dumps(vars_obj)]
+    return where, [re.escape(value)] * 2
 
 
 def _apply_contributor_filters(
@@ -223,12 +248,9 @@ def apply_search_filters(  # noqa: C901  (one branch per operator category — s
         elif key in OWNER_OPS:
             queryset = _apply_owner_filter(queryset, value)
         elif key in CONTRIBUTOR_ROLE_OPS:
-            jsonpath, vars_obj = _contributor_role_jsonpath(value, CONTRIBUTOR_ROLE_OPS[key])
-            contributor_wheres.append(_build_jsonpath_where(jsonpath, vars_obj))
+            contributor_wheres.append(_contributor_where(value, CONTRIBUTOR_ROLE_OPS[key]))
         elif key in AFFILIATION_OPS:
-            contributor_wheres.append(
-                _build_jsonpath_where(AFFILIATION_JSONPATH, {'val': re.escape(value)})
-            )
+            contributor_wheres.append(_affiliation_where(value))
 
     if contributor_wheres:
         queryset = _apply_contributor_filters(queryset, contributor_wheres)

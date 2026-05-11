@@ -68,14 +68,6 @@ ASSET_NAME_PATH_OPS = {
     'standard': '$.dataStandard[*].name',
 }
 
-# Affiliation jsonpath: nested under each contributor[].affiliation[],
-# matched on the affiliation's own `name` or `identifier` (ROR URL).
-AFFILIATION_JSONPATH = (
-    '$.contributor[*].affiliation[*] ? '
-    '(@.name like_regex $val flag "i" '
-    ' || @.identifier like_regex $val flag "i")'
-)
-
 # Union of every operator key. The parser uses this for its allowlist;
 # adding a new operator anywhere above is automatically known to the parser.
 OPERATOR_KEYS: frozenset[str] = (
