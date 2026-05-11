@@ -99,6 +99,7 @@ const neurosiftURL = computed(() => {
   const metadata = currentDandiset.value.metadata;
   const dandisetId = currentDandiset.value.dandiset.identifier;
   const dandisetVersion = metadata.version;
+  // TODO: BRANDING - hardcoded sandbox URL for staging detection
   const stagingParam = metadata.url!.startsWith('https://sandbox.dandiarchive.org/') ? '&staging=1' : '';
 
   return `https://neurosift.app/dandiset/${dandisetId}?dandisetVersion=${dandisetVersion}${stagingParam}`;
@@ -111,6 +112,7 @@ const aiEditorURL = computed(() => {
 
   const dandisetId = currentDandiset.value.dandiset.identifier;
   const baseApiUrl = import.meta.env.VITE_APP_DANDI_API_ROOT;
+  // TODO: BRANDING - hardcoded AI metadata editor URL
   return `https://medit.dandiarchive.org/?dandiset=${dandisetId}&instance=${baseApiUrl}`;
 });
 

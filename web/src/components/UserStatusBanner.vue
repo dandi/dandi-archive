@@ -28,6 +28,7 @@ interface StatusBanner {
 
 const bannerInfo = computed<StatusBanner | null>(() => {
   switch (user.value?.status) {
+    // TODO: BRANDING START - hardcoded archive name and support email
     case 'PENDING':
       return {
         text: 'Your DANDI account is currently pending approval. Please allow up to 2 business days for approval and contact the DANDI admins at help@dandiarchive.org if you have any questions.',
@@ -40,6 +41,7 @@ const bannerInfo = computed<StatusBanner | null>(() => {
         icon: 'mdi-close-octagon',
         color: 'error',
       };
+    // TODO: BRANDING END
     default:
       return null;
   }

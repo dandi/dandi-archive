@@ -4,6 +4,7 @@
       <CookieBanner />
       <v-row>
         <v-col offset="2">
+          <!-- TODO: BRANDING - hardcoded copyright year, team name -->
           &copy; 2019 - {{ currentYear }} The DANDI Team<br>
           <a
             target="_blank"
@@ -19,11 +20,13 @@
           >Policies</a>
           <v-icon size="x-small">
             mdi-open-in-new
+          <!-- TODO: BRANDING START - hardcoded GitHub repo URL -->
           </v-icon> / <a
             target="_blank"
             rel="noopener"
             href="https://github.com/dandi/dandi-archive/blob/master/CODE_OF_CONDUCT.md"
           >Code of Conduct</a>
+          <!-- TODO: BRANDING END -->
           <v-icon size="x-small">
             mdi-open-in-new
           </v-icon>
@@ -36,6 +39,7 @@
             rel="noopener"
           >{{ version }}</a>
         </v-col>
+        <!-- TODO: BRANDING START - hardcoded funding sources and sponsor URLs -->
         <v-col>
           Funding / In-Kind Support:<br>
           - <a
@@ -72,6 +76,8 @@
             mdi-open-in-new
           </v-icon>
         </v-col>
+        <!-- TODO: BRANDING END -->
+        <!-- TODO: BRANDING START - hardcoded support email and helpdesk URL -->
         <v-col>
           Support:<br>
           - <a
@@ -92,6 +98,7 @@
             mdi-open-in-new
           </v-icon>
         </v-col>
+        <!-- TODO: BRANDING END -->
       </v-row>
     </v-container>
   </v-footer>
@@ -102,6 +109,7 @@ import CookieBanner from './CookieBanner.vue';
 import { dandiDocumentationUrl } from '@/utils/constants';
 
 const version = import.meta.env.VITE_APP_VERSION;
+// TODO: BRANDING - hardcoded GitHub repo URL
 const githubLink = import.meta.env.VITE_APP_GIT_REVISION ? `https://github.com/dandi/dandi-archive/commit/${import.meta.env.VITE_APP_GIT_REVISION}` : 'https://github.com/dandi/dandi-archive';
 const currentYear = new Date().getFullYear();
 </script>

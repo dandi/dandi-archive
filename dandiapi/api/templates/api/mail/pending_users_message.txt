@@ -1,3 +1,4 @@
+{# TODO: BRANDING(name) - hardcoded archive name #}
 {% autoescape off %}
 The following new DANDI users are awaiting approval:
 

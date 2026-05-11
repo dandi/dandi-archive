@@ -1,3 +1,4 @@
+{# TODO: BRANDING(name) - hardcoded archive name #}
 {% autoescape off %}
 A new user ({{ username }}) has signed up for DANDI.
 

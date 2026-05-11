@@ -1,3 +1,4 @@
+{# TODO: BRANDING - hardcoded archive name, docs URLs, YouTube URL, team name #}
 {% autoescape off %}
 Dear {{ greeting_name }},
 
