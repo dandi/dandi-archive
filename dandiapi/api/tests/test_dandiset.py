@@ -2197,11 +2197,11 @@ def test_advanced_search_contributor_and_role_operators(api_client):
     """
     # Three dandisets with overlapping names but different role assignments.
     # Realistic identifiers: ORCID for Persons, ROR URL for Organizations.
-    ds_baker_curator = _seed_dandiset_with_contributors(
+    ds_doe_curator = _seed_dandiset_with_contributors(
         contributors=[
             {
                 'name': 'Doe, Jane',
-                'email': 'jane.doe.com',
+                'email': 'jane.doe@example.com',
                 'identifier': '0000-0002-2990-9889',
                 'roleName': ['dcite:DataCurator', 'dcite:Author'],
                 'schemaKey': 'Person',
@@ -2214,7 +2214,7 @@ def test_advanced_search_contributor_and_role_operators(api_client):
             },
         ],
     )
-    ds_baker_author_only = _seed_dandiset_with_contributors(
+    ds_doe_author_only = _seed_dandiset_with_contributors(
         contributors=[
             {
                 'name': 'Doe, Jane',
@@ -2236,50 +2236,52 @@ def test_advanced_search_contributor_and_role_operators(api_client):
 
     # `contributor:` (catch-all) — any role
     assert _search_ids(api_client, 'contributor:Doe') == {
-        ds_baker_curator.identifier,
-        ds_baker_author_only.identifier,
+        ds_doe_curator.identifier,
+        ds_doe_author_only.identifier,
     }
     assert _search_ids(api_client, 'contributor:NIH') == set()  # full org name only
     assert _search_ids(api_client, 'contributor:"National Institutes"') == {
-        ds_baker_curator.identifier
+        ds_doe_curator.identifier
     }
     # Email lookup also works via the catch-all.
-    assert _search_ids(api_client, 'contributor:jane.doe.com') == {ds_baker_curator.identifier}
+    assert _search_ids(api_client, 'contributor:jane.doe@example.com') == {
+        ds_doe_curator.identifier
+    }
 
     # role-specific: author:Doe matches the two dandisets where Doe has Author role
     assert _search_ids(api_client, 'author:Doe') == {
-        ds_baker_curator.identifier,
-        ds_baker_author_only.identifier,
+        ds_doe_curator.identifier,
+        ds_doe_author_only.identifier,
     }
     # data_curator:Doe matches only the dandiset where Doe is also a curator
-    assert _search_ids(api_client, 'data_curator:Doe') == {ds_baker_curator.identifier}
+    assert _search_ids(api_client, 'data_curator:Doe') == {ds_doe_curator.identifier}
     # data_curator:Smith matches the smith dandiset
     assert _search_ids(api_client, 'data_curator:Smith') == {ds_smith_curator.identifier}
     # funder:"National Institutes" only the one with NIH funder
-    assert _search_ids(api_client, 'funder:"National Institutes"') == {ds_baker_curator.identifier}
+    assert _search_ids(api_client, 'funder:"National Institutes"') == {ds_doe_curator.identifier}
 
     # Case-insensitive on both name and role
-    assert _search_ids(api_client, 'AUTHOR:baker') == {
-        ds_baker_curator.identifier,
-        ds_baker_author_only.identifier,
+    assert _search_ids(api_client, 'AUTHOR:doe') == {
+        ds_doe_curator.identifier,
+        ds_doe_author_only.identifier,
     }
 
     # Identifier lookup: full ORCID for Person, full ROR URL for Org, AND
     # bare-id substring forms (`01cwqze88` matches the ROR URL via icontains).
     assert _search_ids(api_client, 'contributor:0000-0002-2990-9889') == {
-        ds_baker_curator.identifier
+        ds_doe_curator.identifier
     }
     assert _search_ids(api_client, 'contributor:"https://ror.org/01cwqze88"') == {
-        ds_baker_curator.identifier
+        ds_doe_curator.identifier
     }
-    assert _search_ids(api_client, 'contributor:01cwqze88') == {ds_baker_curator.identifier}
+    assert _search_ids(api_client, 'contributor:01cwqze88') == {ds_doe_curator.identifier}
     # Identifier lookup composes with role: a role-specific operator with an
     # ORCID also requires the matched contributor to hold that role.
     assert _search_ids(api_client, 'data_curator:0000-0002-2990-9889') == {
-        ds_baker_curator.identifier
+        ds_doe_curator.identifier
     }
-    # Wrong role for that ORCID → 0 (Doe @ ds_baker_curator IS a curator,
-    # but Doe @ ds_baker_author_only has a different ORCID).
+    # Wrong role for that ORCID → 0 (Doe @ ds_doe_curator IS a curator,
+    # but Doe @ ds_doe_author_only has a different ORCID).
     assert _search_ids(api_client, 'data_curator:0000-0001-2222-3333') == set()
 
     # Independent-operator AND across DIFFERENT contributor elements:
@@ -2289,7 +2291,7 @@ def test_advanced_search_contributor_and_role_operators(api_client):
     # specifically wanted — with same-element semantics the query would
     # require Doe to himself be a Funder, which is wrong.)
     assert _search_ids(api_client, 'author:Doe funder:"National Institutes"') == {
-        ds_baker_curator.identifier
+        ds_doe_curator.identifier
     }
 
 
