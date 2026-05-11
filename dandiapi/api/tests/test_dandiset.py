@@ -2268,9 +2268,7 @@ def test_advanced_search_contributor_and_role_operators(api_client):
 
     # Identifier lookup: full ORCID for Person, full ROR URL for Org, AND
     # bare-id substring forms (`01cwqze88` matches the ROR URL via icontains).
-    assert _search_ids(api_client, 'contributor:0000-0002-2990-9889') == {
-        ds_doe_curator.identifier
-    }
+    assert _search_ids(api_client, 'contributor:0000-0002-2990-9889') == {ds_doe_curator.identifier}
     assert _search_ids(api_client, 'contributor:"https://ror.org/01cwqze88"') == {
         ds_doe_curator.identifier
     }
