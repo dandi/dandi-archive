@@ -13,6 +13,16 @@ from django.db.models.functions import Concat
 
 from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
+from dandiapi.api.services.search.operators import (
+    AFFILIATION_JSONPATH,
+    AFFILIATION_OPS,
+    ASSET_NAME_PATH_OPS,
+    ASSET_OPS,
+    CONTRIBUTOR_ROLE_OPS,
+    DATE_OPS,
+    FILE_TYPE_ALIASES,
+    OWNER_OPS,
+)
 from dandiapi.api.services.search.parser import SearchSyntaxError
 from dandiapi.search.models import AssetSearch
 
@@ -22,79 +32,6 @@ if TYPE_CHECKING:
 
     from dandiapi.api.models import Dandiset
     from dandiapi.api.services.search.parser import ParsedSearch
-
-# Aliases for the file-type operator: short name → MIME prefix matched with
-# istartswith. Keep in sync with DandisetSearchQueryParameterSerializer.
-_FILE_TYPE_ALIASES = {
-    'nwb': 'application/x-nwb',
-    'image': 'image/',
-    'text': 'text/',
-    'video': 'video/',
-}
-
-_DATE_OPS = frozenset(
-    {
-        'created_before',
-        'created_after',
-        'modified_before',
-        'modified_after',
-        'published_before',
-        'published_after',
-    }
-)
-_ASSET_OPS = frozenset({'species', 'approach', 'technique', 'standard', 'file_type'})
-_OWNER_OPS = frozenset({'owner'})
-
-# Contributor / per-role operators. The catch-all `contributor:` matches any
-# role; each named operator additionally requires the matched contributor's
-# `roleName` array to contain the corresponding `dcite:Role` value. Keys MUST
-# be in OPERATOR_KEYS (parser allowlist) — keep the two in sync.
-#
-# Independent-operator semantics: each operator constrains a single
-# `contributor[]` element, but two operators (e.g. `author:Baker funder:NIH`)
-# are AND'd against the same Version's metadata — they may match the same OR
-# different contributor elements. Same composability as the asset operators.
-_CONTRIBUTOR_ROLE_OPS: dict[str, str | None] = {
-    'contributor': None,  # catch-all, no role constraint
-    'author': 'Author',
-    'conceptualization': 'Conceptualization',
-    'contact_person': 'ContactPerson',
-    'data_collector': 'DataCollector',
-    'data_curator': 'DataCurator',
-    'data_manager': 'DataManager',
-    'formal_analysis': 'FormalAnalysis',
-    'funding_acquisition': 'FundingAcquisition',
-    'investigation': 'Investigation',
-    'maintainer': 'Maintainer',
-    'methodology': 'Methodology',
-    'producer': 'Producer',
-    'project_leader': 'ProjectLeader',
-    'project_manager': 'ProjectManager',
-    'project_member': 'ProjectMember',
-    'project_administration': 'ProjectAdministration',
-    'researcher': 'Researcher',
-    'resources': 'Resources',
-    'software': 'Software',
-    'supervision': 'Supervision',
-    'validation': 'Validation',
-    'visualization': 'Visualization',
-    'funder': 'Funder',
-    'sponsor': 'Sponsor',
-    'study_participant': 'StudyParticipant',
-    # Note: `affiliation` is intentionally NOT here. Despite `dcite:Affiliation`
-    # existing as a RoleType, in real DANDI data affiliations live in a
-    # separate nested field — `Person.affiliation[]` — not as a contributor's
-    # role. The `affiliation:` operator queries that nested path; see
-    # `_AFFILIATION_JSONPATH` below.
-}
-
-# Affiliation has its own jsonpath because it lives at
-# `contributor[].affiliation[]`, not `contributor[].roleName[]`.
-_AFFILIATION_JSONPATH = (
-    '$.contributor[*].affiliation[*] ? '
-    '(@.name like_regex $val flag "i" '
-    ' || @.identifier like_regex $val flag "i")'
-)
 
 
 def _annotate_latest_version_modified(queryset):
@@ -115,29 +52,8 @@ def _annotate_latest_published_created(queryset):
     )
 
 
-# Each entry maps an operator to a Postgres jsonpath that selects the names
-# we want to match against. `[*]` wildcards mean we match if ANY element of
-# the array satisfies the predicate — important for assets that list
-# multiple species, approaches, etc. Paths MUST be trusted constants:
-# they're interpolated into the SQL.
-_NAME_PATH_OPS = {
-    'species': '$.wasAttributedTo[*].species.name',
-    'approach': '$.approach[*].name',
-    'technique': '$.measurementTechnique[*].name',
-    'standard': '$.dataStandard[*].name',
-}
-
-
 def _jsonpath_name_match(path: str, value: str) -> tuple[str, list[str]]:
-    """Build a parameterized Postgres `jsonb_path_exists` predicate.
-
-    Matches `value` case-insensitively as a substring against any node
-    selected by `path`. `path` MUST come from a trusted allowlist; `value`
-    is parameterized and regex-escaped.
-    """
-    # No table prefix on `asset_metadata`: Django may alias the AssetSearch
-    # table (e.g. inside a subquery), and qualifying the column would break
-    # those queries. The unqualified column is unambiguous in our usage.
+    """Asset-metadata jsonpath substring predicate; `path` must be trusted."""
     where = (
         'jsonb_path_exists(asset_metadata, '
         f"('{path} ? (@ like_regex ' "
@@ -149,25 +65,17 @@ def _jsonpath_name_match(path: str, value: str) -> tuple[str, list[str]]:
 
 def _apply_asset_filter(queryset, operator: str, value: str):
     """Apply one parsed asset operator to an AssetSearch queryset."""
-    if operator in _NAME_PATH_OPS:
-        where, params = _jsonpath_name_match(_NAME_PATH_OPS[operator], value)
-        # `where` interpolates only an allowlisted jsonpath; the user value
-        # is bound via params (and re-escaped against regex injection).
+    if operator in ASSET_NAME_PATH_OPS:
+        where, params = _jsonpath_name_match(ASSET_NAME_PATH_OPS[operator], value)
         return queryset.extra(where=[where], params=params)  # noqa: S610
     if operator == 'file_type':
-        mime_prefix = _FILE_TYPE_ALIASES.get(value.lower(), value)
+        mime_prefix = FILE_TYPE_ALIASES.get(value.lower(), value)
         return queryset.filter(asset_metadata__encodingFormat__istartswith=mime_prefix)
     raise ValueError(f'unknown asset operator: {operator}')  # pragma: no cover
 
 
 def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Dandiset]:
-    """Filter dandisets to those owned by the given user identifier.
-
-    `value` is matched case-insensitively against `User.username`, `User.email`,
-    `User.first_name`, `User.last_name`, or `"first_name last_name"` (so the
-    display name shown in the UI works). Multiple users may match; we union
-    dandisets owned by any of them. Unknown user → empty result.
-    """
+    """Filter dandisets to those owned by users matching `value` (icontains)."""
     matched_user_pks = (
         User.objects.annotate(_full_name=Concat('first_name', Value(' '), 'last_name'))
         .filter(
@@ -186,17 +94,7 @@ def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Da
 
 
 def _contributor_role_jsonpath(value: str, role: str | None) -> tuple[str, dict[str, str]]:
-    """Jsonpath + vars for a contributor[] element predicate.
-
-    Matches a `contributor[]` element whose `name`, `email`, OR `identifier`
-    contains `value` (case-insensitive). The identifier covers ORCIDs for
-    Person contributors (e.g. `0000-0002-2990-9889`) and ROR URLs for
-    Organization contributors (e.g. `https://ror.org/01cwqze88`); the
-    substring match means bare-ID forms like `01cwqze88` work too.
-
-    If `role` is given, additionally requires that element's `roleName` array
-    to contain a string matching `role` (also case-insensitive substring).
-    """
+    """Jsonpath + vars for a contributor[] predicate (optional role constraint)."""
     name_or_email_or_id = (
         '@.name like_regex $val flag "i" '
         ' || @.email like_regex $val flag "i" '
@@ -213,12 +111,7 @@ def _contributor_role_jsonpath(value: str, role: str | None) -> tuple[str, dict[
 
 
 def _build_jsonpath_where(jsonpath: str, vars_obj: dict[str, str]) -> tuple[str, list[str]]:
-    """Wrap a jsonpath + vars into a `jsonb_path_exists(metadata, ...)` predicate.
-
-    Uses the third argument of `jsonb_path_exists` to bind named variables
-    so user values are properly quoted by Postgres rather than concatenated
-    into the path string.
-    """
+    """Wrap a jsonpath + vars into a `jsonb_path_exists(metadata, ...)` predicate."""
     where = f"jsonb_path_exists(metadata, '{jsonpath}'::jsonpath, %s::jsonb)"
     return where, [json.dumps(vars_obj)]
 
@@ -312,7 +205,7 @@ def apply_search_filters(  # noqa: C901  (one branch per operator category — s
         if not value:
             raise SearchSyntaxError(f'Operator "{key}" requires a value (e.g. {key}:something).')
 
-        if key in _DATE_OPS:
+        if key in DATE_OPS:
             try:
                 ts = datetime.strptime(value, '%Y-%m-%d').replace(tzinfo=UTC)
             except ValueError as exc:
@@ -320,18 +213,18 @@ def apply_search_filters(  # noqa: C901  (one branch per operator category — s
                     f'Invalid date for "{key}": {value!r}. Use YYYY-MM-DD.'
                 ) from exc
             queryset = _apply_date_filter(queryset, key, ts, annotated)
-        elif key in _ASSET_OPS:
+        elif key in ASSET_OPS:
             if asset_qs is None:
                 asset_qs = AssetSearch.objects.visible_to(user)
             asset_qs = _apply_asset_filter(asset_qs, key, value)
-        elif key in _OWNER_OPS:
+        elif key in OWNER_OPS:
             queryset = _apply_owner_filter(queryset, value)
-        elif key in _CONTRIBUTOR_ROLE_OPS:
-            jsonpath, vars_obj = _contributor_role_jsonpath(value, _CONTRIBUTOR_ROLE_OPS[key])
+        elif key in CONTRIBUTOR_ROLE_OPS:
+            jsonpath, vars_obj = _contributor_role_jsonpath(value, CONTRIBUTOR_ROLE_OPS[key])
             contributor_wheres.append(_build_jsonpath_where(jsonpath, vars_obj))
-        elif key == 'affiliation':
+        elif key in AFFILIATION_OPS:
             contributor_wheres.append(
-                _build_jsonpath_where(_AFFILIATION_JSONPATH, {'val': re.escape(value)})
+                _build_jsonpath_where(AFFILIATION_JSONPATH, {'val': re.escape(value)})
             )
 
     if contributor_wheres:

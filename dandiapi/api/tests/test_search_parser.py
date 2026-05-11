@@ -98,3 +98,25 @@ def test_parse_search(query, expected_free_text, expected_operators):
 def test_parse_search_raises_on_invalid_query(query, expected_message_fragment):
     with pytest.raises(SearchSyntaxError, match=expected_message_fragment):
         parse_search(query)
+
+
+def test_contributor_role_ops_match_actual_dandischema_roletype():
+    """Guard against schema drift.
+
+    Every non-catch-all `CONTRIBUTOR_ROLE_OPS` value must match a real
+    `dandischema.RoleType` member name. Renames or removals on the schema
+    side trip this test, forcing an explicit decision here instead of
+    silently changing user-facing search syntax.
+    """
+    from dandischema.models import RoleType
+
+    from dandiapi.api.services.search.operators import CONTRIBUTOR_ROLE_OPS
+
+    role_names = {r.name for r in RoleType}
+    for op_name, role_name in CONTRIBUTOR_ROLE_OPS.items():
+        if role_name is None:
+            continue
+        assert role_name in role_names, (
+            f'CONTRIBUTOR_ROLE_OPS[{op_name!r}] = {role_name!r} is not a valid '
+            'dandischema.RoleType member name'
+        )
