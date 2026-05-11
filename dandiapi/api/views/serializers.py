@@ -169,6 +169,10 @@ class VersionMetadataSerializer(serializers.ModelSerializer):
         return super().validate(data)
 
 
+class PublishVersionSerializer(serializers.Serializer):
+    release_notes = serializers.CharField(required=False, allow_blank=True, max_length=5000)
+
+
 class VersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Version
@@ -182,6 +186,7 @@ class VersionSerializer(serializers.ModelSerializer):
             'created',
             'modified',
             'dandiset',
+            'release_notes',
         ]
         read_only_fields = ['created']
 
