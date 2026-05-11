@@ -210,10 +210,12 @@ def apply_search_filters(  # noqa: C901  (one branch per operator category — s
 
     summary_clauses: list[tuple[str, str]] = []
     annotated: set[str] = set()
-    # Contributor predicates collected here, then applied in a single batch so
-    # all operators AND on the same Version (avoids cross-version weirdness
-    # when a dandiset has both a draft and a published version with disjoint
-    # contributor lists).
+    # Contributor predicates apply to a single Version's
+    # metadata.contributor[] array, so we accumulate them and AND on the same
+    # Version to avoid cross-version weirdness when a draft and a published
+    # version have disjoint contributor lists. Within that single version
+    # each predicate independently scans `contributor[*]`, so two operators
+    # may match different contributor entries.
     contributor_wheres: list[tuple[str, list[str]]] = []
 
     for op in parsed.operators:
