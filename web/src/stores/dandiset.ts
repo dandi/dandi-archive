@@ -96,6 +96,11 @@ export const useDandisetStore = defineStore('dandiset', {
 
         const data = await dandiRest.specificVersion(identifier, sanitizedVersion);
         this.dandiset = data;
+
+        if (sanitizedVersion === 'draft' && this.dandiset !== null) {
+          const data = await dandiRest.assetValidationErrors(identifier, sanitizedVersion);
+          this.dandiset.asset_validation_errors = data;
+        }
       } catch (err) {
         if (axios.isAxiosError(err) && err.response && err.response.status < 500) {
           this.dandiset = null;
