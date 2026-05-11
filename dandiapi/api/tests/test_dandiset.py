@@ -2003,24 +2003,47 @@ def test_advanced_search_file_type_alias_and_mime(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_repeated_asset_operators_intersect(api_client):
-    # Cross-key semantics: a SINGLE asset must satisfy ALL constraints. So
-    # `species:mouse approach:electrophysiological` requires one asset that
-    # is both attributed to a mouse AND uses an electrophysiological approach.
-    # An asset that has the species but a different approach (and vice versa
-    # for a sibling dandiset) does NOT qualify.
-    mouse_ephys = _seed_dandiset_with_asset(
+def test_advanced_search_asset_operators_combine_at_dandiset_level(api_client):
+    # Multiple asset operators are AND'd at the DANDISET level, not at the
+    # asset level. So `species:mouse approach:electrophysiological` returns
+    # any dandiset that has SOME mouse asset AND SOME ephys asset — they may
+    # be the same asset, but they don't have to be.
+    one_asset_both = _seed_dandiset_with_asset(
         asset_metadata={
             'wasAttributedTo': [{'species': {'name': 'House mouse'}}],
             'approach': [{'name': 'electrophysiological approach'}],
         },
     )
+    # Two distinct assets, each satisfying one of the operators.
+    two_assets_split = DandisetFactory.create()
+    two_assets_split_version = DraftVersionFactory.create(dandiset=two_assets_split)
+    two_assets_split_version.assets.add(
+        DraftAssetFactory.create(
+            metadata={
+                'schemaVersion': DANDI_SCHEMA_VERSION,
+                'schemaKey': 'Asset',
+                'encodingFormat': 'application/x-nwb',
+                'wasAttributedTo': [{'species': {'name': 'House mouse'}}],
+            },
+        ),
+        DraftAssetFactory.create(
+            metadata={
+                'schemaVersion': DANDI_SCHEMA_VERSION,
+                'schemaKey': 'Asset',
+                'encodingFormat': 'application/x-nwb',
+                'approach': [{'name': 'electrophysiological approach'}],
+            },
+        ),
+    )
+    add_version_asset_paths(two_assets_split_version)
+    # Has mouse but no ephys — should NOT match.
     _seed_dandiset_with_asset(
         asset_metadata={
             'wasAttributedTo': [{'species': {'name': 'House mouse'}}],
             'approach': [{'name': 'behavioral approach'}],
         },
     )
+    # Has ephys but no mouse — should NOT match.
     _seed_dandiset_with_asset(
         asset_metadata={
             'wasAttributedTo': [{'species': {'name': 'Norway rat'}}],
@@ -2030,17 +2053,20 @@ def test_advanced_search_repeated_asset_operators_intersect(api_client):
     _refresh_asset_search()
 
     query = 'species:mouse approach:electrophysiological'
-    assert _search_ids(api_client, query) == {mouse_ephys.identifier}
+    assert _search_ids(api_client, query) == {
+        one_asset_both.identifier,
+        two_assets_split.identifier,
+    }
 
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_repeated_same_key_operator_combines_with_and(api_client):
-    # Same-key semantics: `species:mouse species:rat` requires a single
-    # asset whose species set contains BOTH "mouse" and "rat" (matches
-    # GitHub's default for repeated keys). Pinning this so a future change
-    # to OR-within-key is a deliberate decision, not a regression.
-    multi = _seed_dandiset_with_asset(
+def test_advanced_search_repeated_same_key_operator_combines_at_dandiset_level(api_client):
+    # `species:mouse species:rat` returns dandisets that have a mouse asset
+    # AND a rat asset. The two assets can be the same row (multi-species) or
+    # two different rows — what matters is that the dandiset, as a whole,
+    # has both kinds of data represented.
+    multi_species_one_asset = _seed_dandiset_with_asset(
         asset_metadata={
             'wasAttributedTo': [
                 {'species': {'name': 'House mouse'}},
@@ -2048,6 +2074,31 @@ def test_advanced_search_repeated_same_key_operator_combines_with_and(api_client
             ],
         },
     )
+    # Two assets: one mouse, one rat. This is the case that distinguishes the
+    # dandiset-level semantic from a same-asset semantic — it would have been
+    # excluded under the older "single asset matches both" rule.
+    two_assets_mouse_and_rat = DandisetFactory.create()
+    two_assets_mouse_and_rat_version = DraftVersionFactory.create(dandiset=two_assets_mouse_and_rat)
+    two_assets_mouse_and_rat_version.assets.add(
+        DraftAssetFactory.create(
+            metadata={
+                'schemaVersion': DANDI_SCHEMA_VERSION,
+                'schemaKey': 'Asset',
+                'encodingFormat': 'application/x-nwb',
+                'wasAttributedTo': [{'species': {'name': 'House mouse'}}],
+            },
+        ),
+        DraftAssetFactory.create(
+            metadata={
+                'schemaVersion': DANDI_SCHEMA_VERSION,
+                'schemaKey': 'Asset',
+                'encodingFormat': 'application/x-nwb',
+                'wasAttributedTo': [{'species': {'name': 'Norway rat'}}],
+            },
+        ),
+    )
+    add_version_asset_paths(two_assets_mouse_and_rat_version)
+    # Only mouse, only rat — neither should match the combined query.
     _seed_dandiset_with_asset(
         asset_metadata={'wasAttributedTo': [{'species': {'name': 'House mouse'}}]},
     )
@@ -2056,7 +2107,10 @@ def test_advanced_search_repeated_same_key_operator_combines_with_and(api_client
     )
     _refresh_asset_search()
 
-    assert _search_ids(api_client, 'species:mouse species:rat') == {multi.identifier}
+    assert _search_ids(api_client, 'species:mouse species:rat') == {
+        multi_species_one_asset.identifier,
+        two_assets_mouse_and_rat.identifier,
+    }
 
 
 @pytest.mark.ai_generated

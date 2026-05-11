@@ -185,18 +185,22 @@ def apply_search_filters(  # noqa: C901  (one branch per operator category — s
     if not parsed.operators:
         return queryset
 
-    # `asset_qs` is built lazily so a query with no asset ops pays nothing.
-    # Note on semantics: chaining `.filter()` AND's the conditions on a SINGLE
-    # AssetSearch row, so e.g. `species:mouse approach:ephys` returns dandisets
-    # with at least one asset that satisfies BOTH (cross-key AND on the same
-    # asset). Repeated keys (`species:mouse species:rat`) likewise require a
-    # single asset to match both substrings — same as GitHub's default.
-    asset_qs = None
+    # Semantics: every operator describes a property of the dandiset, and
+    # multiple operators are AND'd at the dandiset level — NOT at the asset
+    # or version level. So `species:mouse species:rat` returns dandisets that
+    # have at least one mouse asset AND at least one rat asset (possibly the
+    # same asset, possibly different ones). Each asset operator therefore
+    # builds an independent AssetSearch subquery and we filter dandisets to
+    # those whose IDs appear in EVERY such subquery.
+    #
+    # Contributor predicates are different: they apply to a single Version's
+    # metadata.contributor[] array (since contributors live on the version,
+    # not on individual assets), so we accumulate them and AND on the same
+    # Version to avoid cross-version weirdness when a draft and a published
+    # version have disjoint contributor lists. Within that single version
+    # each predicate independently scans `contributor[*]`, so two operators
+    # may match different contributor entries.
     annotated: set[str] = set()
-    # Contributor predicates collected here, then applied in a single batch so
-    # all operators AND on the same Version (avoids cross-version weirdness
-    # when a dandiset has both a draft and a published version with disjoint
-    # contributor lists).
     contributor_wheres: list[tuple[str, list[str]]] = []
 
     for op in parsed.operators:
@@ -214,9 +218,8 @@ def apply_search_filters(  # noqa: C901  (one branch per operator category — s
                 ) from exc
             queryset = _apply_date_filter(queryset, key, ts, annotated)
         elif key in ASSET_OPS:
-            if asset_qs is None:
-                asset_qs = AssetSearch.objects.visible_to(user)
-            asset_qs = _apply_asset_filter(asset_qs, key, value)
+            asset_match = _apply_asset_filter(AssetSearch.objects.visible_to(user), key, value)
+            queryset = queryset.filter(id__in=asset_match.values('dandiset_id'))
         elif key in OWNER_OPS:
             queryset = _apply_owner_filter(queryset, value)
         elif key in CONTRIBUTOR_ROLE_OPS:
@@ -229,16 +232,5 @@ def apply_search_filters(  # noqa: C901  (one branch per operator category — s
 
     if contributor_wheres:
         queryset = _apply_contributor_filters(queryset, contributor_wheres)
-
-    if asset_qs is not None:
-        # NOTE perf: jsonb_path_exists with a runtime-built jsonpath cannot
-        # use the existing per-field GIN indexes; the path-scan operators
-        # (species/approach/technique/standard) currently sequential-scan the
-        # asset_search materialized view. The view is small enough today
-        # (~one row per asset) that this is acceptable, but if it becomes a
-        # hot path the fix is expression GIN indexes on each path or
-        # denormalized text columns + trgm_ops indexes.
-        matching_dandiset_ids = asset_qs.values_list('dandiset_id', flat=True).distinct()
-        queryset = queryset.filter(id__in=matching_dandiset_ids)
 
     return queryset
