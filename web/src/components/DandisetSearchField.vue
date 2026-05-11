@@ -95,7 +95,7 @@ const operatorHelp = [
   { example: 'technique:"patch clamp"', description: 'Has assets using a measurement technique' },
   { example: 'standard:nwb', description: 'Has assets in a data standard' },
   { example: 'file_type:nwb', description: 'Has assets of a file type (nwb, image, text, video)' },
-  { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, username, email; or owner:me)' },
+  { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, username, or email)' },
 ];
 
 function updateSearch(search: string) {

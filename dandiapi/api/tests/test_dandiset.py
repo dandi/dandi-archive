@@ -2154,43 +2154,6 @@ def test_advanced_search_owner_lookup_paths_and_combinations(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_owner_me_magic_and_literal_escape(api_client):
-    """`owner:me` (unquoted) is the magic alias for "the current user".
-
-    Anonymous → 400. To search for a real user named "Me" instead, quote
-    the value (`owner:"me"`) — the quoted form opts out of the magic and
-    falls back to the case-insensitive lookup against username / email /
-    first / last / full name.
-    """
-    alice = UserFactory.create(username='alice')
-    me_user = UserFactory.create(username='me_actual_user', first_name='Me', last_name='Someoneyou')
-    alice_ds = DandisetFactory.create(owners=[alice])
-    me_ds = DandisetFactory.create(owners=[me_user])
-    DraftVersionFactory.create(dandiset=alice_ds)
-    DraftVersionFactory.create(dandiset=me_ds)
-
-    # Anonymous + `owner:me` → 400 with explicit message
-    response = api_client.get(
-        '/api/dandisets/',
-        {'draft': 'true', 'empty': 'true', 'search': 'owner:me'},
-    )
-    assert response.status_code == 400
-    assert 'requires authentication' in response.json()['search']
-
-    # Authenticated + unquoted `owner:me` → only alice's dandisets
-    # (does NOT match the literal user named "Me").
-    api_client.force_authenticate(user=alice)
-    assert _search_ids(api_client, 'owner:me') == {alice_ds.identifier}
-
-    # Authenticated + quoted `owner:"me"` → escapes the magic and matches
-    # the literal user "Me" by first_name (NOT alice).
-    assert _search_ids(api_client, 'owner:"me"') == {me_ds.identifier}
-    # Full display name lookup also works for that user.
-    assert _search_ids(api_client, 'owner:"Me Someoneyou"') == {me_ds.identifier}
-
-
-@pytest.mark.ai_generated
-@pytest.mark.django_db
 def test_advanced_search_owner_does_not_inflate_to_superuser_archive(api_client):
     # Guardian's get_objects_for_user(with_superuser=True) returns ALL objects
     # for superusers — wrong semantics for owner: searches. We pass

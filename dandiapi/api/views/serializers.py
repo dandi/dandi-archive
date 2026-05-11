@@ -313,9 +313,7 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
             'substring against the corresponding asset_metadata array); '
             'file_type (nwb, image, text, video — or any MIME prefix); '
             'owner (case-insensitive match against username, email, first '
-            'name, last name, or "first last"; the magic value "owner:me" '
-            'resolves to the requesting user — quote it as "owner:\\"me\\"" '
-            'to match a literal user named Me instead). '
+            'name, last name, or "first last"). '
             'Invalid syntax returns HTTP 400 with the offending token; '
             'unknown operators get a "Did you mean?" suggestion.'
         ),
