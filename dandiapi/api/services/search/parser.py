@@ -28,12 +28,14 @@ from dandiapi.api.services.search.operators import OPERATOR_KEYS
 #
 # We deliberately match `key:"value"` and `"value"` *before* the bare-token
 # alternative so quoted segments stay together.
+# Operator keys are matched case-insensitively (`AUTHOR:doe` works the same
+# as `author:doe`) — we lowercase the captured key before validation/dispatch.
 _TOKEN_RE = re.compile(
-    r'(?P<op_key>[a-z_]+):"(?P<op_qval>[^"]*)"'
+    r'(?P<op_key>[A-Za-z_]+):"(?P<op_qval>[^"]*)"'
     r'|"(?P<free_quoted>[^"]*)"'
     r'|(?P<bare>\S+)'
 )
-_BARE_OP_RE = re.compile(r'^([a-z_]+):(.+)$')
+_BARE_OP_RE = re.compile(r'^([A-Za-z_]+):(.+)$')
 
 
 # Defense-in-depth: cap search-term length so an unauthenticated caller can't
@@ -92,6 +94,7 @@ def parse_search(query: str) -> ParsedSearch:
 
     for match in _TOKEN_RE.finditer(query):
         if (key := match.group('op_key')) is not None:
+            key = key.lower()
             _validate_operator_key(key)
             parsed.operators.append(Operator(key, match.group('op_qval')))
         elif (free := match.group('free_quoted')) is not None:
@@ -99,7 +102,7 @@ def parse_search(query: str) -> ParsedSearch:
         else:
             bare = match.group('bare')
             if op_match := _BARE_OP_RE.match(bare):
-                key = op_match.group(1)
+                key = op_match.group(1).lower()
                 _validate_operator_key(key)
                 parsed.operators.append(Operator(key, op_match.group(2)))
             else:
