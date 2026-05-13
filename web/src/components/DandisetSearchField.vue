@@ -46,9 +46,7 @@
               mdi-help-circle-outline
             </v-icon>
           </template>
-          <v-card
-            class="pa-3 advanced-search-help"
-          >
+          <v-card class="pa-3 advanced-search-help">
             <div class="text-subtitle-2 mb-2">
               Advanced search operators
             </div>
@@ -77,9 +75,9 @@
     </v-text-field>
     <!--
       Autocomplete dropdown. Anchored to the v-form (the wrapping container)
-      so it spans the full width of the search field. We control visibility
-      manually via `autocompleteOpen` and reposition the highlighted item via
-      `selectedIndex` so arrow keys in the input drive selection.
+      so it spans the full width of the search field; teleported (default
+      v-menu behavior, no `attach`) so it escapes any sibling stacking
+      context like the result-count panel below.
     -->
     <v-menu
       v-model="autocompleteOpen"
@@ -97,18 +95,33 @@
         density="compact"
         class="advanced-search-autocomplete"
       >
+        <!-- Header line indicating which mode the dropdown is in. -->
+        <v-list-subheader v-if="mode.kind === 'value'">
+          values for <code>{{ mode.operator.name }}:</code>
+          <span
+            v-if="speciesLoading"
+            class="text-caption text-grey-darken-1 ml-2"
+          >loading…</span>
+        </v-list-subheader>
         <v-list-item
-          v-for="(op, i) in suggestions"
-          :key="op.name"
+          v-for="(s, i) in suggestions"
+          :key="suggestionKey(s)"
           :active="i === selectedIndex"
-          @mousedown.prevent="insertOperator(op)"
+          @mousedown.prevent="insertSuggestion(s)"
           @mouseenter="selectedIndex = i"
         >
-          <v-list-item-title>
-            <code>{{ op.name }}:</code>
-            <span class="text-grey-darken-1 ml-2 text-caption">{{ op.valueExample }}</span>
-          </v-list-item-title>
-          <v-list-item-subtitle>{{ op.description }}</v-list-item-subtitle>
+          <template v-if="s.kind === 'key'">
+            <v-list-item-title>
+              <code>{{ s.op.name }}:</code>
+              <span class="text-grey-darken-1 ml-2 text-caption">{{ s.op.valueExample }}</span>
+            </v-list-item-title>
+            <v-list-item-subtitle>{{ s.op.description }}</v-list-item-subtitle>
+          </template>
+          <template v-else>
+            <v-list-item-title>
+              <code>{{ s.value }}</code>
+            </v-list-item-title>
+          </template>
         </v-list-item>
       </v-list>
     </v-menu>
@@ -123,10 +136,12 @@ import type { ComponentPublicInstance } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import { useRoute } from 'vue-router';
 import router from '@/router';
+import { client } from '@/rest';
 import {
-  OPERATORS,
-  suggestionsFor,
-  tokenAtCursor,
+  type SearchOperator,
+  keySuggestions,
+  suggestModeAt,
+  valueSuggestions,
 } from '@/components/advancedSearchOperators';
 
 defineProps({
@@ -162,6 +177,10 @@ const operatorHelp = [
 
 // --- Autocomplete state -------------------------------------------------------------
 
+type Suggestion =
+  | { kind: 'key'; op: SearchOperator }
+  | { kind: 'value'; value: string };
+
 const searchInputRef = ref<ComponentPublicInstance | null>(null);
 const formEl = ref<HTMLElement | null>(null);
 const autocompleteOpen = ref(false);
@@ -173,15 +192,80 @@ const cursor = ref(0);
 // (default v-menu behavior, no `attach`) so it escapes any local stacking
 // context — that's how it stays on top of sibling result panels below.
 const dropdownWidth = ref(0);
+// Live species values, fetched from `/search/species` when the cursor is in
+// a `species:` value. Other value-suggesting operators use static lists
+// from the operator catalog.
+const speciesValues = ref<string[]>([]);
+const speciesLoading = ref(false);
+let speciesDebounce: number | null = null;
+let speciesFetchSeq = 0;
 
-// We anchor the dropdown to the <form> wrapping the field so its width
-// matches the field. Capture the form element after mount.
+// Mode is recomputed automatically from the current text + cursor position.
+const mode = computed(() => suggestModeAt(currentSearch.value, cursor.value));
+
+const suggestions = computed<Suggestion[]>(() => {
+  const m = mode.value;
+  if (m.kind === 'key') {
+    return keySuggestions(m.prefix).map((op) => ({ kind: 'key', op }));
+  }
+  if (m.kind === 'value') {
+    if (m.operator.name === 'species') {
+      return speciesValues.value.map((value) => ({ kind: 'value', value }));
+    }
+    return valueSuggestions(m.operator, m.prefix)
+      .map((value) => ({ kind: 'value', value }));
+  }
+  return [];
+});
+
+// Keep selection in range when the suggestion list changes.
+watch(suggestions, (next) => {
+  if (selectedIndex.value >= next.length) {
+    selectedIndex.value = 0;
+  }
+});
+
+// When the user is typing a species value, fetch live matches from the
+// existing /search/species endpoint. Debounced + sequence-checked so a
+// slow earlier response can't overwrite a faster later one.
+watch(mode, (m) => {
+  if (m.kind === 'value' && m.operator.name === 'species') {
+    if (speciesDebounce) {
+      clearTimeout(speciesDebounce);
+    }
+    speciesLoading.value = true;
+    const seq = ++speciesFetchSeq;
+    const prefix = m.prefix;
+    speciesDebounce = window.setTimeout(async () => {
+      try {
+        const r = await client.get('/search/species', { params: { species: prefix } });
+        if (seq === speciesFetchSeq) {
+          // r.data follows DandiPagination — `results` is the value list.
+          speciesValues.value = (r.data?.results ?? []) as string[];
+        }
+      } catch {
+        if (seq === speciesFetchSeq) {
+          speciesValues.value = [];
+        }
+      } finally {
+        if (seq === speciesFetchSeq) {
+          speciesLoading.value = false;
+        }
+      }
+    }, 200);
+  }
+});
+
+function inputElement(): HTMLInputElement | null {
+  const inputComponent = searchInputRef.value;
+  if (!inputComponent) return null;
+  return (inputComponent.$el as HTMLElement | undefined)?.querySelector('input') ?? null;
+}
+
 function captureFormEl() {
   // The v-form root element is the actual DOM <form>; v-text-field exposes
   // its <input> via $el. We want the form for layout, the input for cursor.
-  const inputComponent = searchInputRef.value;
-  if (!inputComponent) return;
-  const inputEl = (inputComponent.$el as HTMLElement | undefined)?.querySelector('input');
+  const inputEl = inputElement();
   if (inputEl?.form) {
     formEl.value = inputEl.form;
     dropdownWidth.value = inputEl.form.clientWidth;
@@ -206,32 +290,15 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', updateDropdownWidth);
 });
 
-function inputElement(): HTMLInputElement | null {
-  const inputComponent = searchInputRef.value;
-  if (!inputComponent) return null;
-  return (inputComponent.$el as HTMLElement | undefined)?.querySelector('input') ?? null;
-}
-
-const suggestions = computed(() => {
-  const token = tokenAtCursor(currentSearch.value, cursor.value);
-  return suggestionsFor(token.text);
-});
-
-// Keep selection in range when the suggestion list changes.
-watch(suggestions, (next) => {
-  if (selectedIndex.value >= next.length) {
-    selectedIndex.value = 0;
-  }
-});
-
 function syncCursorAndSuggest() {
   captureFormEl();
   const el = inputElement();
   if (!el) return;
   cursor.value = el.selectionStart ?? currentSearch.value.length;
-  // Re-evaluate visibility based on whether there are matches at the new
-  // cursor position. Always open while focused if there's at least one.
-  autocompleteOpen.value = suggestions.value.length > 0;
+  // For value mode we always open the dropdown so the user sees the loading
+  // header even if no values have come back yet; for key/none modes only
+  // open when there are actual matches.
+  autocompleteOpen.value = suggestions.value.length > 0 || mode.value.kind === 'value';
 }
 
 function onInput(value: string) {
@@ -260,14 +327,14 @@ function moveSelection(delta: number) {
   selectedIndex.value = (selectedIndex.value + delta + n) % n;
 }
 
-function insertOperator(op: typeof OPERATORS[number]) {
+function suggestionKey(s: Suggestion): string {
+  return s.kind === 'key' ? `key:${s.op.name}` : `value:${s.value}`;
+}
+
+function spliceAndMoveCursor(start: number, end: number, replacement: string) {
   const text = currentSearch.value;
-  const { start, end } = tokenAtCursor(text, cursor.value);
-  const replacement = `${op.name}:`;
   currentSearch.value = text.slice(0, start) + replacement + text.slice(end);
   const newCursor = start + replacement.length;
-  // Focus the input and move the cursor right after the inserted colon so
-  // the user can immediately start typing the value.
   nextTick(() => {
     const el = inputElement();
     if (el) {
@@ -275,8 +342,28 @@ function insertOperator(op: typeof OPERATORS[number]) {
       el.setSelectionRange(newCursor, newCursor);
     }
     cursor.value = newCursor;
-    autocompleteOpen.value = false;
+    selectedIndex.value = 0;
   });
+}
+
+function insertSuggestion(s: Suggestion) {
+  const m = mode.value;
+  if (s.kind === 'key' && m.kind === 'key') {
+    // Insert `name:` at the key position. Cursor lands right after the colon
+    // — if the operator has value suggestions, the dropdown will switch to
+    // value mode on the next sync (the user sees value options immediately).
+    spliceAndMoveCursor(m.replaceStart, m.replaceEnd, `${s.op.name}:`);
+  } else if (s.kind === 'value' && m.kind === 'value') {
+    // Insert the chosen value, preserving the user's `key:` prefix. Quote
+    // multi-word values so the parser sees them as a single token.
+    const value = /\s/.test(s.value) ? `"${s.value}"` : s.value;
+    spliceAndMoveCursor(m.replaceStart, m.replaceEnd, value);
+    // After picking a value, the user is done with this operator — close
+    // the dropdown so a stray Tab doesn't re-complete.
+    nextTick(() => {
+      autocompleteOpen.value = false;
+    });
+  }
 }
 
 function onEnter(evt: KeyboardEvent) {
@@ -288,14 +375,14 @@ function onEnter(evt: KeyboardEvent) {
 }
 
 function onTabComplete(evt: KeyboardEvent) {
-  // Tab also completes the highlighted suggestion (familiar from terminal /
+  // Tab completes the highlighted suggestion (familiar from terminal /
   // editor autocomplete UIs); falls through to the browser default if the
-  // dropdown isn't open.
+  // dropdown isn't open or has no matches.
   if (autocompleteOpen.value && suggestions.value.length > 0) {
-    const op = suggestions.value[selectedIndex.value];
-    if (op) {
+    const s = suggestions.value[selectedIndex.value];
+    if (s) {
       evt.preventDefault();
-      insertOperator(op);
+      insertSuggestion(s);
     }
   }
 }
@@ -343,9 +430,9 @@ function performSearch(evt: Event) {
 }
 
 .advanced-search-autocomplete {
-  /* Match the input's width and cap the height so a long list doesn't push
-   * other content off-screen — internal scroll instead. */
-  min-width: 100%;
+  /* Cap the dropdown's height so a long list doesn't push other content
+   * off-screen — internal scroll instead. Width is set via the v-menu's
+   * min/max-width binding, so the list itself doesn't need a width. */
   max-height: min(60vh, 480px);
   overflow-y: auto;
 }
