@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from dandiapi.api.services.search.parser import (
+    Operator,
     SearchSyntaxError,
     parse_search,
 )
@@ -22,29 +23,32 @@ pytestmark = pytest.mark.ai_generated
         (
             'species:mouse created_after:2024-01-01',
             [],
-            [('species', 'mouse'), ('created_after', '2024-01-01')],
+            [Operator('species', 'mouse'), Operator('created_after', '2024-01-01')],
         ),
         # Mixed
         (
             'place cells species:mouse created_after:2024-01-01 ca1',
             ['place', 'cells', 'ca1'],
-            [('species', 'mouse'), ('created_after', '2024-01-01')],
+            [Operator('species', 'mouse'), Operator('created_after', '2024-01-01')],
         ),
         # Quoted phrase as free text
         ('"place cells" hippocampus', ['place cells', 'hippocampus'], []),
         # Quoted operator value (multi-word)
-        ('technique:"patch clamp"', [], [('technique', 'patch clamp')]),
+        ('technique:"patch clamp"', [], [Operator('technique', 'patch clamp')]),
         # Repeated operator keeps every entry (AND'd downstream)
         (
             'species:mouse species:rat',
             [],
-            [('species', 'mouse'), ('species', 'rat')],
+            [Operator('species', 'mouse'), Operator('species', 'rat')],
         ),
         # Special characters preserved inside quoted operator value
-        ('species:"C57BL/6"', [], [('species', 'C57BL/6')]),
+        ('species:"C57BL/6"', [], [Operator('species', 'C57BL/6')]),
         # Quoted token that *looks* like an operator is treated as free text —
-        # this is the documented escape hatch for searching for a literal colon.
+        # documented escape hatch for searching for a literal colon.
         ('"foo:bar" hippocampus', ['foo:bar', 'hippocampus'], []),
+        # Owner operator
+        ('owner:jdoe', [], [Operator('owner', 'jdoe')]),
+        ('owner:user@example.com', [], [Operator('owner', 'user@example.com')]),
     ],
     ids=[
         'empty',
@@ -57,6 +61,8 @@ pytestmark = pytest.mark.ai_generated
         'repeated-operator-key',
         'special-chars-in-quoted-value',
         'quoted-operator-like-token-is-free-text',
+        'owner-username',
+        'owner-email',
     ],
 )
 def test_parse_search(query, expected_free_text, expected_operators):

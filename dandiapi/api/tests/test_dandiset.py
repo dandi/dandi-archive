@@ -2086,3 +2086,83 @@ def test_advanced_search_species_respects_embargo_visibility(api_client):
 
     # Anonymous request: embargoed must be filtered out.
     assert _search_ids(api_client, 'species:mouse') == {open_ds.identifier}
+
+
+# --- owner: operator -----------------------------------------------------------------------------
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_lookup_paths_and_combinations(api_client):
+    """One setup, many assertions for the owner: operator.
+
+    Resolves users by every documented lookup path, unions across multiple
+    matched users, returns 0 for unknown values, is case-insensitive, and
+    combines correctly with other operators (cross-key AND on the same
+    dandiset).
+    """
+    # Three users with overlapping last names so we can exercise every lookup
+    # path AND the multi-user union in a single setup.
+    alice = UserFactory.create(
+        username='Alice', email='Alice@Example.com', first_name='Alice', last_name='Smith'
+    )
+    bob = UserFactory.create(
+        username='bob', email='bob@example.com', first_name='Bob', last_name='Smith'
+    )
+    carol = UserFactory.create(
+        username='carol', email='carol@example.com', first_name='Carol', last_name='Jones'
+    )
+    alice_old = DandisetFactory.create(owners=[alice])
+    alice_new = DandisetFactory.create(owners=[alice])
+    bob_ds = DandisetFactory.create(owners=[bob])
+    carol_ds = DandisetFactory.create(owners=[carol])
+    for ds in (alice_old, alice_new, bob_ds, carol_ds):
+        DraftVersionFactory.create(dandiset=ds)
+
+    # Backdate alice_old so we can intersect with a date operator below.
+    cutoff = timezone.now() - datetime.timedelta(days=1)
+    Dandiset.objects.filter(pk=alice_old.pk).update(created=cutoff - datetime.timedelta(days=30))
+    after_str = (cutoff + datetime.timedelta(seconds=1)).date().isoformat()
+
+    alice_dsets = {alice_old.identifier, alice_new.identifier}
+
+    # username (case-insensitive)
+    assert _search_ids(api_client, 'owner:alice') == alice_dsets
+    assert _search_ids(api_client, 'owner:ALICE') == alice_dsets
+
+    # email (case-insensitive)
+    assert _search_ids(api_client, 'owner:alice@example.com') == alice_dsets
+    assert _search_ids(api_client, 'owner:ALICE@Example.com') == alice_dsets
+
+    # first / last / full name
+    assert _search_ids(api_client, 'owner:Bob') == {bob_ds.identifier}
+    assert _search_ids(api_client, 'owner:Jones') == {carol_ds.identifier}
+    assert _search_ids(api_client, 'owner:"Carol Jones"') == {carol_ds.identifier}
+
+    # union: shared last name returns dandisets from both users
+    assert _search_ids(api_client, 'owner:Smith') == alice_dsets | {bob_ds.identifier}
+
+    # unknown user → 0 results, not 400 (a valid 0-hit query)
+    assert _search_ids(api_client, 'owner:no_such_user_anywhere') == set()
+
+    # combines with other operators: cross-key AND on the same dandiset.
+    # Only alice_new satisfies BOTH owner:alice AND created_after.
+    assert _search_ids(api_client, f'owner:alice created_after:{after_str}') == {
+        alice_new.identifier
+    }
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_does_not_inflate_to_superuser_archive(api_client):
+    # Guardian's get_objects_for_user(with_superuser=True) returns ALL objects
+    # for superusers — wrong semantics for owner: searches. We pass
+    # with_superuser=False so `owner:admin` returns only what admin
+    # explicitly owns, not the entire archive.
+    admin = UserFactory.create(username='admin', is_superuser=True)
+    other = UserFactory.create()
+    DraftVersionFactory.create(dandiset=DandisetFactory.create(owners=[other]))
+    admin_owned = DandisetFactory.create(owners=[admin])
+    DraftVersionFactory.create(dandiset=admin_owned)
+
+    assert _search_ids(api_client, 'owner:admin') == {admin_owned.identifier}
