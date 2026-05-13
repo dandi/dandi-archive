@@ -89,7 +89,8 @@
       :open-on-focus="false"
       location="bottom start"
       transition="false"
-      attach
+      :min-width="dropdownWidth"
+      :max-width="dropdownWidth"
     >
       <v-list
         v-if="suggestions.length"
@@ -115,7 +116,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue';
+import {
+  computed, nextTick, onBeforeUnmount, onMounted, ref, watch,
+} from 'vue';
 import type { ComponentPublicInstance } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import { useRoute } from 'vue-router';
@@ -165,6 +168,11 @@ const autocompleteOpen = ref(false);
 const selectedIndex = ref(0);
 // Cursor position inside the underlying <input>; updated on every keyup/click.
 const cursor = ref(0);
+// Width of the form, used to size the autocomplete menu so it visually
+// matches the search field. The menu itself teleports to the document body
+// (default v-menu behavior, no `attach`) so it escapes any local stacking
+// context — that's how it stays on top of sibling result panels below.
+const dropdownWidth = ref(0);
 
 // We anchor the dropdown to the <form> wrapping the field so its width
 // matches the field. Capture the form element after mount.
@@ -176,8 +184,27 @@ function captureFormEl() {
   const inputEl = (inputComponent.$el as HTMLElement | undefined)?.querySelector('input');
   if (inputEl?.form) {
     formEl.value = inputEl.form;
+    dropdownWidth.value = inputEl.form.clientWidth;
   }
 }
+
+function updateDropdownWidth() {
+  if (formEl.value) {
+    dropdownWidth.value = formEl.value.clientWidth;
+  }
+}
+
+onMounted(() => {
+  // Capture the form element after the v-text-field's DOM is rendered, then
+  // keep `dropdownWidth` in sync with the form on window resize so a wider
+  // viewport → wider dropdown.
+  nextTick(captureFormEl);
+  window.addEventListener('resize', updateDropdownWidth);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateDropdownWidth);
+});
 
 function inputElement(): HTMLInputElement | null {
   const inputComponent = searchInputRef.value;
