@@ -2407,10 +2407,26 @@ def test_advanced_search_affiliation_operator(api_client):
                     },
                 ],
             },
+            # An Organization contributor (no `affiliation` field of its own —
+            # affiliations live on Persons in the schema). The affiliation
+            # jsonpath must walk past this element without exploding.
+            {
+                'name': 'National Institutes of Health (NIH)',
+                'identifier': 'https://ror.org/01cwqze88',
+                'roleName': ['dcite:Funder'],
+                'schemaKey': 'Organization',
+            },
         ],
     )
     ds_ucl = _seed_dandiset_with_contributors(
         contributors=[
+            # Same shape but the Organization comes first this time — the
+            # jsonpath shouldn't be order-sensitive.
+            {
+                'name': 'Wellcome Trust',
+                'roleName': ['dcite:Funder'],
+                'schemaKey': 'Organization',
+            },
             {
                 'name': 'Doe, Jane',
                 'roleName': ['dcite:Author'],
@@ -2430,8 +2446,15 @@ def test_advanced_search_affiliation_operator(api_client):
     assert _search_ids(api_client, 'affiliation:"University College London"') == {ds_ucl.identifier}
     # Affiliation by ROR identifier (full URL or bare ID via substring)
     assert _search_ids(api_client, 'affiliation:00f54p054') == {ds_stanford.identifier}
+    # The Organization contributors' own identifiers are NOT matched by
+    # `affiliation:` — that operator queries `contributor[].affiliation[]`,
+    # not the contributor's own identifier. (Use `funder:` instead.)
+    assert _search_ids(api_client, 'affiliation:01cwqze88') == set()
 
     # Composes with role/contributor operators on the same Version (different
-    # contributor elements OK — but here both must match Doe, who is the only
-    # contributor in each fixture, so the joint constraint is just an AND).
+    # contributor elements OK — here `author:Doe` matches the Person and
+    # `affiliation:Stanford` matches via that Person's affiliation, while
+    # the unrelated Organization contributor is harmlessly ignored).
     assert _search_ids(api_client, 'author:Doe affiliation:Stanford') == {ds_stanford.identifier}
+    # Cross-key with role on the Organization side also works.
+    assert _search_ids(api_client, 'funder:NIH affiliation:Stanford') == {ds_stanford.identifier}
