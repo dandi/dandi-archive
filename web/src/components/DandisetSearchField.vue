@@ -280,16 +280,10 @@ function insertOperator(op: typeof OPERATORS[number]) {
 }
 
 function onEnter(evt: KeyboardEvent) {
-  // If the autocomplete is open with a valid selection, take that — Enter
-  // selects the highlighted operator instead of submitting the search.
-  if (autocompleteOpen.value && suggestions.value.length > 0) {
-    const op = suggestions.value[selectedIndex.value];
-    if (op) {
-      evt.preventDefault();
-      insertOperator(op);
-      return;
-    }
-  }
+  // Enter always submits the search — even when the dropdown is open. Users
+  // need to be able to search for free-text terms (e.g. `publ`) that happen
+  // to be a prefix of an operator name; auto-completing on Enter would make
+  // those queries unreachable. Use Tab or click to complete instead.
   performSearch(evt);
 }
 
