@@ -73,7 +73,7 @@ def _apply_asset_filter(queryset, operator: str, value: str):
 
 
 def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Dandiset]:
-    """Filter dandisets to those owned by users matching `value` (icontains)."""
+    """Filter dandisets to those owned by users matching `value` (iexact)."""
     matched_user_pks = (
         User.objects.annotate(_full_name=Concat('first_name', Value(' '), 'last_name'))
         .filter(
