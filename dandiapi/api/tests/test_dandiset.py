@@ -2458,3 +2458,75 @@ def test_advanced_search_affiliation_operator(api_client):
     assert _search_ids(api_client, 'author:Doe affiliation:Stanford') == {ds_stanford.identifier}
     # Cross-key with role on the Organization side also works.
     assert _search_ids(api_client, 'funder:NIH affiliation:Stanford') == {ds_stanford.identifier}
+
+
+def _seed_dandiset_with_subject_count(n: int | None) -> Dandiset:
+    """Create a dandiset whose draft version's `assetsSummary.numberOfSubjects` is `n`.
+
+    Pass `None` to omit the field entirely (simulates a dandiset that hasn't
+    had its assets summarized — the count operator should not match these).
+    """
+    dandiset = DandisetFactory.create()
+    version = DraftVersionFactory.create(dandiset=dandiset)
+    summary = {'schemaKey': 'AssetsSummary', 'numberOfBytes': 0, 'numberOfFiles': 0}
+    if n is not None:
+        summary['numberOfSubjects'] = n
+    version.metadata = {**version.metadata, 'assetsSummary': summary}
+    version.save()
+    return dandiset
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_num_subjects_operator(api_client):
+    """`num_subjects:N` is "at least N subjects" against assetsSummary.numberOfSubjects.
+
+    Covers the threshold (exact + above match, below doesn't), missing
+    field (doesn't match), case-insensitivity, and composition with another
+    operator on the same dandiset.
+    """
+    ds_2 = _seed_dandiset_with_subject_count(2)
+    ds_10 = _seed_dandiset_with_subject_count(10)
+    ds_50 = _seed_dandiset_with_subject_count(50)
+    ds_unknown = _seed_dandiset_with_subject_count(None)  # no numberOfSubjects field
+
+    # >= threshold semantics
+    assert _search_ids(api_client, 'num_subjects:10') == {ds_10.identifier, ds_50.identifier}
+    assert _search_ids(api_client, 'num_subjects:0') == {
+        ds_2.identifier,
+        ds_10.identifier,
+        ds_50.identifier,
+    }
+    # ds_unknown never matches: a missing count must not be coerced to 0
+    assert ds_unknown.identifier not in _search_ids(api_client, 'num_subjects:0')
+
+    # Case-insensitive operator key
+    assert _search_ids(api_client, 'NUM_SUBJECTS:10') == {ds_10.identifier, ds_50.identifier}
+
+    # Composes with another operator (here `name` free-text would compose
+    # via the existing path; use a date operator to stay structured-only).
+    # Constrain `ds_50` only via its created date.
+    cutoff = timezone.now() - datetime.timedelta(days=1)
+    Dandiset.objects.filter(pk=ds_2.pk).update(created=cutoff - datetime.timedelta(days=30))
+    after_str = (cutoff + datetime.timedelta(seconds=1)).date().isoformat()
+    # `num_subjects:2 created_after:<recent>` → dandisets with >=2 subjects
+    # AND created in the last day → ds_10 + ds_50 (ds_2 is older).
+    assert _search_ids(api_client, f'num_subjects:2 created_after:{after_str}') == {
+        ds_10.identifier,
+        ds_50.identifier,
+    }
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_num_subjects_invalid_value_returns_400(api_client):
+    # Non-integer values are rejected with a helpful message; negatives and
+    # decimals fail the digits-only check. `num_subjects:` alone (no value)
+    # doesn't reach this path — the parser treats it as free text since the
+    # operator regex requires at least one character after the colon.
+    for bad in ('abc', '-5', '5.5'):
+        response = api_client.get(
+            '/api/dandisets/',
+            {'draft': 'true', 'empty': 'true', 'search': f'num_subjects:{bad}'},
+        )
+        assert response.status_code == 400, bad

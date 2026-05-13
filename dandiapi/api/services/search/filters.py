@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+import json
 import re
 from typing import TYPE_CHECKING
 
@@ -17,6 +18,7 @@ from dandiapi.api.services.search.operators import (
     ASSET_NAME_PATH_OPS,
     ASSET_OPS,
     CONTRIBUTOR_ROLE_OPS,
+    COUNT_OPS,
     DATE_OPS,
     FILE_TYPE_ALIASES,
     OWNER_OPS,
@@ -166,6 +168,38 @@ def _apply_contributor_filters(
     return queryset.filter(versions__pk__in=matching_versions.values('pk'))
 
 
+def _apply_count_filter(
+    queryset: QuerySet[Dandiset], jsonpath_path: str, value: str
+) -> QuerySet[Dandiset]:
+    """Filter dandisets where `Version.metadata` at `jsonpath_path` is >= `value`.
+
+    The value is a non-negative integer (e.g. `num_subjects:10`). Treated as
+    a lower bound — "at least N" is the search intent users actually have;
+    upper bounds are rare enough not to be worth the syntax cost.
+
+    `jsonpath_path` is a trusted constant pointing into `Version.metadata`.
+    The integer is bound via `jsonb_path_exists`'s `vars` parameter (not
+    inlined into SQL or jsonpath), so the value is injection-safe.
+
+    A dandiset matches if at least one of its versions satisfies the
+    predicate. Versions whose metadata lacks the count field don't match —
+    the jsonpath `?` filter drops missing/null/non-numeric values naturally.
+    """
+    if not value.isdigit():
+        raise SearchSyntaxError(
+            f'Invalid count value {value!r}. Use a non-negative integer '
+            f'(e.g. `num_subjects:10`).'
+        )
+    n = int(value)
+    jsonpath = f'{jsonpath_path} ? (@ >= $val)'
+    vars_json = json.dumps({'val': n})
+    where = 'jsonb_path_exists(metadata, %s::jsonpath, %s::jsonb)'
+    matching_versions = Version.objects.all().extra(  # noqa: S610
+        where=[where], params=[jsonpath, vars_json]
+    )
+    return queryset.filter(id__in=matching_versions.values('dandiset_id'))
+
+
 _MODIFIED_ALIAS = '_search_latest_version_modified'
 _PUBLISHED_ALIAS = '_search_latest_published_created'
 
@@ -251,6 +285,8 @@ def apply_search_filters(  # noqa: C901  (one branch per operator category — s
             contributor_wheres.append(_contributor_where(value, CONTRIBUTOR_ROLE_OPS[key]))
         elif key in AFFILIATION_OPS:
             contributor_wheres.append(_affiliation_where(value))
+        elif key in COUNT_OPS:
+            queryset = _apply_count_filter(queryset, COUNT_OPS[key], value)
 
     if contributor_wheres:
         queryset = _apply_contributor_filters(queryset, contributor_wheres)
