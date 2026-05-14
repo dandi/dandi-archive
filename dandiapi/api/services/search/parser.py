@@ -18,21 +18,7 @@ from dataclasses import dataclass, field
 from difflib import get_close_matches
 import re
 
-OPERATOR_KEYS: frozenset[str] = frozenset(
-    {
-        'created_before',
-        'created_after',
-        'modified_before',
-        'modified_after',
-        'published_before',
-        'published_after',
-        'species',
-        'approach',
-        'technique',
-        'standard',
-        'file_type',
-    }
-)
+from dandiapi.api.services.search.operators import OPERATOR_KEYS
 
 # A token in the input is one of:
 #   key:"quoted value"       — operator with quoted value
@@ -42,12 +28,14 @@ OPERATOR_KEYS: frozenset[str] = frozenset(
 #
 # We deliberately match `key:"value"` and `"value"` *before* the bare-token
 # alternative so quoted segments stay together.
+# Operator keys are matched case-insensitively (`AUTHOR:doe` works the same
+# as `author:doe`) — we lowercase the captured key before validation/dispatch.
 _TOKEN_RE = re.compile(
-    r'(?P<op_key>[a-z_]+):"(?P<op_qval>[^"]*)"'
+    r'(?P<op_key>[A-Za-z_]+):"(?P<op_qval>[^"]*)"'
     r'|"(?P<free_quoted>[^"]*)"'
     r'|(?P<bare>\S+)'
 )
-_BARE_OP_RE = re.compile(r'^([a-z_]+):(.+)$')
+_BARE_OP_RE = re.compile(r'^([A-Za-z_]+):(.+)$')
 
 
 # Defense-in-depth: cap search-term length so an unauthenticated caller can't
@@ -61,9 +49,17 @@ class SearchSyntaxError(ValueError):
 
 
 @dataclass
+class Operator:
+    """One parsed `key:value` operator."""
+
+    key: str
+    value: str
+
+
+@dataclass
 class ParsedSearch:
     free_text: list[str] = field(default_factory=list)
-    operators: list[tuple[str, str]] = field(default_factory=list)
+    operators: list[Operator] = field(default_factory=list)
 
 
 def _check_balanced_quotes(query: str) -> None:
@@ -98,16 +94,17 @@ def parse_search(query: str) -> ParsedSearch:
 
     for match in _TOKEN_RE.finditer(query):
         if (key := match.group('op_key')) is not None:
+            key = key.lower()
             _validate_operator_key(key)
-            parsed.operators.append((key, match.group('op_qval')))
+            parsed.operators.append(Operator(key, match.group('op_qval')))
         elif (free := match.group('free_quoted')) is not None:
             parsed.free_text.append(free)
         else:
             bare = match.group('bare')
             if op_match := _BARE_OP_RE.match(bare):
-                key = op_match.group(1)
+                key = op_match.group(1).lower()
                 _validate_operator_key(key)
-                parsed.operators.append((key, op_match.group(2)))
+                parsed.operators.append(Operator(key, op_match.group(2)))
             else:
                 parsed.free_text.append(bare)
     return parsed
