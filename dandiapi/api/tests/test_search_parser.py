@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from dandischema.models import RoleType
 import pytest
 
+from dandiapi.api.services.search.operators import CONTRIBUTOR_ROLE_OPS
 from dandiapi.api.services.search.parser import (
     Operator,
     SearchSyntaxError,
@@ -108,10 +110,6 @@ def test_contributor_role_ops_match_actual_dandischema_roletype():
     side trip this test, forcing an explicit decision here instead of
     silently changing user-facing search syntax.
     """
-    from dandischema.models import RoleType
-
-    from dandiapi.api.services.search.operators import CONTRIBUTOR_ROLE_OPS
-
     role_names = {r.name for r in RoleType}
     for op_name, role_name in CONTRIBUTOR_ROLE_OPS.items():
         if role_name is None:
