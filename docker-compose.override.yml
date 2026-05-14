@@ -9,6 +9,7 @@ services:
     ]
     # Log printing is enhanced by a TTY
     tty: true
+<<<<<<< before updating
     environment:
       PYTHONDONTWRITEBYTECODE: 1
       PYTHONUNBUFFERED: 1
@@ -24,6 +25,13 @@ services:
       - .:/home/vscode/dandi
       - uv_cache:/home/vscode/uv
       - pre-commit_cache:/home/vscode/.cache/pre-commit
+=======
+    working_dir: /home/vscode/dandiapi
+    env_file: ./dev/.env.docker-compose
+    volumes:
+      - .:/home/vscode/dandiapi
+      - pkg_cache:/home/vscode/pkg-cache
+>>>>>>> after updating
     ports:
       - 8000:8000
     depends_on:
@@ -50,8 +58,9 @@ services:
       "--queues", "celery,calculate_sha256,ingest_zarr_archive,manifest-worker",
       "--beat"
     ]
-    # Docker Compose does not set the TTY width, which causes Celery errors
+    # uv progress doesn't display properly with a Docker TTY
     tty: false
+<<<<<<< before updating
     environment:
       PYTHONDONTWRITEBYTECODE: 1
       PYTHONUNBUFFERED: 1
@@ -68,6 +77,13 @@ services:
       - .:/home/vscode/dandi
       - uv_cache:/home/vscode/uv
       - pre-commit_cache:/home/vscode/.cache/pre-commit
+=======
+    working_dir: /home/vscode/dandiapi
+    env_file: ./dev/.env.docker-compose
+    volumes:
+      - .:/home/vscode/dandiapi
+      - pkg_cache:/home/vscode/pkg-cache
+>>>>>>> after updating
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,5 +93,9 @@ services:
         condition: service_healthy
 
 volumes:
+<<<<<<< before updating
   uv_cache:
   pre-commit_cache:
+=======
+  pkg_cache:
+>>>>>>> after updating
