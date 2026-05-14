@@ -6,39 +6,30 @@ from datetime import UTC, datetime
 import re
 from typing import TYPE_CHECKING
 
-from django.db.models import OuterRef, Subquery
+from django.contrib.auth.models import User
+from django.db.models import OuterRef, Q, Subquery, Value
+from django.db.models.functions import Concat
 
 from dandiapi.api.models import Version
+from dandiapi.api.models.dandiset import DandisetUserObjectPermission
+from dandiapi.api.services.search.operators import (
+    AFFILIATION_OPS,
+    ASSET_NAME_PATH_OPS,
+    ASSET_OPS,
+    CONTRIBUTOR_ROLE_OPS,
+    DATE_OPS,
+    FILE_TYPE_ALIASES,
+    OWNER_OPS,
+)
 from dandiapi.api.services.search.parser import SearchSyntaxError
 from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
-    from django.contrib.auth.models import AnonymousUser, User
+    from django.contrib.auth.models import AnonymousUser
     from django.db.models import QuerySet
 
     from dandiapi.api.models import Dandiset
     from dandiapi.api.services.search.parser import ParsedSearch
-
-# Aliases for the file-type operator: short name → MIME prefix matched with
-# istartswith. Keep in sync with DandisetSearchQueryParameterSerializer.
-_FILE_TYPE_ALIASES = {
-    'nwb': 'application/x-nwb',
-    'image': 'image/',
-    'text': 'text/',
-    'video': 'video/',
-}
-
-_DATE_OPS = frozenset(
-    {
-        'created_before',
-        'created_after',
-        'modified_before',
-        'modified_after',
-        'published_before',
-        'published_after',
-    }
-)
-_ASSET_OPS = frozenset({'species', 'approach', 'technique', 'standard', 'file_type'})
 
 
 def _annotate_latest_version_modified(queryset):
@@ -59,29 +50,8 @@ def _annotate_latest_published_created(queryset):
     )
 
 
-# Each entry maps an operator to a Postgres jsonpath that selects the names
-# we want to match against. `[*]` wildcards mean we match if ANY element of
-# the array satisfies the predicate — important for assets that list
-# multiple species, approaches, etc. Paths MUST be trusted constants:
-# they're interpolated into the SQL.
-_NAME_PATH_OPS = {
-    'species': '$.wasAttributedTo[*].species.name',
-    'approach': '$.approach[*].name',
-    'technique': '$.measurementTechnique[*].name',
-    'standard': '$.dataStandard[*].name',
-}
-
-
 def _jsonpath_name_match(path: str, value: str) -> tuple[str, list[str]]:
-    """Build a parameterized Postgres `jsonb_path_exists` predicate.
-
-    Matches `value` case-insensitively as a substring against any node
-    selected by `path`. `path` MUST come from a trusted allowlist; `value`
-    is parameterized and regex-escaped.
-    """
-    # No table prefix on `asset_metadata`: Django may alias the AssetSearch
-    # table (e.g. inside a subquery), and qualifying the column would break
-    # those queries. The unqualified column is unambiguous in our usage.
+    """Asset-metadata jsonpath substring predicate; `path` must be trusted."""
     where = (
         'jsonb_path_exists(asset_metadata, '
         f"('{path} ? (@ like_regex ' "
@@ -93,15 +63,107 @@ def _jsonpath_name_match(path: str, value: str) -> tuple[str, list[str]]:
 
 def _apply_asset_filter(queryset, operator: str, value: str):
     """Apply one parsed asset operator to an AssetSearch queryset."""
-    if operator in _NAME_PATH_OPS:
-        where, params = _jsonpath_name_match(_NAME_PATH_OPS[operator], value)
-        # `where` interpolates only an allowlisted jsonpath; the user value
-        # is bound via params (and re-escaped against regex injection).
+    if operator in ASSET_NAME_PATH_OPS:
+        where, params = _jsonpath_name_match(ASSET_NAME_PATH_OPS[operator], value)
         return queryset.extra(where=[where], params=params)  # noqa: S610
     if operator == 'file_type':
-        mime_prefix = _FILE_TYPE_ALIASES.get(value.lower(), value)
+        mime_prefix = FILE_TYPE_ALIASES.get(value.lower(), value)
         return queryset.filter(asset_metadata__encodingFormat__istartswith=mime_prefix)
     raise ValueError(f'unknown asset operator: {operator}')  # pragma: no cover
+
+
+def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Dandiset]:
+    """Filter dandisets to those owned by users matching `value` (iexact)."""
+    matched_user_pks = (
+        User.objects.annotate(_full_name=Concat('first_name', Value(' '), 'last_name'))
+        .filter(
+            Q(username__iexact=value)
+            | Q(email__iexact=value)
+            | Q(first_name__iexact=value)
+            | Q(last_name__iexact=value)
+            | Q(_full_name__iexact=value)
+        )
+        .values_list('pk', flat=True)
+    )
+    owned_pks = DandisetUserObjectPermission.objects.filter(
+        user__in=matched_user_pks, permission__codename='owner'
+    ).values('content_object')
+    return queryset.filter(pk__in=owned_pks)
+
+
+# Postgres jsonpath quirk: `like_regex` requires its pattern to be a STRING
+# LITERAL inside the jsonpath text — not a `$variable`. So we can't use the
+# `vars` arg of `jsonb_path_exists` for the regex pattern; we have to build
+# the jsonpath at SQL execution time by concatenating `to_jsonb(?::text)::text`
+# (a properly-quoted JSON string literal) into the path. The user value is
+# still bound as a parameter — never inlined into the SQL — so the value
+# remains SQL-injection-safe. `re.escape` neutralizes regex metachars.
+_LIKE_REGEX_PATTERN = ' like_regex \' || to_jsonb(%s::text)::text || \' flag "i"'
+
+
+def _contributor_where(value: str, role: str | None) -> tuple[str, list[str]]:
+    """Build a `jsonb_path_exists(metadata, ...)` where clause for a contributor[] predicate.
+
+    Matches a `contributor[]` element whose `name`, `email`, OR `identifier`
+    contains `value` (case-insensitive). If `role` is given, additionally
+    requires that element's `roleName` array to contain a string matching
+    `role` (also case-insensitive substring).
+    """
+    val_clause = (
+        f'@.name{_LIKE_REGEX_PATTERN}'
+        f' || @.email{_LIKE_REGEX_PATTERN}'
+        f' || @.identifier{_LIKE_REGEX_PATTERN}'
+    )
+    params = [re.escape(value)] * 3
+    if role is None:
+        jsonpath_expr = f"'$.contributor[*] ? ({val_clause})'"
+    else:
+        jsonpath_expr = (
+            f"'$.contributor[*] ? (({val_clause})"
+            f" && exists(@.roleName[*] ? (@{_LIKE_REGEX_PATTERN})))'"
+        )
+        params.append(re.escape(role))
+    where = f'jsonb_path_exists(metadata, ({jsonpath_expr})::jsonpath)'
+    return where, params
+
+
+def _affiliation_where(value: str) -> tuple[str, list[str]]:
+    """Build a `jsonb_path_exists(metadata, ...)` where clause for the affiliation predicate.
+
+    Affiliations live at `contributor[].affiliation[]`, each with a `name` and
+    optionally an `identifier` (ROR URL). Matches case-insensitive substring
+    on either.
+    """
+    clause = f'@.name{_LIKE_REGEX_PATTERN} || @.identifier{_LIKE_REGEX_PATTERN}'
+    where = (
+        f"jsonb_path_exists(metadata, ('$.contributor[*].affiliation[*] ? ({clause})')::jsonpath)"
+    )
+    return where, [re.escape(value)] * 2
+
+
+def _apply_contributor_filters(
+    queryset: QuerySet[Dandiset], wheres: list[tuple[str, list[str]]]
+) -> QuerySet[Dandiset]:
+    """Filter dandisets by accumulated contributor predicates.
+
+    `wheres` is a list of `(where_clause, params)` pairs (one per operator).
+    The returned queryset is restricted to dandisets that have at least ONE
+    Version whose `metadata` satisfies ALL the predicates simultaneously.
+    Operators thus AND on the same Version (a draft and a published version
+    with disjoint contributor lists never combine into a spurious match).
+
+    Each operator is independent: `author:Doe funder:NIH` matches if SOME
+    contributor element has Doe as Author AND SOME contributor element (the
+    same OR a different one) has NIH as Funder.
+    """
+    matching_versions = Version.objects.all()
+    for where, params in wheres:
+        # Trusted jsonpath template (no user value interpolated); user value
+        # is bound via the jsonb vars param and additionally regex-escaped.
+        matching_versions = matching_versions.extra(  # noqa: S610
+            where=[where], params=params
+        )
+    return queryset.filter(versions__pk__in=matching_versions.values('pk'))
 
 
 _MODIFIED_ALIAS = '_search_latest_version_modified'
@@ -134,7 +196,7 @@ def _apply_date_filter(queryset, operator: str, ts: datetime, annotated: set[str
     raise ValueError(f'unknown date operator: {operator}')  # pragma: no cover
 
 
-def apply_search_filters(
+def apply_search_filters(  # noqa: C901  (one branch per operator category — splitting the dispatch loop wouldn't make it more readable)
     queryset: QuerySet[Dandiset],
     parsed: ParsedSearch,
     *,
@@ -148,21 +210,31 @@ def apply_search_filters(
     if not parsed.operators:
         return queryset
 
-    # `asset_qs` is built lazily so a query with no asset ops pays nothing.
-    # Note on semantics: chaining `.filter()` AND's the conditions on a SINGLE
-    # AssetSearch row, so e.g. `species:mouse approach:ephys` returns dandisets
-    # with at least one asset that satisfies BOTH (cross-key AND on the same
-    # asset). Repeated keys (`species:mouse species:rat`) likewise require a
-    # single asset to match both substrings — same as GitHub's default.
-    asset_qs = None
+    # Semantics: every operator describes a property of the dandiset, and
+    # multiple operators are AND'd at the dandiset level — NOT at the asset
+    # or version level. So `species:mouse species:rat` returns dandisets that
+    # have at least one mouse asset AND at least one rat asset (possibly the
+    # same asset, possibly different ones). Each asset operator therefore
+    # builds an independent AssetSearch subquery and we filter dandisets to
+    # those whose IDs appear in EVERY such subquery.
+    #
+    # Contributor predicates are different: they apply to a single Version's
+    # metadata.contributor[] array (since contributors live on the version,
+    # not on individual assets), so we accumulate them and AND on the same
+    # Version to avoid cross-version weirdness when a draft and a published
+    # version have disjoint contributor lists. Within that single version
+    # each predicate independently scans `contributor[*]`, so two operators
+    # may match different contributor entries.
     annotated: set[str] = set()
+    contributor_wheres: list[tuple[str, list[str]]] = []
 
-    for key, raw_value in parsed.operators:
-        value = raw_value.strip()
+    for op in parsed.operators:
+        key = op.key
+        value = op.value.strip()
         if not value:
             raise SearchSyntaxError(f'Operator "{key}" requires a value (e.g. {key}:something).')
 
-        if key in _DATE_OPS:
+        if key in DATE_OPS:
             try:
                 ts = datetime.strptime(value, '%Y-%m-%d').replace(tzinfo=UTC)
             except ValueError as exc:
@@ -170,20 +242,17 @@ def apply_search_filters(
                     f'Invalid date for "{key}": {value!r}. Use YYYY-MM-DD.'
                 ) from exc
             queryset = _apply_date_filter(queryset, key, ts, annotated)
-        elif key in _ASSET_OPS:
-            if asset_qs is None:
-                asset_qs = AssetSearch.objects.visible_to(user)
-            asset_qs = _apply_asset_filter(asset_qs, key, value)
+        elif key in ASSET_OPS:
+            asset_match = _apply_asset_filter(AssetSearch.objects.visible_to(user), key, value)
+            queryset = queryset.filter(id__in=asset_match.values('dandiset_id'))
+        elif key in OWNER_OPS:
+            queryset = _apply_owner_filter(queryset, value)
+        elif key in CONTRIBUTOR_ROLE_OPS:
+            contributor_wheres.append(_contributor_where(value, CONTRIBUTOR_ROLE_OPS[key]))
+        elif key in AFFILIATION_OPS:
+            contributor_wheres.append(_affiliation_where(value))
 
-    if asset_qs is not None:
-        # NOTE perf: jsonb_path_exists with a runtime-built jsonpath cannot
-        # use the existing per-field GIN indexes; the path-scan operators
-        # (species/approach/technique/standard) currently sequential-scan the
-        # asset_search materialized view. The view is small enough today
-        # (~one row per asset) that this is acceptable, but if it becomes a
-        # hot path the fix is expression GIN indexes on each path or
-        # denormalized text columns + trgm_ops indexes.
-        matching_dandiset_ids = asset_qs.values_list('dandiset_id', flat=True).distinct()
-        queryset = queryset.filter(id__in=matching_dandiset_ids)
+    if contributor_wheres:
+        queryset = _apply_contributor_filters(queryset, contributor_wheres)
 
     return queryset
