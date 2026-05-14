@@ -187,8 +187,7 @@ def _apply_count_filter(
     """
     if not value.isdigit():
         raise SearchSyntaxError(
-            f'Invalid count value {value!r}. Use a non-negative integer '
-            f'(e.g. `num_subjects:10`).'
+            f'Invalid count value {value!r}. Use a non-negative integer (e.g. `num_subjects:10`).'
         )
     n = int(value)
     jsonpath = f'{jsonpath_path} ? (@ >= $val)'
