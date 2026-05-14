@@ -15,7 +15,7 @@ services:
       - postgres:/var/lib/postgresql
 
   rabbitmq:
-    image: rabbitmq:management-alpine
+    image: rabbitmq:4.2-management-alpine
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       start_period: 30s
