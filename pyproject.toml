@@ -26,7 +26,7 @@ dependencies = [
   "django-oauth-toolkit==3.2.0",
   "django-resonant-settings[allauth,celery]==0.50.4",
   "django-resonant-utils[allauth,s3_storage]==0.19.0",
-  "django-stubs-ext==6.0.3",
+  "django-stubs-ext==6.0.4",
   "djangorestframework==3.17.1",
   "drf-extensions==0.8.0",
   "drf-yasg==1.21.15",
@@ -68,23 +68,23 @@ dev = [
   # so use this to install "development" extras by default too
   "dandiapi[development]",
   "pre-commit==4.6.0",
-  "tox==4.53.0",
-  "tox-uv==1.35.1",
+  "tox==4.54.0",
+  "tox-uv==1.35.2",
 ]
 lint = [
-  "ruff==0.15.12",
+  "ruff==0.15.13",
 ]
 type = [
   "mypy==1.20.2",
-  "boto3-stubs[s3]==1.43.0",
+  "boto3-stubs[s3]==1.43.8",
   "celery-types==0.26.0",
-  "django-stubs[compatible-mypy]==6.0.3",
-  "djangorestframework-stubs[compatible-mypy]==3.16.9",
-  "types-requests==2.33.0.20260408",
+  "django-stubs[compatible-mypy]==6.0.4",
+  "djangorestframework-stubs[compatible-mypy]==3.17.0",
+  "types-requests==2.33.0.20260513",
 ]
 test = [
   "djangorestframework-yaml==2.0.0",
-  "Faker==40.15.0",
+  "Faker==40.18.0",
   "factory-boy==3.3.3",
   "freezegun==1.5.5",
   "pytest==9.0.3",
