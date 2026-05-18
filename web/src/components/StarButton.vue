@@ -4,7 +4,7 @@
       variant="plain"
       icon
       :readonly="!loggedIn"
-      @click.prevent="toggleStar"
+      @click.stop.prevent="toggleStar"
     >
       <v-icon :color="isStarred ? 'amber darken-2' : undefined">
         {{ isStarred ? 'mdi-star' : 'mdi-star-outline' }}
