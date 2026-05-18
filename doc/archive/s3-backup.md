@@ -1,5 +1,11 @@
 # S3 Backup
 
+# ARCHIVED
+
+On 5/18/2026, it was determined that there is no funding capabilities for any S3 backup option at this point in time.
+
+
+
 ## Terms used
 
 - **Primary bucket**: The sponsored bucket that is currently used for storing DANDI data. Located in us-east-2.
