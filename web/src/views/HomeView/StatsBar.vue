@@ -44,7 +44,7 @@ const stats = computed(() => [
     href: '/dandiset',
   },
   { name: 'users', value: users.value },
-  { name: 'total data size', value: filesize(size.value, { round: 0, base: 10, standard: 'iec' }) },
+  { name: 'total data size', value: filesize(size.value, { round: 0, base: 10, standard: 'si' }) },
 ]);
 
 // equivalent of async created method in options API

@@ -24,7 +24,7 @@
         "ghcr.io/devcontainers-extra/features/heroku-cli:1.0.5": {},
         "ghcr.io/devcontainers/features/github-cli:1": {},
         "ghcr.io/devcontainers/features/node:1": {
-            "version": "20"
+            "version": "24"
         }
     },
     "customizations": {

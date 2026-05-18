@@ -11,6 +11,15 @@ def populate_embargo_end_date(apps, schema_editor):
     Dandiset = apps.get_model('api', 'Dandiset')
     Version = apps.get_model('api', 'Version')
 
+    # Ensure that all embargoed dandisets have a value in the embargoedUntil field
+    problem_dandisets = Dandiset.objects.filter(
+        embargo_status='EMBARGOED', versions__metadata__access__0__embargoedUntil__isnull=True
+    )
+    if problem_dandisets.exists():
+        raise ValueError(
+            f"Found {problem_dandisets.count()} dandisets without 'embargoedUntil' value!"
+        )
+
     embargoed_dandisets = Dandiset.objects.filter(
         embargo_status='EMBARGOED', versions__metadata__access__0__embargoedUntil__isnull=False
     )

@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   build-image:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out this repository
         uses: actions/checkout@v6
@@ -34,13 +34,13 @@ jobs:
           docker image save -o dandiarchive-api.tgz dandiarchive/dandiarchive-api
 
       - name: Upload Docker image tarball
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: dandiarchive-api.tgz
           path: dandiarchive-api.tgz
 
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: build-image
     strategy:
       fail-fast: false
@@ -54,7 +54,7 @@ jobs:
       DANDI_TESTS_PULL_DOCKER_COMPOSE: 0
     steps:
       - name: Download Docker image tarball
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: dandiarchive-api.tgz
 
@@ -62,7 +62,7 @@ jobs:
         run: docker image load -i dandiarchive-api.tgz
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
 
       - name: Run dandi-api tests in dandi-cli
         if: matrix.dandi-version == 'release'

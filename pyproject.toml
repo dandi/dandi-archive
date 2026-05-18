@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
+requires = ["hatchling==1.29.0", "hatch-vcs==0.5.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -10,57 +10,56 @@ license-files = ["LICENSE", "NOTICE"]
 classifiers = ["Private :: Do Not Upload"]
 dependencies = [
   # Runtime dependencies, always needed
-  "boto3",
-  "celery",
+  "boto3==1.42.97",
+  "celery==5.6.3",
   # Pin dandischema to exact version to make explicit which schema version is being used
   "dandischema==0.12.1", # schema version 0.7.0
-  "django[argon2]",
-  "django-allauth",
-  "django-auth-style",
-  "django-click",
-  "django-cors-headers",
-  "django-environ",
-  "django-extensions",
-  "django-filter",
-  "django-guardian",
-  "django-oauth-toolkit",
-  "django-resonant-settings[allauth,celery]",
-  "django-resonant-utils[allauth,s3_storage]",
-  "django-stubs-ext",
-  # TODO: pin djangorestframework until we figure out what the cause of
-  # https://github.com/dandi/dandi-archive/issues/1896 is.
-  "djangorestframework<3.15.0",
-  "drf-extensions",
-  "drf-yasg",
-  "fsspec[http]",
-  "jsonschema",
-  "more_itertools",
-  "psycopg[binary]",
-  "pyyaml",
-  "requests",
-  "rich",
-  "whitenoise[brotli]",
-  "zarr-checksum",
+  "django[argon2]==5.2.13",
+  "django-allauth==65.16.1",
+  "django-auth-style==0.15.0",
+  "django-click==2.5.0",
+  "django-cors-headers==4.9.0",
+  "django-environ==0.13.0",
+  "django-extensions==4.1",
+  "django-filter==25.2",
+  "django-guardian==3.3.1",
+  "django-oauth-toolkit==3.2.0",
+  "django-resonant-settings[allauth,celery]==0.50.4",
+  "django-resonant-utils[allauth,s3_storage]==0.19.0",
+  "django-stubs-ext==6.0.3",
+  "djangorestframework==3.17.1",
+  "drf-extensions==0.8.0",
+  "drf-yasg==1.21.15",
+  "jsonschema==4.26.0",
+  "more_itertools==11.0.2",
+  "psycopg[binary]==3.3.3",
+  "pyyaml==6.0.3",
+  "requests==2.33.1",
+  "rich==15.0.0",
+  "whitenoise[brotli]==6.12.0",
+  "zarr-checksum==0.4.7",
   # Production-only
-  "django-s3-file-field[s3]",
-  "django-storages[s3]",
-  "sentry-sdk[celery,django,pure_eval]",
-  "gunicorn",
+  "django-s3-file-field[s3]==1.1.0",
+  "django-storages[s3]==1.14.6",
+  "sentry-sdk[celery,django,pure_eval]==2.58.0",
+  "gunicorn==25.3.0",
   # Development-only, but required
-  "tqdm",
+  "tqdm==4.67.3",
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
 development = [
   # Runtime dependencies, only needed with "development" settings
-  "django-browser-reload",
-  "django-debug-toolbar",
-  "ipython",
-  "watchdog",
-  "werkzeug",
+  "django-browser-reload==1.21.0",
+  "django-debug-toolbar==6.3.0",
+  "ipython==9.13.0",
+  "watchdog==6.0.0",
+  "werkzeug==3.1.8",
 ]
-cli = ["dandi>=0.74.0"]
+cli = [
+  "dandi[extras]==0.74.3",
+]
 
 [dependency-groups]
 dev = [
@@ -68,36 +67,37 @@ dev = [
   # The "dev" dependency group is installed by default,
   # so use this to install "development" extras by default too
   "dandiapi[development]",
-  "pre-commit",
-  "tox",
-  "tox-uv",
+  "pre-commit==4.6.0",
+  "tox==4.53.0",
+  "tox-uv==1.35.1",
 ]
 lint = [
-  "ruff",
+  "ruff==0.15.12",
 ]
 type = [
-  "mypy",
-  "boto3-stubs[s3]",
-  "celery-types",
-  "django-stubs[compatible-mypy]",
-  "djangorestframework-stubs[compatible-mypy]",
+  "mypy==1.20.2",
+  "boto3-stubs[s3]==1.43.0",
+  "celery-types==0.26.0",
+  "django-stubs[compatible-mypy]==6.0.3",
+  "djangorestframework-stubs[compatible-mypy]==3.16.9",
+  "types-requests==2.33.0.20260408",
 ]
 test = [
-  "djangorestframework-yaml",
-  "Faker",
-  "factory-boy",
-  "freezegun",
-  "pytest",
-  "pytest-cov",
-  "pytest-django",
-  "pytest-factoryboy",
+  "djangorestframework-yaml==2.0.0",
+  "Faker==40.15.0",
+  "factory-boy==3.3.3",
+  "freezegun==1.5.5",
+  "pytest==9.0.3",
+  "pytest-cov==7.1.0",
+  "pytest-django==4.12.0",
+  "pytest-factoryboy==2.8.1",
   # Enable with "pytest --memray ..."
-  "pytest-memray",
-  "pytest-mock",
+  "pytest-memray==1.8.0",
+  "pytest-mock==3.15.1",
   # Enable with "pytest --random-order ..."
-  "pytest-random-order",
+  "pytest-random-order==1.2.0",
   # Enable with "pytest --count=... ..."
-  "pytest-repeat",
+  "pytest-repeat==0.9.4",
 ]
 
 [tool.hatch.build]
@@ -248,4 +248,7 @@ filterwarnings = [
   'ignore:unclosed <socket\.socket:ResourceWarning',
   # TODO: Remove this with pytest_factoryboy
   "ignore:Using a <class 'dict'> as model type:UserWarning:pytest_factoryboy.fixture",
+]
+markers = [
+  "ai_generated: test was authored (or substantially authored) by an AI assistant; review extra carefully",
 ]

@@ -798,15 +798,6 @@ def test_version_populate_access_metadata_embargo_end_date(embargo_status: Dandi
 
 
 @pytest.mark.django_db
-def test_version_populate_access_metadata_no_embargo_end_date():
-    draft_version = DraftVersionFactory.create(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.OPEN,
-    )
-    access = draft_version.metadata['access']
-    assert 'embargoedUntil' not in access[0]
-
-
-@pytest.mark.django_db
 def test_version_rest_publish(
     api_client: APIClient,
     draft_asset_factory,

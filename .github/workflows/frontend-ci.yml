@@ -11,7 +11,7 @@ jobs:
     defaults:
         run:
           working-directory: web
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
         with:
@@ -19,7 +19,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20.x
+          node-version: 24.x
 
       - name: Install Vue app
         run: npm ci
@@ -35,7 +35,7 @@ jobs:
 
   test-e2e:
     name: E2E tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:latest
@@ -93,10 +93,10 @@ jobs:
 
     - uses: actions/setup-node@v6
       with:
-        node-version: 20
+        node-version: 24
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@v8.1.0
 
     - name: Install web app
       run: npm ci
@@ -133,7 +133,7 @@ jobs:
           # run the tests
           cd e2e && npx playwright test
 
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       if: always()
       with:
         name: playwright-report

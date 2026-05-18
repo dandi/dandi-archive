@@ -315,7 +315,7 @@ const display = useDisplay();
 const currentDandiset = computed(() => store.dandiset);
 const isXsDisplay = computed(() => display.xs.value);
 
-const transformFilesize = (size: number) => filesize(size, { round: 1, base: 10, standard: 'iec' });
+const transformFilesize = (size: number) => filesize(size, { round: 1, base: 10, standard: 'si' });
 
 const stats: ComputedRef<DandisetStats|null> = computed(() => {
   if (!currentDandiset.value) {

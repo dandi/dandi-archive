@@ -35,6 +35,9 @@ from dandiapi.api.views import (
     users_me_view,
     users_search_view,
     webdav,
+    zarr_upload_complete_view,
+    zarr_upload_initialize_view,
+    zarr_upload_validate_view,
 )
 from dandiapi.search.views import search_genotypes, search_species
 from dandiapi.zarr.views import ZarrViewSet
@@ -45,13 +48,13 @@ router = ExtendedSimpleRouter()
     .register(
         r'versions',
         VersionViewSet,
-        basename='version',
+        basename='dandiset-version',
         parents_query_lookups=[f'dandiset__{DandisetViewSet.lookup_field}'],
     )
     .register(
         r'assets',
         NestedAssetViewSet,
-        basename='asset',
+        basename='dandiset-version-asset',
         parents_query_lookups=[
             f'versions__dandiset__{DandisetViewSet.lookup_field}',
             f'versions__{VersionViewSet.lookup_field}',
@@ -60,6 +63,8 @@ router = ExtendedSimpleRouter()
 )
 router.register('assets', AssetViewSet, basename='asset')
 router.register('zarr', ZarrViewSet, basename='zarr')
+
+UPLOAD_ID_URLPATTERN = r'(?P<upload_id>[0-9a-f\-]{36})'
 
 # All core API endpoints
 api_urlpatterns = [
@@ -72,14 +77,27 @@ api_urlpatterns = [
     path('api/schemas/', schema_view, name='schema-view'),
     path('api/uploads/initialize/', upload_initialize_view, name='upload-initialize'),
     re_path(
-        r'api/uploads/(?P<upload_id>[0-9a-f\-]{36})/complete/',
+        rf'api/uploads/{UPLOAD_ID_URLPATTERN}/complete/',
         upload_complete_view,
         name='upload-complete',
     ),
     re_path(
-        r'^api/uploads/(?P<upload_id>[0-9a-f\-]{36})/validate/$',
+        rf'^api/uploads/{UPLOAD_ID_URLPATTERN}/validate/$',
         upload_validate_view,
         name='upload-validate',
+    ),
+    path(
+        'api/uploads/zarr/initialize/', zarr_upload_initialize_view, name='zarr-upload-initialize'
+    ),
+    re_path(
+        rf'api/uploads/zarr/{UPLOAD_ID_URLPATTERN}/complete/',
+        zarr_upload_complete_view,
+        name='zarr-upload-complete',
+    ),
+    re_path(
+        rf'^api/uploads/zarr/{UPLOAD_ID_URLPATTERN}/validate/$',
+        zarr_upload_validate_view,
+        name='zarr-upload-validate',
     ),
     path('api/users/me/', users_me_view),
     path('api/users/search/', users_search_view),

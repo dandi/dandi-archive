@@ -1,5 +1,5 @@
-_commit: v0.47.1
-_src_path: gh:kitware-resonant/cookiecutter-resonant
+_commit: v0.48.1
+_src_path: https://github.com/kitware-resonant/cookiecutter-resonant
 core_app_name: api
 include_example_code: false
 project_name: DANDI Archive
