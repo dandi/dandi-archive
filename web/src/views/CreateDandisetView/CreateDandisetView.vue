@@ -284,7 +284,7 @@ const grantEndDateRules = computed(() => [
 
     // Check if date is more than 5 years in the future
     if (selectedDate > fiveYearsFromNow) {
-      return 'DANDI only supports 5 years of embargo';
+      return 'DANDI only supports 5 years of embargo'; // TODO: BRANDING(name) - hardcoded archive name
     }
 
     return true;

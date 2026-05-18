@@ -101,7 +101,7 @@ defineProps({
   },
 });
 
-// // Twitter user to mention
+// TODO: BRANDING - hardcoded social media handle
 const twitterUser = 'DANDIarchive';
 
 const store = useDandisetStore();

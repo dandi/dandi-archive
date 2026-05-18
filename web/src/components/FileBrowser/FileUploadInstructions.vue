@@ -26,6 +26,7 @@
             <div>> cd {{ dandisetIdentifier }}</div>
             <div>> dandi organize &lt;source_folder&gt; -f dry</div>
             <div>> dandi organize &lt;source_folder&gt;</div>
+            <!-- TODO: BRANDING(name) - may need instance flag for non-default instances -->
             <div>> dandi upload</div>
           </v-sheet>
         </div>

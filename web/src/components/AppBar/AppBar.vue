@@ -42,12 +42,14 @@
       </v-list>
     </v-menu>
     <router-link to="/">
+      <!-- TODO: BRANDING START - hardcoded logo asset and alt text -->
       <v-img
         alt="DANDI logo"
         :width="100"
         :src="logo"
         class="mr-3"
       />
+      <!-- TODO: BRANDING END -->
     </router-link>
     <v-toolbar-items v-if="!isMobile">
       <v-tabs selected-class="text-primary">
@@ -154,7 +156,7 @@ import {
   dandiAboutUrl, dandiBlogUrl, dandiDocumentationUrl, dandiHelpUrl, dandihubUrl,
 } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
-import logo from '@/assets/logo.svg';
+import logo from '@/assets/logo.svg'; // TODO: BRANDING - hardcoded logo asset
 
 interface NavigationItem {
   text: string,
