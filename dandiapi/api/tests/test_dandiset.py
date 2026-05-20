@@ -4,6 +4,7 @@ import datetime
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
+from allauth.socialaccount.models import SocialAccount
 from dandischema.conf import get_instance_config
 from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.conf import settings
@@ -1267,6 +1268,109 @@ def test_dandiset_rest_add_owner_does_not_exist(api_client):
     resp = api_client.put(f'/api/dandisets/{dandiset.identifier}/users/', [{'username': fake_name}])
     assert resp.status_code == 400
     assert resp.data == [f'User {fake_name} not found']
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_add_owner_username_collides_with_other_user_login(api_client):
+    """
+    Regression test for #2831.
+
+    Two distinct Django User rows can share a string `"yarikoptic"`: one as the social
+    account login (the canonical username clients see), the other as the Django
+    User.username (typically an email, but possibly a legacy account whose username
+    happens to be the same as another user's GitHub login). PUT /users/ must resolve
+    the requested username to exactly one User -- the one with the matching social
+    account.
+    """
+    shared_name = 'yarikoptic'
+    # The "real" GitHub-linked user that should win.
+    real_user = UserFactory.create(social_account__extra_data__login=shared_name)
+    # A legacy user whose Django username happens to equal `shared_name`.
+    UserFactory.create(username=shared_name, email=f'{shared_name}@example.com')
+
+    requesting_user = UserFactory.create()
+    dandiset = DandisetFactory.create(owners=[requesting_user])
+    api_client.force_authenticate(user=requesting_user)
+
+    resp = api_client.put(
+        f'/api/dandisets/{dandiset.identifier}/users/',
+        [
+            {'username': requesting_user.socialaccount_set.get().extra_data['login']},
+            {'username': shared_name},
+        ],
+    )
+
+    assert resp.status_code == 200
+    assert [o['username'] for o in resp.data] == [
+        requesting_user.socialaccount_set.get().extra_data['login'],
+        shared_name,
+    ]
+    assert list(get_dandiset_owners(dandiset)) == [requesting_user, real_user]
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_add_owner_login_shared_by_two_social_accounts(api_client):
+    """
+    Regression test for #2831.
+
+    If two SocialAccount rows happen to share the same `extra_data['login']`
+    (e.g. someone renamed their GitHub username and the freed handle was taken
+    by another user), the PUT must still grant ownership to exactly one User.
+    """
+    shared_login = 'yarikoptic'
+    older_user = UserFactory.create(social_account__extra_data__login=shared_login)
+    newer_user = UserFactory.create()
+    # Force-rename newer_user's social-account login so we have two rows sharing it.
+    sa = newer_user.socialaccount_set.get()
+    sa.extra_data['login'] = shared_login
+    sa.save()
+    # Make `newer_user` the most recently active so it wins the deterministic ordering.
+    newer_user.last_login = timezone.now()
+    newer_user.save()
+
+    assert SocialAccount.objects.filter(extra_data__login=shared_login).count() == 2
+
+    requesting_user = UserFactory.create()
+    dandiset = DandisetFactory.create(owners=[requesting_user])
+    api_client.force_authenticate(user=requesting_user)
+
+    resp = api_client.put(
+        f'/api/dandisets/{dandiset.identifier}/users/',
+        [
+            {'username': requesting_user.socialaccount_set.get().extra_data['login']},
+            {'username': shared_login},
+        ],
+    )
+
+    assert resp.status_code == 200
+    assert [o['username'] for o in resp.data].count(shared_login) == 1
+    owners = list(get_dandiset_owners(dandiset))
+    assert len(owners) == 2
+    assert newer_user in owners
+    assert older_user not in owners
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_add_owner_duplicate_usernames_in_payload(api_client):
+    """The same username repeated in the PUT body should yield one ownership, not two."""
+    user1 = UserFactory.create()
+    user2 = UserFactory.create()
+    dandiset = DandisetFactory.create(owners=[user1])
+    api_client.force_authenticate(user=user1)
+
+    login1 = user1.socialaccount_set.get().extra_data['login']
+    login2 = user2.socialaccount_set.get().extra_data['login']
+
+    resp = api_client.put(
+        f'/api/dandisets/{dandiset.identifier}/users/',
+        [{'username': login1}, {'username': login2}, {'username': login2}],
+    )
+
+    assert resp.status_code == 200
+    assert sorted(o['username'] for o in resp.data) == sorted([login1, login2])
+    assert sorted(get_dandiset_owners(dandiset), key=lambda u: u.pk) == sorted(
+        [user1, user2], key=lambda u: u.pk
+    )
 
 
 @pytest.mark.django_db
