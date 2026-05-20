@@ -166,6 +166,9 @@
               :key="i"
             >
               <strong>{{ item.status }}</strong>
+              <span v-if="item.embargoedUntil">
+                (embargoed until <strong>{{ formatDate(item.embargoedUntil) }}</strong>)
+              </span>
               <span v-text="accessInformation && i === accessInformation.length - 1 ? '' : ', '" />
             </span>
           </span>
