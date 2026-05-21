@@ -1289,7 +1289,7 @@ def test_dandiset_rest_add_owner_username_collides_with_other_user_login(api_cli
     UserFactory.create(username=shared_name, email=f'{shared_name}@example.com')
 
     requesting_user = UserFactory.create()
-    dandiset = DandisetFactory.create(owners=[requesting_user])
+    dandiset = DraftVersionFactory.create(dandiset__owners=[requesting_user]).dandiset
     api_client.force_authenticate(user=requesting_user)
 
     resp = api_client.put(
@@ -1331,7 +1331,7 @@ def test_dandiset_rest_add_owner_login_shared_by_two_social_accounts(api_client)
     assert SocialAccount.objects.filter(extra_data__login=shared_login).count() == 2
 
     requesting_user = UserFactory.create()
-    dandiset = DandisetFactory.create(owners=[requesting_user])
+    dandiset = DraftVersionFactory.create(dandiset__owners=[requesting_user]).dandiset
     api_client.force_authenticate(user=requesting_user)
 
     resp = api_client.put(
@@ -1355,7 +1355,7 @@ def test_dandiset_rest_add_owner_duplicate_usernames_in_payload(api_client):
     """The same username repeated in the PUT body should yield one ownership, not two."""
     user1 = UserFactory.create()
     user2 = UserFactory.create()
-    dandiset = DandisetFactory.create(owners=[user1])
+    dandiset = DraftVersionFactory.create(dandiset__owners=[user1]).dandiset
     api_client.force_authenticate(user=user1)
 
     login1 = user1.socialaccount_set.get().extra_data['login']
