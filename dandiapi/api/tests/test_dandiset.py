@@ -1301,11 +1301,13 @@ def test_dandiset_rest_add_owner_username_collides_with_other_user_login(api_cli
     )
 
     assert resp.status_code == 200
-    assert [o['username'] for o in resp.data] == [
+    # Response order follows `get_dandiset_owners`' date_joined ordering, which is
+    # not the input order; compare as a set.
+    assert {o['username'] for o in resp.data} == {
         requesting_user.socialaccount_set.get().extra_data['login'],
         shared_name,
-    ]
-    assert list(get_dandiset_owners(dandiset)) == [requesting_user, real_user]
+    }
+    assert set(get_dandiset_owners(dandiset)) == {requesting_user, real_user}
 
 
 @pytest.mark.django_db
