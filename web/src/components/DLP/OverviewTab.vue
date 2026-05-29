@@ -88,6 +88,22 @@
       name="Related resources"
       icon="mdi-book"
     >
+      <template #itemTitle="slotProps">
+        <span v-if="slotProps.item.name || slotProps.item.identifier || slotProps.item.id">
+          <a
+            v-if="slotProps.item.url"
+            :href="slotProps.item.url"
+            target="_blank"
+            rel="noopener"
+          >
+            {{ slotProps.item.name || slotProps.item.identifier || slotProps.item.id }}
+          </a>
+          <template v-else>
+            {{ slotProps.item.name || slotProps.item.identifier || slotProps.item.id }}
+          </template>
+          <br>
+        </span>
+      </template>
       <template #content="slotProps">
         <span
           v-if="slotProps.item.identifier"
@@ -116,18 +132,6 @@
         >
           <strong>Relation: </strong>{{ slotProps.item.relation }}
         </span>
-      </template>
-      <template #links="slotProps">
-        <v-btn
-          v-if="slotProps.item.url"
-          icon
-          variant="text"
-          :href="slotProps.item.url"
-          target="_blank"
-          rel="noopener"
-        >
-          <v-icon>mdi-link</v-icon>
-        </v-btn>
       </template>
     </MetadataCard>
 
