@@ -108,14 +108,9 @@ function performSearch(evt: Event) {
     // nothing has changed, do nothing
     return;
   }
-  if (route.name !== 'searchDandisets') {
-    router.push({
-      name: 'searchDandisets',
-      query: {
-        search: currentSearch.value,
-      },
-    });
-  } else {
+  if (route.name === 'searchDandisets' || route.name === 'myDandisets') {
+    // Stay on the current page so the search keeps its context. On "My Dandisets"
+    // this scopes the search to the user's own dandisets (including embargoed).
     router.replace({
       ...route,
       query: {
@@ -123,6 +118,13 @@ function performSearch(evt: Event) {
         search: currentSearch.value,
       },
     } as RouteLocationRaw);
+  } else {
+    router.push({
+      name: 'searchDandisets',
+      query: {
+        search: currentSearch.value,
+      },
+    });
   }
 }
 </script>
