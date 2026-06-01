@@ -38,7 +38,7 @@ _DATE_OPS = frozenset(
         'published_after',
     }
 )
-_ASSET_OPS = frozenset({'species', 'approach', 'technique', 'standard', 'file_type'})
+_ASSET_OPS = frozenset({'species', 'approach', 'technique', 'file_type'})
 
 
 def _annotate_latest_version_modified(queryset):
@@ -60,30 +60,34 @@ def _annotate_latest_published_created(queryset):
 
 
 # Each entry maps an operator to a Postgres jsonpath that selects the names
-# we want to match against. `[*]` wildcards mean we match if ANY element of
-# the array satisfies the predicate — important for assets that list
-# multiple species, approaches, etc. Paths MUST be trusted constants:
-# they're interpolated into the SQL.
+# we want to match against, within an asset's metadata. `[*]` wildcards mean
+# we match if ANY element of the array satisfies the predicate — important for
+# assets that list multiple species, approaches, etc. Paths MUST be trusted
+# constants: they're interpolated into the SQL.
 _NAME_PATH_OPS = {
     'species': '$.wasAttributedTo[*].species.name',
     'approach': '$.approach[*].name',
     'technique': '$.measurementTechnique[*].name',
-    'standard': '$.dataStandard[*].name',
 }
 
+# The data standard is reported on the Version's `assetsSummary`, not on
+# individual assets, so it's matched against the Version metadata column rather
+# than the asset_search view.
+_STANDARD_PATH = '$.assetsSummary.dataStandard[*].name'
 
-def _jsonpath_name_match(path: str, value: str) -> tuple[str, list[str]]:
+
+def _jsonpath_name_match(column: str, path: str, value: str) -> tuple[str, list[str]]:
     """Build a parameterized Postgres `jsonb_path_exists` predicate.
 
     Matches `value` case-insensitively as a substring against any node
-    selected by `path`. `path` MUST come from a trusted allowlist; `value`
-    is parameterized and regex-escaped.
+    selected by `path` within `column`. Both `column` and `path` MUST come
+    from a trusted allowlist; `value` is parameterized and regex-escaped.
     """
-    # No table prefix on `asset_metadata`: Django may alias the AssetSearch
-    # table (e.g. inside a subquery), and qualifying the column would break
-    # those queries. The unqualified column is unambiguous in our usage.
+    # No table prefix on the column: Django may alias the table (e.g. inside a
+    # subquery), and qualifying the column would break those queries. The
+    # unqualified column is unambiguous in our usage.
     where = (
-        'jsonb_path_exists(asset_metadata, '
+        f'jsonb_path_exists({column}, '
         f"('{path} ? (@ like_regex ' "
         '|| to_jsonb(%s::text)::text || '
         '\' flag "i")\')::jsonpath)'
@@ -94,7 +98,7 @@ def _jsonpath_name_match(path: str, value: str) -> tuple[str, list[str]]:
 def _apply_asset_filter(queryset, operator: str, value: str):
     """Apply one parsed asset operator to an AssetSearch queryset."""
     if operator in _NAME_PATH_OPS:
-        where, params = _jsonpath_name_match(_NAME_PATH_OPS[operator], value)
+        where, params = _jsonpath_name_match('asset_metadata', _NAME_PATH_OPS[operator], value)
         # `where` interpolates only an allowlisted jsonpath; the user value
         # is bound via params (and re-escaped against regex injection).
         return queryset.extra(where=[where], params=params)  # noqa: S610
@@ -102,6 +106,22 @@ def _apply_asset_filter(queryset, operator: str, value: str):
         mime_prefix = _FILE_TYPE_ALIASES.get(value.lower(), value)
         return queryset.filter(asset_metadata__encodingFormat__istartswith=mime_prefix)
     raise ValueError(f'unknown asset operator: {operator}')  # pragma: no cover
+
+
+def _apply_standard_filter(queryset, value: str):
+    """Filter dandisets whose version assetsSummary lists a matching data standard.
+
+    Unlike the asset operators, `dataStandard` lives on the Version metadata
+    (`assetsSummary.dataStandard`), so we match against Versions and restrict the
+    dandiset queryset to those that have at least one matching version.
+    """
+    where, params = _jsonpath_name_match('metadata', _STANDARD_PATH, value)
+    matching_dandiset_ids = (
+        Version.objects.extra(where=[where], params=params)  # noqa: S610
+        .values_list('dandiset_id', flat=True)
+        .distinct()
+    )
+    return queryset.filter(id__in=matching_dandiset_ids)
 
 
 _MODIFIED_ALIAS = '_search_latest_version_modified'
@@ -170,6 +190,8 @@ def apply_search_filters(
                     f'Invalid date for "{key}": {value!r}. Use YYYY-MM-DD.'
                 ) from exc
             queryset = _apply_date_filter(queryset, key, ts, annotated)
+        elif key == 'standard':
+            queryset = _apply_standard_filter(queryset, value)
         elif key in _ASSET_OPS:
             if asset_qs is None:
                 asset_qs = AssetSearch.objects.visible_to(user)
@@ -178,7 +200,7 @@ def apply_search_filters(
     if asset_qs is not None:
         # NOTE perf: jsonb_path_exists with a runtime-built jsonpath cannot
         # use the existing per-field GIN indexes; the path-scan operators
-        # (species/approach/technique/standard) currently sequential-scan the
+        # (species/approach/technique) currently sequential-scan the
         # asset_search materialized view. The view is small enough today
         # (~one row per asset) that this is acceptable, but if it becomes a
         # hot path the fix is expression GIN indexes on each path or
