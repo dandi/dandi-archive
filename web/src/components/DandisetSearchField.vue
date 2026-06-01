@@ -99,7 +99,10 @@
             @click="applyOperator(op)"
           >
             <template #title>
-              <code class="operator-key">{{ op.key }}:</code>
+              <code class="operator-key">{{ op.key }}:</code><code
+                v-if="op.example"
+                class="operator-example"
+              >{{ op.example }}</code>
             </template>
             <template #subtitle>
               {{ op.description }}
@@ -151,11 +154,16 @@ const operatorHelp = [
 ];
 
 // The set of operators we suggest, derived from the help table so the two
-// stay in sync. The key is the part before the colon (e.g. `species`).
-const searchOperators = operatorHelp.map((op) => ({
-  key: op.example.split(':')[0],
-  description: op.description,
-}));
+// stay in sync. The key is the part before the colon (e.g. `species`) and the
+// example is the part after it (e.g. `2024-01-01`), shown as a format hint.
+const searchOperators = operatorHelp.map((op) => {
+  const colon = op.example.indexOf(':');
+  return {
+    key: op.example.slice(0, colon),
+    example: op.example.slice(colon + 1),
+    description: op.description,
+  };
+});
 
 // --- Autocomplete state ---------------------------------------------------
 
@@ -350,5 +358,8 @@ function performSearch(evt: Event) {
 .operator-suggestions .operator-key {
   font-weight: 600;
   color: #4051b5;
+}
+.operator-suggestions .operator-example {
+  color: rgba(0, 0, 0, 0.5);
 }
 </style>
