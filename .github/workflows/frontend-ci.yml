@@ -126,7 +126,11 @@ jobs:
           # with browsers preinstalled. This bypasses `npx playwright install`,
           # whose chromium download from cdn.playwright.dev hangs after 100 %
           # on the ubuntu-24.04 runner image >= 20260525.161.1 (see #2845).
+          # PW_TEST_HTML_REPORT_OPEN=never stops the HTML reporter from auto-
+          # serving the report on test failure (which would otherwise hang the
+          # job at "Serving HTML report at http://localhost:9323").
           docker run --rm --network host \
+              -e CI=1 -e PW_TEST_HTML_REPORT_OPEN=never -e PLAYWRIGHT_HTML_OPEN=never \
               -v "$PWD/e2e:/work" -w /work \
               mcr.microsoft.com/playwright:v1.51.1-noble \
               sh -c "npm ci && npx playwright test"
