@@ -115,8 +115,32 @@ jobs:
       run: npm ci
       working-directory: e2e
 
+    - name: Pre-fetch Chromium with curl (workaround for #2845)
+      # `npx playwright install` chromium download from cdn.playwright.dev hangs
+      # after 100 % on ubuntu-24.04 runner image >= 20260525.161.1. curl does
+      # not exhibit the same socket-close-after-EOF bug, so we pre-seed
+      # playwright's cache and let `playwright install --with-deps` only run
+      # apt (it sees the browsers already there and skips the download).
+      run: |
+          set -eu
+          base=https://cdn.playwright.dev/dbazure/download/playwright/builds/chromium/1161
+          cache=$HOME/.cache/ms-playwright
+          mkdir -p "$cache"
+          for pair in chromium-1161:chromium-linux.zip chromium_headless_shell-1161:chromium-headless-shell-linux.zip; do
+              dir=${pair%%:*}
+              zip=${pair##*:}
+              target=$cache/$dir
+              [ -e "$target/INSTALLATION_COMPLETE" ] && continue
+              mkdir -p "$target"
+              curl --retry 5 --retry-delay 5 --retry-connrefused -fSL \
+                  "$base/$zip" -o "/tmp/$zip"
+              unzip -q "/tmp/$zip" -d "$target"
+              touch "$target/INSTALLATION_COMPLETE"
+              rm "/tmp/$zip"
+          done
+
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      run: npx playwright install --with-deps chromium
       working-directory: e2e
 
     - name: Run Playwright tests
