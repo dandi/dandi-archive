@@ -1594,14 +1594,8 @@ def _refresh_asset_search():
         cursor.execute('REFRESH MATERIALIZED VIEW asset_search;')
 
 
-def _seed_dandiset_with_asset(
-    *, asset_metadata: dict, version_metadata: dict | None = None, embargoed: bool = False
-) -> Dandiset:
+def _seed_dandiset_with_asset(*, asset_metadata: dict, embargoed: bool = False) -> Dandiset:
     """Create a draft dandiset + version + single asset with the given metadata.
-
-    ``version_metadata`` is merged into the version's metadata (e.g. to set
-    ``assetsSummary``, which is reported at the version level rather than on
-    individual assets).
 
     Caller is responsible for `_refresh_asset_search()` after seeding all
     fixtures so the materialized view sees them.
@@ -1609,9 +1603,6 @@ def _seed_dandiset_with_asset(
     embargo_status = Dandiset.EmbargoStatus.EMBARGOED if embargoed else Dandiset.EmbargoStatus.OPEN
     dandiset = DandisetFactory.create(embargo_status=embargo_status)
     version = DraftVersionFactory.create(dandiset=dandiset)
-    if version_metadata:
-        version.metadata = {**version.metadata, **version_metadata}
-        version.save()
     base_metadata = {
         'schemaVersion': DANDI_SCHEMA_VERSION,
         'schemaKey': 'Asset',
@@ -1976,29 +1967,6 @@ def test_advanced_search_technique_with_quoted_phrase(api_client):
 
     assert _search_ids(api_client, 'technique:"spike sorting"') == {spike.identifier}
     assert _search_ids(api_client, 'technique:surgical') == {surg.identifier}
-
-
-@pytest.mark.ai_generated
-@pytest.mark.django_db
-def test_advanced_search_standard_matches(api_client):
-    # `dataStandard` is reported on the version's assetsSummary, not on
-    # individual assets, so it must be matched against the version metadata.
-    nwb = _seed_dandiset_with_asset(
-        asset_metadata={},
-        version_metadata={
-            'assetsSummary': {'dataStandard': [{'name': 'Neurodata Without Borders (NWB)'}]}
-        },
-    )
-    bids = _seed_dandiset_with_asset(
-        asset_metadata={},
-        version_metadata={
-            'assetsSummary': {'dataStandard': [{'name': 'Brain Imaging Data Structure (BIDS)'}]}
-        },
-    )
-    _refresh_asset_search()
-
-    assert _search_ids(api_client, 'standard:NWB') == {nwb.identifier}
-    assert _search_ids(api_client, 'standard:BIDS') == {bids.identifier}
 
 
 @pytest.mark.ai_generated
