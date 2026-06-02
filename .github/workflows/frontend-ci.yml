@@ -111,14 +111,6 @@ jobs:
     - name: Install test data
       run: ./manage.py loaddata playwright
 
-    - name: Install dependencies
-      run: npm ci
-      working-directory: e2e
-
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-      working-directory: e2e
-
     - name: Run Playwright tests
       run: |
           # start vue dev server
@@ -130,8 +122,14 @@ jobs:
           # start the dandi-api server
           ./manage.py runserver &
 
-          # run the tests
-          cd e2e && npx playwright test
+          # Run e2e tests inside the official Playwright container, which ships
+          # with browsers preinstalled. This bypasses `npx playwright install`,
+          # whose chromium download from cdn.playwright.dev hangs after 100 %
+          # on the ubuntu-24.04 runner image >= 20260525.161.1 (see #2845).
+          docker run --rm --network host \
+              -v "$PWD/e2e:/work" -w /work \
+              mcr.microsoft.com/playwright:v1.51.1-noble \
+              sh -c "npm ci && npx playwright test"
 
     - uses: actions/upload-artifact@v7
       if: always()
