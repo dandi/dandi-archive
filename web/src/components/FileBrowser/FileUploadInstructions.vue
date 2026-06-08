@@ -26,7 +26,7 @@
             <div>> cd {{ dandisetIdentifier }}</div>
             <div>> dandi organize &lt;source_folder&gt; -f dry</div>
             <div>> dandi organize &lt;source_folder&gt;</div>
-            <div>> dandi upload</div>
+            <div>> dandi upload -i {{ instanceName }}</div>
           </v-sheet>
         </div>
       </div>
@@ -48,12 +48,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useDandisetStore } from '@/stores/dandiset';
 import { dandiDocumentationUrl } from '@/utils/constants';
+import { dandiRest } from '@/rest';
 
 const store = useDandisetStore();
 const dandisetIdentifier = computed(() => store.dandiset?.dandiset.identifier);
+
+const instanceName = ref<string>('');
+
+onMounted(async () => {
+  const info = await dandiRest.info();
+  instanceName.value = info.instance_config.instance_name.toLowerCase();
+});
 
 if (dandisetIdentifier.value === undefined) {
   throw new Error('store.dandiset must be defined');

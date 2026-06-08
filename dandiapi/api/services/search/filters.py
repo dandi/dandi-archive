@@ -41,7 +41,7 @@ _DATE_OPS = frozenset(
         'published_after',
     }
 )
-_ASSET_OPS = frozenset({'species', 'approach', 'technique', 'standard', 'file_type'})
+_ASSET_OPS = frozenset({'species', 'approach', 'technique', 'file_type'})
 _OWNER_OPS = frozenset({'owner'})
 
 
@@ -72,7 +72,6 @@ _NAME_PATH_OPS = {
     'species': '$.wasAttributedTo[*].species.name',
     'approach': '$.approach[*].name',
     'technique': '$.measurementTechnique[*].name',
-    'standard': '$.dataStandard[*].name',
 }
 
 
@@ -210,7 +209,7 @@ def apply_search_filters(
     if asset_qs is not None:
         # NOTE perf: jsonb_path_exists with a runtime-built jsonpath cannot
         # use the existing per-field GIN indexes; the path-scan operators
-        # (species/approach/technique/standard) currently sequential-scan the
+        # (species/approach/technique) currently sequential-scan the
         # asset_search materialized view. The view is small enough today
         # (~one row per asset) that this is acceptable, but if it becomes a
         # hot path the fix is expression GIN indexes on each path or
