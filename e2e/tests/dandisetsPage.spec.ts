@@ -19,7 +19,9 @@ test.describe("dandisets page", async () => {
         // Match a stable substring of the search field's placeholder so this
         // doesn't break when the placeholder copy is tweaked.
         const searchFieldText = "Search Dandisets";
-        await page.getByRole('textbox', { name: 'Search Dandisets' }).click();
+        // The search field exposes role="combobox" (it has an operator
+        // autocomplete dropdown), so target it by role accordingly.
+        await page.getByRole('combobox', { name: 'Search Dandisets' }).click();
         await page.keyboard.press("Enter");
         await page.getByRole("button", { name: "󰒓" }).click();
         await page.waitForTimeout(500);
