@@ -75,3 +75,14 @@ DANDI_AUTO_APPROVE_USERS = True
 
 DANDI_DEV_EMAIL = 'test-dev@example.com'
 DANDI_ADMIN_EMAIL = 'test-admin@example.com'
+
+# `manage.py runserver` spawns a thread per request and, with a long-lived
+# CONN_MAX_AGE (inherited from base settings), holds one Postgres connection per
+# thread for the lifetime of the process. Under parallel load — notably the
+# Playwright E2E suite running with multiple workers — the connection count can
+# climb past Postgres's default `max_connections` ("sorry, too many clients
+# already"). Allow that environment to force per-request connection closing
+# (`DJANGO_CONN_MAX_AGE=0`) so the count stays bounded regardless of test count.
+DATABASES['default']['CONN_MAX_AGE'] = env.float(
+    'DJANGO_CONN_MAX_AGE', default=DATABASES['default']['CONN_MAX_AGE']
+)
