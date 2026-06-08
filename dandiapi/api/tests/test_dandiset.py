@@ -1971,21 +1971,6 @@ def test_advanced_search_technique_with_quoted_phrase(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_standard_matches(api_client):
-    nwb = _seed_dandiset_with_asset(
-        asset_metadata={'dataStandard': [{'name': 'Neurodata Without Borders (NWB)'}]},
-    )
-    bids = _seed_dandiset_with_asset(
-        asset_metadata={'dataStandard': [{'name': 'Brain Imaging Data Structure (BIDS)'}]},
-    )
-    _refresh_asset_search()
-
-    assert _search_ids(api_client, 'standard:NWB') == {nwb.identifier}
-    assert _search_ids(api_client, 'standard:BIDS') == {bids.identifier}
-
-
-@pytest.mark.ai_generated
-@pytest.mark.django_db
 def test_advanced_search_file_type_alias_and_mime(api_client):
     nwb = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'application/x-nwb'})
     image = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'image/tiff'})
@@ -2373,6 +2358,66 @@ def test_advanced_search_contributor_role_substring_match(api_client):
 
 
 @pytest.mark.ai_generated
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_contributor_operators_and_on_same_version(api_client):
+    """Contributor predicates AND on the same Version, never across versions.
+
+    A dandiset whose draft has Author=Doe and whose published version has
+    Funder=NIH (with no overlap between the two contributor lists) must
+    NOT match `author:Doe funder:NIH` — no single version satisfies both
+    predicates simultaneously. The control dandiset has both contributors
+    on the same (draft) version and DOES match.
+
+    Guards against the cross-version spurious match that would happen if
+    the implementation chained per-operator subqueries against unrelated
+    Version rows.
+    """
+    # Negative case: contributors split across versions. Let the factories
+    # populate default metadata first, then overwrite `contributor` so the
+    # required schemaVersion / id / etc. stay present.
+    ds_split = DandisetFactory.create()
+    draft = DraftVersionFactory.create(dandiset=ds_split)
+    draft.metadata = {
+        **draft.metadata,
+        'contributor': [
+            {'name': 'Doe, Jane', 'roleName': ['dcite:Author'], 'schemaKey': 'Person'},
+        ],
+    }
+    draft.save()
+    published = PublishedVersionFactory.create(dandiset=ds_split)
+    published.metadata = {
+        **published.metadata,
+        'contributor': [
+            {
+                'name': 'National Institutes of Health (NIH)',
+                'roleName': ['dcite:Funder'],
+                'schemaKey': 'Organization',
+            },
+        ],
+    }
+    published.save()
+
+    # Positive control: both contributors on the same version.
+    ds_both = _seed_dandiset_with_contributors(
+        contributors=[
+            {'name': 'Doe, Jane', 'roleName': ['dcite:Author'], 'schemaKey': 'Person'},
+            {
+                'name': 'National Institutes of Health (NIH)',
+                'roleName': ['dcite:Funder'],
+                'schemaKey': 'Organization',
+            },
+        ],
+    )
+
+    # Each operator on its own picks up `ds_split` (the draft satisfies
+    # `author:Doe`, the published version satisfies `funder:NIH`); composing
+    # them must not — only `ds_both` does.
+    assert _search_ids(api_client, 'author:Doe') == {ds_split.identifier, ds_both.identifier}
+    assert _search_ids(api_client, 'funder:NIH') == {ds_split.identifier, ds_both.identifier}
+    assert _search_ids(api_client, 'author:Doe funder:NIH') == {ds_both.identifier}
+
+
 @pytest.mark.django_db
 def test_advanced_search_unknown_role_operator_returns_400_with_suggestion(api_client):
     response = api_client.get(

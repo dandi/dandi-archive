@@ -28,7 +28,7 @@ DATE_OPS = frozenset(
     }
 )
 
-ASSET_OPS = frozenset({'species', 'approach', 'technique', 'standard', 'file_type'})
+ASSET_OPS = frozenset({'species', 'approach', 'technique', 'file_type'})
 
 OWNER_OPS = frozenset({'owner'})
 
@@ -83,7 +83,6 @@ ASSET_NAME_PATH_OPS = {
     'species': '$.wasAttributedTo[*].species.name',
     'approach': '$.approach[*].name',
     'technique': '$.measurementTechnique[*].name',
-    'standard': '$.dataStandard[*].name',
 }
 
 # Union of every operator key. The parser uses this for its allowlist;

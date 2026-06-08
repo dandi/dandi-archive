@@ -82,7 +82,7 @@ but allows developers to run Python code on their native system.
 1. Run the Celery app
     1. Start a new terminal
     1. Run `export UV_ENV_FILE=./dev/.env.docker-compose-native`
-    1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
+    1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-mingle --without-heartbeat --without-gossip --queues celery,calculate_sha256,ingest_zarr_archive,manifest-worker --beat`
 1. When finished, run `docker compose stop`
 
 ## Testing
