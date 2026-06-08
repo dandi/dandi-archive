@@ -44,6 +44,14 @@ const EXTERNAL_SERVICES: ExternalService[] = [
 
   {
     name: "Neurosift",
+    regex: /\.nii(\.gz)?$/,
+    maxsize: Infinity,
+    endpoint:
+      "https://neurosift.app/dandiset/$dandiset_id$?tab=$asset_path$",
+  },
+
+  {
+    name: "Neurosift",
     regex: /\.nwb$/,
     maxsize: Infinity,
     endpoint:
@@ -90,6 +98,7 @@ interface ServiceUrlData {
   assetDandiUrl: string,
   assetDandiMetadataUrl: string,
   assetS3Url: string,
+  assetPath: string,
 }
 
 function serviceURL(endpoint: ExternalServiceEndpoint, data: ServiceUrlData): string | null {
@@ -112,7 +121,8 @@ function serviceURL(endpoint: ExternalServiceEndpoint, data: ServiceUrlData): st
     .replaceAll('$asset_url$', data.assetUrl)
     .replaceAll('$asset_dandi_url$', data.assetDandiUrl)
     .replaceAll('$asset_dandi_metadata_url$', data.assetDandiMetadataUrl)
-    .replaceAll('$asset_s3_url$', data.assetS3Url);
+    .replaceAll('$asset_s3_url$', data.assetS3Url)
+    .replaceAll('$asset_path$', data.assetPath);
 }
 
 export function getExternalServices(path: AssetPath, info: {dandisetId: string, dandisetVersion: string}) {
@@ -136,6 +146,7 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
   const assetDandiUrl = `${assetDandiMetadataUrl}download/`;
   const assetS3Url = trimEnd((path.asset as AssetFile).url, '/');
   const assetId = path.asset?.asset_id;
+  const assetPath = path.path;
 
   if (!assetId) {
     // This should never happen
@@ -158,6 +169,7 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
         assetDandiUrl,
         assetDandiMetadataUrl,
         assetS3Url,
+        assetPath,
       });
       return url ? [{ name: service.name, url }] : [];
     });
