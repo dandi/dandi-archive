@@ -58,11 +58,14 @@ CONTRIBUTOR_ROLE_OPS: dict[str, str | None] = {
 
 AFFILIATION_OPS = frozenset({'affiliation'})
 
-# Numeric "at least N" operators: short name → jsonpath into `Version.metadata`.
-# Value is a non-negative integer; `num_subjects:10` matches dandisets whose
-# `assetsSummary.numberOfSubjects` is >= 10. The intuition is "studies with
-# at least N <thing>", which is what users actually search for; an upper
-# bound is rarely useful in practice.
+# Numeric count operators: short name → jsonpath into `Version.metadata`.
+# Value is a non-negative integer, optionally prefixed with a comparator
+# (`>`, `>=`, `<`, `<=`, `=`); a bare value means `>=`. So `num_subjects:10`
+# and `num_subjects:>=10` both match dandisets whose
+# `assetsSummary.numberOfSubjects` is at least 10, while `num_subjects:<5` and
+# `num_subjects:=0` match below / exact. The bare-defaults-to-"at least"
+# behavior reflects the intent behind count search ("studies with at least N
+# <thing>"). Comparator parsing lives in `filters._apply_count_filter`.
 #
 # Only `num_subjects` is exposed for now. The `assetsSummary` schema also
 # carries `numberOfFiles`, `numberOfBytes`, `numberOfSamples`, and

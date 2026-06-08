@@ -168,29 +168,54 @@ def _apply_contributor_filters(
     return queryset.filter(versions__pk__in=matching_versions.values('pk'))
 
 
+# Comparator prefix → Postgres jsonpath operator. The keys are the syntax we
+# accept in a count value (`num_subjects:>=10`); the values are the jsonpath
+# operators we emit. A bare value (no prefix) defaults to `>=` — "at least N"
+# is the intent behind count search. Mapped through this fixed allowlist so the
+# operator is never interpolated from user text into the jsonpath.
+_COUNT_COMPARATORS = {
+    '>': '>',
+    '>=': '>=',
+    '<': '<',
+    '<=': '<=',
+    '=': '==',
+}
+# Longest-match-first alternation so `>=` wins over `>`. `\s*` tolerates the
+# quoted form (`num_subjects:">= 10"`); the bare form never contains spaces.
+_COUNT_VALUE_RE = re.compile(r'^(?P<op>>=|<=|>|<|=)?\s*(?P<n>\d+)$')
+
+
 def _apply_count_filter(
     queryset: QuerySet[Dandiset], jsonpath_path: str, value: str
 ) -> QuerySet[Dandiset]:
-    """Filter dandisets where `Version.metadata` at `jsonpath_path` is >= `value`.
+    """Filter dandisets by a numeric count in `Version.metadata` at `jsonpath_path`.
 
-    The value is a non-negative integer (e.g. `num_subjects:10`). Treated as
-    a lower bound — "at least N" is the search intent users actually have;
-    upper bounds are rare enough not to be worth the syntax cost.
+    The value is a non-negative integer, optionally prefixed with a comparator:
 
-    `jsonpath_path` is a trusted constant pointing into `Version.metadata`.
-    The integer is bound via `jsonb_path_exists`'s `vars` parameter (not
-    inlined into SQL or jsonpath), so the value is injection-safe.
+    - `num_subjects:10` or `num_subjects:>=10` — at least 10 (bare defaults to `>=`)
+    - `num_subjects:>10` / `num_subjects:<10` — strictly above / below
+    - `num_subjects:<=10` — at most 10
+    - `num_subjects:=10` — exactly 10
+
+    `jsonpath_path` is a trusted constant pointing into `Version.metadata`. The
+    comparator is mapped through `_COUNT_COMPARATORS` (never taken verbatim from
+    user input) and the integer is bound via `jsonb_path_exists`'s `vars`
+    parameter (not inlined into SQL or jsonpath), so the value is injection-safe.
 
     A dandiset matches if at least one of its versions satisfies the
     predicate. Versions whose metadata lacks the count field don't match —
     the jsonpath `?` filter drops missing/null/non-numeric values naturally.
     """
-    if not value.isdigit():
+    match = _COUNT_VALUE_RE.match(value)
+    if match is None:
         raise SearchSyntaxError(
-            f'Invalid count value {value!r}. Use a non-negative integer (e.g. `num_subjects:10`).'
+            f'Invalid count value {value!r}. Use a non-negative integer, optionally '
+            'prefixed with a comparator — e.g. `num_subjects:10`, `num_subjects:>=5`, '
+            '`num_subjects:<100`, `num_subjects:=0`.'
         )
-    n = int(value)
-    jsonpath = f'{jsonpath_path} ? (@ >= $val)'
+    op = _COUNT_COMPARATORS[match.group('op') or '>=']
+    n = int(match.group('n'))
+    jsonpath = f'{jsonpath_path} ? (@ {op} $val)'
     vars_json = json.dumps({'val': n})
     where = 'jsonb_path_exists(metadata, %s::jsonpath, %s::jsonb)'
     matching_versions = Version.objects.all().extra(  # noqa: S610

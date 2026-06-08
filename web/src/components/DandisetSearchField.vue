@@ -103,7 +103,7 @@ const operatorHelp = [
   { example: 'maintainer:Doe', description: 'Listed as a Maintainer' },
   { example: 'project_leader:Doe', description: 'Listed as the Project Leader (also: data_collector, data_manager, sponsor)' },
   { example: 'affiliation:Stanford', description: 'Has a contributor affiliated with the named organization (or ROR ID)' },
-  { example: 'num_subjects:10', description: 'Has at least N subjects (assetsSummary.numberOfSubjects)' },
+  { example: 'num_subjects:>=10', description: 'Subject count, assetsSummary.numberOfSubjects (also >, <, <=, =; bare means at least)' },
 ];
 
 function updateSearch(search: string) {

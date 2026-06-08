@@ -2564,12 +2564,38 @@ def test_advanced_search_num_subjects_operator(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
+def test_advanced_search_num_subjects_comparators(api_client):
+    """Count values accept `>`, `>=`, `<`, `<=`, `=` prefixes; bare means `>=`."""
+    ds_2 = _seed_dandiset_with_subject_count(2)
+    ds_10 = _seed_dandiset_with_subject_count(10)
+    ds_50 = _seed_dandiset_with_subject_count(50)
+
+    # Bare value is still "at least" (equivalent to `>=`).
+    assert _search_ids(api_client, 'num_subjects:10') == _search_ids(
+        api_client, 'num_subjects:>=10'
+    )
+    # Strictly greater excludes the boundary.
+    assert _search_ids(api_client, 'num_subjects:>10') == {ds_50.identifier}
+    # At least, including the boundary.
+    assert _search_ids(api_client, 'num_subjects:>=10') == {ds_10.identifier, ds_50.identifier}
+    # Strictly less than excludes the boundary.
+    assert _search_ids(api_client, 'num_subjects:<10') == {ds_2.identifier}
+    # At most, including the boundary.
+    assert _search_ids(api_client, 'num_subjects:<=10') == {ds_2.identifier, ds_10.identifier}
+    # Exact match.
+    assert _search_ids(api_client, 'num_subjects:=10') == {ds_10.identifier}
+    assert _search_ids(api_client, 'num_subjects:=99') == set()
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
 def test_advanced_search_num_subjects_invalid_value_returns_400(api_client):
     # Non-integer values are rejected with a helpful message; negatives and
-    # decimals fail the digits-only check. `num_subjects:` alone (no value)
-    # doesn't reach this path — the parser treats it as free text since the
-    # operator regex requires at least one character after the colon.
-    for bad in ('abc', '-5', '5.5'):
+    # decimals fail the integer check, and a comparator without a number is
+    # likewise invalid. `num_subjects:` alone (no value) doesn't reach this
+    # path — the parser treats it as free text since the operator regex
+    # requires at least one character after the colon.
+    for bad in ('abc', '-5', '5.5', '>', '>=', '>=x', '=>5'):
         response = api_client.get(
             '/api/dandisets/',
             {'draft': 'true', 'empty': 'true', 'search': f'num_subjects:{bad}'},
