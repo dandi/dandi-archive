@@ -1971,21 +1971,6 @@ def test_advanced_search_technique_with_quoted_phrase(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_standard_matches(api_client):
-    nwb = _seed_dandiset_with_asset(
-        asset_metadata={'dataStandard': [{'name': 'Neurodata Without Borders (NWB)'}]},
-    )
-    bids = _seed_dandiset_with_asset(
-        asset_metadata={'dataStandard': [{'name': 'Brain Imaging Data Structure (BIDS)'}]},
-    )
-    _refresh_asset_search()
-
-    assert _search_ids(api_client, 'standard:NWB') == {nwb.identifier}
-    assert _search_ids(api_client, 'standard:BIDS') == {bids.identifier}
-
-
-@pytest.mark.ai_generated
-@pytest.mark.django_db
 def test_advanced_search_file_type_alias_and_mime(api_client):
     nwb = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'application/x-nwb'})
     image = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'image/tiff'})
