@@ -308,26 +308,31 @@ function onKeydown(evt: KeyboardEvent) {
 function performSearch(evt: Event) {
   evt.preventDefault(); // prevent form submission from refreshing page
 
-  if (searchText.value === (route.query.search || '')) {
-    // nothing has changed, do nothing
-    return;
-  }
   if (route.name !== 'searchDandisets') {
+    // Searching from anywhere else (the home page, a dandiset landing page)
+    // takes the user to the search results page. An empty query is allowed —
+    // it lists all dandisets.
     router.push({
       name: 'searchDandisets',
       query: {
         search: searchText.value,
       },
     });
-  } else {
-    router.replace({
-      ...route,
-      query: {
-        ...route.query,
-        search: searchText.value,
-      },
-    } as RouteLocationRaw);
+    return;
   }
+
+  // Already on the search page: only re-run the search if the query actually
+  // changed, so pressing Enter on an unchanged field is a no-op.
+  if (searchText.value === (route.query.search || '')) {
+    return;
+  }
+  router.replace({
+    ...route,
+    query: {
+      ...route.query,
+      search: searchText.value,
+    },
+  } as RouteLocationRaw);
 }
 </script>
 
