@@ -87,6 +87,13 @@ const EXTERNAL_SERVICES: ExternalService[] = [
     maxsize: Infinity,
     endpoint:
       "https://www.neuroglass.io/new?resource=$asset_dandi_metadata_url$",
+  },
+
+  {
+    name: "WebDAV",
+    regex: /.*/,
+    maxsize: Infinity,
+    endpoint: webdavUrl,
   }
 ];
 
@@ -205,4 +212,19 @@ function redirectNeuroglancerUrl(item: ServiceUrlData): string | null {
   };
 
   return baseUrl + encodeURIComponent(JSON.stringify(jsonObject));
+}
+
+/**
+ * Generate the endpoint for the webdav.dandiarchive.org service, which exposes
+ * dandiset assets through a filesystem-like interface at
+ * /dandisets/<id>/<version>/<path>. Zarr assets are surfaced as directories,
+ * so their URLs require a trailing slash.
+ */
+function webdavUrl(item: ServiceUrlData): string {
+  const encodedPath = item.assetPath
+    .split('/')
+    .map(encodeURIComponent)
+    .join('/');
+  const trailingSlash = /\.zarr$/.test(item.assetPath) ? '/' : '';
+  return `https://webdav.dandiarchive.org/dandisets/${item.dandisetId}/${item.dandisetVersion}/${encodedPath}${trailingSlash}`;
 }
