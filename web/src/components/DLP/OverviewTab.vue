@@ -63,6 +63,8 @@
       </template>
     </MetadataCard>
 
+    <AnatomyCard :about="meta.about" />
+
     <MetadataCard
       v-if="protocols && protocols.length"
       :items="protocols"
@@ -246,6 +248,7 @@ import { computed, onMounted, onUnmounted } from 'vue';
 import { useDisplay, useTheme } from 'vuetify';
 
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
+import AnatomyCard from '@/components/DLP/AnatomyCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
 
 import type { ComputedRef, PropType } from 'vue';
