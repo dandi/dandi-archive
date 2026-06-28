@@ -217,7 +217,10 @@
             @click="setVersion(version)"
           >
             <div class="d-flex align-center justify-space-between ga-2">
-              <div class="d-flex align-center">
+              <div
+                class="d-flex align-center"
+                style="min-width: 0"
+              >
                 <v-icon
                   v-if="version.version === currentDandiset?.version"
                   class="mr-1 flex-shrink-0"
@@ -226,8 +229,9 @@
                 >
                   mdi-arrow-right-thick
                 </v-icon>
-                <div>
+                <div style="min-width: 0">
                   <v-list-item-title
+                    class="text-truncate"
                     :class="currentDandiset?.version === version.version ? 'font-weight-bold' : ''"
                   >
                     {{ version?.version.toUpperCase() || '' }}
