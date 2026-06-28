@@ -166,6 +166,9 @@
               :key="i"
             >
               <strong>{{ item.status }}</strong>
+              <span v-if="item.embargoedUntil">
+                (embargoed until <strong>{{ formatDate(item.embargoedUntil) }}</strong>)
+              </span>
               <span v-text="accessInformation && i === accessInformation.length - 1 ? '' : ', '" />
             </span>
           </span>
@@ -315,7 +318,7 @@ const display = useDisplay();
 const currentDandiset = computed(() => store.dandiset);
 const isXsDisplay = computed(() => display.xs.value);
 
-const transformFilesize = (size: number) => filesize(size, { round: 1, base: 10, standard: 'iec' });
+const transformFilesize = (size: number) => filesize(size, { round: 1, base: 10, standard: 'si' });
 
 const stats: ComputedRef<DandisetStats|null> = computed(() => {
   if (!currentDandiset.value) {

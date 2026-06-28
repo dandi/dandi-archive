@@ -1,3 +1,111 @@
+# v0.23.0 (Thu Apr 09 2026)
+
+#### 🚀 Enhancement
+
+- Add `embargo_end_date` field to Dandiset model [#2731](https://github.com/dandi/dandi-archive/pull/2731) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🐛 Bug Fix
+
+- Merge pull request #2775 from dandi/renovate/major-7-github-artifact-actions [#2775](https://github.com/dandi/dandi-archive/pull/2775) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2774 from dandi/renovate/major-8-github-artifact-actions [#2774](https://github.com/dandi/dandi-archive/pull/2774) ([@brianhelba](https://github.com/brianhelba))
+- Apply text wrapping to publish checklist items [#2751](https://github.com/dandi/dandi-archive/pull/2751) ([@bendichter](https://github.com/bendichter))
+- Display data sizes on the front-end using the decimal system [#2755](https://github.com/dandi/dandi-archive/pull/2755) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 4
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
+# v0.22.0 (Tue Mar 24 2026)
+
+#### 🚀 Enhancement
+
+- Add AI assisted metadata editor button to meditor and Open With menu [#2718](https://github.com/dandi/dandi-archive/pull/2718) ([@satra](https://github.com/satra))
+
+#### Authors: 1
+
+- Satrajit Ghosh ([@satra](https://github.com/satra))
+
+---
+
+# v0.21.11 (Tue Mar 24 2026)
+
+#### 🐛 Bug Fix
+
+- Update dashboard permissions [#2752](https://github.com/dandi/dandi-archive/pull/2752) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Fix heroku build [#2741](https://github.com/dandi/dandi-archive/pull/2741) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Update dependency ubuntu to v24 [#2738](https://github.com/dandi/dandi-archive/pull/2738) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 2
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.21.10 (Wed Mar 18 2026)
+
+#### 🐛 Bug Fix
+
+- Add Blog link to AppBar navigation [#2739](https://github.com/dandi/dandi-archive/pull/2739) ([@yarikoptic](https://github.com/yarikoptic))
+- Update dependency @sentry/vue to v10 [#2736](https://github.com/dandi/dandi-archive/pull/2736) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency node to v24 [#2737](https://github.com/dandi/dandi-archive/pull/2737) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Upgrade to Resonant v0.48.1 [#2734](https://github.com/dandi/dandi-archive/pull/2734) ([@brianhelba](https://github.com/brianhelba))
+- Add required pytest marks for test_info tests [#2727](https://github.com/dandi/dandi-archive/pull/2727) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 4
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.21.9 (Wed Mar 11 2026)
+
+#### 🐛 Bug Fix
+
+- Display the correct CLI and required python version in the GUI [#2714](https://github.com/dandi/dandi-archive/pull/2714) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Remove CLI as core dependency [#2715](https://github.com/dandi/dandi-archive/pull/2715) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Set asset to pending when its zarr is ingested [#2720](https://github.com/dandi/dandi-archive/pull/2720) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.21.8 (Fri Mar 06 2026)
+
+#### 🐛 Bug Fix
+
+- Upgrade to Resonant v0.47 [#2692](https://github.com/dandi/dandi-archive/pull/2692) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 1
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+
+---
+
+# v0.21.7 (Fri Mar 06 2026)
+
+#### 🐛 Bug Fix
+
+- Add scrollbar to meditor component for overflowing content [#2724](https://github.com/dandi/dandi-archive/pull/2724) ([@kabilar](https://github.com/kabilar))
+- Don't return `null` names or usernames from user search endpoint [#2681](https://github.com/dandi/dandi-archive/pull/2681) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v0.21.6 (Wed Feb 18 2026)
 
 #### 🐛 Bug Fix

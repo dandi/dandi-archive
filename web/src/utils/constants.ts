@@ -1,5 +1,6 @@
 const dandiUrl = 'https://dandiarchive.org';
 const dandiAboutUrl = 'https://about.dandiarchive.org/';
+const dandiBlogUrl = 'https://about.dandiarchive.org/blog/';
 const dandiDocumentationUrl = 'https://docs.dandiarchive.org';
 const dandiHelpUrl = 'https://docs.dandiarchive.org/support/';
 const dandihubUrl = 'https://hub.dandiarchive.org/';
@@ -56,6 +57,7 @@ const DANDISETS_PER_PAGE = 8;
 export {
   dandiUrl,
   dandiAboutUrl,
+  dandiBlogUrl,
   dandiDocumentationUrl,
   dandihubUrl,
   sandboxDocsUrl,

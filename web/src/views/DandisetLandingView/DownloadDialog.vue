@@ -116,10 +116,10 @@
               <v-list>
                 <v-list-item>
                   Install the Python client (DANDI CLI)
-                  in a Python 3.8+ environment using command:
+                  in a Python {{ cliRequiresPython }} environment using command:
                 </v-list-item>
                 <v-list-item>
-                  <kbd>pip install "dandi>=0.60.0"</kbd>
+                  <kbd>pip install "dandi>={{ cliMinimalVersion }}"</kbd>
                 </v-list-item>
               </v-list>
             </v-expansion-panel-text>
@@ -130,10 +130,11 @@
   </v-menu>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useDandisetStore } from '@/stores/dandiset';
 import CopyText from '@/components/CopyText.vue';
 import { dandiDocumentationUrl } from '@/utils/constants';
+import { dandiRest } from '@/rest';
 
 function downloadCommand(identifier: string, version: string): string {
   // Use the special 'DANDI:' url prefix if appropriate.
@@ -152,6 +153,14 @@ const store = useDandisetStore();
 const currentDandiset = computed(() => store.dandiset);
 const publishedVersions = computed(() => store.versions);
 const currentVersion = computed(() => store.version);
+
+const cliMinimalVersion = ref<string>();
+const cliRequiresPython = ref<string>();
+onMounted(async () => {
+  const info = await dandiRest.info();
+  cliMinimalVersion.value = info['cli-minimal-version'];
+  cliRequiresPython.value = info['cli-requires-python'];
+});
 
 const selectedDownloadOption = ref('draft');
 const selectedVersion = ref(0);

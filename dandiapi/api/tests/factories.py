@@ -8,6 +8,7 @@ from dandischema.conf import get_instance_config
 from dandischema.consts import DANDI_SCHEMA_VERSION
 from dandischema.models import AccessType
 from django.contrib.auth.models import User
+from django.utils import timezone
 import factory
 import faker
 
@@ -75,6 +76,15 @@ class DandisetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Dandiset
         skip_postgeneration_save = True
+
+    embargo_status = Dandiset.EmbargoStatus.OPEN
+    embargo_end_date = factory.LazyAttribute(
+        lambda self: (
+            timezone.now().date() + datetime.timedelta(days=365 * 2)
+            if self.embargo_status != Dandiset.EmbargoStatus.OPEN
+            else None
+        )
+    )
 
     @factory.post_generation
     def owners(self, create: bool, extracted: list[User] | None) -> None:  # noqa: FBT001
@@ -165,9 +175,11 @@ class DraftVersionFactory(BaseVersionFactory):
 
 class PublishedVersionFactory(BaseVersionFactory):
     doi = factory.LazyAttribute(
-        lambda self: f'{get_instance_config().doi_prefix}/'
-        f'{get_instance_config().instance_name}.'
-        f'{self.dandiset.identifier}/{self.version}'
+        lambda self: (
+            f'{get_instance_config().doi_prefix}/'
+            f'{get_instance_config().instance_name}.'
+            f'{self.dandiset.identifier}/{self.version}'
+        )
     )
     status = Version.Status.PUBLISHED
 
@@ -272,6 +284,7 @@ class UploadFactory(factory.django.DjangoModelFactory):
     size = factory.LazyAttribute(lambda self: len(self.blob))
 
     dandiset = factory.SubFactory(DandisetFactory)
+    zarr = None
 
     @factory.lazy_attribute
     def etag(self) -> str:
@@ -296,4 +309,14 @@ class UploadFactory(factory.django.DjangoModelFactory):
 
 
 class EmbargoedUploadFactory(UploadFactory):
-    embargoed = True
+    # Embargoed is a property based on the embargo status of the dandiset
+    dandiset = factory.SubFactory(DandisetFactory, embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+
+
+class ZarrUploadFactory(UploadFactory):
+    dandiset = None
+    zarr = factory.SubFactory('dandiapi.zarr.tests.factories.ZarrArchiveFactory')
+
+
+class EmbargoedZarrUploadFactory(ZarrUploadFactory):
+    zarr = factory.SubFactory('dandiapi.zarr.tests.factories.EmbargoedZarrArchiveFactory')

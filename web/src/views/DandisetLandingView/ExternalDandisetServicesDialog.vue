@@ -47,6 +47,30 @@
           </template>
           <span>Open the Dandiset in Neurosift</span>
         </v-tooltip>
+        <v-tooltip
+          open-on-hover
+          location="left"
+        >
+          <template #activator="{ props }">
+            <div v-bind="props">
+              <v-list-item
+                :href="aiEditorURL"
+                target="_blank"
+                rel="noopener"
+              >
+                <v-icon
+                  color="primary"
+                  start
+                  size="small"
+                >
+                  mdi-robot
+                </v-icon>
+                AI Metadata Editor (Beta)
+              </v-list-item>
+            </div>
+          </template>
+          <span>Open the Dandiset in the AI assisted metadata editor (Beta)</span>
+        </v-tooltip>
       </v-list>
     </v-card>
   </v-menu>
@@ -78,6 +102,16 @@ const neurosiftURL = computed(() => {
   const stagingParam = metadata.url!.startsWith('https://sandbox.dandiarchive.org/') ? '&staging=1' : '';
 
   return `https://neurosift.app/dandiset/${dandisetId}?dandisetVersion=${dandisetVersion}${stagingParam}`;
+});
+
+const aiEditorURL = computed(() => {
+  if (!currentDandiset.value) {
+    throw new Error('Dandiset is undefined');
+  }
+
+  const dandisetId = currentDandiset.value.dandiset.identifier;
+  const baseApiUrl = import.meta.env.VITE_APP_DANDI_API_ROOT;
+  return `https://medit.dandiarchive.org/?dandiset=${dandisetId}&instance=${baseApiUrl}`;
 });
 
 </script>

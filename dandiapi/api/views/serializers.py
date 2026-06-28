@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+import re
 from typing import TYPE_CHECKING, Any
 
 from dandischema.consts import DANDI_SCHEMA_VERSION
@@ -43,7 +44,26 @@ class UserDetailSerializer(serializers.Serializer):
     status = serializers.CharField()
 
 
+class DandisetIdentifierField(serializers.Field[int, str | int, str, Any]):
+    default_error_messages = {'invalid': 'A valid Dandiset identifier is required.'}
+
+    def to_internal_value(self, data: Any) -> int:
+        if not isinstance(data, str | int):
+            self.fail('invalid')
+        if isinstance(data, str) and not re.fullmatch(Dandiset.IDENTIFIER_REGEX, data):
+            self.fail('invalid')
+        # Always coerce; since bool is a subtype of int
+        data = int(data)
+        if not 0 <= data <= 999_999:
+            self.fail('invalid')
+        return data
+
+    def to_representation(self, value: int) -> str:
+        return f'{value:06}'
+
+
 class DandisetSerializer(serializers.ModelSerializer):
+    identifier = DandisetIdentifierField()
     contact_person = serializers.SerializerMethodField(method_name='get_contact_person')
     star_count = serializers.SerializerMethodField()
     is_starred = serializers.SerializerMethodField()
@@ -285,7 +305,21 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
     )
     search = serializers.CharField(
         required=False,
-        help_text='Search terms to filter the results.',
+        help_text=(
+            'Free-text search across dandiset metadata, plus Gmail-style '
+            'key:value operators that filter on structured fields. Operators '
+            'and free text combine with AND. Multi-word operator values must '
+            'be quoted (e.g. technique:"spike sorting"). Wrapping a token in '
+            'double quotes opts out of operator parsing for that token. '
+            'Available operators: '
+            'created_before, created_after, modified_before, modified_after, '
+            'published_before, published_after (all take YYYY-MM-DD); '
+            'species, approach, technique (case-insensitive '
+            'substring against the corresponding asset_metadata array); '
+            'file_type (nwb, image, text, video — or any MIME prefix). '
+            'Invalid syntax returns HTTP 400 with the offending token; '
+            'unknown operators get a "Did you mean?" suggestion.'
+        ),
     )
 
 
@@ -396,7 +430,6 @@ class DandisetUploadSerializer(serializers.ModelSerializer):
         model = Upload
         exclude = [
             'dandiset',
-            'embargoed',
             'id',
             'multipart_upload_id',
         ]

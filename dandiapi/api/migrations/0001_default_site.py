@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from django.db.migrations.state import StateApps
 
 
-def update_default_site(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor):
+def update_default_site(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor) -> None:
     Site = apps.get_model('sites', 'Site')
 
     # A default site object may or may not exist.
@@ -27,7 +27,7 @@ def update_default_site(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor
     )
 
 
-def rollback_default_site(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor):
+def rollback_default_site(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor) -> None:
     Site = apps.get_model('sites', 'Site')
 
     # This is the initial value of the default site object, as populated by the sites app.
@@ -42,5 +42,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(update_default_site, rollback_default_site),
+        migrations.RunPython(update_default_site, rollback_default_site, elidable=False),
     ]
