@@ -193,6 +193,15 @@ class VersionSerializer(serializers.ModelSerializer):
     dandiset = DandisetSerializer()
     # name = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
+    # Source release notes from the published metadata (the canonical, schema-defined
+    # `releaseNotes` field) rather than the mutable `release_notes` column, which is only
+    # used internally to carry the value into a publish. This ensures the draft version,
+    # which has no `releaseNotes` in its metadata, reports no release notes.
+    release_notes = serializers.SerializerMethodField()
+
+    def get_release_notes(self, obj: Version) -> str:
+        return obj.metadata.get('releaseNotes', '')
+
     def __init__(self, *args, child_context=False, **kwargs):
         if child_context:
             del self.fields['dandiset']

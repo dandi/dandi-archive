@@ -1162,8 +1162,9 @@ def test_version_rest_list_with_release_notes(api_client: APIClient):
     # Find the draft version in results
     draft_result = next((r for r in results if r['version'] == 'draft'), None)
     assert draft_result is not None
-    # Ensure draft version contains release notes from latest published version
-    assert draft_result['release_notes'] == release_notes
+    # The draft has no release notes of its own (release notes belong to published
+    # versions, sourced from `metadata.releaseNotes`, which the draft lacks).
+    assert draft_result['release_notes'] == ''
 
 
 @pytest.mark.django_db

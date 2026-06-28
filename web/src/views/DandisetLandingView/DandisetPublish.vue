@@ -216,31 +216,43 @@
             :class="'opacity-100 ' + (i === (allVersions?.length || 0) - 1 ? 'border-b-0' : 'border-b')"
             @click="setVersion(version)"
           >
-            <div class="d-flex align-center justify-space-between">
-              <v-list-item-title class="d-flex align-center">
+            <div class="d-flex align-center justify-space-between ga-2">
+              <div class="d-flex align-center">
                 <v-icon
                   v-if="version.version === currentDandiset?.version"
-                  class="mr-2"
+                  class="mr-1 flex-shrink-0"
                   size="small"
                   color="primary"
                 >
                   mdi-arrow-right-thick
                 </v-icon>
-                <v-btn
-                  v-if="version.release_notes"
-                  icon
-                  variant="text"
-                  size="small"
-                  class="ml-2"
-                  @click.stop="showVersionReleaseNotes(version)"
-                >
-                  <v-icon>mdi-text-box-outline</v-icon>
-                </v-btn>
-                <span :class="currentDandiset?.version === version.version ? 'font-weight-bold' : ''">{{ version?.version.toUpperCase() || '' }}</span>
-              </v-list-item-title>
-              <v-list-item-subtitle class="text-caption">
-                {{ version ? formatDate(version.modified) : '' }}
-              </v-list-item-subtitle>
+                <div>
+                  <v-list-item-title
+                    :class="currentDandiset?.version === version.version ? 'font-weight-bold' : ''"
+                  >
+                    {{ version?.version.toUpperCase() || '' }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle class="text-caption">
+                    {{ version ? formatDate(version.modified) : '' }}
+                  </v-list-item-subtitle>
+                </div>
+              </div>
+              <v-tooltip
+                v-if="version.release_notes"
+                text="View release notes"
+                location="top"
+              >
+                <template #activator="{ props: tooltipProps }">
+                  <v-btn
+                    v-bind="tooltipProps"
+                    icon="mdi-text-box-outline"
+                    variant="text"
+                    size="x-small"
+                    class="flex-shrink-0"
+                    @click.stop="showVersionReleaseNotes(version)"
+                  />
+                </template>
+              </v-tooltip>
             </div>
           </v-list-item>
         </v-list>
