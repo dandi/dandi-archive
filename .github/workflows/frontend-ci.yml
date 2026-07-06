@@ -73,6 +73,10 @@ jobs:
       # API server env vars
       DJANGO_SETTINGS_MODULE: dandiapi.settings.development
       DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+      # Close DB connections per-request so the threaded `runserver` doesn't
+      # accumulate connections under parallel Playwright load and exhaust
+      # Postgres's max_connections ("sorry, too many clients already").
+      DJANGO_CONN_MAX_AGE: "0"
       DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
       DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage-testing
       DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
