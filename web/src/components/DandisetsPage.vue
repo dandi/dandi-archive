@@ -142,7 +142,7 @@
       </v-btn>
     </v-toolbar>
     <v-alert
-      v-if="props.search && searchError"
+      v-if="searchActive && searchError"
       type="error"
       variant="tonal"
       class="mx-4 mx-md-8 mt-4"
@@ -151,7 +151,7 @@
       {{ searchError }}
     </v-alert>
     <div
-      v-else-if="props.search && djangoDandisetRequest"
+      v-else-if="searchActive && djangoDandisetRequest"
       class="mx-4 mx-md-8 mt-4 text-h6"
     >
       {{ djangoDandisetRequest.count }} {{ djangoDandisetRequest.count === 1 ? 'result' : 'results' }} found
@@ -232,6 +232,9 @@ const sortDir = ref(Number(route.query.sortDir || -1));
 const page = ref(Number(route.query.page) || 1);
 
 const pageTitle = computed(() => ((props.search) ? route.query.search as string : props.title));
+// A search is active either on the dedicated search page, or whenever a search
+// query is present on another listing page (e.g. "My Dandisets").
+const searchActive = computed(() => props.search || !!route.query.search);
 const sortField = computed(() => sortingOptions[sortOption.value].djangoField);
 
 // Django dandiset listing
@@ -246,7 +249,7 @@ watchEffect(async () => {
       page_size: DANDISETS_PER_PAGE,
       ordering,
       user: props.user ? 'me' : null,
-      search: props.search ? route.query.search : null,
+      search: searchActive.value ? route.query.search : null,
       starred: props.starred ? true : null,
       draft: props.user ? true : showDrafts.value,
       empty: props.user ? true : showEmpty.value,
