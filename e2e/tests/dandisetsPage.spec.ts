@@ -19,6 +19,9 @@ test.describe("dandisets page", async () => {
         // Match a stable substring of the search field's placeholder so this
         // doesn't break when the placeholder copy is tweaked.
         const searchFieldText = "Search Dandisets";
+        // Vuetify puts role="combobox" on the field's wrapper, but the inner
+        // <input> still exposes the textbox role with the placeholder as its
+        // accessible name — so match it as a textbox.
         await page.getByRole('textbox', { name: 'Search Dandisets' }).click();
         await page.keyboard.press("Enter");
         await page.getByRole("button", { name: "󰒓" }).click();
