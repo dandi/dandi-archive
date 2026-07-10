@@ -1,6 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-docker-compose
 {
+<<<<<<< before updating
     "name": "DANDI Archive Django",
     "dockerComposeFile": [
         "../docker-compose.yml",
@@ -78,4 +79,94 @@
         "--all-extras",
         "--all-groups"
     ]
+=======
+  "name": "DANDI Archive",
+  "dockerComposeFile": [
+    "../docker-compose.yml",
+    "../docker-compose.override.yml",
+    "./docker-compose.devcontainer.yml"
+  ],
+  "service": "django",
+  "overrideCommand": true,
+  // The "vscode" user and remoteUser are set by the base image label (devcontainers/base).
+  "workspaceFolder": "/home/vscode/dandiapi",
+  "features": {
+    "ghcr.io/devcontainers/features/git-lfs:1": {},
+    "ghcr.io/devcontainers/features/node:2": {
+      "version": "24",
+      // Work around https://github.com/devcontainers/features/pull/1625
+      "pnpmVersion": "none"
+    },
+    "ghcr.io/rails/devcontainer/features/postgres-client:1": {
+      "version": 18
+    },
+    "ghcr.io/devcontainers/features/terraform:1": {},
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers-extra/features/heroku-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Python
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "ms-python.mypy-type-checker",
+        "charliermarsh.ruff",
+        // Django
+        "batisteo.vscode-django",
+        "augustocdias.tasks-shell-input",
+        // Other file formats
+        "editorconfig.editorconfig",
+        "mikestead.dotenv",
+        "tamasfe.even-better-toml",
+        "timonwong.shellcheck",
+        // Infrastructure
+        "ms-azuretools.vscode-containers",
+        "hashicorp.terraform",
+        "github.vscode-github-actions",
+        // Remove AWS extension, as only the CLI is wanted; see: https://github.com/devcontainers/features/issues/1228
+        "-AmazonWebServices.aws-toolkit-vscode"
+      ],
+      "settings": {
+        "containers.containerClient": "com.microsoft.visualstudio.containers.docker",
+        // Container-specific Python paths
+        "python.defaultInterpreterPath": "/home/vscode/venv/bin/python",
+        // Disable automatic Python venv activation in new terminals.
+        "python-envs.terminal.autoActivationType": "off",
+        // Ensure that `envFile` from any user settings is ignored; Docker Compose provides it.
+        "python.envFile": "",
+        // Reduce file watcher overhead for generated/cache directories.
+        "files.watcherExclude": {
+          "**/__pycache__/**": true,
+          "**/.pytest_cache/**": true,
+          "**/node_modules/**": true
+        }
+      }
+    }
+  },
+  // Prevent a prompt every time the debugger opens a port or Django auto-restarts.
+  "otherPortsAttributes": {
+    "onAutoForward": "silent"
+  },
+  "portsAttributes": {
+    "8000": {
+      "label": "Django",
+      // Show a dialog if the port isn't free.
+      "requireLocalPort": true,
+      "onAutoForward": "silent"
+    }
+  },
+  // Install a global Python and create a venv before VSCode extensions start,
+  // to prevent prompts and ensure test discovery works on first load.
+  "onCreateCommand": {
+    "python": ["uv", "python", "install", "--default"],
+    "venv": ["uv", "sync", "--all-extras", "--all-groups"]
+  },
+  // Ensure it is re-synced on restarts.
+  "updateContentCommand": {
+    "venv": ["uv", "sync", "--all-extras", "--all-groups"]
+  }
+>>>>>>> after updating
 }
