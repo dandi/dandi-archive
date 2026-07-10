@@ -198,6 +198,10 @@ extend-immutable-calls = ["ninja.Query"]
 [tool.ruff.lint.flake8-self]
 extend-ignore-names = ["_base_manager", "_default_manager",  "_meta"]
 
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+runtime-evaluated-decorators = ["pydantic.validate_call"]
+
 [tool.ruff.lint.isort]
 # Sort by name, don't cluster "from" vs "import"
 force-sort-within-sections = true
