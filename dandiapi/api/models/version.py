@@ -94,29 +94,43 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         # Return False if any asset is not VALID
         return not self.assets.exclude(status=Asset.Status.VALID).exists()
 
-    @property
-    def asset_validation_errors(self) -> list[VersionAssetValidationError]:
+    def get_asset_validation_errors(self) -> list[VersionAssetValidationError]:
         # Import here to avoid dependency cycle
+        from dandiapi.zarr.models import ZarrArchiveStatus
+
         from .asset import Asset
 
         # We want to display "Pending" assets in the validation errors list,
-        # despite them not being stored explicitly as errors in the database.
-        # Grab a random sample of 50 pending or currently validating assets
-        # and place them first in the list.
-        pending_assets: models.QuerySet[Asset] = (
-            self.assets.filter(status__in=[Asset.Status.PENDING, Asset.Status.VALIDATING])
+        #   despite them not being stored explicitly as errors in the database.
+        # We must exclude pending zarr assets, as they are collected in the next step.
+        # For performance reasons, we only return the first 50 assets.
+        pending_assets: models.QuerySet[VersionAssetValidationError] = (
+            self.assets.filter(status=Asset.Status.PENDING)
+            .exclude(zarr__status=ZarrArchiveStatus.PENDING)
             .annotate(
                 field=models.Value(''),
                 message=models.Value('asset is currently being validated, please wait.'),
             )
-            .values('field', 'message', 'path')[:50]
+            .values('field', 'message', 'path')
         )
 
-        # Next, get all INVALID assets. Each of these should have one or more
-        # validation errors stored in the database.
+        # Next, get all zarr assets which have not been finalized. These also are not stored
+        #   explicitly as errors in the database, so we need to construct them manually.
+        # For performance reasons, we only return the first 50 assets.
+        incomplete_zarr_assets: models.QuerySet[VersionAssetValidationError] = (
+            self.assets.filter(zarr__status=ZarrArchiveStatus.PENDING)
+            .annotate(
+                field=models.Value(''),
+                message=models.Value('zarr asset is not yet finalized.'),
+            )
+            .values('field', 'message', 'path')
+        )
+
+        # Finally, get all INVALID assets. Each of these should have one or more
+        #   validation errors stored in the database.
         # For performance reasons, we truncate the list of INVALID assets such
-        # that we only display errors for the 50 assets with the most errors.
-        invalid_assets: models.QuerySet[Asset] = (
+        #   that we only display errors for the 50 assets with the most errors.
+        invalid_assets: models.QuerySet[dict] = (
             self.assets.filter(status=Asset.Status.INVALID)
             .alias(
                 validation_error_count=models.Func(
@@ -127,17 +141,21 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             )
             .order_by('-validation_error_count')
             .values('path', 'validation_errors')
-        )[:50]
+        )
 
-        return list(pending_assets) + [
-            {
-                'field': error['field'],
-                'message': error['message'],
-                'path': asset['path'],
-            }
-            for asset in invalid_assets
-            for error in asset['validation_errors']
-        ]
+        return (
+            list(pending_assets)
+            + list(incomplete_zarr_assets)
+            + [
+                {
+                    'field': error['field'],
+                    'message': error['message'],
+                    'path': asset['path'],
+                }
+                for asset in invalid_assets
+                for error in asset['validation_errors']
+            ]
+        )
 
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:
