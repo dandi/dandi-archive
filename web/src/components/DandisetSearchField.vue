@@ -150,6 +150,16 @@ const operatorHelp = [
   { example: 'approach:electrophysiology', description: 'Has assets using an approach' },
   { example: 'technique:"patch clamp"', description: 'Has assets using a measurement technique' },
   { example: 'file_type:nwb', description: 'Has assets of a file type (nwb, image, text, video)' },
+  { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, username, or email)' },
+  { example: 'contributor:"Doe, Jane"', description: 'Listed as a contributor (any role; matches name, email, ORCID, or ROR ID)' },
+  { example: 'author:Doe', description: 'Listed as an Author (matches name, email, ORCID, or ROR ID)' },
+  { example: 'data_curator:Doe', description: 'Listed as a Data Curator' },
+  { example: 'funder:NIH', description: 'Listed as a Funder' },
+  { example: 'contact_person:Doe', description: 'Listed as the Contact Person' },
+  { example: 'maintainer:Doe', description: 'Listed as a Maintainer' },
+  { example: 'project_leader:Doe', description: 'Listed as the Project Leader (also: data_collector, data_manager, sponsor)' },
+  { example: 'affiliation:Stanford', description: 'Has a contributor affiliated with the named organization (or ROR ID)' },
+  { example: 'num_subjects:>=10', description: 'Subject count, assetsSummary.numberOfSubjects (also >, <, <=, =; bare means at least)' },
 ];
 
 // The set of operators we suggest, derived from the help table so the two
