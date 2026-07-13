@@ -407,14 +407,14 @@ def test_version_aggregate_assets_summary_metadata_modified(draft_asset_factory)
 @pytest.mark.django_db
 def test_version_size(
     version,
-    asset_factory,
+    draft_asset_factory,
     asset_blob_factory,
     embargoed_asset_blob_factory,
     zarr_archive_factory,
 ):
-    version.assets.add(asset_factory(blob=asset_blob_factory(size=100)))
-    version.assets.add(asset_factory(blob=embargoed_asset_blob_factory(size=200)))
-    version.assets.add(asset_factory(blob=None, zarr=zarr_archive_factory(size=400)))
+    version.assets.add(draft_asset_factory(blob=asset_blob_factory(size=100)))
+    version.assets.add(draft_asset_factory(blob=embargoed_asset_blob_factory(size=200)))
+    version.assets.add(draft_asset_factory(blob=None, zarr=zarr_archive_factory(size=400)))
     add_version_asset_paths(version=version)
 
     assert version.size == 700
