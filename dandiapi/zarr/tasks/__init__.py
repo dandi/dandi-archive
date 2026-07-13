@@ -52,7 +52,7 @@ def ingest_zarr_archive(zarr_id: str, *, force: bool = False):
     with transaction.atomic():
         zarr = (
             ZarrArchive.objects.select_related('dandiset')
-            .select_for_update()
+            .select_for_update(of=['self'])
             .get(zarr_id=zarr_id, status=ZarrArchiveStatus.INGESTING)
         )
 
