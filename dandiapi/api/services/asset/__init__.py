@@ -14,7 +14,7 @@ from dandiapi.api.services.asset.exceptions import (
     AssetAlreadyExistsError,
     AssetPathConflictError,
     DandisetOwnerRequiredError,
-    DraftDandisetNotModifiableError,
+    PublishedDandisetNotModifiableError,
     ZarrArchiveBelongsToDifferentDandisetError,
 )
 from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
@@ -121,7 +121,7 @@ def change_asset(  # noqa: PLR0913
     if not is_dandiset_owner(version.dandiset, user):
         raise DandisetOwnerRequiredError
     if version.version != 'draft':
-        raise DraftDandisetNotModifiableError
+        raise PublishedDandisetNotModifiableError
 
     path = new_metadata['path']
     new_metadata_stripped = Asset.strip_metadata(new_metadata)
@@ -171,7 +171,7 @@ def add_asset_to_version(
     if not is_dandiset_owner(version.dandiset, user):
         raise DandisetOwnerRequiredError
     if version.version != 'draft':
-        raise DraftDandisetNotModifiableError
+        raise PublishedDandisetNotModifiableError
 
     # Check if there are already any assets with the same path
     path = metadata['path']
@@ -203,7 +203,7 @@ def remove_asset_from_version(*, user, asset: Asset, version: Version) -> Versio
     if not is_dandiset_owner(version.dandiset, user):
         raise DandisetOwnerRequiredError
     if version.version != 'draft':
-        raise DraftDandisetNotModifiableError
+        raise PublishedDandisetNotModifiableError
 
     with transaction.atomic():
         _remove_asset_from_version(asset=asset, version=version)
