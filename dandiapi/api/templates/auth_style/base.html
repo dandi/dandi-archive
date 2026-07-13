@@ -1,0 +1,35 @@
+{% extends "auth_style/base.html" %}
+{% load allauth %}
+{% load i18n %}
+{% load static %}
+{% block body %}
+    <div class="flex flex-col sm:flex-row sm:navbar">
+        <span class="text-center sm:text-left sm:grow">{% include "auth_style/site_name.html" %}</span>
+        {# TODO: display username and user info #}
+        {% if user.is_authenticated %}
+            {% url 'account_logout' as logout_url_ %}
+            {% if logout_url_ %}
+                <a class="btn btn-ghost btn-sm" href="{{ logout_url_ }}">
+                    <i class="ri-logout-box-line ri-lg"></i>
+                    {% trans "Sign Out" %}
+                </a>
+            {% endif %}
+        {% else %}
+            {% url 'account_login' as login_url_ %}
+            {% if login_url_ %}
+                <a class="btn btn-ghost btn-sm" href="{{ login_url_ }}">
+                    <i class="ri-user-shared-line ri-lg"></i>
+                    {% trans "Sign In" %}
+                </a>
+            {% endif %}
+        {% endif %}
+    </div>
+    <div class="flex flex-col sm:mx-auto sm:w-full sm:max-w-lg">
+        <div class="my-6 shadow-sm card bg-base-100">
+            <div class="card-body">
+                {% block content %}
+                {% endblock content %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
