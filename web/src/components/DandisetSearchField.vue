@@ -150,6 +150,7 @@ const operatorHelp = [
   { example: 'approach:electrophysiology', description: 'Has assets using an approach' },
   { example: 'technique:"patch clamp"', description: 'Has assets using a measurement technique' },
   { example: 'file_type:nwb', description: 'Has assets of a file type (nwb, image, text, video)' },
+  { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, username, or email)' },
 ];
 
 // The set of operators we suggest, derived from the help table so the two
