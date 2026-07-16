@@ -110,6 +110,19 @@ class UploadCompletionResponseSerializer(serializers.Serializer):
     body = serializers.CharField(trim_whitespace=False)
 
 
+class UploadValidationResponseSerializer(AssetBlobSerializer):
+    # Zarr fields, null for asset blob uploads. The inherited AssetBlob
+    # fields are likewise null for zarr uploads.
+    zarr_id = serializers.UUIDField(allow_null=True, default=None)
+    chunk_key = serializers.CharField(allow_null=True, default=None)
+
+    class Meta(AssetBlobSerializer.Meta):
+        fields = [*AssetBlobSerializer.Meta.fields, 'zarr_id', 'chunk_key']
+        # Default the inherited AssetBlob fields to null so the zarr case only
+        # needs to supply its own fields.
+        extra_kwargs = {field: {'default': None} for field in AssetBlobSerializer.Meta.fields}
+
+
 @swagger_auto_schema(
     method='POST',
     operation_summary='Fetch an existing asset blob by digest, if it exists.',
@@ -255,7 +268,7 @@ def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
 @swagger_auto_schema(
     method='POST',
     responses={
-        200: AssetBlobSerializer,
+        200: UploadValidationResponseSerializer,
         400: 'The specified upload has not completed or has failed.',
     },
 )
@@ -280,6 +293,11 @@ def upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
         # This raises an exception if unsuccessful
         upload.validate_successful()
 
+        # Grab this data before calling upload.delete
+        if upload.blob.name is None:
+            raise ValueError('Upload blob name is None')
+        chunk_key = upload.blob.name.removeprefix(zarr.s3_path(''))
+
         with transaction.atomic():
             upload.delete()
 
@@ -287,7 +305,10 @@ def upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
             zarr.mark_pending()
             zarr.save()
 
-        return Response(None, status=status.HTTP_200_OK)
+        response_serializer = UploadValidationResponseSerializer(
+            {'zarr_id': zarr.zarr_id, 'chunk_key': chunk_key}
+        )
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     dandiset = typing.cast('Dandiset', upload.dandiset)
     if upload.embargoed and not is_dandiset_owner(dandiset, request.user):
@@ -319,5 +340,5 @@ def upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
     # Start calculating the sha256 in the background
     calculate_sha256.delay(asset_blob.blob_id)
 
-    response_serializer = AssetBlobSerializer(asset_blob)
+    response_serializer = UploadValidationResponseSerializer(asset_blob)
     return Response(response_serializer.data, status=status.HTTP_200_OK)

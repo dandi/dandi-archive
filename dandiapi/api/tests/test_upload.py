@@ -436,6 +436,8 @@ def test_upload_validate(api_client, upload):
         'etag': upload.etag,
         'sha256': None,
         'size': upload.size,
+        'zarr_id': None,
+        'chunk_key': None,
     }
 
     # Verify that a new AssetBlob was created
@@ -462,6 +464,8 @@ def test_upload_validate_embargo(api_client, embargoed_upload_factory):
         'etag': embargoed_upload.etag,
         'sha256': None,
         'size': embargoed_upload.size,
+        'zarr_id': None,
+        'chunk_key': None,
     }
 
     # Verify that a new embargoed AssetBlob was created
@@ -698,8 +702,9 @@ def test_upload_complete_zarr(api_client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_upload_validate_zarr(api_client):
-    """Validating a zarr upload returns 200 with no body."""
+@pytest.mark.parametrize('chunk_key', ['.zattrs', '0/0/0'])
+def test_upload_validate_zarr(api_client, chunk_key):
+    """Validating a zarr upload returns the zarr ID and chunk key."""
     from zarr_checksum.checksum import EMPTY_CHECKSUM
 
     from dandiapi.zarr.models import ZarrArchiveStatus
@@ -707,11 +712,19 @@ def test_upload_validate_zarr(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
     zarr = ZarrArchiveFactory.create(status=ZarrArchiveStatus.COMPLETE, checksum=EMPTY_CHECKSUM)
-    zarr_upload = ZarrUploadFactory.create(zarr=zarr)
+
+    zarr_upload = ZarrUploadFactory.create(zarr=zarr, blob__filename=zarr.s3_path(chunk_key))
 
     resp = api_client.post(f'/api/uploads/{zarr_upload.upload_id}/validate/')
     assert resp.status_code == 200
-    assert resp.data is None
+    assert resp.data == {
+        'blob_id': None,
+        'etag': None,
+        'sha256': None,
+        'size': None,
+        'zarr_id': str(zarr.zarr_id),
+        'chunk_key': chunk_key,
+    }
 
     assert not Upload.objects.exists()
 
