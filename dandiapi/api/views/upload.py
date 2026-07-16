@@ -42,7 +42,9 @@ class DigestSerializer(serializers.Serializer):
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
     contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
-    digest = DigestSerializer(required=False)
+    digest = DigestSerializer()
+
+    # Unioned fields
     dandiset = DandisetIdentifierField(required=False)
     zarr_id = serializers.UUIDField(required=False)
     chunk_key = serializers.CharField(required=False)
