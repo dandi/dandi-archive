@@ -40,9 +40,27 @@ class DigestSerializer(serializers.Serializer):
     value = serializers.CharField()
 
 
-class CommonUploadSerializer(serializers.Serializer):
+class UploadInitializationRequestSerializer(serializers.Serializer):
     contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
-    digest = DigestSerializer(required=False)
+    digest = DigestSerializer()
+
+    # Unioned fields
+    dandiset = DandisetIdentifierField(required=False)
+    zarr_id = serializers.UUIDField(required=False)
+    chunk_key = serializers.CharField(required=False)
+
+    def validate(self, data):
+        has_dandiset = 'dandiset' in data
+        has_zarr = 'zarr_id' in data or 'chunk_key' in data
+
+        if has_dandiset and has_zarr:
+            raise ValidationError('Only one of dandiset or zarr_id/chunk_key may be specified.')
+        if not has_dandiset and not has_zarr:
+            raise ValidationError('Either dandiset or zarr_id/chunk_key must be specified.')
+        if has_zarr and ('zarr_id' not in data or 'chunk_key' not in data):
+            raise ValidationError('Both zarr_id and chunk_key must be specified.')
+
+        return data
 
     def get_digest_data(self) -> tuple[str, int]:
         """Return a tuple of (etag, content_size), raising an exception if invalid."""
@@ -55,15 +73,6 @@ class CommonUploadSerializer(serializers.Serializer):
             raise ValidationError('Unsupported Digest Type')
 
         return digest['value'], data['contentSize']
-
-
-class ZarrUploadInitializationRequestSerializer(CommonUploadSerializer):
-    zarr_id = serializers.UUIDField()
-    chunk_key = serializers.CharField()
-
-
-class UploadInitializationRequestSerializer(CommonUploadSerializer):
-    dandiset = DandisetIdentifierField()
 
 
 class PartInitializationResponseSerializer(serializers.Serializer):
@@ -99,6 +108,19 @@ class UploadCompletionRequestSerializer(serializers.Serializer):
 class UploadCompletionResponseSerializer(serializers.Serializer):
     complete_url = serializers.URLField()
     body = serializers.CharField(trim_whitespace=False)
+
+
+class UploadValidationResponseSerializer(AssetBlobSerializer):
+    # Zarr fields, null for asset blob uploads. The inherited AssetBlob
+    # fields are likewise null for zarr uploads.
+    zarr_id = serializers.UUIDField(allow_null=True, default=None)
+    chunk_key = serializers.CharField(allow_null=True, default=None)
+
+    class Meta(AssetBlobSerializer.Meta):
+        fields = [*AssetBlobSerializer.Meta.fields, 'zarr_id', 'chunk_key']
+        # Default the inherited AssetBlob fields to null so the zarr case only
+        # needs to supply its own fields.
+        extra_kwargs = {field: {'default': None} for field in AssetBlobSerializer.Meta.fields}
 
 
 @swagger_auto_schema(
@@ -145,6 +167,8 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
 
     A list of parts will be returned, each of which has a presigned upload URL and a size.
     This URL communicates directly with the object store so the client can upload bytes directly.
+    Either `dandiset` or `zarr_id`/`chunk_key` must be specified, to upload a regular asset blob
+    or a chunk of a zarr file, respectively.
 
     https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html
     """
@@ -152,11 +176,17 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
     request_serializer.is_valid(raise_exception=True)
 
     etag, content_size = request_serializer.get_digest_data()
+    data: dict = request_serializer.validated_data
 
-    dandiset = get_object_or_404(
-        get_visible_dandisets(request.user),
-        id=request_serializer.validated_data['dandiset'],
-    )
+    # Since the serializer does validation, we know the serializer data contains either the full
+    # dandiset case, or the full zarr case. We can simply check against zarr_id.
+    zarr_archive: ZarrArchive | None = None
+    if 'zarr_id' in data:
+        zarr_archive = get_object_or_404(ZarrArchive, zarr_id=data['zarr_id'])
+        dandiset = zarr_archive.dandiset
+    else:
+        dandiset = get_object_or_404(get_visible_dandisets(request.user), id=data['dandiset'])
+
     if not is_dandiset_owner(dandiset, request.user):
         raise NotAllowedError
 
@@ -164,36 +194,44 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
     if dandiset.unembargo_in_progress:
         raise DandisetUnembargoInProgressError
 
-    logger.info(
-        'Starting upload initialization of size %s, ETag %s to dandiset %s',
-        content_size,
-        etag,
-        dandiset,
-    )
+    if zarr_archive is None:
+        existing_asset_blob = AssetBlob.objects.filter(etag=etag).first()
+        if existing_asset_blob is not None:
+            return Response(
+                'Blob already exists.',
+                status=status.HTTP_409_CONFLICT,
+                headers={'Location': str(existing_asset_blob.blob_id)},
+            )
 
-    existing_asset_blob = AssetBlob.objects.filter(etag=etag).first()
-    if existing_asset_blob is not None:
-        return Response(
-            'Blob already exists.',
-            status=status.HTTP_409_CONFLICT,
-            headers={'Location': str(existing_asset_blob.blob_id)},
+        upload, initialization = Upload.initialize_multipart_upload(etag, content_size, dandiset)
+        logger.info(
+            'AssetBlob upload initialized (size %s, ETag %s, dandiset %s)',
+            content_size,
+            etag,
+            dandiset,
         )
+    else:
+        upload, initialization = Upload.initialize_zarr_multipart_upload(
+            etag, content_size, zarr=zarr_archive, chunk_key=data['chunk_key']
+        )
+        logger.info('Zarr upload initialized for chunk %s', data['chunk_key'])
 
-    logger.info('Blob with ETag %s does not yet exist', etag)
-
-    upload, initialization = Upload.initialize_multipart_upload(etag, content_size, dandiset)
-    logger.info('Upload of ETag %s initialized', etag)
     upload.save()
     logger.info('Upload of ETag %s saved', etag)
 
     response_serializer = UploadInitializationResponseSerializer(initialization)
-    logger.info('Upload of ETag %s serialized', etag)
     return Response(response_serializer.data)
 
 
-# This view is used identically in two separate views. The reason for this is solely so that the
-# swagger page can add "of a zarr file" to the description of the zarr multipart upload endpoint.
-def _upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
+@swagger_auto_schema(
+    method='POST',
+    request_body=UploadCompletionRequestSerializer,
+    responses={200: UploadCompletionResponseSerializer},
+)
+@api_view(['POST'])
+@parser_classes([JSONParser])
+@permission_classes([IsApproved])
+def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
     """
     Complete a multipart upload.
 
@@ -206,7 +244,8 @@ def _upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> Http
     parts: list[TransferredPart] = request_serializer.save()
 
     upload: Upload = get_object_or_404(Upload, upload_id=upload_id)
-    if upload.embargoed and not is_dandiset_owner(upload.dandiset, request.user):
+    dandiset = upload.dandiset or typing.cast('ZarrArchive', upload.zarr).dandiset
+    if upload.embargoed and not is_dandiset_owner(dandiset, request.user):
         raise Http404 from None
 
     completion = TransferredParts(
@@ -228,27 +267,8 @@ def _upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> Http
 
 @swagger_auto_schema(
     method='POST',
-    request_body=UploadCompletionRequestSerializer,
-    responses={200: UploadCompletionResponseSerializer},
-)
-@api_view(['POST'])
-@parser_classes([JSONParser])
-@permission_classes([IsApproved])
-def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
-    """
-    Complete a multipart upload.
-
-    After all data has been uploaded using the URLs provided by initialize, this endpoint must
-    be called to create the object in the object store. A presigned URL that performs the
-    completion is returned, as the completion might take several minutes for large files.
-    """
-    return _upload_complete_view(request=request, upload_id=upload_id)
-
-
-@swagger_auto_schema(
-    method='POST',
     responses={
-        200: AssetBlobSerializer,
+        200: UploadValidationResponseSerializer,
         400: 'The specified upload has not completed or has failed.',
     },
 )
@@ -257,11 +277,39 @@ def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
 @permission_classes([IsApproved])
 def upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
     """
-    Verify that an upload completed successfully and mint a new AssetBlob.
+    Verify that an upload completed successfully.
 
-    Also starts the asynchronous checksum calculation process.
+    For a regular asset blob upload, this mints a new AssetBlob and starts the asynchronous
+    checksum calculation process. For a zarr chunk upload, this marks the zarr archive as
+    pending, since a new file has been added to it.
     """
-    upload = get_object_or_404(Upload, upload_id=upload_id, dandiset__isnull=False)
+    upload = get_object_or_404(Upload, upload_id=upload_id)
+
+    if upload.zarr is not None:
+        zarr = typing.cast('ZarrArchive', upload.zarr)
+        if upload.embargoed and not is_dandiset_owner(zarr.dandiset, request.user):
+            raise Http404 from None
+
+        # This raises an exception if unsuccessful
+        upload.validate_successful()
+
+        # Grab this data before calling upload.delete
+        if upload.blob.name is None:
+            raise ValueError('Upload blob name is None')
+        chunk_key = upload.blob.name.removeprefix(zarr.s3_path(''))
+
+        with transaction.atomic():
+            upload.delete()
+
+            # Zarr must be marked pending since a new file is now added
+            zarr.mark_pending()
+            zarr.save()
+
+        response_serializer = UploadValidationResponseSerializer(
+            {'zarr_id': zarr.zarr_id, 'chunk_key': chunk_key}
+        )
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
     dandiset = typing.cast('Dandiset', upload.dandiset)
     if upload.embargoed and not is_dandiset_owner(dandiset, request.user):
         raise Http404 from None
@@ -292,95 +340,5 @@ def upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
     # Start calculating the sha256 in the background
     calculate_sha256.delay(asset_blob.blob_id)
 
-    response_serializer = AssetBlobSerializer(asset_blob)
+    response_serializer = UploadValidationResponseSerializer(asset_blob)
     return Response(response_serializer.data, status=status.HTTP_200_OK)
-
-
-@swagger_auto_schema(
-    method='POST',
-    request_body=ZarrUploadInitializationRequestSerializer,
-    responses={200: UploadInitializationResponseSerializer},
-)
-@api_view(['POST'])
-@parser_classes([JSONParser])
-@permission_classes([IsApproved])
-def zarr_upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
-    """
-    Initialize a multipart upload of a zarr file.
-
-    A list of parts will be returned, each of which has a presigned upload URL and a size.
-    This URL communicates directly with the object store so the client can upload bytes directly.
-
-    https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html
-    """
-    request_serializer = ZarrUploadInitializationRequestSerializer(data=request.data)
-    request_serializer.is_valid(raise_exception=True)
-
-    etag, content_size = request_serializer.get_digest_data()
-
-    data: dict = request_serializer.validated_data
-    zarr_archive = get_object_or_404(ZarrArchive, zarr_id=data['zarr_id'])
-    dandiset = zarr_archive.dandiset
-    chunk_key = data['chunk_key']
-
-    if not is_dandiset_owner(dandiset, request.user):
-        raise NotAllowedError
-
-    # Ensure dandiset not in the process of unembargo
-    if dandiset.unembargo_in_progress:
-        raise DandisetUnembargoInProgressError
-
-    upload, initialization = Upload.initialize_zarr_multipart_upload(
-        etag, content_size, zarr=zarr_archive, chunk_key=chunk_key
-    )
-    upload.save()
-
-    logger.info('Zarr upload initialized for chunk %s', chunk_key)
-    response_serializer = UploadInitializationResponseSerializer(initialization)
-    return Response(response_serializer.data)
-
-
-@swagger_auto_schema(
-    method='POST',
-    request_body=UploadCompletionRequestSerializer,
-    responses={200: UploadCompletionResponseSerializer},
-)
-@api_view(['POST'])
-@parser_classes([JSONParser])
-@permission_classes([IsApproved])
-def zarr_upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
-    """
-    Complete a multipart upload of a zarr file.
-
-    After all data has been uploaded using the URLs provided by initialize, this endpoint must
-    be called to create the object in the object store. A presigned URL that performs the
-    completion is returned, as the completion might take several minutes for large files.
-    """
-    return _upload_complete_view(request=request, upload_id=upload_id)
-
-
-@swagger_auto_schema(
-    method='POST',
-    responses={200: None},
-)
-@api_view(['POST'])
-@parser_classes([JSONParser])
-@permission_classes([IsApproved])
-def zarr_upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
-    """Verify that a multipart zarr file upload completed successfully."""
-    upload = get_object_or_404(Upload, upload_id=upload_id, zarr__isnull=False)
-    zarr = typing.cast('ZarrArchive', upload.zarr)
-    if upload.embargoed and not is_dandiset_owner(zarr.dandiset, request.user):
-        raise Http404 from None
-
-    # This raises an exception if unsuccessful
-    upload.validate_successful()
-
-    with transaction.atomic():
-        upload.delete()
-
-        # Zarr must be marked pending since a new file is now added
-        zarr.mark_pending()
-        zarr.save()
-
-    return Response(None, status=status.HTTP_200_OK)

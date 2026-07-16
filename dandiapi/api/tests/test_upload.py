@@ -436,6 +436,8 @@ def test_upload_validate(api_client, upload):
         'etag': upload.etag,
         'sha256': None,
         'size': upload.size,
+        'zarr_id': None,
+        'chunk_key': None,
     }
 
     # Verify that a new AssetBlob was created
@@ -462,6 +464,8 @@ def test_upload_validate_embargo(api_client, embargoed_upload_factory):
         'etag': embargoed_upload.etag,
         'sha256': None,
         'size': embargoed_upload.size,
+        'zarr_id': None,
+        'chunk_key': None,
     }
 
     # Verify that a new embargoed AssetBlob was created
@@ -586,7 +590,7 @@ def test_upload_initialize_zarr_required(api_client):
     api_client.force_authenticate(user=user)
 
     resp = api_client.post(
-        '/api/uploads/zarr/initialize/',
+        '/api/uploads/initialize/',
         {
             'contentSize': 123,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
@@ -606,7 +610,7 @@ def test_upload_initialize_zarr_file_size_limit(api_client):
     chunk_key = '0/0/1'
 
     resp = api_client.post(
-        '/api/uploads/zarr/initialize/',
+        '/api/uploads/initialize/',
         {
             'contentSize': ZARR_MULTIPART_UPLOAD_THRESHOLD,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
@@ -617,7 +621,7 @@ def test_upload_initialize_zarr_file_size_limit(api_client):
     assert resp.status_code == 400
 
     resp = api_client.post(
-        '/api/uploads/zarr/initialize/',
+        '/api/uploads/initialize/',
         {
             'contentSize': ZARR_MULTIPART_UPLOAD_THRESHOLD + 1,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
@@ -643,7 +647,7 @@ def test_upload_initialize_zarr(api_client, embargoed):
     chunk_key = '0/chunk'
 
     resp = api_client.post(
-        '/api/uploads/zarr/initialize/',
+        '/api/uploads/initialize/',
         {
             'contentSize': content_size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
@@ -668,7 +672,7 @@ def test_upload_initialize_zarr_not_found(api_client):
     api_client.force_authenticate(user=user)
 
     resp = api_client.post(
-        '/api/uploads/zarr/initialize/',
+        '/api/uploads/initialize/',
         {
             'contentSize': ZARR_MULTIPART_UPLOAD_THRESHOLD + 1,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
@@ -689,7 +693,7 @@ def test_upload_complete_zarr(api_client):
     content_size = ZARR_MULTIPART_UPLOAD_THRESHOLD + 1
 
     assert api_client.post(
-        f'/api/uploads/zarr/{zarr_upload.upload_id}/complete/',
+        f'/api/uploads/{zarr_upload.upload_id}/complete/',
         {'parts': [{'part_number': 1, 'size': content_size, 'etag': 'test-etag'}]},
     ).data == {
         'complete_url': HTTP_URL_RE,
@@ -698,8 +702,9 @@ def test_upload_complete_zarr(api_client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_upload_validate_zarr(api_client):
-    """Validating a zarr upload returns 200 with no body."""
+@pytest.mark.parametrize('chunk_key', ['.zattrs', '0/0/0'])
+def test_upload_validate_zarr(api_client, chunk_key):
+    """Validating a zarr upload returns the zarr ID and chunk key."""
     from zarr_checksum.checksum import EMPTY_CHECKSUM
 
     from dandiapi.zarr.models import ZarrArchiveStatus
@@ -707,11 +712,19 @@ def test_upload_validate_zarr(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
     zarr = ZarrArchiveFactory.create(status=ZarrArchiveStatus.COMPLETE, checksum=EMPTY_CHECKSUM)
-    zarr_upload = ZarrUploadFactory.create(zarr=zarr)
 
-    resp = api_client.post(f'/api/uploads/zarr/{zarr_upload.upload_id}/validate/')
+    zarr_upload = ZarrUploadFactory.create(zarr=zarr, blob__filename=zarr.s3_path(chunk_key))
+
+    resp = api_client.post(f'/api/uploads/{zarr_upload.upload_id}/validate/')
     assert resp.status_code == 200
-    assert resp.data is None
+    assert resp.data == {
+        'blob_id': None,
+        'etag': None,
+        'sha256': None,
+        'size': None,
+        'zarr_id': str(zarr.zarr_id),
+        'chunk_key': chunk_key,
+    }
 
     assert not Upload.objects.exists()
 
@@ -731,7 +744,7 @@ def test_upload_initialize_and_complete_zarr(api_client):
     content_size = ZARR_MULTIPART_UPLOAD_THRESHOLD + 1
 
     initialization = api_client.post(
-        '/api/uploads/zarr/initialize/',
+        '/api/uploads/initialize/',
         {
             'contentSize': content_size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
@@ -755,7 +768,7 @@ def test_upload_initialize_and_complete_zarr(api_client):
         )
 
     completion = api_client.post(
-        f'/api/uploads/zarr/{upload_id}/complete/',
+        f'/api/uploads/{upload_id}/complete/',
         {'parts': transferred_parts},
     ).data
 

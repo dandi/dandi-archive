@@ -68,16 +68,16 @@ class Upload(models.Model):  # noqa: DJ008
 
     @classmethod
     def initialize_zarr_multipart_upload(cls, etag, size, zarr: ZarrArchive, chunk_key: str):
-        object_key = zarr.s3_path(chunk_key.lstrip('/'))
-        upload, attrs = cls.initialize_multipart_upload(
-            etag=etag, size=size, dandiset=zarr.dandiset, object_key=object_key
-        )
-
         if size <= ZARR_MULTIPART_UPLOAD_THRESHOLD:
             raise ValidationError(
                 f'Zarr files below {ZARR_MULTIPART_UPLOAD_THRESHOLD} bytes in size'
                 ' must be uploaded via single part upload.'
             )
+
+        object_key = zarr.s3_path(chunk_key.lstrip('/'))
+        upload, attrs = cls.initialize_multipart_upload(
+            etag=etag, size=size, dandiset=zarr.dandiset, object_key=object_key
+        )
 
         # Tack on zarr and remove dandiset from instantiated (but not yet saved) Upload
         upload.dandiset = None
