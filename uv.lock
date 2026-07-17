@@ -821,7 +821,7 @@ requires-dist = [
     { name = "boto3", specifier = "==1.42.97" },
     { name = "celery", specifier = "==5.6.3" },
     { name = "dandi", extras = ["extras"], marker = "extra == 'cli'", specifier = "==0.74.3" },
-    { name = "dandischema", specifier = "==0.12.1" },
+    { name = "dandischema", git = "https://github.com/dandi/dandi-schema.git?rev=consolidate-models" },
     { name = "django", extras = ["argon2"], specifier = "==5.2.13" },
     { name = "django-allauth", specifier = "==65.16.1" },
     { name = "django-auth-style", specifier = "==0.15.0" },
@@ -892,8 +892,8 @@ type = [
 
 [[package]]
 name = "dandischema"
-version = "0.12.1"
-source = { registry = "https://pypi.org/simple" }
+version = "0.12.1+68.g60cc4de"
+source = { git = "https://github.com/dandi/dandi-schema.git?rev=consolidate-models#60cc4de84ffc750c694dd4062e1d3b720181ab5a" }
 dependencies = [
     { name = "jsonschema", extra = ["format"] },
     { name = "packaging" },
@@ -901,10 +901,6 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "requests" },
     { name = "zarr-checksum" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/23/b7/b44244184c16c1b1cc69070b53325965285b81843ad7755c429e1ffaa341/dandischema-0.12.1.tar.gz", hash = "sha256:481ed1da9481090d8000b3b2373a0d4876043f48d4cddc3364c18e0a97bd0c22", size = 98659, upload-time = "2025-11-26T20:16:58.672Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/16/959ccdc06e45781d3c41cd552baeaaf563ffb5fe240fbd24efd26b8b2b12/dandischema-0.12.1-py3-none-any.whl", hash = "sha256:88f84cefd7883ce15d5c2f6b92411b1d00fd76468b77950fff25381e17eaab44", size = 118561, upload-time = "2025-11-26T20:16:57.121Z" },
 ]
 
 [[package]]

@@ -12,8 +12,10 @@ dependencies = [
   # Runtime dependencies, always needed
   "boto3==1.42.97",
   "celery==5.6.3",
-  # Pin dandischema to exact version to make explicit which schema version is being used
-  "dandischema==0.12.1", # schema version 0.7.0
+  # TEMPORARY (DO NOT MERGE): pin dandischema to the dandi/dandi-schema#419
+  # `consolidate-models` branch to run this repo's CI against the consolidated
+  # models before that PR is merged and released.
+  "dandischema @ git+https://github.com/dandi/dandi-schema.git@consolidate-models",
   "django[argon2]==5.2.13",
   "django-allauth==65.16.1",
   "django-auth-style==0.15.0",
@@ -104,6 +106,11 @@ test = [
 only-include = [
   "dandiapi",
 ]
+
+# TEMPORARY (DO NOT MERGE): required so the direct git reference for
+# dandischema above (dandi/dandi-schema#419) is accepted by hatchling.
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.sdist]
 only-include = [
