@@ -70,6 +70,11 @@ class ZarrArchive(TimeStampedModel):
         choices=ZarrArchiveStatus,
         default=ZarrArchiveStatus.PENDING,
     )
+    # Whether this zarr's chunks are uploaded via the multipart upload flow. Determined at
+    # creation and fixed for the life of the zarr's contents, since a zarr's checksum is an
+    # aggregate over per-chunk S3 ETags, which differ between single-part and multipart uploads.
+    # A zarr with mixed upload schemes cannot produce a reconcilable checksum.
+    multipart = models.BooleanField(default=False)
 
     @property
     def embargoed(self):

@@ -184,6 +184,11 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
     if 'zarr_id' in data:
         zarr_archive = get_object_or_404(ZarrArchive, zarr_id=data['zarr_id'])
         dandiset = zarr_archive.dandiset
+
+        # This is the multipart upload flow. A single-part zarr's chunks must be uploaded
+        # through the single-part flow, or its checksum cannot be reconciled.
+        if not zarr_archive.multipart:
+            raise ValidationError('This zarr archive does not support multipart upload.')
     else:
         dandiset = get_object_or_404(get_visible_dandisets(request.user), id=data['dandiset'])
 

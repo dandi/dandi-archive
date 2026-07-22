@@ -67,6 +67,20 @@ def test_zarr_rest_upload_start(
 
 
 @pytest.mark.django_db
+def test_zarr_rest_upload_start_multipart_rejected(api_client):
+    """Single-part upload to a multipart zarr must be rejected."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user], multipart=True)
+
+    resp = api_client.post(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
+        [{'path': 'foo/bar.txt', 'base64md5': 'DMF1ucDxtqgxw5niaXcmYQ=='}],
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db
 def test_zarr_rest_upload_start_not_an_owner(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
