@@ -583,8 +583,8 @@ def test_upload_validate_embargo_existing_embargoed_assetblob(
 
 
 @pytest.mark.django_db
-def test_upload_initialize_zarr_required(api_client):
-    """Not providing zarr data is invalid."""
+def test_upload_initialize_empty(api_client):
+    """Not providing dandiset or zarr data is invalid."""
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
 
