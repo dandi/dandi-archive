@@ -7,7 +7,6 @@ import pytest
 import requests
 
 from dandiapi.api.models import AssetBlob, Dandiset, Upload
-from dandiapi.api.models.upload import ZARR_MULTIPART_UPLOAD_THRESHOLD
 from dandiapi.api.tests.factories import DandisetFactory, UserFactory, ZarrUploadFactory
 from dandiapi.zarr.tests.factories import EmbargoedZarrArchiveFactory, ZarrArchiveFactory
 
@@ -601,38 +600,6 @@ def test_upload_initialize_zarr_required(api_client):
 
 
 @pytest.mark.django_db
-def test_upload_initialize_zarr_file_size_limit(api_client):
-    """Not providing zarr data is invalid."""
-    user = UserFactory.create()
-    api_client.force_authenticate(user=user)
-    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user], multipart=True)
-
-    chunk_key = '0/0/1'
-
-    resp = api_client.post(
-        '/api/uploads/initialize/',
-        {
-            'contentSize': ZARR_MULTIPART_UPLOAD_THRESHOLD,
-            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
-            'zarr_id': str(zarr_archive.zarr_id),
-            'chunk_key': chunk_key,
-        },
-    )
-    assert resp.status_code == 400
-
-    resp = api_client.post(
-        '/api/uploads/initialize/',
-        {
-            'contentSize': ZARR_MULTIPART_UPLOAD_THRESHOLD + 1,
-            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
-            'zarr_id': str(zarr_archive.zarr_id),
-            'chunk_key': chunk_key,
-        },
-    )
-    assert resp.status_code == 200
-
-
-@pytest.mark.django_db
 @pytest.mark.parametrize('embargoed', [True, False])
 def test_upload_initialize_zarr(api_client, embargoed):
     user = UserFactory.create()
@@ -643,7 +610,7 @@ def test_upload_initialize_zarr(api_client, embargoed):
     )
     api_client.force_authenticate(user=user)
 
-    content_size = ZARR_MULTIPART_UPLOAD_THRESHOLD + 1
+    content_size = 100
     chunk_key = '0/chunk'
 
     resp = api_client.post(
@@ -676,7 +643,7 @@ def test_upload_initialize_zarr_single_part_rejected(api_client):
     resp = api_client.post(
         '/api/uploads/initialize/',
         {
-            'contentSize': ZARR_MULTIPART_UPLOAD_THRESHOLD + 1,
+            'contentSize': 100,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
             'zarr_id': str(zarr_archive.zarr_id),
             'chunk_key': '0/chunk',
@@ -694,7 +661,7 @@ def test_upload_initialize_zarr_not_found(api_client):
     resp = api_client.post(
         '/api/uploads/initialize/',
         {
-            'contentSize': ZARR_MULTIPART_UPLOAD_THRESHOLD + 1,
+            'contentSize': 100,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
             'zarr_id': str(uuid.uuid4()),
             'chunk_key': 'some/key',
@@ -710,7 +677,7 @@ def test_upload_complete_zarr(api_client):
     api_client.force_authenticate(user=user)
     zarr_upload = ZarrUploadFactory.create()
 
-    content_size = ZARR_MULTIPART_UPLOAD_THRESHOLD + 1
+    content_size = 100
 
     assert api_client.post(
         f'/api/uploads/{zarr_upload.upload_id}/complete/',
@@ -761,7 +728,7 @@ def test_upload_initialize_and_complete_zarr(api_client):
     api_client.force_authenticate(user=user)
 
     chunk_key = '0/chunk'
-    content_size = ZARR_MULTIPART_UPLOAD_THRESHOLD + 1
+    content_size = 100
 
     initialization = api_client.post(
         '/api/uploads/initialize/',
