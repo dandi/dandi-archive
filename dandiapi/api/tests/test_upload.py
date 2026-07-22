@@ -605,7 +605,7 @@ def test_upload_initialize_zarr_file_size_limit(api_client):
     """Not providing zarr data is invalid."""
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user])
+    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user], multipart=True)
 
     chunk_key = '0/0/1'
 
@@ -637,9 +637,9 @@ def test_upload_initialize_zarr_file_size_limit(api_client):
 def test_upload_initialize_zarr(api_client, embargoed):
     user = UserFactory.create()
     zarr_archive = (
-        EmbargoedZarrArchiveFactory.create(dandiset__owners=[user])
+        EmbargoedZarrArchiveFactory.create(dandiset__owners=[user], multipart=True)
         if embargoed
-        else ZarrArchiveFactory.create(dandiset__owners=[user])
+        else ZarrArchiveFactory.create(dandiset__owners=[user], multipart=True)
     )
     api_client.force_authenticate(user=user)
 
@@ -664,6 +664,26 @@ def test_upload_initialize_zarr(api_client, embargoed):
     assert upload.dandiset is None
     assert upload.blob.name == zarr_archive.s3_path(chunk_key)
     assert upload.embargoed == embargoed
+
+
+@pytest.mark.django_db
+def test_upload_initialize_zarr_single_part_rejected(api_client):
+    """Multipart upload to a single-part (multipart=False) zarr must be rejected."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user], multipart=False)
+
+    resp = api_client.post(
+        '/api/uploads/initialize/',
+        {
+            'contentSize': ZARR_MULTIPART_UPLOAD_THRESHOLD + 1,
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
+            'zarr_id': str(zarr_archive.zarr_id),
+            'chunk_key': '0/chunk',
+        },
+    )
+    assert resp.status_code == 400
+    assert not Upload.objects.exists()
 
 
 @pytest.mark.django_db
@@ -737,7 +757,7 @@ def test_upload_validate_zarr(api_client, chunk_key):
 @pytest.mark.django_db(transaction=True)
 def test_upload_initialize_and_complete_zarr(api_client):
     user = UserFactory.create()
-    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user])
+    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user], multipart=True)
     api_client.force_authenticate(user=user)
 
     chunk_key = '0/chunk'
