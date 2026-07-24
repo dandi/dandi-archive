@@ -26,7 +26,7 @@ dependencies = [
   "django-oauth-toolkit==3.2.0",
   "django-resonant-settings[allauth,celery]==0.50.4",
   "django-resonant-utils[allauth,s3_storage]==0.19.0",
-  "django-stubs-ext==6.0.3",
+  "django-stubs-ext==6.0.7",
   "djangorestframework==3.17.1",
   "drf-extensions==0.8.0",
   "drf-yasg==1.21.15",
@@ -68,31 +68,31 @@ dev = [
   # so use this to install "development" extras by default too
   "dandiapi[development]",
   "pre-commit==4.6.0",
-  "tox==4.53.0",
-  "tox-uv==1.35.1",
+  "tox==4.58.0",
+  "tox-uv==1.36.0",
 ]
 lint = [
-  "ruff==0.15.12",
+  "ruff==0.15.22",
 ]
 type = [
   "mypy==1.20.2",
-  "boto3-stubs[s3]==1.43.0",
+  "boto3-stubs[s3]==1.43.53",
   "celery-types==0.26.0",
-  "django-stubs[compatible-mypy]==6.0.3",
-  "djangorestframework-stubs[compatible-mypy]==3.16.9",
-  "types-requests==2.33.0.20260408",
+  "django-stubs[compatible-mypy]==6.0.7",
+  "djangorestframework-stubs[compatible-mypy]==3.17.0",
+  "types-requests==2.33.0.20260712",
 ]
 test = [
   "djangorestframework-yaml==2.0.0",
-  "Faker==40.15.0",
+  "Faker==40.32.0",
   "factory-boy==3.3.3",
   "freezegun==1.5.5",
-  "pytest==9.0.3",
+  "pytest==9.1.1",
   "pytest-cov==7.1.0",
   "pytest-django==4.12.0",
   "pytest-factoryboy==2.8.1",
   # Enable with "pytest --memray ..."
-  "pytest-memray==1.8.0",
+  "pytest-memray==1.9.0",
   "pytest-mock==3.15.1",
   # Enable with "pytest --random-order ..."
   "pytest-random-order==1.2.0",
