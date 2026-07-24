@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling==1.29.0", "hatch-vcs==0.5.0"]
+requires = ["hatchling==1.31.0", "hatch-vcs==0.5.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -10,41 +10,41 @@ license-files = ["LICENSE", "NOTICE"]
 classifiers = ["Private :: Do Not Upload"]
 dependencies = [
   # Runtime dependencies, always needed
-  "boto3==1.42.97",
+  "boto3==1.43.53",
   "celery==5.6.3",
   # Pin dandischema to exact version to make explicit which schema version is being used
   "dandischema==0.12.1", # schema version 0.7.0
-  "django[argon2]==5.2.13",
-  "django-allauth==65.16.1",
+  "django[argon2]==5.2.16",
+  "django-allauth==65.18.0",
   "django-auth-style==0.15.0",
   "django-click==2.5.0",
   "django-cors-headers==4.9.0",
-  "django-environ==0.13.0",
+  "django-environ==0.14.0",
   "django-extensions==4.1",
   "django-filter==25.2",
-  "django-guardian==3.3.1",
-  "django-oauth-toolkit==3.2.0",
-  "django-resonant-settings[allauth,celery]==0.50.4",
+  "django-guardian==3.3.2",
+  "django-oauth-toolkit==3.3.0",
+  "django-resonant-settings[allauth,celery]==0.51.1",
   "django-resonant-utils[allauth,s3_storage]==0.19.0",
   "django-stubs-ext==6.0.3",
   "djangorestframework==3.17.1",
   "drf-extensions==0.8.0",
   "drf-yasg==1.21.15",
   "jsonschema==4.26.0",
-  "more_itertools==11.0.2",
-  "psycopg[binary]==3.3.3",
+  "more_itertools==11.1.0",
+  "psycopg[binary]==3.3.4",
   "pyyaml==6.0.3",
-  "requests==2.33.1",
+  "requests==2.34.2",
   "rich==15.0.0",
   "whitenoise[brotli]==6.12.0",
   "zarr-checksum==0.4.7",
   # Production-only
   "django-s3-file-field[s3]==1.1.0",
   "django-storages[s3]==1.14.6",
-  "sentry-sdk[celery,django,pure_eval]==2.58.0",
+  "sentry-sdk[celery,django,pure_eval]==2.66.0",
   "gunicorn==25.3.0",
   # Development-only, but required
-  "tqdm==4.67.3",
+  "tqdm==4.69.0",
 ]
 dynamic = ["version"]
 
@@ -53,12 +53,12 @@ development = [
   # Runtime dependencies, only needed with "development" settings
   "django-browser-reload==1.21.0",
   "django-debug-toolbar==6.3.0",
-  "ipython==9.13.0",
+  "ipython==9.15.0",
   "watchdog==6.0.0",
   "werkzeug==3.1.8",
 ]
 cli = [
-  "dandi[extras]==0.74.3",
+  "dandi[extras]==0.76.7",
 ]
 
 [dependency-groups]
