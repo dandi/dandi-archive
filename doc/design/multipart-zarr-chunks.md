@@ -33,4 +33,4 @@ If someone truly needs to hybridize an existing, non-multipart Zarr with multipa
 
 ## Reference Implementation
 
-This design has been implemented in PR #???
+This design has been implemented in PR [#2869](https://github.com/dandi/dandi-archive/pull/2869).
