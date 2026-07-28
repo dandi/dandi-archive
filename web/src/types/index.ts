@@ -46,8 +46,8 @@ export interface Version {
   modified: string,
   dandiset: Dandiset,
   metadata?: DandisetMetadata,
-  asset_validation_errors: ValidationError[],
-  version_validation_errors: ValidationError[],
+  asset_validation_errors?: ValidationError[],
+  validation_errors: ValidationError[],
   contact_person?: string,
 }
 

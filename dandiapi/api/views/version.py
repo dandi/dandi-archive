@@ -87,6 +87,16 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
+        manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
+        responses={200: 'A list of asset validation errors.'},
+    )
+    @action(detail=True, methods=['GET'])
+    def asset_validation_errors(self, request, **kwargs):
+        """Get the asset validation errors on a version."""
+        version: Version = self.get_object()
+        return Response(version.get_asset_validation_errors(), status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
         request_body=VersionMetadataSerializer,
         responses={200: VersionDetailSerializer},
         manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],

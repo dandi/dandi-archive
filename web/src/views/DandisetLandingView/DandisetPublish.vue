@@ -365,12 +365,19 @@ onUnmounted(() => {
 
 
 
-const publishButtonDisabled = computed(() => !!(
-  currentDandiset.value?.version_validation_errors.length
-      || currentDandiset.value?.asset_validation_errors.length
-      || currentDandiset.value?.dandiset.embargo_status !== 'OPEN'
-      || publishDisabledMessage.value
-));
+const publishButtonDisabled = computed(() => {
+  const dandiset = currentDandiset.value;
+  if (dandiset === null || dandiset.asset_validation_errors === undefined) {
+    return true;
+  }
+
+  return Boolean(
+    dandiset.validation_errors.length
+    || dandiset.asset_validation_errors.length
+    || dandiset.dandiset.embargo_status !== 'OPEN'
+    || publishDisabledMessage.value
+  );
+});
 
 const publishButtonHidden: ComputedRef<boolean> = computed(() => {
   if (!store.owners) {
