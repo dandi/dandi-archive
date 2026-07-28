@@ -13,7 +13,10 @@ dependencies = [
   "boto3==1.42.97",
   "celery==5.6.3",
   # Pin dandischema to exact version to make explicit which schema version is being used
-  "dandischema==0.12.1", # schema version 0.7.0
+  # TODO: BEFORE MERGE — replace git branch with released version (e.g., dandischema==0.13.0)
+  # This branch adds concept_doi param to to_datacite(), dates field, and concept DOI model.
+  # See: https://github.com/dandi/dandi-schema/pull/401
+  "dandischema @ git+https://github.com/dandi/dandi-schema@enh/datacite-doi-improvements", # schema version 0.7.0
   "django[argon2]==5.2.13",
   "django-allauth==65.16.1",
   "django-auth-style==0.15.0",
@@ -98,7 +101,12 @@ test = [
   "pytest-random-order==1.2.0",
   # Enable with "pytest --count=... ..."
   "pytest-repeat==0.9.4",
+  "responses==0.25.7",
 ]
+
+# TODO: BEFORE MERGE — remove this once dandischema is pinned to a released version
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build]
 only-include = [

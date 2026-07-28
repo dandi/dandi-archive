@@ -182,8 +182,23 @@ sequenceDiagram
 
 A django-admin script should be created and executed to create a `Dandiset DOI` for all existing dandisets.
 
-No DB migration will be needed, as no new field will be added to `Dandiset` model, and
-instead, the `Dandiset DOI` will be stored in the "draft" `Version`.
+> **Implementation note (PR #2799)**: Two new DB fields were added, deviating
+> from the original "no new field" plan:
+>
+> - `Dandiset.concept_doi` (CharField, unique, nullable): Stores the concept
+>   DOI string. Rationale: the concept DOI is semantically a dandiset-level
+>   attribute, not a version-level one. Storing it on the draft Version creates
+>   awkward semantics when the draft is deleted/replaced. The `unique` constraint
+>   prevents duplicate DOIs from bugs.
+>
+> - `Version.doi_state` (CharField, nullable, choices: pending/draft/registered/
+>   findable/failed): Tracks the DOI lifecycle state on DataCite. Required by
+>   the async Celery workflow to detect stuck/failed states — impossible without
+>   a field. The `remediate_dois` and `check_doi_health` management commands
+>   query this field.
+>
+> Two migrations (0032, 0033) add these fields. Both are nullable and additive,
+> safe for zero-downtime deployment.
 
 ### Dandi Schema Changes
 

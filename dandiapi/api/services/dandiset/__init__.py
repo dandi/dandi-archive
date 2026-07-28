@@ -15,6 +15,7 @@ from dandiapi.api.models.dandiset import Dandiset, DandisetStar
 from dandiapi.api.models.version import Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset.exceptions import DandisetAlreadyExistsError
+from dandiapi.api.services.doi.utils import doi_configured, format_doi
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.exceptions import (
     AdminOnlyOperationError,
@@ -23,6 +24,7 @@ from dandiapi.api.services.exceptions import (
 )
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, is_dandiset_owner
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
+from dandiapi.api.tasks import create_dandiset_doi_task, delete_dandiset_doi_task
 
 
 def _create_dandiset(
@@ -76,6 +78,20 @@ def create_open_dandiset(
             version_name=version_name,
             version_metadata=version_metadata,
         )
+
+        # Always compute and set the concept DOI string (deterministic).
+        # DataCite registration is gated by doi_configured().
+        concept_doi = format_doi(dandiset_id=dandiset.identifier)
+        dandiset.concept_doi = concept_doi
+        dandiset.save(update_fields=['concept_doi'])
+
+        draft_version.doi = concept_doi
+        if doi_configured():
+            draft_version.doi_state = 'pending'
+        draft_version.save(update_fields=['doi', 'doi_state'])
+
+        if doi_configured():
+            transaction.on_commit(lambda: create_dandiset_doi_task.delay(dandiset.id))
 
         audit.create_dandiset(dandiset=dandiset, user=user, metadata=draft_version.metadata)
 
@@ -153,6 +169,13 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
         # Record the audit event first so that the AuditRecord instance has a
         # chance to grab the Dandiset information before it is destroyed.
         audit.delete_dandiset(dandiset=dandiset, user=user)
+
+        # Clean up concept DOI on DataCite.
+        # At this point, dandiset has no published versions (checked above),
+        # so the concept DOI should be Draft and deletable.
+        concept_doi = dandiset.concept_doi
+        if concept_doi:
+            transaction.on_commit(lambda: delete_dandiset_doi_task.delay(concept_doi))
 
         dandiset.versions.all().delete()
         dandiset.delete()

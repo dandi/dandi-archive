@@ -46,6 +46,17 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         validators=[RegexValidator(f'^{VERSION_REGEX}$')],
     )
     doi = models.CharField(max_length=64, null=True, default=None, blank=True)  # noqa: DJ001
+
+    class DoiState(models.TextChoices):
+        DRAFT = 'draft'
+        REGISTERED = 'registered'  # Hidden/retracted — metadata not public
+        FINDABLE = 'findable'
+        PENDING = 'pending'
+        FAILED = 'failed'
+
+    doi_state = models.CharField(  # noqa: DJ001
+        max_length=20, null=True, default=None, blank=True, choices=DoiState.choices
+    )
     """Track the validation status of this version, without considering assets"""
     status = models.CharField(
         max_length=10,
@@ -259,7 +270,11 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
                 'numberOfFiles': 0,
             }
 
-        if self.doi:
+        # Drafts cite the dandiset URL; only published versions expose the DOI.
+        # The concept DOI lives on Dandiset.concept_doi and on Version.doi (DB),
+        # but a draft's *published-shape* metadata keeps the URL citation that
+        # downstream consumers (dandi-cli snapshot tests, UI) expect.
+        if self.doi and self.version != 'draft':
             metadata['doi'] = self.doi
         metadata['citation'] = self.citation(metadata)
 

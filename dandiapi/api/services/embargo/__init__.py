@@ -11,11 +11,12 @@ from dandiapi.api.models import AssetBlob, Dandiset, Version
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.services import audit
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
+from dandiapi.api.services.doi.utils import doi_configured, format_doi
 from dandiapi.api.services.embargo.utils import remove_dandiset_embargo_tags
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.metadata import validate_version_metadata
 from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
-from dandiapi.api.tasks import unembargo_dandiset_task
+from dandiapi.api.tasks import create_dandiset_doi_task, unembargo_dandiset_task
 
 from .exceptions import (
     AssetBlobEmbargoedError,
@@ -71,6 +72,16 @@ def unembargo_dandiset(ds: Dandiset, user: User):
     v.status = Version.Status.PENDING
     v.save()
     logger.info('Version metadata updated')
+
+    # Always set concept DOI string (deterministic). DataCite registration gated.
+    concept_doi = format_doi(dandiset_id=ds.identifier)
+    Dandiset.objects.filter(pk=ds.pk).update(concept_doi=concept_doi)
+    doi_state = 'pending' if doi_configured() else None
+    Version.objects.filter(pk=v.pk).update(doi=concept_doi, doi_state=doi_state)
+
+    if doi_configured():
+        transaction.on_commit(lambda: create_dandiset_doi_task.delay(ds.id))
+        logger.info('Concept DOI %s scheduled for unembargoed dandiset', concept_doi)
 
     # Pre-emptively validate version metadata, so that old validation
     # errors don't show up once un-embargo is finished
