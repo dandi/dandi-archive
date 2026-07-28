@@ -20,7 +20,7 @@ from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import DandisetIdentifierField
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, validate_zarr_path
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadType, validate_zarr_path
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 if TYPE_CHECKING:
@@ -49,11 +49,13 @@ class ZarrArchiveSerializer(serializers.ModelSerializer):
             'file_count',
             'size',
         ]
-        fields = ['name', 'dandiset', 'multipart', *read_only_fields]
+        fields = ['name', 'dandiset', 'upload_type', *read_only_fields]
 
-    # `multipart` is settable at creation (default False) but fixed thereafter, since the
+    # `upload_type` is settable at creation (default singlepart) but fixed thereafter, since the
     # zarr's upload scheme cannot change without a full re-upload.
-    multipart = serializers.BooleanField(default=False)
+    upload_type = serializers.ChoiceField(
+        choices=ZarrUploadType.choices, default=ZarrUploadType.SINGLEPART
+    )
 
     dandiset = serializers.PrimaryKeyRelatedField(
         queryset=Dandiset.objects.all(),
@@ -95,7 +97,7 @@ class ZarrListSerializer(serializers.ModelSerializer):
             'checksum',
             'file_count',
             'size',
-            'multipart',
+            'upload_type',
         ]
         fields = ['name', 'dandiset', *read_only_fields]
 
@@ -315,7 +317,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
             # This endpoint uploads chunks via single-part PUT. A multipart zarr's chunks must
             # be uploaded through the multipart flow, or its checksum cannot be reconciled.
-            if zarr_archive.multipart:
+            if zarr_archive.upload_type != ZarrUploadType.SINGLEPART:
                 return Response(
                     'This zarr archive requires multipart upload.',
                     status=status.HTTP_400_BAD_REQUEST,
