@@ -12,15 +12,15 @@ For simplicity, and under the assumption that it would be sufficient, the DANDI 
 
 ### DANDI Backend
 
-The basic idea is to tag Zarr Archive objects with a boolean `multipart` flag that indicates how the chunks in it were uploaded. In practical terms, all existing Zarrs would have this set to `false`, while all newly created Zarrs would have it set to `true`. This flag then governs how upload is carried out for the chunks: for `multipart=true`, the client will initiate a multipart upload by `POST`ing to an initialization endpoint, then the server will generate the same sequence of presigned URLs as it currently does for blob upload, the client will use them to upload a chunk by parts, followed by the client `POST`ing to a completion endpoint.
+The basic idea is to tag Zarr Archive objects with an `upload_type` field that indicates how the chunks in it were uploaded. It takes one of two values, `singlepart` and `multipart`, leaving room for additional upload schemes in the future. All existing Zarrs will have this set to `singlepart`, while allowing for newly created Zarrs to set it to `multipart`. This field then governs how upload is carried out for the chunks: for `upload_type=multipart`, the client will initiate a multipart upload by `POST`ing to an initialization endpoint, then the server will generate the same sequence of presigned URLs as it currently does for blob upload, the client will use them to upload a chunk by parts, followed by the client `POST`ing to a completion endpoint.
 
-For existing (`multipart=false`) Zarrs, the upload procedure remains the same as it is now, enabling the client to upload single-part chunks only.
+For existing (`upload_type=singlepart`) Zarrs, the upload procedure remains the same as it is now, enabling the client to upload single-part chunks only.
 
 ## DANDI CLI
 
-The CLI will require two changes. For its uploading procedure, it will need to query the Zarr Archive’s `multipart` flag; depending on the value, it will either engage in a single-part upload (for `false`) as it does now, or it will branch onto a path where it initiates a multipart upload and performs one or more `PUT` operations to the presigned part URLs coming from the server.
+The CLI will require two changes. For its uploading procedure, it will need to query the Zarr Archive’s `upload_type` field; depending on the value, it will either engage in a single-part upload (for `singlepart`) as it does now, or it will branch onto a path where it initiates a multipart upload and performs one or more `PUT` operations to the presigned part URLs coming from the server.
 
-For its checksumming procedure, it will check the `multipart` flag; for `false`, it uses the same checksumming algorithm as it does now (using whole-object md5 sums for each chunk, composing them into a tree of hashes, then hashing the whole thing). For `true`, it will change its approach to compute S3’s part-based pseudo-md5 sum for each chunk (taking into account a hash for each part, then hashing the concatenation of those before appending the number of parts to that string), following the same hash-of-hashes strategy to compute the checksum for the entire Zarr.
+For its checksumming procedure, it will check the `upload_type` field; for `singlepart`, it uses the same checksumming algorithm as it does now (using whole-object md5 sums for each chunk, composing them into a tree of hashes, then hashing the whole thing). For `multipart`, it will change its approach to compute S3’s part-based pseudo-md5 sum for each chunk (taking into account a hash for each part, then hashing the concatenation of those before appending the number of parts to that string), following the same hash-of-hashes strategy to compute the checksum for the entire Zarr.
 
 ## Limitations and Tradeoffs
 
@@ -29,7 +29,7 @@ This design removes limits on the size of Zarr chunks by ensuring that multipart
 If someone truly needs to hybridize an existing, non-multipart Zarr with multipart chunks, there are some workarounds:
 
 1. **Reupload the entire Zarr.** Reuploading the Zarr would make use of the new multipart architecture, enabling large chunks and avoiding the need for hybridized-chunk Zarr support.
-2. **Introduce a `mixed` multipart modality.** If reuploading the Zarr is prohibitive, we can imagine a `mixed` mode that incurs the performance penalty described above. For Zarrs with many parts, the overwhelming number of requests to verify each checksum’s multipartness (by asking S3 for the etag value and examining it for a trailing part number) may become intolerably slow. We could warn the user about this situation, but it introduces other weaknesses, chief among them complexity: attempting to correctly implement a mixed-mode algorithm will likely run into edge and corner cases that are likely to lead to bugs and possibly data loss.
+2. **Introduce a `mixed` upload type.** If reuploading the Zarr is prohibitive, we can imagine a third `upload_type` value, `mixed`, that incurs the performance penalty described above. For Zarrs with many parts, the overwhelming number of requests to verify each checksum’s multipartness (by asking S3 for the etag value and examining it for a trailing part number) may become intolerably slow. We could warn the user about this situation, but it introduces other weaknesses, chief among them complexity: attempting to correctly implement a mixed-mode algorithm will likely run into edge and corner cases that are likely to lead to bugs and possibly data loss.
 
 ## Reference Implementation
 

@@ -23,7 +23,7 @@ from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.tasks import calculate_sha256
 from dandiapi.api.views.serializers import AssetBlobSerializer, DandisetIdentifierField
-from dandiapi.zarr.models import ZarrArchive
+from dandiapi.zarr.models import ZarrArchive, ZarrUploadType
 
 if TYPE_CHECKING:
     from collections import OrderedDict
@@ -187,7 +187,7 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
 
         # This is the multipart upload flow. A single-part zarr's chunks must be uploaded
         # through the single-part flow, or its checksum cannot be reconciled.
-        if not zarr_archive.multipart:
+        if zarr_archive.upload_type != ZarrUploadType.MULTIPART:
             raise ValidationError('This zarr archive does not support multipart upload.')
     else:
         dandiset = get_object_or_404(get_visible_dandisets(request.user), id=data['dandiset'])
