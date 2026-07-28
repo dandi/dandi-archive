@@ -11,7 +11,11 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='zarrarchive',
-            name='multipart',
-            field=models.BooleanField(default=False),
+            name='upload_type',
+            field=models.CharField(
+                choices=[('singlepart', 'Singlepart'), ('multipart', 'Multipart')],
+                default='singlepart',
+                max_length=10,
+            ),
         ),
     ]

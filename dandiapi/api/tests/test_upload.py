@@ -8,6 +8,7 @@ import requests
 
 from dandiapi.api.models import AssetBlob, Dandiset, Upload
 from dandiapi.api.tests.factories import DandisetFactory, UserFactory, ZarrUploadFactory
+from dandiapi.zarr.models import ZarrUploadType
 from dandiapi.zarr.tests.factories import EmbargoedZarrArchiveFactory, ZarrArchiveFactory
 
 from .fuzzy import HTTP_URL_RE, UUID_RE, Re
@@ -604,9 +605,13 @@ def test_upload_initialize_empty(api_client):
 def test_upload_initialize_zarr(api_client, embargoed):
     user = UserFactory.create()
     zarr_archive = (
-        EmbargoedZarrArchiveFactory.create(dandiset__owners=[user], multipart=True)
+        EmbargoedZarrArchiveFactory.create(
+            dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART
+        )
         if embargoed
-        else ZarrArchiveFactory.create(dandiset__owners=[user], multipart=True)
+        else ZarrArchiveFactory.create(
+            dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART
+        )
     )
     api_client.force_authenticate(user=user)
 
@@ -635,10 +640,12 @@ def test_upload_initialize_zarr(api_client, embargoed):
 
 @pytest.mark.django_db
 def test_upload_initialize_zarr_single_part_rejected(api_client):
-    """Multipart upload to a single-part (multipart=False) zarr must be rejected."""
+    """Multipart upload to a single-part zarr must be rejected."""
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
-    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user], multipart=False)
+    zarr_archive = ZarrArchiveFactory.create(
+        dandiset__owners=[user], upload_type=ZarrUploadType.SINGLEPART
+    )
 
     resp = api_client.post(
         '/api/uploads/initialize/',
@@ -724,7 +731,9 @@ def test_upload_validate_zarr(api_client, chunk_key):
 @pytest.mark.django_db(transaction=True)
 def test_upload_initialize_and_complete_zarr(api_client):
     user = UserFactory.create()
-    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user], multipart=True)
+    zarr_archive = ZarrArchiveFactory.create(
+        dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART
+    )
     api_client.force_authenticate(user=user)
 
     chunk_key = '0/chunk'
