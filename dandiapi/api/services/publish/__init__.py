@@ -100,7 +100,7 @@ def _build_publishable_version_from_draft(draft_version: Version) -> Version:
         }
     )
 
-    release_notes: str | None = draft_version.release_notes
+    release_notes = draft_version.release_notes
     if release_notes:
         publishable_version_metadata['releaseNotes'] = release_notes
 

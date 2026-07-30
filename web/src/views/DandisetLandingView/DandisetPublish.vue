@@ -284,7 +284,7 @@
           <p class="text-body-2 mb-2 text-grey-darken-1">
             {{ formatDate(selectedVersionForNotes?.modified || '') }}
           </p>
-          <p class="text-body-1 white-space-pre-wrap">
+          <p class="text-body-1 text-pre-wrap">
             {{ selectedVersionForNotes?.release_notes }}
           </p>
         </v-card-text>
