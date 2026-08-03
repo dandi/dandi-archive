@@ -184,9 +184,9 @@
 </template>
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { downloadZip } from 'client-zip';
 import { filesize } from 'filesize';
 import { useDandisetStore } from '@/stores/dandiset';
+import { useZipDownload, type ZipEntry } from '@/composables/useZipDownload';
 import CopyText from '@/components/CopyText.vue';
 import { dandiDocumentationUrl } from '@/utils/constants';
 import { dandiRest } from '@/rest';
@@ -260,44 +260,23 @@ const customDownloadText = computed(() => {
 
 // --- In-browser zip download (prototype) ---------------------------------
 
-const zipInProgress = ref(false);
-const zipProgress = ref(0); // 0–100
+const {
+  inProgress: zipInProgress,
+  progress: zipProgress,
+  canceled: zipCanceled,
+  cancel: cancelZip,
+  download: downloadEntriesAsZip,
+} = useZipDownload();
+
 const zipError = ref('');
-const zipCanceled = ref(false);
-
-let zipAbortController: AbortController | null = null;
-
-function cancelZip() {
-  zipAbortController?.abort();
-}
-
-// Wrap a byte stream so we can count bytes as they flow through to the zipper,
-// giving smooth progress even when a dandiset is a few large files.
-function trackStream(
-  stream: ReadableStream<Uint8Array>,
-  onBytes: (n: number) => void,
-): ReadableStream<Uint8Array> {
-  const reader = stream.getReader();
-  return new ReadableStream<Uint8Array>({
-    async pull(controller) {
-      const { done, value } = await reader.read();
-      if (done) {
-        controller.close();
-        return;
-      }
-      onBytes(value.byteLength);
-      controller.enqueue(value);
-    },
-    cancel(reason) {
-      reader.cancel(reason);
-    },
-  });
-}
 
 const browserZipEligible = computed(() => {
   const version = currentDandiset.value;
+  // The composable fetches assets without auth headers, so embargoed
+  // dandisets (which require an authenticated download) are excluded.
   return !!version
     && !!identifier.value
+    && version.dandiset.embargo_status === 'OPEN'
     && version.size > 0
     && version.size <= BROWSER_ZIP_MAX_SIZE
     && version.asset_count > 0
@@ -333,77 +312,40 @@ async function downloadAsZip() {
     return;
   }
 
-  zipInProgress.value = true;
-  zipProgress.value = 0;
   zipError.value = '';
-  zipCanceled.value = false;
-  zipAbortController = new AbortController();
-  const { signal } = zipAbortController;
+
+  // Nest everything under a single root folder matching the zip filename.
+  const rootFolder = `${id}-${version}`;
+  let included = 0;
+  let skipped = 0;
 
   try {
-    const allAssets = await fetchAllAssets(id, version, signal);
-    // Zarr assets aren't single blobs and can't be fetched via the download endpoint.
-    const blobAssets = allAssets.filter((a) => !a.zarr);
-    const skipped = allAssets.length - blobAssets.length;
-    if (blobAssets.length === 0) {
-      zipError.value = 'No downloadable files in this dandiset (Zarr assets are not supported).';
-      return;
-    }
-
-    const totalBytes = blobAssets.reduce((sum, a) => sum + a.size, 0);
-    let downloadedBytes = 0;
-
-    // Nest everything under a single root folder matching the zip filename.
-    const rootFolder = `${id}-${version}`;
-
-    // Lazily fetch each asset so only one file is in flight at a time.
-    async function* zipEntries() {
-      for (const asset of blobAssets) {
-        const url = dandiRest.assetDownloadURI(id!, version!, asset.asset_id);
-        const response = await fetch(url, { signal });
-        if (!response.ok) {
-          throw new Error(`Failed to download "${asset.path}" (HTTP ${response.status})`);
-        }
-        const body = response.body
-          ? trackStream(response.body, (n) => {
-            downloadedBytes += n;
-            zipProgress.value = totalBytes ? (downloadedBytes / totalBytes) * 100 : 0;
-          })
-          : response;
-        yield {
-          name: `${rootFolder}/${asset.path}`,
-          input: body,
-          size: asset.size,
-          lastModified: new Date(asset.modified),
-        };
+    await downloadEntriesAsZip(`${rootFolder}.zip`, async (signal): Promise<ZipEntry[]> => {
+      const allAssets = await fetchAllAssets(id, version, signal);
+      // Zarr assets aren't single blobs and can't be fetched via the download endpoint.
+      const blobAssets = allAssets.filter((a) => !a.zarr);
+      included = blobAssets.length;
+      skipped = allAssets.length - blobAssets.length;
+      if (blobAssets.length === 0) {
+        throw new Error('No downloadable files in this dandiset (Zarr assets are not supported).');
       }
-    }
-
-    const zipResponse = downloadZip(zipEntries(), { length: blobAssets.length });
-    const blob = await zipResponse.blob();
-
-    const objectUrl = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = objectUrl;
-    link.download = `${rootFolder}.zip`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(objectUrl);
+      return blobAssets.map((asset) => ({
+        name: `${rootFolder}/${asset.path}`,
+        url: dandiRest.assetDownloadURI(id, version, asset.asset_id),
+        size: asset.size,
+        lastModified: new Date(asset.modified),
+      }));
+    });
 
     if (skipped > 0) {
-      zipError.value = `Downloaded ${blobAssets.length} files. Skipped ${skipped} Zarr asset(s) — use the DANDI CLI for those.`;
+      zipError.value = `Downloaded ${included} files. Skipped ${skipped} Zarr asset(s); use the DANDI CLI for those.`;
     }
   } catch (err) {
-    if (signal.aborted) {
-      zipCanceled.value = true;
+    if (zipCanceled.value) {
       zipError.value = 'Download canceled.';
     } else {
       zipError.value = err instanceof Error ? err.message : 'Download failed.';
     }
-  } finally {
-    zipInProgress.value = false;
-    zipAbortController = null;
   }
 }
 </script>
