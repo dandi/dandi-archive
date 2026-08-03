@@ -148,6 +148,7 @@ ignore = [
 
   # Overly burdensome
   "ANN", # flake8-annotations
+  "CPY001", # missing-copyright-notice
   "D1", # undocumented-*
   "EM", # flake8-errmsg
   "ERA001", # commented-out-code
