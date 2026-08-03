@@ -52,7 +52,7 @@
     "@vue/eslint-config-typescript": "14.9.0",
     "@vue/tsconfig": "0.9.1",
     "eslint": "9.39.5",
-    "eslint-plugin-vue": "9.33.0",
+    "eslint-plugin-vue": "10.10.0",
     "eslint-plugin-vuetify": "2.7.2",
     "json-schema-to-typescript": "15.0.4",
     "sass": "1.102.0",
