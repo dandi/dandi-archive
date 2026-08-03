@@ -21,7 +21,7 @@ To be useful, this app requires a server component, which you can run locally; s
 To fix the code formatting and check for common errors, run:
 
 ```bash
-npm run lint
+npm run format
 ```
 
 ### Schema Migration
