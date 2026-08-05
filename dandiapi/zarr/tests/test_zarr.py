@@ -11,7 +11,7 @@ from dandiapi.api.services.permissions.dandiset import (
 )
 from dandiapi.api.tests.factories import DandisetFactory, UserFactory
 from dandiapi.api.tests.fuzzy import UUID_RE
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadType
 from dandiapi.zarr.tasks import ingest_zarr_archive
 from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
@@ -38,11 +38,35 @@ def test_zarr_rest_create(api_client):
         'checksum': None,
         'file_count': 0,
         'size': 0,
+        'upload_type': 'singlepart',
     }
     assert resp.status_code == 200
 
     zarr_archive = ZarrArchive.objects.get(zarr_id=resp.json()['zarr_id'])
     assert zarr_archive.name == name
+    assert zarr_archive.upload_type == ZarrUploadType.SINGLEPART
+
+
+@pytest.mark.django_db
+def test_zarr_rest_create_multipart(api_client):
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    dandiset = DandisetFactory.create(owners=[user])
+    name = 'My Multipart Zarr!'
+
+    resp = api_client.post(
+        '/api/zarr/',
+        {
+            'name': name,
+            'dandiset': dandiset.identifier,
+            'upload_type': 'multipart',
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()['upload_type'] == 'multipart'
+
+    zarr_archive = ZarrArchive.objects.get(zarr_id=resp.json()['zarr_id'])
+    assert zarr_archive.upload_type == ZarrUploadType.MULTIPART
 
 
 @pytest.mark.django_db
@@ -154,6 +178,7 @@ def test_zarr_rest_get(api_client, zarr_archive_factory, zarr_file_factory):
         'checksum': zarr_archive.checksum,
         'file_count': 1,
         'size': zarr_file.size,
+        'upload_type': 'singlepart',
     }
 
 
@@ -259,6 +284,7 @@ def test_zarr_rest_get_very_big(api_client, zarr_archive_factory):
         'checksum': zarr_archive.checksum,
         'file_count': ten_quadrillion,
         'size': ten_petabytes,
+        'upload_type': 'singlepart',
     }
 
 
@@ -275,6 +301,7 @@ def test_zarr_rest_get_empty(api_client):
         'checksum': zarr_archive.checksum,
         'file_count': 0,
         'size': 0,
+        'upload_type': 'singlepart',
     }
 
 

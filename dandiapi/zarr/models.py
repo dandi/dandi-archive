@@ -32,6 +32,12 @@ class ZarrArchiveStatus(models.TextChoices):
     COMPLETE = 'Complete'
 
 
+# The scheme by which this zarr's chunks are uploaded
+class ZarrUploadType(models.TextChoices):
+    SINGLEPART = 'singlepart'
+    MULTIPART = 'multipart'
+
+
 class ZarrArchive(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
     INGEST_ERROR_MSG = 'Zarr archive is currently ingesting or has already ingested'
@@ -69,6 +75,15 @@ class ZarrArchive(TimeStampedModel):
         max_length=max(len(choice[0]) for choice in ZarrArchiveStatus.choices),
         choices=ZarrArchiveStatus,
         default=ZarrArchiveStatus.PENDING,
+    )
+    # The scheme by which this zarr's chunks are uploaded. Determined at creation and fixed for
+    # the life of the zarr's contents, since a zarr's checksum is an aggregate over per-chunk S3
+    # ETags, which differ between single-part and multipart uploads. A zarr with mixed upload
+    # schemes cannot produce a reconcilable checksum.
+    upload_type = models.CharField(
+        max_length=max(len(choice[0]) for choice in ZarrUploadType.choices),
+        choices=ZarrUploadType,
+        default=ZarrUploadType.SINGLEPART,
     )
 
     @property

@@ -61,6 +61,8 @@ router = ExtendedSimpleRouter()
 router.register('assets', AssetViewSet, basename='asset')
 router.register('zarr', ZarrViewSet, basename='zarr')
 
+UPLOAD_ID_URLPATTERN = r'(?P<upload_id>[0-9a-f\-]{36})'
+
 # All core API endpoints
 api_urlpatterns = [
     path('api/', include(router.urls)),
@@ -72,12 +74,12 @@ api_urlpatterns = [
     path('api/schemas/', schema_view, name='schema-view'),
     path('api/uploads/initialize/', upload_initialize_view, name='upload-initialize'),
     re_path(
-        r'api/uploads/(?P<upload_id>[0-9a-f\-]{36})/complete/',
+        rf'api/uploads/{UPLOAD_ID_URLPATTERN}/complete/',
         upload_complete_view,
         name='upload-complete',
     ),
     re_path(
-        r'^api/uploads/(?P<upload_id>[0-9a-f\-]{36})/validate/$',
+        rf'^api/uploads/{UPLOAD_ID_URLPATTERN}/validate/$',
         upload_validate_view,
         name='upload-validate',
     ),

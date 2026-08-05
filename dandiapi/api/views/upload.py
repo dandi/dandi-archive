@@ -15,7 +15,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from s3_file_field._multipart import TransferredPart, TransferredParts
 
-from dandiapi.api.models import AssetBlob, Upload
+from dandiapi.api.models import AssetBlob, Dandiset, Upload
 from dandiapi.api.multipart import DandiS3MultipartManager
 from dandiapi.api.permissions import AuthenticatedRequest, IsApproved
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
@@ -23,6 +23,7 @@ from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.tasks import calculate_sha256
 from dandiapi.api.views.serializers import AssetBlobSerializer, DandisetIdentifierField
+from dandiapi.zarr.models import ZarrArchive, ZarrUploadType
 
 if TYPE_CHECKING:
     from collections import OrderedDict
@@ -40,9 +41,26 @@ class DigestSerializer(serializers.Serializer):
 
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
-    dandiset = DandisetIdentifierField()
     contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
-    digest = DigestSerializer(required=False)
+    digest = DigestSerializer()
+
+    # Unioned fields
+    dandiset = DandisetIdentifierField(required=False)
+    zarr_id = serializers.UUIDField(required=False)
+    chunk_key = serializers.CharField(required=False)
+
+    def validate(self, data):
+        has_dandiset = 'dandiset' in data
+        has_zarr = 'zarr_id' in data or 'chunk_key' in data
+
+        if has_dandiset and has_zarr:
+            raise ValidationError('Only one of dandiset or zarr_id/chunk_key may be specified.')
+        if not has_dandiset and not has_zarr:
+            raise ValidationError('Either dandiset or zarr_id/chunk_key must be specified.')
+        if has_zarr and ('zarr_id' not in data or 'chunk_key' not in data):
+            raise ValidationError('Both zarr_id and chunk_key must be specified.')
+
+        return data
 
     def get_digest_data(self) -> tuple[str, int]:
         """Return a tuple of (etag, content_size), raising an exception if invalid."""
@@ -92,6 +110,19 @@ class UploadCompletionResponseSerializer(serializers.Serializer):
     body = serializers.CharField(trim_whitespace=False)
 
 
+class UploadValidationResponseSerializer(AssetBlobSerializer):
+    # Zarr fields, null for asset blob uploads. The inherited AssetBlob
+    # fields are likewise null for zarr uploads.
+    zarr_id = serializers.UUIDField(allow_null=True, default=None)
+    chunk_key = serializers.CharField(allow_null=True, default=None)
+
+    class Meta(AssetBlobSerializer.Meta):
+        fields = [*AssetBlobSerializer.Meta.fields, 'zarr_id', 'chunk_key']
+        # Default the inherited AssetBlob fields to null so the zarr case only
+        # needs to supply its own fields.
+        extra_kwargs = {field: {'default': None} for field in AssetBlobSerializer.Meta.fields}
+
+
 @swagger_auto_schema(
     method='POST',
     operation_summary='Fetch an existing asset blob by digest, if it exists.',
@@ -136,6 +167,8 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
 
     A list of parts will be returned, each of which has a presigned upload URL and a size.
     This URL communicates directly with the object store so the client can upload bytes directly.
+    Either `dandiset` or `zarr_id`/`chunk_key` must be specified, to upload a regular asset blob
+    or a chunk of a zarr file, respectively.
 
     https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html
     """
@@ -143,11 +176,22 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
     request_serializer.is_valid(raise_exception=True)
 
     etag, content_size = request_serializer.get_digest_data()
+    data: dict = request_serializer.validated_data
 
-    dandiset = get_object_or_404(
-        get_visible_dandisets(request.user),
-        id=request_serializer.validated_data['dandiset'],
-    )
+    # Since the serializer does validation, we know the serializer data contains either the full
+    # dandiset case, or the full zarr case. We can simply check against zarr_id.
+    zarr_archive: ZarrArchive | None = None
+    if 'zarr_id' in data:
+        zarr_archive = get_object_or_404(ZarrArchive, zarr_id=data['zarr_id'])
+        dandiset = zarr_archive.dandiset
+
+        # This is the multipart upload flow. A single-part zarr's chunks must be uploaded
+        # through the single-part flow, or its checksum cannot be reconciled.
+        if zarr_archive.upload_type != ZarrUploadType.MULTIPART:
+            raise ValidationError('This zarr archive does not support multipart upload.')
+    else:
+        dandiset = get_object_or_404(get_visible_dandisets(request.user), id=data['dandiset'])
+
     if not is_dandiset_owner(dandiset, request.user):
         raise NotAllowedError
 
@@ -155,30 +199,32 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
     if dandiset.unembargo_in_progress:
         raise DandisetUnembargoInProgressError
 
-    logger.info(
-        'Starting upload initialization of size %s, ETag %s to dandiset %s',
-        content_size,
-        etag,
-        dandiset,
-    )
+    if zarr_archive is None:
+        existing_asset_blob = AssetBlob.objects.filter(etag=etag).first()
+        if existing_asset_blob is not None:
+            return Response(
+                'Blob already exists.',
+                status=status.HTTP_409_CONFLICT,
+                headers={'Location': str(existing_asset_blob.blob_id)},
+            )
 
-    existing_asset_blob = AssetBlob.objects.filter(etag=etag).first()
-    if existing_asset_blob is not None:
-        return Response(
-            'Blob already exists.',
-            status=status.HTTP_409_CONFLICT,
-            headers={'Location': str(existing_asset_blob.blob_id)},
+        upload, initialization = Upload.initialize_multipart_upload(etag, content_size, dandiset)
+        logger.info(
+            'AssetBlob upload initialized (size %s, ETag %s, dandiset %s)',
+            content_size,
+            etag,
+            dandiset,
         )
+    else:
+        upload, initialization = Upload.initialize_zarr_multipart_upload(
+            etag, content_size, zarr=zarr_archive, chunk_key=data['chunk_key']
+        )
+        logger.info('Zarr upload initialized for chunk %s', data['chunk_key'])
 
-    logger.info('Blob with ETag %s does not yet exist', etag)
-
-    upload, initialization = Upload.initialize_multipart_upload(etag, content_size, dandiset)
-    logger.info('Upload of ETag %s initialized', etag)
     upload.save()
     logger.info('Upload of ETag %s saved', etag)
 
     response_serializer = UploadInitializationResponseSerializer(initialization)
-    logger.info('Upload of ETag %s serialized', etag)
     return Response(response_serializer.data)
 
 
@@ -203,7 +249,8 @@ def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
     parts: list[TransferredPart] = request_serializer.save()
 
     upload: Upload = get_object_or_404(Upload, upload_id=upload_id)
-    if upload.embargoed and not is_dandiset_owner(upload.dandiset, request.user):
+    dandiset = upload.dandiset or typing.cast('ZarrArchive', upload.zarr).dandiset
+    if upload.embargoed and not is_dandiset_owner(dandiset, request.user):
         raise Http404 from None
 
     completion = TransferredParts(
@@ -226,7 +273,7 @@ def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
 @swagger_auto_schema(
     method='POST',
     responses={
-        200: AssetBlobSerializer,
+        200: UploadValidationResponseSerializer,
         400: 'The specified upload has not completed or has failed.',
     },
 )
@@ -235,25 +282,45 @@ def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
 @permission_classes([IsApproved])
 def upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
     """
-    Verify that an upload completed successfully and mint a new AssetBlob.
+    Verify that an upload completed successfully.
 
-    Also starts the asynchronous checksum calculation process.
+    For a regular asset blob upload, this mints a new AssetBlob and starts the asynchronous
+    checksum calculation process. For a zarr chunk upload, this marks the zarr archive as
+    pending, since a new file has been added to it.
     """
     upload = get_object_or_404(Upload, upload_id=upload_id)
-    if upload.embargoed and not is_dandiset_owner(upload.dandiset, request.user):
+
+    if upload.zarr is not None:
+        zarr = typing.cast('ZarrArchive', upload.zarr)
+        if upload.embargoed and not is_dandiset_owner(zarr.dandiset, request.user):
+            raise Http404 from None
+
+        # This raises an exception if unsuccessful
+        upload.validate_successful()
+
+        # Grab this data before calling upload.delete
+        if upload.blob.name is None:
+            raise ValueError('Upload blob name is None')
+        chunk_key = upload.blob.name.removeprefix(zarr.s3_path(''))
+
+        with transaction.atomic():
+            upload.delete()
+
+            # Zarr must be marked pending since a new file is now added
+            zarr.mark_pending()
+            zarr.save()
+
+        response_serializer = UploadValidationResponseSerializer(
+            {'zarr_id': zarr.zarr_id, 'chunk_key': chunk_key}
+        )
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+    dandiset = typing.cast('Dandiset', upload.dandiset)
+    if upload.embargoed and not is_dandiset_owner(dandiset, request.user):
         raise Http404 from None
 
-    # Verify that the upload was successful
-    if not upload.object_key_exists():
-        raise ValidationError('Object does not exist.')
-    if upload.size != upload.actual_size():
-        raise ValidationError(
-            f'Size {upload.size} does not match actual size {upload.actual_size()}.'
-        )
-    if upload.etag != upload.actual_etag():
-        raise ValidationError(
-            f'ETag {upload.etag} does not match actual ETag {upload.actual_etag()}.'
-        )
+    # This raises an exception if unsuccessful
+    upload.validate_successful()
 
     with transaction.atomic():
         # Avoid a race condition where two clients are uploading the same blob at the same time.
@@ -278,5 +345,5 @@ def upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
     # Start calculating the sha256 in the background
     calculate_sha256.delay(asset_blob.blob_id)
 
-    response_serializer = AssetBlobSerializer(asset_blob)
+    response_serializer = UploadValidationResponseSerializer(asset_blob)
     return Response(response_serializer.data, status=status.HTTP_200_OK)
