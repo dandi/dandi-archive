@@ -79,6 +79,35 @@ def test_zarr_rest_upload_start_not_an_owner(api_client):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    'path',
+    [
+        '../../blobs/traversed',
+        # Backslashes are normalized to '/' by django-storages' clean_name *after*
+        # normpath runs, so this variant must be rejected too.
+        '..\\../blobs/traversed',
+        'foo/../../../blobs/traversed',
+        '..',
+    ],
+)
+def test_zarr_rest_upload_start_rejects_path_traversal(api_client, path):
+    """A '..' in an upload path must be rejected before a presigned PUT is minted."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user])
+
+    resp = api_client.post(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
+        [{'path': path, 'base64md5': 'DMF1ucDxtqgxw5niaXcmYQ=='}],
+    )
+    assert resp.status_code == 400
+
+    # No upload should have been started; the zarr is untouched.
+    zarr_archive.refresh_from_db()
+    assert zarr_archive.status == ZarrArchiveStatus.PENDING
+
+
+@pytest.mark.django_db
 def test_zarr_rest_finalize(
     api_client,
     zarr_file_factory,
