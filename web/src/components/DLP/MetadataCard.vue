@@ -35,10 +35,15 @@
                 cols="9"
                 class="text-grey-darken-3"
               >
-                <span v-if="item.name || item.identifier || item.id">
-                  {{ item.name || item.identifier || item.id }}
-                  <br>
-                </span>
+                <slot
+                  name="itemTitle"
+                  :item="item"
+                >
+                  <span v-if="item.name || item.identifier || item.id">
+                    {{ item.name || item.identifier || item.id }}
+                    <br>
+                  </span>
+                </slot>
                 <slot
                   name="content"
                   :item="item"
