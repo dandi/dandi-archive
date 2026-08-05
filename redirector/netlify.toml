@@ -13,7 +13,7 @@ from = "https://api-staging.dandiarchive.org/*"
 to = "https://api.sandbox.dandiarchive.org/:splat"
 status = 308
 
-# The DandiHub JupyterHub has been taken down.
+# The DANDI JupyterHub has been taken down.
 [[redirects]]
 from = "https://hub.dandiarchive.org/*"
 to = "https://notebooks.dandiarchive.org/"
