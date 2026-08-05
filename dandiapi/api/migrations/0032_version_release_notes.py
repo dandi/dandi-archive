@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('api', '0032_remove_upload_embargoed_upload_zarr_and_more'),
+        ('api', '0031_dandiset_embargo_end_date'),
     ]
 
     operations = [
