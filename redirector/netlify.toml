@@ -12,3 +12,9 @@ status = 301
 from = "https://api-staging.dandiarchive.org/*"
 to = "https://api.sandbox.dandiarchive.org/:splat"
 status = 308
+
+# The DANDI JupyterHub has been taken down.
+[[redirects]]
+from = "https://hub.dandiarchive.org/*"
+to = "https://notebooks.dandiarchive.org/"
+status = 302
