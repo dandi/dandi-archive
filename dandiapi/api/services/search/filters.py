@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+import json
 import re
 from typing import TYPE_CHECKING
 
@@ -17,6 +18,7 @@ from dandiapi.api.services.search.operators import (
     ASSET_NAME_PATH_OPS,
     ASSET_OPS,
     CONTRIBUTOR_ROLE_OPS,
+    COUNT_OPS,
     DATE_OPS,
     FILE_TYPE_ALIASES,
     OWNER_OPS,
@@ -166,6 +168,62 @@ def _apply_contributor_filters(
     return queryset.filter(versions__pk__in=matching_versions.values('pk'))
 
 
+# Comparator prefix → Postgres jsonpath operator. The keys are the syntax we
+# accept in a count value (`num_subjects:>=10`); the values are the jsonpath
+# operators we emit. A bare value (no prefix) defaults to `>=` — "at least N"
+# is the intent behind count search. Mapped through this fixed allowlist so the
+# operator is never interpolated from user text into the jsonpath.
+_COUNT_COMPARATORS = {
+    '>': '>',
+    '>=': '>=',
+    '<': '<',
+    '<=': '<=',
+    '=': '==',
+}
+# Longest-match-first alternation so `>=` wins over `>`. `\s*` tolerates the
+# quoted form (`num_subjects:">= 10"`); the bare form never contains spaces.
+_COUNT_VALUE_RE = re.compile(r'^(?P<op>>=|<=|>|<|=)?\s*(?P<n>\d+)$')
+
+
+def _apply_count_filter(
+    queryset: QuerySet[Dandiset], jsonpath_path: str, value: str
+) -> QuerySet[Dandiset]:
+    """Filter dandisets by a numeric count in `Version.metadata` at `jsonpath_path`.
+
+    The value is a non-negative integer, optionally prefixed with a comparator:
+
+    - `num_subjects:10` or `num_subjects:>=10` — at least 10 (bare defaults to `>=`)
+    - `num_subjects:>10` / `num_subjects:<10` — strictly above / below
+    - `num_subjects:<=10` — at most 10
+    - `num_subjects:=10` — exactly 10
+
+    `jsonpath_path` is a trusted constant pointing into `Version.metadata`. The
+    comparator is mapped through `_COUNT_COMPARATORS` (never taken verbatim from
+    user input) and the integer is bound via `jsonb_path_exists`'s `vars`
+    parameter (not inlined into SQL or jsonpath), so the value is injection-safe.
+
+    A dandiset matches if at least one of its versions satisfies the
+    predicate. Versions whose metadata lacks the count field don't match —
+    the jsonpath `?` filter drops missing/null/non-numeric values naturally.
+    """
+    match = _COUNT_VALUE_RE.match(value)
+    if match is None:
+        raise SearchSyntaxError(
+            f'Invalid count value {value!r}. Use a non-negative integer, optionally '
+            'prefixed with a comparator — e.g. `num_subjects:10`, `num_subjects:>=5`, '
+            '`num_subjects:<100`, `num_subjects:=0`.'
+        )
+    op = _COUNT_COMPARATORS[match.group('op') or '>=']
+    n = int(match.group('n'))
+    jsonpath = f'{jsonpath_path} ? (@ {op} $val)'
+    vars_json = json.dumps({'val': n})
+    where = 'jsonb_path_exists(metadata, %s::jsonpath, %s::jsonb)'
+    matching_versions = Version.objects.all().extra(  # noqa: S610
+        where=[where], params=[jsonpath, vars_json]
+    )
+    return queryset.filter(id__in=matching_versions.values('dandiset_id'))
+
+
 _MODIFIED_ALIAS = '_search_latest_version_modified'
 _PUBLISHED_ALIAS = '_search_latest_published_created'
 
@@ -251,6 +309,8 @@ def apply_search_filters(  # noqa: C901  (one branch per operator category — s
             contributor_wheres.append(_contributor_where(value, CONTRIBUTOR_ROLE_OPS[key]))
         elif key in AFFILIATION_OPS:
             contributor_wheres.append(_affiliation_where(value))
+        elif key in COUNT_OPS:
+            queryset = _apply_count_filter(queryset, COUNT_OPS[key], value)
 
     if contributor_wheres:
         queryset = _apply_contributor_filters(queryset, contributor_wheres)

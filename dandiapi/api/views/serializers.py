@@ -336,7 +336,11 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
             'data_curator, data_manager, maintainer, project_leader, funder, '
             'sponsor. '
             'affiliation (matches the nested Person.affiliation[] field by '
-            'organization name or ROR identifier — e.g. affiliation:Stanford). '
+            'organization name or ROR identifier — e.g. affiliation:Stanford); '
+            'num_subjects (matches dandisets by subject count per '
+            'assetsSummary.numberOfSubjects; a bare value means "at least", and '
+            'comparators >, >=, <, <=, = are supported — e.g. num_subjects:10, '
+            'num_subjects:>=5, num_subjects:<100, num_subjects:=0). '
             'Invalid syntax returns HTTP 400 with the offending token; '
             'unknown operators get a "Did you mean?" suggestion.'
         ),
