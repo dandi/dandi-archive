@@ -270,6 +270,7 @@
 import {
   computed,
   ref,
+  watch,
   watchEffect,
   type ComputedRef,
 } from 'vue';
@@ -279,6 +280,7 @@ import { marked } from 'marked';
 import moment from 'moment';
 import DOMPurify from 'dompurify';
 import { useDisplay } from 'vuetify';
+import { useRoute, useRouter } from 'vue-router';
 
 import { useDandisetStore } from '@/stores/dandiset';
 import { getDoiMetadata } from '@/utils/doi';
@@ -295,11 +297,13 @@ const MAX_DESCRIPTION_LENGTH = 400;
 const tabs = [
   {
     name: 'Overview',
+    slug: 'overview',
     component: OverviewTab,
     icon: 'mdi-information-outline',
   },
   {
     name: 'How to Cite',
+    slug: 'how-to-cite',
     component: HowToCiteTab,
     icon: 'mdi-format-quote-close',
   },
@@ -361,7 +365,27 @@ const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed
   () => meta.value?.about,
 );
 
-const currentTab = ref(0);
+const route = useRoute();
+const router = useRouter();
+
+// Resolve the initial tab from the ?tab= query param (default to 0 / Overview).
+const initialTabIndex = tabs.findIndex((t) => t.slug === route.query.tab);
+const currentTab = ref(initialTabIndex >= 0 ? initialTabIndex : 0);
+
+// Sync tab selection → URL query param.
+watch(currentTab, (index) => {
+  const slug = tabs[index]?.slug;
+  const currentSlug = route.query.tab as string | undefined;
+  if (slug === currentSlug) return;
+  // Use the default tab (overview) without a query param to keep the base URL clean.
+  const query = { ...route.query };
+  if (index === 0) {
+    delete query.tab;
+  } else {
+    query.tab = slug;
+  }
+  router.replace({ ...route, query });
+});
 
 function formatDate(date: string): string {
   return moment(date).format('LL');
