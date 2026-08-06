@@ -5,6 +5,7 @@ from .audit import asset_audit_events
 from .auth import auth_token_view, authorize_view, user_questionnaire_form_view
 from .dandiset import DandisetViewSet
 from .dashboard import DashboardView, mailchimp_csv_view, user_approval_view
+from .email_verification import verify_email_view
 from .info import info_view
 from .robots import robots_txt_view
 from .root import root_content_view
@@ -44,4 +45,5 @@ __all__ = [
     'users_list_view',
     'users_me_view',
     'users_search_view',
+    'verify_email_view',
 ]
