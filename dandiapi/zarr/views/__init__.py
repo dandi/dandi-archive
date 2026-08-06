@@ -20,7 +20,7 @@ from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import DandisetIdentifierField
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, validate_zarr_path
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 if TYPE_CHECKING:
@@ -31,12 +31,12 @@ logger = logging.getLogger(__name__)
 
 
 class ZarrFileCreationSerializer(serializers.Serializer):
-    path = serializers.CharField()
+    path = serializers.CharField(validators=[validate_zarr_path])
     base64md5 = serializers.CharField()
 
 
 class ZarrDeleteFileRequestSerializer(serializers.Serializer):
-    path = serializers.CharField()
+    path = serializers.CharField(validators=[validate_zarr_path])
 
 
 class ZarrArchiveSerializer(serializers.ModelSerializer):
@@ -102,7 +102,7 @@ class ZarrListSerializer(serializers.ModelSerializer):
 
 class ZarrExploreInputSerializer(serializers.Serializer):
     after = serializers.CharField(default='')
-    prefix = serializers.CharField(default='')
+    prefix = serializers.CharField(default='', validators=[validate_zarr_path])
     limit = serializers.IntegerField(min_value=0, max_value=1000, default=1000)
     download = serializers.BooleanField(default=False)
 

@@ -284,7 +284,6 @@ class UploadFactory(factory.django.DjangoModelFactory):
     size = factory.LazyAttribute(lambda self: len(self.blob))
 
     dandiset = factory.SubFactory(DandisetFactory)
-    zarr = None
 
     @factory.lazy_attribute
     def etag(self) -> str:
@@ -309,14 +308,4 @@ class UploadFactory(factory.django.DjangoModelFactory):
 
 
 class EmbargoedUploadFactory(UploadFactory):
-    # Embargoed is a property based on the embargo status of the dandiset
-    dandiset = factory.SubFactory(DandisetFactory, embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-
-
-class ZarrUploadFactory(UploadFactory):
-    dandiset = None
-    zarr = factory.SubFactory('dandiapi.zarr.tests.factories.ZarrArchiveFactory')
-
-
-class EmbargoedZarrUploadFactory(ZarrUploadFactory):
-    zarr = factory.SubFactory('dandiapi.zarr.tests.factories.EmbargoedZarrArchiveFactory')
+    embargoed = True

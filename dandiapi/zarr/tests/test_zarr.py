@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.core.files.base import ContentFile
 import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
@@ -495,3 +496,59 @@ def test_zarr_explore_head(api_client):
     resp = api_client.head(f'/api/zarr/{zarr_archive.zarr_id}/files/', {'prefix': filepath})
     assert resp.status_code == 302
     assert f'/test-zarr/{zarr_archive.zarr_id}/{filepath}?' in resp.headers['Location']
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'path',
+    [
+        '../../blobs/victim-object',
+        # Backslash variant: clean_name rewrites '\' to '/' after normpath, so this
+        # resolves to the same victim key and must be rejected too.
+        '..\\../blobs/victim-object',
+        'foo/../../../blobs/victim-object',
+    ],
+)
+def test_zarr_rest_delete_file_rejects_path_traversal(api_client, path):
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create(dandiset__owners=[user])
+
+    # An object living outside the attacker's zarr prefix (e.g. another dandiset's blob).
+    # '../../' walks out of 'test-zarr/<zarr_id>/' to the bucket root, so each parametrized
+    # path resolves to this key.
+    victim_key = 'blobs/victim-object'
+    ZarrArchive.storage.save(victim_key, ContentFile(b'victim'))
+    assert ZarrArchive.storage.exists(victim_key)
+
+    resp = api_client.delete(f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': path}])
+
+    # Without the fix, delete_files resolves the traversal to the *existing* victim and
+    # deletes it (returning 204); the validator must reject the request first.
+    assert resp.status_code == 400
+    assert ZarrArchive.storage.exists(victim_key)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'prefix',
+    [
+        '../../blobs/traversed',
+        # Backslashes are normalized to '/' by django-storages,
+        # so this variant must be rejected too.
+        '..\\../blobs/traversed',
+        'a/../../b',
+        '..',
+    ],
+)
+def test_zarr_file_list_rejects_path_traversal(api_client, prefix):
+    zarr_archive = ZarrArchiveFactory.create()
+
+    resp = api_client.get(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
+        {'prefix': prefix, 'download': True},
+    )
+    assert resp.status_code == 400
+
+    resp = api_client.head(f'/api/zarr/{zarr_archive.zarr_id}/files/', {'prefix': prefix})
+    assert resp.status_code == 400
