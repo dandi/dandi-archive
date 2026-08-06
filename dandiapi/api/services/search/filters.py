@@ -6,14 +6,17 @@ from datetime import UTC, datetime
 import re
 from typing import TYPE_CHECKING
 
-from django.db.models import OuterRef, Subquery
+from django.contrib.auth.models import User
+from django.db.models import OuterRef, Q, Subquery, Value
+from django.db.models.functions import Concat
 
 from dandiapi.api.models import Version
+from dandiapi.api.models.dandiset import DandisetUserObjectPermission
 from dandiapi.api.services.search.parser import SearchSyntaxError
 from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
-    from django.contrib.auth.models import AnonymousUser, User
+    from django.contrib.auth.models import AnonymousUser
     from django.db.models import QuerySet
 
     from dandiapi.api.models import Dandiset
@@ -39,6 +42,7 @@ _DATE_OPS = frozenset(
     }
 )
 _ASSET_OPS = frozenset({'species', 'approach', 'technique', 'file_type'})
+_OWNER_OPS = frozenset({'owner'})
 
 
 def _annotate_latest_version_modified(queryset):
@@ -103,6 +107,31 @@ def _apply_asset_filter(queryset, operator: str, value: str):
     raise ValueError(f'unknown asset operator: {operator}')  # pragma: no cover
 
 
+def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Dandiset]:
+    """Filter dandisets to those owned by the given user identifier.
+
+    `value` is matched case-insensitively against `User.username`, `User.email`,
+    `User.first_name`, `User.last_name`, or `"first_name last_name"` (so the
+    display name shown in the UI works). Multiple users may match; we union
+    dandisets owned by any of them. Unknown user → empty result.
+    """
+    matched_user_pks = (
+        User.objects.annotate(_full_name=Concat('first_name', Value(' '), 'last_name'))
+        .filter(
+            Q(username__iexact=value)
+            | Q(email__iexact=value)
+            | Q(first_name__iexact=value)
+            | Q(last_name__iexact=value)
+            | Q(_full_name__iexact=value)
+        )
+        .values_list('pk', flat=True)
+    )
+    owned_pks = DandisetUserObjectPermission.objects.filter(
+        user__in=matched_user_pks, permission__codename='owner'
+    ).values('content_object')
+    return queryset.filter(pk__in=owned_pks)
+
+
 _MODIFIED_ALIAS = '_search_latest_version_modified'
 _PUBLISHED_ALIAS = '_search_latest_published_created'
 
@@ -156,8 +185,9 @@ def apply_search_filters(
     asset_qs = None
     annotated: set[str] = set()
 
-    for key, raw_value in parsed.operators:
-        value = raw_value.strip()
+    for op in parsed.operators:
+        key = op.key
+        value = op.value.strip()
         if not value:
             raise SearchSyntaxError(f'Operator "{key}" requires a value (e.g. {key}:something).')
 
@@ -173,6 +203,8 @@ def apply_search_filters(
             if asset_qs is None:
                 asset_qs = AssetSearch.objects.visible_to(user)
             asset_qs = _apply_asset_filter(asset_qs, key, value)
+        elif key in _OWNER_OPS:
+            queryset = _apply_owner_filter(queryset, value)
 
     if asset_qs is not None:
         # NOTE perf: jsonb_path_exists with a runtime-built jsonpath cannot
