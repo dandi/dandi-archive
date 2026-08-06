@@ -13,11 +13,11 @@ jobs:
           working-directory: web
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # fetch history for all branches and tags
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.x
 
@@ -73,6 +73,10 @@ jobs:
       # API server env vars
       DJANGO_SETTINGS_MODULE: dandiapi.settings.development
       DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+      # Close DB connections per-request so the threaded `runserver` doesn't
+      # accumulate connections under parallel Playwright load and exhaust
+      # Postgres's max_connections ("sorry, too many clients already").
+      DJANGO_CONN_MAX_AGE: "0"
       DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
       DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage-testing
       DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
@@ -87,16 +91,16 @@ jobs:
       VITE_APP_OAUTH_API_ROOT: http://localhost:8000/oauth/
       VITE_APP_OAUTH_CLIENT_ID: Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0 # fetch history for all branches and tags
 
-    - uses: actions/setup-node@v6
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
         node-version: 24
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v8.1.0
+      uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
 
     - name: Install web app
       run: npm ci

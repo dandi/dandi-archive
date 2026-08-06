@@ -1,3 +1,116 @@
+# v1.0.0 (Wed Aug 05 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD)), for all your work!
+
+### Release Notes
+
+#### Merge pull request #2783 from dandi/renovate/apidevtools-json-schema-ref-parser-15.x ([#2783](https://github.com/dandi/dandi-archive/pull/2783))
+
+<details>
+<summary>APIDevTools/json-schema-ref-parser (@&#8203;apidevtools/json-schema-ref-parser)</summary>
+
+#### Merge pull request #2781 from dandi/renovate/apidevtools-json-schema-ref-parser-13.x ([#2781](https://github.com/dandi/dandi-archive/pull/2781))
+
+<details>
+<summary>APIDevTools/json-schema-ref-parser (@&#8203;apidevtools/json-schema-ref-parser)</summary>
+
+---
+
+#### 💥 Breaking Change
+
+- [gh-actions](deps): Bump actions/add-to-project from 1.0.2 to 2.0.0 [#2813](https://github.com/dandi/dandi-archive/pull/2813) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### 🚀 Enhancement
+
+- Add support for zarr multi-part uploads [#2784](https://github.com/dandi/dandi-archive/pull/2784) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🐛 Bug Fix
+
+- Fix zarr path traversal bug [#2881](https://github.com/dandi/dandi-archive/pull/2881) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Revert "Add support for zarr multi-part uploads (#2784)" [#2878](https://github.com/dandi/dandi-archive/pull/2878) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Attach `dependencies` label to renovate PRs [#2879](https://github.com/dandi/dandi-archive/pull/2879) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add release notes functionality to dandiset publishing process [#2606](https://github.com/dandi/dandi-archive/pull/2606) ([@bendichter](https://github.com/bendichter) [@mvandenburgh](https://github.com/mvandenburgh))
+- Reduce zarr stuckness [#2872](https://github.com/dandi/dandi-archive/pull/2872) ([@danlamanna](https://github.com/danlamanna))
+- Guard against empty `loc` in `_encode_pydantic_error` [#2853](https://github.com/dandi/dandi-archive/pull/2853) ([@candleindark](https://github.com/candleindark))
+- Merge remote-tracking branch 'origin/master' into search-operators-autocomplete [#2843](https://github.com/dandi/dandi-archive/pull/2843) ([@bendichter](https://github.com/bendichter))
+- Fix search within "My Dandisets" to include owned/embargoed dandisets [#2841](https://github.com/dandi/dandi-archive/pull/2841) ([@bendichter](https://github.com/bendichter))
+- Fix empty-query Enter not navigating to search results page [#2843](https://github.com/dandi/dandi-archive/pull/2843) ([@bendichter](https://github.com/bendichter))
+- E2E: target search field by textbox role, not combobox [#2843](https://github.com/dandi/dandi-archive/pull/2843) ([@bendichter](https://github.com/bendichter))
+- E2E CI: bound runserver DB connections to avoid Postgres exhaustion [#2843](https://github.com/dandi/dandi-archive/pull/2843) ([@bendichter](https://github.com/bendichter))
+- Add E2E tests for search operator autocomplete [#2843](https://github.com/dandi/dandi-archive/pull/2843) ([@bendichter](https://github.com/bendichter))
+- Remove `standard:` search operator [#2844](https://github.com/dandi/dandi-archive/pull/2844) ([@bendichter](https://github.com/bendichter))
+- Show example/format hint next to each operator in the dropdown [#2843](https://github.com/dandi/dandi-archive/pull/2843) ([@bendichter](https://github.com/bendichter))
+- Merge pull request #2833 from dandi/display-embargoed-until-date [#2833](https://github.com/dandi/dandi-archive/pull/2833) ([@bendichter](https://github.com/bendichter))
+- Expand S3 doc with all options and archival note [#2830](https://github.com/dandi/dandi-archive/pull/2830) ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Update code snippet to show correct instance [#2689](https://github.com/dandi/dandi-archive/pull/2689) ([@NEStock](https://github.com/NEStock))
+- Display total data size on the homepage with one decimal place [#2802](https://github.com/dandi/dandi-archive/pull/2802) ([@kabilar](https://github.com/kabilar))
+- Update status for initial s3 backup doc [#2829](https://github.com/dandi/dandi-archive/pull/2829) ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Add support to open NIfTI assets in Neurosift [#2700](https://github.com/dandi/dandi-archive/pull/2700) ([@kabilar](https://github.com/kabilar))
+- Fix documentation link in email template [#2803](https://github.com/dandi/dandi-archive/pull/2803) ([@kabilar](https://github.com/kabilar))
+- [codex] Fix citation author filtering [#2794](https://github.com/dandi/dandi-archive/pull/2794) ([@bendichter](https://github.com/bendichter))
+- Wider, responsive advanced-search help popover (closes #2818) [#2820](https://github.com/dandi/dandi-archive/pull/2820) ([@bendichter](https://github.com/bendichter))
+- Gmail-style advanced search for dandiset listing [#2814](https://github.com/dandi/dandi-archive/pull/2814) ([@bendichter](https://github.com/bendichter))
+- Fix "This Version" header style on DLP [#2816](https://github.com/dandi/dandi-archive/pull/2816) ([@bendichter](https://github.com/bendichter))
+- fix: use datePublished for citation year on published versions [#2771](https://github.com/dandi/dandi-archive/pull/2771) ([@bendichter](https://github.com/bendichter))
+- Get `fsspec` from `dandi[extras]` [#2809](https://github.com/dandi/dandi-archive/pull/2809) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2792 from dandi/celery-fix [#2792](https://github.com/dandi/dandi-archive/pull/2792) ([@brianhelba](https://github.com/brianhelba))
+- Fix incompatibility with RabbitMQ 4.3 [#2792](https://github.com/dandi/dandi-archive/pull/2792) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2807 from dandi/renovate/fsspec-2026.x [#2807](https://github.com/dandi/dandi-archive/pull/2807) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2808 from dandi/renovate/marked-18.x [#2808](https://github.com/dandi/dandi-archive/pull/2808) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2795 from dandi/renovate/all-minor-patch [#2795](https://github.com/dandi/dandi-archive/pull/2795) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2804 from dandi/renovate/pytest-9.x [#2804](https://github.com/dandi/dandi-archive/pull/2804) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2589 from dandi/drf-upgrade [#2589](https://github.com/dandi/dandi-archive/pull/2589) ([@brianhelba](https://github.com/brianhelba))
+- Merge remote-tracking branch 'origin/master' into drf-upgrade [#2589](https://github.com/dandi/dandi-archive/pull/2589) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2796 from dandi/renovate/dev-deps [#2796](https://github.com/dandi/dandi-archive/pull/2796) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2801 from dandi/type-packages [#2801](https://github.com/dandi/dandi-archive/pull/2801) ([@brianhelba](https://github.com/brianhelba))
+- Update dependency more_itertools to v11 [#2791](https://github.com/dandi/dandi-archive/pull/2791) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency rich to v15 [#2788](https://github.com/dandi/dandi-archive/pull/2788) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency faker to v40 - autoclosed [#2790](https://github.com/dandi/dandi-archive/pull/2790) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update astral-sh/setup-uv action to v8 [#2786](https://github.com/dandi/dandi-archive/pull/2786) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency gunicorn to v25 [#2787](https://github.com/dandi/dandi-archive/pull/2787) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Merge pull request #2783 from dandi/renovate/apidevtools-json-schema-ref-parser-15.x [#2783](https://github.com/dandi/dandi-archive/pull/2783) ([@brianhelba](https://github.com/brianhelba))
+- Update dependency @apidevtools/json-schema-ref-parser to v15 [#2783](https://github.com/dandi/dandi-archive/pull/2783) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Truncate long filenames in file browser [#2726](https://github.com/dandi/dandi-archive/pull/2726) ([@bendichter](https://github.com/bendichter))
+- Merge pull request #2747 from dandi/renovate/tsconfig-node22-replacement [#2747](https://github.com/dandi/dandi-archive/pull/2747) ([@brianhelba](https://github.com/brianhelba))
+- Replace dependency @tsconfig/node22 with @tsconfig/node24 [#2747](https://github.com/dandi/dandi-archive/pull/2747) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Merge pull request #2781 from dandi/renovate/apidevtools-json-schema-ref-parser-13.x [#2781](https://github.com/dandi/dandi-archive/pull/2781) ([@brianhelba](https://github.com/brianhelba))
+- Update dependency @apidevtools/json-schema-ref-parser to v13 [#2781](https://github.com/dandi/dandi-archive/pull/2781) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Merge pull request #2785 from dandi/vue-router [#2785](https://github.com/dandi/dandi-archive/pull/2785) ([@brianhelba](https://github.com/brianhelba))
+- Use `DandisetIdentifierField` in appropriate Serializers [#2589](https://github.com/dandi/dandi-archive/pull/2589) ([@brianhelba](https://github.com/brianhelba))
+- Move validation logic into `ZarrArchiveSerializer` [#2589](https://github.com/dandi/dandi-archive/pull/2589) ([@brianhelba](https://github.com/brianhelba))
+- Move `vue-router` to runtime dependencies [#2785](https://github.com/dandi/dandi-archive/pull/2785) ([@brianhelba](https://github.com/brianhelba))
+- Rename the `NestedAssetViewSet` URL basename to avoid a conflict [#2589](https://github.com/dandi/dandi-archive/pull/2589) ([@brianhelba](https://github.com/brianhelba))
+- Upgrade `djangorestframework` [#2589](https://github.com/dandi/dandi-archive/pull/2589) ([@brianhelba](https://github.com/brianhelba))
+
+#### 📝 Documentation
+
+- Fix native Celery instructions for RabbitMQ 4.3 [#2815](https://github.com/dandi/dandi-archive/pull/2815) ([@candleindark](https://github.com/candleindark))
+
+#### 🔩 Dependency Updates
+
+- Update dependency @faker-js/faker to v10 [#2839](https://github.com/dandi/dandi-archive/pull/2839) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update actions/checkout action to v7 [#2858](https://github.com/dandi/dandi-archive/pull/2858) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update actions/setup-node action to v7 [#2874](https://github.com/dandi/dandi-archive/pull/2874) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update astral-sh/setup-uv action to v9 [#2875](https://github.com/dandi/dandi-archive/pull/2875) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 11
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Nicole Tregoning ([@NEStock](https://github.com/NEStock))
+
+---
+
 # v0.23.0 (Thu Apr 09 2026)
 
 #### 🚀 Enhancement
