@@ -53,16 +53,18 @@ def _annotate_latest_published_created(queryset):
 
 # Maps each operator to a Postgres jsonpath into the version-level
 # `assetsSummary` aggregation. Paths MUST be trusted constants: they're
-# interpolated into the SQL.
+# interpolated into the SQL. `variableMeasured` holds bare strings rather
+# than objects with a `name`, so its path selects the elements themselves.
 _SUMMARY_PATH_OPS = {
     'species': '$.assetsSummary.species[*].name',
     'approach': '$.assetsSummary.approach[*].name',
     'technique': '$.assetsSummary.measurementTechnique[*].name',
     'standard': '$.assetsSummary.dataStandard[*].name',
+    'variable': '$.assetsSummary.variableMeasured[*]',
 }
 
 
-def _jsonpath_name_match(path: str, value: str) -> tuple[str, list[str]]:
+def _jsonpath_match(path: str, value: str) -> tuple[str, list[str]]:
     """Build a parameterized `jsonb_path_exists` predicate on `metadata`.
 
     `path` MUST come from a trusted allowlist; `value` is parameterized and
@@ -88,7 +90,7 @@ def _apply_summary_filters(
     """
     version_qs = Version.objects.all()
     for operator, value in clauses:
-        where, params = _jsonpath_name_match(_SUMMARY_PATH_OPS[operator], value)
+        where, params = _jsonpath_match(_SUMMARY_PATH_OPS[operator], value)
         # `where` interpolates only an allowlisted jsonpath; the user value
         # is bound via params (and regex-escaped).
         version_qs = version_qs.extra(where=[where], params=params)  # noqa: S610

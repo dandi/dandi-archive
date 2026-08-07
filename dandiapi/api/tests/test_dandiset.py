@@ -1957,6 +1957,27 @@ def test_advanced_search_standard_matches_data_standard(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
+def test_advanced_search_variable_matches_bare_string_array(api_client):
+    # Unlike the other summary fields, `variableMeasured` is an array of bare
+    # strings (NWB neurodata types) rather than objects with a `name`, so its
+    # jsonpath selects the elements themselves.
+    ephys = _seed_dandiset_with_summary(
+        assets_summary={'variableMeasured': ['ElectricalSeries', 'Units', 'LFP']},
+    )
+    imaging = _seed_dandiset_with_summary(
+        assets_summary={'variableMeasured': ['ImagingPlane', 'OpticalChannel']},
+    )
+
+    assert _search_ids(api_client, 'variable:LFP') == {ephys.identifier}
+    assert _search_ids(api_client, 'variable:ImagingPlane') == {imaging.identifier}
+    # Case-insensitive substring, same as the other summary operators.
+    assert _search_ids(api_client, 'variable:electrical') == {ephys.identifier}
+    assert _search_ids(api_client, 'variable:series') == {ephys.identifier}
+    assert _search_ids(api_client, 'variable:nosuchtype') == set()
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
 def test_advanced_search_removed_file_type_returns_helpful_400(api_client):
     # `file_type:` was removed in favor of `standard:` and the faceted
     # file_type query parameter. The generic unknown-operator error has no
