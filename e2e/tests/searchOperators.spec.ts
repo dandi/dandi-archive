@@ -71,12 +71,12 @@ test.describe("search operator autocomplete", async () => {
 
     const search = page.getByPlaceholder(SEARCH_PLACEHOLDER);
     await search.click();
-    await search.fill("file");
+    await search.fill("stan");
 
     const listbox = page.locator(".operator-suggestions");
-    await listbox.getByText("file_type:", { exact: true }).click();
+    await listbox.getByText("standard:", { exact: true }).click();
 
-    await expect(search).toHaveValue("file_type:");
+    await expect(search).toHaveValue("standard:");
   });
 
   test("dismisses the dropdown on Escape and submits on Enter when browsing", async ({ page }) => {

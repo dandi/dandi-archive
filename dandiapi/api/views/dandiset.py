@@ -153,7 +153,7 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
         # full-text path unchanged. Surface any parse / validation problems as 400.
         try:
             parsed = parse_search(search_term)
-            queryset = apply_search_filters(queryset, parsed, user=request.user)
+            queryset = apply_search_filters(queryset, parsed)
         except SearchSyntaxError as exc:
             raise ValidationError({'search': str(exc)}) from exc
 
