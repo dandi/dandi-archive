@@ -55,15 +55,20 @@ def _annotate_latest_published_created(queryset):
 # we match if ANY element of the array satisfies the predicate — important
 # for dandisets that list multiple species, approaches, etc. Paths MUST be
 # trusted constants: they're interpolated into the SQL.
+#
+# Most of these arrays hold objects with a `name`, but `variableMeasured` is
+# an array of bare strings (NWB neurodata types like "ElectricalSeries"), so
+# its path selects the elements themselves.
 _SUMMARY_PATH_OPS = {
     'species': '$.assetsSummary.species[*].name',
     'approach': '$.assetsSummary.approach[*].name',
     'technique': '$.assetsSummary.measurementTechnique[*].name',
     'standard': '$.assetsSummary.dataStandard[*].name',
+    'variable': '$.assetsSummary.variableMeasured[*]',
 }
 
 
-def _jsonpath_name_match(path: str, value: str) -> tuple[str, list[str]]:
+def _jsonpath_match(path: str, value: str) -> tuple[str, list[str]]:
     """Build a parameterized Postgres `jsonb_path_exists` predicate on `metadata`.
 
     Matches `value` case-insensitively as a substring against any node
@@ -103,7 +108,7 @@ def _apply_summary_filters(
     """
     version_qs = Version.objects.all()
     for operator, value in clauses:
-        where, params = _jsonpath_name_match(_SUMMARY_PATH_OPS[operator], value)
+        where, params = _jsonpath_match(_SUMMARY_PATH_OPS[operator], value)
         # `where` interpolates only an allowlisted jsonpath; the user value
         # is bound via params (and re-escaped against regex injection).
         version_qs = version_qs.extra(where=[where], params=params)  # noqa: S610

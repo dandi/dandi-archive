@@ -150,6 +150,7 @@ const operatorHelp = [
   { example: 'approach:electrophysiology', description: 'Has assets using an approach' },
   { example: 'technique:"patch clamp"', description: 'Has assets using a measurement technique' },
   { example: 'standard:nwb', description: 'Has assets in a data standard (e.g. nwb, bids)' },
+  { example: 'variable:LFP', description: 'Contains a measured variable / neurodata type' },
 ];
 
 // The set of operators we suggest, derived from the help table so the two
