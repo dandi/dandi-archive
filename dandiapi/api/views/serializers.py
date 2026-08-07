@@ -323,10 +323,10 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
             'Available operators: '
             'created_before, created_after, modified_before, modified_after, '
             'published_before, published_after (all take YYYY-MM-DD); '
-            'species, approach, technique (case-insensitive '
+            'species, approach, technique, standard (case-insensitive '
             'substring against the corresponding assetsSummary array of '
-            'the dandiset version); '
-            'file_type (nwb, image, text, video — or any MIME prefix). '
+            'the dandiset version; standard matches assetsSummary.dataStandard, '
+            'e.g. standard:nwb). '
             'Invalid syntax returns HTTP 400 with the offending token; '
             'unknown operators get a "Did you mean?" suggestion.'
         ),
