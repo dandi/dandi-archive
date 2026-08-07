@@ -43,6 +43,8 @@ pytestmark = pytest.mark.ai_generated
         ),
         # Special characters preserved inside quoted operator value
         ('species:"C57BL/6"', [], [Operator('species', 'C57BL/6')]),
+        # Data-standard operator
+        ('standard:nwb', [], [Operator('standard', 'nwb')]),
         # Quoted token that *looks* like an operator is treated as free text —
         # documented escape hatch for searching for a literal colon.
         ('"foo:bar" hippocampus', ['foo:bar', 'hippocampus'], []),
@@ -60,6 +62,7 @@ pytestmark = pytest.mark.ai_generated
         'quoted-operator-value',
         'repeated-operator-key',
         'special-chars-in-quoted-value',
+        'standard-operator',
         'quoted-operator-like-token-is-free-text',
         'owner-username',
         'owner-email',
