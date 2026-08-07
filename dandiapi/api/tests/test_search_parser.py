@@ -44,6 +44,8 @@ pytestmark = pytest.mark.ai_generated
         ('species:"C57BL/6"', [], [('species', 'C57BL/6')]),
         # Data-standard operator
         ('standard:nwb', [], [('standard', 'nwb')]),
+        # Measured-variable operator
+        ('variable:LFP', [], [('variable', 'LFP')]),
         # Quoted token that *looks* like an operator is treated as free text —
         # this is the documented escape hatch for searching for a literal colon.
         ('"foo:bar" hippocampus', ['foo:bar', 'hippocampus'], []),
@@ -59,6 +61,7 @@ pytestmark = pytest.mark.ai_generated
         'repeated-operator-key',
         'special-chars-in-quoted-value',
         'standard-operator',
+        'variable-operator',
         'quoted-operator-like-token-is-free-text',
     ],
 )
