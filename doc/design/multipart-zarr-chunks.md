@@ -14,6 +14,8 @@ For simplicity, and under the assumption that it would be sufficient, the DANDI 
 
 The basic idea is to tag Zarr Archive objects with an `upload_type` field that indicates how the chunks in it were uploaded. It takes one of two values, `singlepart` and `multipart`, leaving room for additional upload schemes in the future. All existing Zarrs will have this set to `singlepart`, while allowing for newly created Zarrs to set it to `multipart`. This field then governs how upload is carried out for the chunks: for `upload_type=multipart`, the client will initiate a multipart upload by `POST`ing to an initialization endpoint, then the server will generate the same sequence of presigned URLs as it currently does for blob upload, the client will use them to upload a chunk by parts, followed by the client `POST`ing to a completion endpoint.
 
+Multipart Zarr chunk upload gets its own set of endpoints (`/api/zarr/uploads/initialize/`, `/api/zarr/uploads/{upload_id}/complete/`, and `/api/zarr/uploads/{upload_id}/validate/`), which mirror the existing asset blob upload endpoints under `/api/uploads/`. Correspondingly, chunk uploads are tracked by their own `ZarrUpload` model, which points at the Zarr Archive it belongs to and records the chunk key being uploaded, while the existing `Upload` model continues to track asset blob uploads only. Both share the fields and object store interactions common to any multipart upload.
+
 For existing (`upload_type=singlepart`) Zarrs, the upload procedure remains the same as it is now, enabling the client to upload single-part chunks only.
 
 ## DANDI CLI

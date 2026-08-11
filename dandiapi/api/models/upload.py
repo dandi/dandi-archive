@@ -9,25 +9,22 @@ from django_extensions.db.models import CreationDateTimeField
 from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.multipart import DandiS3MultipartManager
-from dandiapi.zarr.models import ZarrArchive
 
 from .asset import AssetBlob
 from .dandiset import Dandiset
 
 
-class Upload(models.Model):  # noqa: DJ008
+class BaseUpload(models.Model):
+    """
+    The fields and behavior common to all multipart uploads.
+
+    Subclasses define what the upload belongs to (a dandiset, a zarr, etc.), and therefore
+    how its object key and embargo status are determined.
+    """
+
     ETAG_REGEX = DandiETag.REGEX
 
     created = CreationDateTimeField()
-
-    # We store exactly one of either a dandiset, or a zarr, that this upload belongs to. This is to
-    # eliminate a possible source of data divergence, since zarrs also point directly to dandisets.
-    dandiset = models.ForeignKey(
-        Dandiset, null=True, related_name='uploads', on_delete=models.CASCADE
-    )
-    zarr = models.ForeignKey(
-        ZarrArchive, null=True, related_name='uploads', on_delete=models.CASCADE
-    )
 
     blob = models.FileField(blank=True)
 
@@ -46,54 +43,72 @@ class Upload(models.Model):  # noqa: DJ008
     size = models.PositiveBigIntegerField()
 
     class Meta:
+        abstract = True
         ordering = ['created']
         indexes = [models.Index(fields=['etag'])]
-        constraints = [
-            # Ensure that there's exactly one of dandiset or zarr
-            models.CheckConstraint(
-                name='dandiset-zarr-xor',
-                condition=models.Q(dandiset__isnull=True, zarr__isnull=False)
-                | models.Q(dandiset__isnull=False, zarr__isnull=True),
-            )
-        ]
 
     @property
-    def embargoed(self):
-        dandiset = self.dandiset or self.zarr.dandiset
-        return dandiset.embargoed
+    def embargoed(self) -> bool:
+        raise NotImplementedError
 
     @classmethod
-    def initialize_zarr_multipart_upload(cls, etag, size, zarr: ZarrArchive, chunk_key: str):
-        object_key = zarr.s3_path(chunk_key.lstrip('/'))
-        upload, attrs = cls.initialize_multipart_upload(
-            etag=etag, size=size, dandiset=zarr.dandiset, object_key=object_key
-        )
-
-        # Tack on zarr and remove dandiset from instantiated (but not yet saved) Upload
-        upload.dandiset = None
-        upload.zarr = zarr
-
-        return upload, attrs
-
-    @classmethod
-    def initialize_multipart_upload(
-        cls, etag, size, dandiset: Dandiset, object_key: str | None = None
-    ):
-        upload_id = uuid4()
-        if object_key is None:
-            upload_id_str = str(upload_id)
-            object_key = f'blobs/{upload_id_str[0:3]}/{upload_id_str[3:6]}/{upload_id_str}'
-
-        embargoed = dandiset.embargo_status == Dandiset.EmbargoStatus.EMBARGOED
-        multipart_initialization = DandiS3MultipartManager(
-            cls._meta.get_field('blob').storage
-        ).initialize_upload(
+    def _initialize_multipart_upload(cls, *, size: int, object_key: str, embargoed: bool):
+        """Initialize a multipart upload in the object store."""
+        return DandiS3MultipartManager(cls._meta.get_field('blob').storage).initialize_upload(
             object_key,
             size,
             # The upload HTTP API does not pass the file name or content type, and it would be a
             # breaking change to start requiring this.
             'application/octet-stream',
             tags={'embargoed': 'true'} if embargoed else None,
+        )
+
+    def object_key_exists(self):
+        return self.blob.storage.exists(self.blob.name)
+
+    def actual_size(self):
+        return self.blob.storage.size(self.blob.name)
+
+    def actual_etag(self) -> str | None:
+        return self.blob.storage.e_tag(self.blob.name)
+
+    def validate_successful(self):
+        if not self.object_key_exists():
+            raise ValidationError('Object does not exist.')
+
+        actual_size = self.actual_size()
+        if self.size != actual_size:
+            raise ValidationError(f'Size {self.size} does not match actual size {actual_size}.')
+
+        actual_etag = self.actual_etag()
+        if self.etag != actual_etag:
+            raise ValidationError(f'ETag {self.etag} does not match actual ETag {actual_etag}.')
+
+
+class Upload(BaseUpload):  # noqa: DJ008
+    """An upload of a file which will become an asset blob."""
+
+    dandiset = models.ForeignKey(Dandiset, related_name='uploads', on_delete=models.CASCADE)
+
+    class Meta(BaseUpload.Meta):
+        abstract = False
+
+    @property
+    def embargoed(self) -> bool:
+        return self.dandiset.embargoed
+
+    @staticmethod
+    def object_key(upload_id):
+        upload_id = str(upload_id)
+        return f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
+
+    @classmethod
+    def initialize_multipart_upload(cls, etag, size, dandiset: Dandiset):
+        upload_id = uuid4()
+        object_key = cls.object_key(upload_id)
+        embargoed = dandiset.embargo_status == Dandiset.EmbargoStatus.EMBARGOED
+        multipart_initialization = cls._initialize_multipart_upload(
+            size=size, object_key=object_key, embargoed=embargoed
         )
 
         upload = cls(
@@ -119,24 +134,3 @@ class Upload(models.Model):  # noqa: DJ008
             etag=self.etag,
             size=self.size,
         )
-
-    def object_key_exists(self):
-        return self.blob.storage.exists(self.blob.name)
-
-    def actual_size(self):
-        return self.blob.storage.size(self.blob.name)
-
-    def actual_etag(self) -> str | None:
-        return self.blob.storage.e_tag(self.blob.name)
-
-    def validate_successful(self):
-        if not self.object_key_exists():
-            raise ValidationError('Object does not exist.')
-
-        actual_size = self.actual_size()
-        if self.size != actual_size:
-            raise ValidationError(f'Size {self.size} does not match actual size {actual_size}.')
-
-        actual_etag = self.actual_etag()
-        if self.etag != actual_etag:
-            raise ValidationError(f'ETag {self.etag} does not match actual ETag {actual_etag}.')
