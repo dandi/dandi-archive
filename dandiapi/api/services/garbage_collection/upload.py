@@ -64,10 +64,11 @@ def _garbage_collect_model(model: type[BaseUpload]) -> int:
                 for u in uploads_chunk
             )
 
-            # Delete the blobs from S3
+            # Release the object store resources held by these uploads. Note that this does
+            # not necessarily delete the uploaded object; see `BaseUpload.abort`.
             futures.append(
                 executor.submit(
-                    lambda chunk: [u.blob.delete(save=False) for u in chunk],
+                    lambda chunk: [u.abort() for u in chunk],
                     uploads_chunk,
                 )
             )
