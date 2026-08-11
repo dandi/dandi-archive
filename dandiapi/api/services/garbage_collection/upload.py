@@ -16,26 +16,37 @@ from dandiapi.api.models import (
     Upload,
 )
 from dandiapi.api.multipart import DandiS3MultipartManager
+from dandiapi.zarr.models import ZarrUpload
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
+
+    from dandiapi.api.models.upload import BaseUpload
 
 logger = get_task_logger(__name__)
 
 UPLOAD_EXPIRATION_TIME = DandiS3MultipartManager._url_expiration  # noqa: SLF001
 
+# The upload models which are garbage collected, all of which represent an in-progress
+# multipart upload that has expired.
+UPLOAD_MODELS: list[type[BaseUpload]] = [Upload, ZarrUpload]
 
-def get_queryset() -> QuerySet[Upload]:
-    """Get the queryset of Uploads that are eligible for garbage collection."""
-    return Upload.objects.filter(
+
+def get_queryset(model: type[BaseUpload] = Upload) -> QuerySet[BaseUpload]:
+    """Get the queryset of uploads of the given model that are eligible for garbage collection."""
+    return model.objects.filter(
         created__lt=timezone.now() - UPLOAD_EXPIRATION_TIME,
     )
 
 
 def garbage_collect() -> int:
+    return sum(_garbage_collect_model(model) for model in UPLOAD_MODELS)
+
+
+def _garbage_collect_model(model: type[BaseUpload]) -> int:
     from . import GARBAGE_COLLECTION_EVENT_CHUNK_SIZE
 
-    qs = get_queryset()
+    qs = get_queryset(model)
 
     if not qs.exists():
         return 0
@@ -44,7 +55,7 @@ def garbage_collect() -> int:
     futures: list[Future] = []
 
     with transaction.atomic(), ThreadPoolExecutor() as executor:
-        event = GarbageCollectionEvent.objects.create(type=Upload.__name__)
+        event = GarbageCollectionEvent.objects.create(type=model.__name__)
         for uploads_chunk in chunked(qs.iterator(), GARBAGE_COLLECTION_EVENT_CHUNK_SIZE):
             GarbageCollectionEventRecord.objects.bulk_create(
                 GarbageCollectionEventRecord(
@@ -61,7 +72,7 @@ def garbage_collect() -> int:
                 )
             )
 
-            deleted_records += Upload.objects.filter(
+            deleted_records += model.objects.filter(
                 pk__in=[u.pk for u in uploads_chunk],
             ).delete()[0]
 

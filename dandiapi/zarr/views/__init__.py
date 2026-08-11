@@ -22,12 +22,24 @@ from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import DandisetIdentifierField
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadType, validate_zarr_path
 from dandiapi.zarr.tasks import ingest_zarr_archive
+from dandiapi.zarr.views.upload import (
+    zarr_upload_complete_view,
+    zarr_upload_initialize_view,
+    zarr_upload_validate_view,
+)
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AnonymousUser, User
     from django.db.models.query import QuerySet
 
 logger = logging.getLogger(__name__)
+
+__all__ = [
+    'ZarrViewSet',
+    'zarr_upload_complete_view',
+    'zarr_upload_initialize_view',
+    'zarr_upload_validate_view',
+]
 
 
 class ZarrFileCreationSerializer(serializers.Serializer):

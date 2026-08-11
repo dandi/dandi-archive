@@ -16,6 +16,7 @@ from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.metadata import validate_version_metadata
 from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.api.tasks import unembargo_dandiset_task
+from dandiapi.zarr.models import ZarrUpload
 
 from .exceptions import (
     AssetBlobEmbargoedError,
@@ -30,6 +31,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _has_active_uploads(ds: Dandiset) -> bool:
+    """Return whether the dandiset has any in-progress asset blob or zarr chunk uploads."""
+    return ds.uploads.exists() or ZarrUpload.objects.filter(zarr__dandiset=ds).exists()
+
+
 @transaction.atomic()
 def unembargo_dandiset(ds: Dandiset, user: User):
     """Unembargo a dandiset by copying all embargoed asset blobs to the public bucket."""
@@ -41,7 +47,7 @@ def unembargo_dandiset(ds: Dandiset, user: User):
             message=f'Expected dandiset state {Dandiset.EmbargoStatus.UNEMBARGOING}, found {ds.embargo_status}',  # noqa: E501
             http_status_code=500,
         )
-    if ds.uploads.all().exists():
+    if _has_active_uploads(ds):
         raise DandisetActiveUploadsError(http_status_code=500)
 
     # Remove tags in S3
@@ -102,7 +108,7 @@ def kickoff_dandiset_unembargo(*, user: User, dandiset: Dandiset):
     if not is_dandiset_owner(dandiset, user):
         raise DandisetOwnerRequiredError
 
-    if dandiset.uploads.count():
+    if _has_active_uploads(dandiset):
         raise DandisetActiveUploadsError
 
     with transaction.atomic():

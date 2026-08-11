@@ -220,6 +220,9 @@ def upload_zarr_chunks(
     details = {
         'zarr_id': str(zarr_archive.zarr_id),
         'paths': paths,
+        # The scheme by which these chunks are uploaded. Records predating multipart zarr
+        # chunk upload were all single-part, and were backfilled as such.
+        'upload_type': zarr_archive.upload_type,
     }
     return _make_audit_record(
         dandiset=dandiset,

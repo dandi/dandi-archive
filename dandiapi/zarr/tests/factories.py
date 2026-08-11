@@ -8,8 +8,8 @@ import factory
 from zarr_checksum.generators import ZarrArchiveFile
 
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.tests.factories import DandisetFactory
-from dandiapi.zarr.models import ZarrArchive
+from dandiapi.api.tests.factories import BaseUploadFactory, DandisetFactory
+from dandiapi.zarr.models import ZarrArchive, ZarrUpload
 
 from .utils import PostgenerationAttributesFactory
 
@@ -35,6 +35,28 @@ class ZarrArchiveFactory(factory.django.DjangoModelFactory):
 
 class EmbargoedZarrArchiveFactory(ZarrArchiveFactory):
     dandiset = factory.SubFactory(DandisetFactory, embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+
+
+class ZarrUploadFactory(BaseUploadFactory):
+    class Meta:
+        model = ZarrUpload
+        skip_postgeneration_save = True
+
+    zarr = factory.SubFactory(ZarrArchiveFactory)
+    chunk_key = factory.Faker('numerify', text='#/#/@#')
+
+    # The object key of a zarr upload is determined by the zarr and the chunk key
+    blob = factory.django.FileField(
+        filename=factory.LazyAttribute(
+            lambda blob: blob.factory_parent.zarr.s3_path(blob.factory_parent.chunk_key)
+        ),
+        data=factory.Faker('binary', length=100),
+    )
+
+
+class EmbargoedZarrUploadFactory(ZarrUploadFactory):
+    # Embargoed is a property based on the embargo status of the zarr's dandiset
+    zarr = factory.SubFactory(EmbargoedZarrArchiveFactory)
 
 
 class ZarrFileFactory(PostgenerationAttributesFactory):
