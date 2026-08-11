@@ -160,6 +160,12 @@ class ZarrUpload(BaseUpload):
     def embargoed(self) -> bool:
         return self.zarr.embargoed
 
+    # Note that `abort` is deliberately not overridden to delete the object, as `Upload` does.
+    # A zarr upload writes directly to the chunk's final location in the zarr, and nothing
+    # prevents several uploads (e.g. an abandoned attempt and the retry that succeeded) from
+    # targeting the same chunk key. Deleting the object would therefore risk destroying a chunk
+    # that is live in the zarr. Aborting the multipart upload discards only this upload's parts.
+
     @classmethod
     def initialize_multipart_upload(cls, etag, size, zarr: ZarrArchive, chunk_key: str):
         upload_id = uuid4()

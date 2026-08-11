@@ -63,6 +63,17 @@ class BaseUpload(models.Model):
             tags={'embargoed': 'true'} if embargoed else None,
         )
 
+    def abort(self) -> None:
+        """
+        Release the object store resources held by this abandoned upload.
+
+        The multipart upload is aborted, discarding any parts that were uploaded. Subclasses
+        whose object key belongs to this upload alone should also delete the object itself.
+        """
+        DandiS3MultipartManager(self.blob.storage).abort_upload(
+            self.blob.name, self.multipart_upload_id
+        )
+
     def object_key_exists(self):
         return self.blob.storage.exists(self.blob.name)
 
@@ -124,6 +135,12 @@ class Upload(BaseUpload):  # noqa: DJ008
             'upload_id': upload.upload_id,
             'parts': multipart_initialization.parts,
         }
+
+    def abort(self) -> None:
+        super().abort()
+
+        # This upload owns its object key outright, so the object can be deleted along with it
+        self.blob.delete(save=False)
 
     def to_asset_blob(self) -> AssetBlob:
         """Convert this upload into an AssetBlob."""
