@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import inspect
+
+from django.conf import settings
 from django.http import HttpResponse
 
 
@@ -18,4 +21,22 @@ Disallow: /
 User-agent: *
 Disallow: /
 """
+    return HttpResponse(content, content_type='text/plain')
+
+
+def frontend_robots_txt_view(request):
+    parts = []
+
+    parts.append("""
+    User-agent: *
+    Allow: /
+    """)
+
+    if settings.DANDI_ENABLE_SITEMAP_XML:
+        parts.append(f"""
+        Sitemap: {settings.DANDI_WEB_APP_URL}/sitemap.xml
+        """)
+
+    content = "\n\n".join(inspect.cleandoc(p) for p in parts)
+
     return HttpResponse(content, content_type='text/plain')
