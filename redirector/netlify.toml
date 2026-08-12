@@ -16,5 +16,5 @@ status = 308
 # The DANDI JupyterHub has been taken down.
 [[redirects]]
 from = "https://hub.dandiarchive.org/*"
-to = "https://notebooks.dandiarchive.org/"
+to = "https://docs.dandiarchive.org/user-guide-using/dandi-hub/"
 status = 302
