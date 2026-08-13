@@ -26,7 +26,13 @@ from dandiapi.api.views.upload import (
     UploadInitializationResponseSerializer,
     complete_multipart_upload,
 )
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUpload, ZarrUploadType
+from dandiapi.zarr.models import (
+    ZarrArchive,
+    ZarrArchiveStatus,
+    ZarrUpload,
+    ZarrUploadType,
+    validate_zarr_path,
+)
 
 if TYPE_CHECKING:
     from collections import OrderedDict
@@ -38,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 class ZarrUploadInitializationRequestSerializer(serializers.Serializer):
     zarr_id = serializers.UUIDField()
-    chunk_key = serializers.CharField()
+    chunk_key = serializers.CharField(validators=[validate_zarr_path])
     contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
     digest = DigestSerializer()
 

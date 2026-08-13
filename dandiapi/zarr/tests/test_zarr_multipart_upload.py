@@ -78,6 +78,37 @@ def test_zarr_multipart_upload_initialize_ingesting(api_client, status):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    'chunk_key',
+    [
+        '../../blobs/traversed',
+        # Backslashes are normalized to '/' by django-storages' clean_name *after*
+        # normpath runs, so this variant must be rejected too.
+        '..\\../blobs/traversed',
+        'foo/../../../blobs/traversed',
+        '..',
+    ],
+)
+def test_zarr_multipart_upload_initialize_rejects_path_traversal(api_client, chunk_key):
+    """A '..' in a chunk key must be rejected before a multipart upload is created."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create(
+        dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART
+    )
+
+    resp = api_client.post(
+        '/api/zarr/uploads/initialize/', initialize_body(zarr_archive, chunk_key=chunk_key)
+    )
+    assert resp.status_code == 400
+
+    # No upload should have been started; the zarr is untouched.
+    assert not ZarrUpload.objects.exists()
+    zarr_archive.refresh_from_db()
+    assert zarr_archive.status == ZarrArchiveStatus.PENDING
+
+
+@pytest.mark.django_db
 def test_zarr_multipart_upload_initialize_not_an_owner(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
