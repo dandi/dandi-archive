@@ -30,6 +30,7 @@ OPERATOR_KEYS: frozenset[str] = frozenset(
         'approach',
         'technique',
         'standard',
+        'variable',
         'owner',
     }
 )
