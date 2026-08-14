@@ -2079,15 +2079,27 @@ def test_advanced_search_owner_lookup_paths_and_combinations(api_client):
     dandiset).
     """
     # Three users with overlapping last names so we can exercise every lookup
-    # path AND the multi-user union in a single setup.
+    # path AND the multi-user union in a single setup. GitHub logins are set
+    # explicitly: they are the "username" the UI displays, and the only kind
+    # of username the filter consults. `User.username` is left at its factory
+    # default (the email address), matching production.
     alice = UserFactory.create(
-        username='Alice', email='Alice@Example.com', first_name='Alice', last_name='Smith'
+        email='Alice@Example.com',
+        first_name='Alice',
+        last_name='Smith',
+        social_account__extra_data__login='Alice-Codes',
     )
     bob = UserFactory.create(
-        username='bob', email='bob@example.com', first_name='Bob', last_name='Smith'
+        email='bob@example.com',
+        first_name='Bob',
+        last_name='Smith',
+        social_account__extra_data__login='bob-gh',
     )
     carol = UserFactory.create(
-        username='carol', email='carol@example.com', first_name='Carol', last_name='Jones'
+        email='carol@example.com',
+        first_name='Carol',
+        last_name='Jones',
+        social_account__extra_data__login='carol-gh',
     )
     alice_old = DandisetFactory.create(owners=[alice])
     alice_new = DandisetFactory.create(owners=[alice])
@@ -2103,9 +2115,9 @@ def test_advanced_search_owner_lookup_paths_and_combinations(api_client):
 
     alice_dsets = {alice_old.identifier, alice_new.identifier}
 
-    # username (case-insensitive)
-    assert _search_ids(api_client, 'owner:alice') == alice_dsets
-    assert _search_ids(api_client, 'owner:ALICE') == alice_dsets
+    # GitHub username (case-insensitive)
+    assert _search_ids(api_client, 'owner:alice-codes') == alice_dsets
+    assert _search_ids(api_client, 'owner:ALICE-CODES') == alice_dsets
 
     # email (case-insensitive)
     assert _search_ids(api_client, 'owner:alice@example.com') == alice_dsets
@@ -2122,9 +2134,24 @@ def test_advanced_search_owner_lookup_paths_and_combinations(api_client):
     # unknown user → 0 results, not 400 (a valid 0-hit query)
     assert _search_ids(api_client, 'owner:no_such_user_anywhere') == set()
 
+    # `User.username` is NOT a lookup path: in production it holds the email
+    # address, not the GitHub login the UI displays as the username. A
+    # username differing from both must not match; the GitHub login must.
+    dave = UserFactory.create(
+        username='dave-django-username',
+        email='dave@example.com',
+        first_name='Dave',
+        last_name='Miller',
+        social_account__extra_data__login='dave-gh',
+    )
+    dave_ds = DandisetFactory.create(owners=[dave])
+    DraftVersionFactory.create(dandiset=dave_ds)
+    assert _search_ids(api_client, 'owner:dave-django-username') == set()
+    assert _search_ids(api_client, 'owner:dave-gh') == {dave_ds.identifier}
+
     # combines with other operators: cross-key AND on the same dandiset.
-    # Only alice_new satisfies BOTH owner:alice AND created_after.
-    assert _search_ids(api_client, f'owner:alice created_after:{after_str}') == {
+    # Only alice_new satisfies BOTH owner:alice-codes AND created_after.
+    assert _search_ids(api_client, f'owner:alice-codes created_after:{after_str}') == {
         alice_new.identifier
     }
 
@@ -2132,14 +2159,14 @@ def test_advanced_search_owner_lookup_paths_and_combinations(api_client):
 @pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_owner_does_not_inflate_to_superuser_archive(api_client):
-    # Guardian's get_objects_for_user(with_superuser=True) returns ALL objects
-    # for superusers — wrong semantics for owner: searches. We pass
-    # with_superuser=False so `owner:admin` returns only what admin
-    # explicitly owns, not the entire archive.
-    admin = UserFactory.create(username='admin', is_superuser=True)
+    # Guardian's get_objects_for_user returns ALL objects for superusers —
+    # wrong semantics for owner: searches. The filter queries
+    # DandisetUserObjectPermission directly, so `owner:` returns only what
+    # admin explicitly owns, not the entire archive.
+    admin = UserFactory.create(is_superuser=True, social_account__extra_data__login='admin-gh')
     other = UserFactory.create()
     DraftVersionFactory.create(dandiset=DandisetFactory.create(owners=[other]))
     admin_owned = DandisetFactory.create(owners=[admin])
     DraftVersionFactory.create(dandiset=admin_owned)
 
-    assert _search_ids(api_client, 'owner:admin') == {admin_owned.identifier}
+    assert _search_ids(api_client, 'owner:admin-gh') == {admin_owned.identifier}

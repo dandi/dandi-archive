@@ -120,15 +120,18 @@ def _apply_file_type_filters(
 def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Dandiset]:
     """Filter dandisets to those owned by the given user identifier.
 
-    `value` is matched case-insensitively against `User.username`, `User.email`,
-    `User.first_name`, `User.last_name`, or `"first_name last_name"` (so the
-    display name shown in the UI works). Multiple users may match; we union
-    dandisets owned by any of them. Unknown user → empty result.
+    `value` is matched case-insensitively against the user's GitHub login
+    (`SocialAccount.extra_data['login']` — the "username" the API and UI
+    display), `User.email`, `User.first_name`, `User.last_name`, or
+    `"first_name last_name"` (so the display name shown in the UI works).
+    `User.username` is deliberately not matched: in production it holds the
+    user's email address, not the GitHub login. Multiple users may match; we
+    union dandisets owned by any of them. Unknown user → empty result.
     """
     matched_user_pks = (
         User.objects.annotate(_full_name=Concat('first_name', Value(' '), 'last_name'))
         .filter(
-            Q(username__iexact=value)
+            Q(socialaccount__extra_data__login__iexact=value)
             | Q(email__iexact=value)
             | Q(first_name__iexact=value)
             | Q(last_name__iexact=value)
