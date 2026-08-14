@@ -6,14 +6,17 @@ from datetime import UTC, datetime
 import re
 from typing import TYPE_CHECKING
 
-from django.db.models import OuterRef, Subquery
+from django.contrib.auth.models import User
+from django.db.models import OuterRef, Q, Subquery, Value
+from django.db.models.functions import Concat
 
 from dandiapi.api.models import Version
+from dandiapi.api.models.dandiset import DandisetUserObjectPermission
 from dandiapi.api.services.search.parser import SearchSyntaxError
 from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
-    from django.contrib.auth.models import AnonymousUser, User
+    from django.contrib.auth.models import AnonymousUser
     from django.db.models import QuerySet
 
     from dandiapi.api.models import Dandiset
@@ -39,6 +42,7 @@ _DATE_OPS = frozenset(
     }
 )
 _ASSET_OPS = frozenset({'file_type'})
+_OWNER_OPS = frozenset({'owner'})
 
 
 def _annotate_latest_version_modified(queryset):
@@ -113,8 +117,45 @@ def _apply_file_type_filters(
     return queryset.filter(id__in=asset_qs.values_list('dandiset_id', flat=True).distinct())
 
 
+def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Dandiset]:
+    """Filter dandisets to those owned by the given user identifier.
+
+    `value` is matched case-insensitively against the user's GitHub login
+    (`SocialAccount.extra_data['login']` — the "username" the API and UI
+    display), `User.email`, `User.first_name`, `User.last_name`, or
+    `"first_name last_name"` (so the display name shown in the UI works).
+    `User.username` is deliberately not matched: in production it holds the
+    user's email address, not the GitHub login. Multiple users may match; we
+    union dandisets owned by any of them. Unknown user → empty result.
+    """
+    matched_user_pks = (
+        User.objects.annotate(_full_name=Concat('first_name', Value(' '), 'last_name'))
+        .filter(
+            Q(socialaccount__extra_data__login__iexact=value)
+            | Q(email__iexact=value)
+            | Q(first_name__iexact=value)
+            | Q(last_name__iexact=value)
+            | Q(_full_name__iexact=value)
+        )
+        .values_list('pk', flat=True)
+    )
+    owned_pks = DandisetUserObjectPermission.objects.filter(
+        user__in=matched_user_pks, permission__codename='owner'
+    ).values('content_object')
+    return queryset.filter(pk__in=owned_pks)
+
+
 _MODIFIED_ALIAS = '_search_latest_version_modified'
 _PUBLISHED_ALIAS = '_search_latest_published_created'
+
+
+def _parse_date(operator: str, value: str) -> datetime:
+    try:
+        return datetime.strptime(value, '%Y-%m-%d').replace(tzinfo=UTC)
+    except ValueError as exc:
+        raise SearchSyntaxError(
+            f'Invalid date for "{operator}": {value!r}. Use YYYY-MM-DD.'
+        ) from exc
 
 
 def _apply_date_filter(queryset, operator: str, ts: datetime, annotated: set[str]):
@@ -161,23 +202,20 @@ def apply_search_filters(
     file_type_values: list[str] = []
     annotated: set[str] = set()
 
-    for key, raw_value in parsed.operators:
-        value = raw_value.strip()
+    for op in parsed.operators:
+        key = op.key
+        value = op.value.strip()
         if not value:
             raise SearchSyntaxError(f'Operator "{key}" requires a value (e.g. {key}:something).')
 
         if key in _DATE_OPS:
-            try:
-                ts = datetime.strptime(value, '%Y-%m-%d').replace(tzinfo=UTC)
-            except ValueError as exc:
-                raise SearchSyntaxError(
-                    f'Invalid date for "{key}": {value!r}. Use YYYY-MM-DD.'
-                ) from exc
-            queryset = _apply_date_filter(queryset, key, ts, annotated)
+            queryset = _apply_date_filter(queryset, key, _parse_date(key, value), annotated)
         elif key in _SUMMARY_PATH_OPS:
             summary_clauses.append((key, value))
         elif key in _ASSET_OPS:
             file_type_values.append(value)
+        elif key in _OWNER_OPS:
+            queryset = _apply_owner_filter(queryset, value)
 
     if summary_clauses:
         queryset = _apply_summary_filters(queryset, summary_clauses)

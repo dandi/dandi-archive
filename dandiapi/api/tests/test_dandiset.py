@@ -2063,3 +2063,110 @@ def test_advanced_search_species_respects_embargo_visibility(api_client):
 
     # Anonymous request: embargoed must be filtered out.
     assert _search_ids(api_client, 'species:mouse') == {open_ds.identifier}
+
+
+# --- owner: operator -----------------------------------------------------------------------------
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_lookup_paths_and_combinations(api_client):
+    """One setup, many assertions for the owner: operator.
+
+    Resolves users by every documented lookup path, unions across multiple
+    matched users, returns 0 for unknown values, is case-insensitive, and
+    combines correctly with other operators (cross-key AND on the same
+    dandiset).
+    """
+    # Three users with overlapping last names so we can exercise every lookup
+    # path AND the multi-user union in a single setup. GitHub logins are set
+    # explicitly: they are the "username" the UI displays, and the only kind
+    # of username the filter consults. `User.username` is left at its factory
+    # default (the email address), matching production.
+    alice = UserFactory.create(
+        email='Alice@Example.com',
+        first_name='Alice',
+        last_name='Smith',
+        social_account__extra_data__login='Alice-Codes',
+    )
+    bob = UserFactory.create(
+        email='bob@example.com',
+        first_name='Bob',
+        last_name='Smith',
+        social_account__extra_data__login='bob-gh',
+    )
+    carol = UserFactory.create(
+        email='carol@example.com',
+        first_name='Carol',
+        last_name='Jones',
+        social_account__extra_data__login='carol-gh',
+    )
+    alice_old = DandisetFactory.create(owners=[alice])
+    alice_new = DandisetFactory.create(owners=[alice])
+    bob_ds = DandisetFactory.create(owners=[bob])
+    carol_ds = DandisetFactory.create(owners=[carol])
+    for ds in (alice_old, alice_new, bob_ds, carol_ds):
+        DraftVersionFactory.create(dandiset=ds)
+
+    # Backdate alice_old so we can intersect with a date operator below.
+    cutoff = timezone.now() - datetime.timedelta(days=1)
+    Dandiset.objects.filter(pk=alice_old.pk).update(created=cutoff - datetime.timedelta(days=30))
+    after_str = (cutoff + datetime.timedelta(seconds=1)).date().isoformat()
+
+    alice_dsets = {alice_old.identifier, alice_new.identifier}
+
+    # GitHub username (case-insensitive)
+    assert _search_ids(api_client, 'owner:alice-codes') == alice_dsets
+    assert _search_ids(api_client, 'owner:ALICE-CODES') == alice_dsets
+
+    # email (case-insensitive)
+    assert _search_ids(api_client, 'owner:alice@example.com') == alice_dsets
+    assert _search_ids(api_client, 'owner:ALICE@Example.com') == alice_dsets
+
+    # first / last / full name
+    assert _search_ids(api_client, 'owner:Bob') == {bob_ds.identifier}
+    assert _search_ids(api_client, 'owner:Jones') == {carol_ds.identifier}
+    assert _search_ids(api_client, 'owner:"Carol Jones"') == {carol_ds.identifier}
+
+    # union: shared last name returns dandisets from both users
+    assert _search_ids(api_client, 'owner:Smith') == alice_dsets | {bob_ds.identifier}
+
+    # unknown user → 0 results, not 400 (a valid 0-hit query)
+    assert _search_ids(api_client, 'owner:no_such_user_anywhere') == set()
+
+    # `User.username` is NOT a lookup path: in production it holds the email
+    # address, not the GitHub login the UI displays as the username. A
+    # username differing from both must not match; the GitHub login must.
+    dave = UserFactory.create(
+        username='dave-django-username',
+        email='dave@example.com',
+        first_name='Dave',
+        last_name='Miller',
+        social_account__extra_data__login='dave-gh',
+    )
+    dave_ds = DandisetFactory.create(owners=[dave])
+    DraftVersionFactory.create(dandiset=dave_ds)
+    assert _search_ids(api_client, 'owner:dave-django-username') == set()
+    assert _search_ids(api_client, 'owner:dave-gh') == {dave_ds.identifier}
+
+    # combines with other operators: cross-key AND on the same dandiset.
+    # Only alice_new satisfies BOTH owner:alice-codes AND created_after.
+    assert _search_ids(api_client, f'owner:alice-codes created_after:{after_str}') == {
+        alice_new.identifier
+    }
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_owner_does_not_inflate_to_superuser_archive(api_client):
+    # Guardian's get_objects_for_user returns ALL objects for superusers —
+    # wrong semantics for owner: searches. The filter queries
+    # DandisetUserObjectPermission directly, so `owner:` returns only what
+    # admin explicitly owns, not the entire archive.
+    admin = UserFactory.create(is_superuser=True, social_account__extra_data__login='admin-gh')
+    other = UserFactory.create()
+    DraftVersionFactory.create(dandiset=DandisetFactory.create(owners=[other]))
+    admin_owned = DandisetFactory.create(owners=[admin])
+    DraftVersionFactory.create(dandiset=admin_owned)
+
+    assert _search_ids(api_client, 'owner:admin-gh') == {admin_owned.identifier}

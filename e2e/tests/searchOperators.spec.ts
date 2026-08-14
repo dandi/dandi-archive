@@ -18,7 +18,7 @@ test.describe("search operator autocomplete", async () => {
     const listbox = page.locator(".operator-suggestions");
     await expect(listbox).toBeVisible();
     // Every operator from the help table should be offered.
-    await expect(listbox.getByRole("option")).toHaveCount(10);
+    await expect(listbox.getByRole("option")).toHaveCount(11);
     await expect(listbox.getByText("species:", { exact: true })).toBeVisible();
     await expect(listbox.getByText("created_after:", { exact: true })).toBeVisible();
   });
