@@ -1,0 +1,4 @@
+[[redirects]]
+from = "https://api-staging.dandiarchive.org/*"
+to = "https://api.sandbox.dandiarchive.org/:splat"
+status = 308
