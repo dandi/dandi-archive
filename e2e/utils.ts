@@ -59,7 +59,9 @@ async function registerDandiset(page: Page, name: string, description: string) {
   await page.locator(".v-select").filter({ hasText: "License" }).click();
   await page.getByRole("option", { name: "spdx:CC0-" }).click();
   await page.getByRole("button", { name: "Register Dandiset" }).click();
-  await page.waitForTimeout(1000);
+  // Wait for the post-submit redirect to land on the new dandiset's page before
+  // reading the id out of the URL, instead of racing a fixed timeout.
+  await page.waitForURL(/\/dandiset\/\d+$/);
   const dandisetId = await page.url().split("/").pop();
   return dandisetId;
 }
