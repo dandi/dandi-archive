@@ -54,7 +54,9 @@ async function registerDandiset(page: Page, name: string, description: string) {
   await page.getByLabel("Title").fill(name);
   await page.getByLabel("Description").click();
   await page.getByLabel("Description").fill(description);
-  await page.locator('div:nth-child(3) > .v-input__control > .v-field > .v-field__field > .v-field__input').click()
+  // Vuetify's v-select sets aria-label="Open" on its input, which overrides the
+  // associated <label> in accessible-name computation, so getByLabel can't find it.
+  await page.locator(".v-select").filter({ hasText: "License" }).click();
   await page.getByRole("option", { name: "spdx:CC0-" }).click();
   await page.getByRole("button", { name: "Register Dandiset" }).click();
   await page.waitForTimeout(1000);
