@@ -43,7 +43,9 @@ test.describe("dandiset landing page", async () => {
     await newPage.waitForTimeout(250);
     await newPage.getByRole("dialog").getByRole("button").nth(1).click();
     await newPage.getByRole("button", { name: "Done" }).click();
-    await expect(newPage.getByText(otherUserName)).toHaveCount(1);
+    // Saving the owner change and re-rendering the owners list is an async
+    // round-trip; give it more room than the default 5s expect timeout.
+    await expect(newPage.getByText(otherUserName)).toHaveCount(1, { timeout: 15000 });
     await context.close();
   });
   test("navigate to an invalid dandiset URL", async ({ page }) => {
