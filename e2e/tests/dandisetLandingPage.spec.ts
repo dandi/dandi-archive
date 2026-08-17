@@ -12,7 +12,10 @@ test.describe("dandiset landing page", async () => {
     } = await registerNewUser(page);
     const otherUserName = `${otherUserFirstname} ${otherUserLastName}`;
     const otherUserInitials = `${otherUserFirstname.charAt(0)}${otherUserLastName.charAt(0)}`;
-    await page.getByRole("button", { name: otherUserInitials }).click();
+    // Right after signup the header can transiently render the avatar button more
+    // than once (exact cause not isolated), producing a strict-mode violation on
+    // this locator; .first() sidesteps it regardless of the mechanism.
+    await page.getByRole("button", { name: otherUserInitials }).first().click();
     await page.getByText(LOGOUT_BUTTON_TEXT).click();
 
     // Create a fresh browser context and page
