@@ -88,6 +88,23 @@
       name="Related resources"
       icon="mdi-book"
     >
+      <template #itemTitle="slotProps">
+        <span v-if="slotProps.item.name || slotProps.item.identifier || slotProps.item.id">
+          <a
+            v-if="slotProps.item.url"
+            class="related-resource-link"
+            :href="slotProps.item.url"
+            target="_blank"
+            rel="noopener"
+          >
+            {{ slotProps.item.name || slotProps.item.identifier || slotProps.item.id }}
+          </a>
+          <template v-else>
+            {{ slotProps.item.name || slotProps.item.identifier || slotProps.item.id }}
+          </template>
+          <br>
+        </span>
+      </template>
       <template #content="slotProps">
         <span
           v-if="slotProps.item.identifier"
@@ -116,18 +133,6 @@
         >
           <strong>Relation: </strong>{{ slotProps.item.relation }}
         </span>
-      </template>
-      <template #links="slotProps">
-        <v-btn
-          v-if="slotProps.item.url"
-          icon
-          variant="text"
-          :href="slotProps.item.url"
-          target="_blank"
-          rel="noopener"
-        >
-          <v-icon>mdi-link</v-icon>
-        </v-btn>
       </template>
     </MetadataCard>
 
@@ -362,3 +367,19 @@ onUnmounted(() => {
 });
 
 </script>
+
+<style scoped>
+/* Match the link styling used in https://docs.dandiarchive.org/ (Material for
+ * MkDocs): colored, no underline, with a smooth transition to a lighter blue on
+ * hover/focus — rather than the default underlined browser link. */
+.related-resource-link {
+  color: #4051b5;
+  text-decoration: none;
+  transition: color 125ms;
+}
+
+.related-resource-link:hover,
+.related-resource-link:focus {
+  color: #0091eb;
+}
+</style>
