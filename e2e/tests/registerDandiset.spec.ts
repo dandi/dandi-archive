@@ -15,7 +15,10 @@ test.describe("dandiset registration page", async () => {
     await page.locator(".v-select").filter({ hasText: "License" }).click();
     await page.getByRole("option", { name: "spdx:CC0-" }).click();
     await page.getByRole("button", { name: "Register Dandiset" }).click();
+    // Wait for the post-submit redirect to land on the new dandiset's page before
+    // asserting on its content, instead of racing the default 5s expect timeout.
+    await page.waitForURL(/\/dandiset\/\d+$/);
 
-    await expect(page.getByText("Licenses: spdx:CC0-")).toHaveCount(1);
+    await expect(page.getByText("Licenses: spdx:CC0-")).toHaveCount(1, { timeout: 15000 });
   });
 });
