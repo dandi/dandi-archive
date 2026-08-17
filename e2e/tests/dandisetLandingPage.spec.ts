@@ -4,6 +4,9 @@ import { faker } from "@faker-js/faker";
 
 test.describe("dandiset landing page", async () => {
   test("add an owner to the dandiset", async ({ page, browser }) => {
+    // This test does 2 full user signups, a dandiset registration, and a dialog
+    // interaction; under concurrent workers the default 30s budget is too tight.
+    test.slow();
     // Create a user to add as an owner later
     const {
       email: otherUserEmail,
