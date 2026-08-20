@@ -17,7 +17,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
-    "lint": "eslint . --fix --max-warnings=0",
+    "lint": "eslint . --max-warnings=0",
+    "format": "eslint . --max-warnings=0 --fix",
     "migrate": "tsx src/migrate.ts"
   },
   "dependencies": {

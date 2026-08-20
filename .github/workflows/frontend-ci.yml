@@ -25,7 +25,7 @@ jobs:
         run: npm ci
 
       - name: Lint Vue app
-        run: npm run lint --no-fix
+        run: npm run lint
 
       - name: Type-check Vue app
         run: npm run type-check
