@@ -1,4 +1,5 @@
 release: python ./manage.py migrate
+<<<<<<< before updating
 web: gunicorn --config gunicorn.conf.py dandiapi.wsgi
 # celery-beat: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery beat --loglevel INFO
 # Rather than using a dedicated worker for Celery Beat, we simply use the -B option on the priority task worker.
@@ -9,3 +10,9 @@ web: gunicorn --config gunicorn.conf.py dandiapi.wsgi
 worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO --without-mingle --without-heartbeat --without-gossip --queues celery --beat
 # The checksum-worker calculates blob checksums and updates zarr checksum files
 checksum-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO --without-mingle --without-heartbeat --without-gossip --queues calculate_sha256,ingest_zarr_archive
+=======
+# Set `graceful_timeout` to shorter than the 30 second limit imposed by Heroku restarts
+# Set `timeout` to shorter than the 30 second limit imposed by the Heroku router
+web: gunicorn --bind 0.0.0.0:$PORT --graceful-timeout 25 --timeout 15 dandiapi.wsgi
+worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO --without-mingle --without-heartbeat --without-gossip
+>>>>>>> after updating
