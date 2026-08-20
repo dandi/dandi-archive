@@ -15,7 +15,7 @@
           :key="i"
           variant="outlined"
         >
-          {{ contributor.name }}
+          {{ formatContributorName(contributor) }}
           <a
             v-if="contributor.identifier && contributor.schemaKey === 'Person'"
             :href="`https://orcid.org/${contributor.identifier}`"
@@ -294,6 +294,21 @@ const contributors = computed(
     (contributor) => !!(contributor.includeInCitation),
   ),
 );
+
+function formatContributorName(contributor: { name?: string; schemaKey?: string }): string {
+  const name = contributor.name ?? '';
+  if (contributor.schemaKey !== 'Person') {
+    return name;
+  }
+  const commaIndex = name.indexOf(',');
+  if (commaIndex === -1) {
+    return name;
+  }
+  const family = name.slice(0, commaIndex).trim();
+  const given = name.slice(commaIndex + 1).trim();
+  return [given, family].filter(Boolean).join(' ');
+}
+
 const fundingInformation = computed(
   () => props.meta.contributor?.filter(
     (contributor) => !!(contributor.schemaKey === 'Organization')
