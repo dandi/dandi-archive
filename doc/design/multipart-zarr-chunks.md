@@ -16,6 +16,8 @@ The basic idea is to tag Zarr Archive objects with an `upload_type` field that i
 
 Multipart Zarr chunk upload gets its own set of endpoints (`/api/zarr/uploads/initialize/`, `/api/zarr/uploads/{upload_id}/complete/`, and `/api/zarr/uploads/{upload_id}/validate/`), which mirror the existing asset blob upload endpoints under `/api/uploads/`. Correspondingly, chunk uploads are tracked by their own `ZarrUpload` model, which points at the Zarr Archive it belongs to and records the chunk key being uploaded, while the existing `Upload` model continues to track asset blob uploads only. Both share the fields and object store interactions common to any multipart upload.
 
+Because in-progress uploads now live in two tables, the Dandiset upload endpoints (`GET` and `DELETE` on `/api/dandisets/{id}/uploads/`) span both: the listing returns asset blob and Zarr chunk uploads in one page-ordered stream, distinguished by a `zarr` field, which is `null` for asset blob uploads and holds the `zarr_id` and `chunk_key` of the chunk being uploaded for Zarr chunk uploads. This keeps the endpoints consistent with the unembargo check, which already refuses to proceed while a Dandiset has active uploads of either kind.
+
 For existing (`upload_type=singlepart`) Zarrs, the upload procedure remains the same as it is now, enabling the client to upload single-part chunks only.
 
 ## DANDI CLI
