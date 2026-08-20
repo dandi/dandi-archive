@@ -37,7 +37,12 @@ from dandiapi.api.views import (
     webdav,
 )
 from dandiapi.search.views import search_genotypes, search_species
-from dandiapi.zarr.views import ZarrViewSet
+from dandiapi.zarr.views import (
+    ZarrViewSet,
+    zarr_upload_complete_view,
+    zarr_upload_initialize_view,
+    zarr_upload_validate_view,
+)
 
 router = ExtendedSimpleRouter()
 (
@@ -82,6 +87,21 @@ api_urlpatterns = [
         rf'^api/uploads/{UPLOAD_ID_URLPATTERN}/validate/$',
         upload_validate_view,
         name='upload-validate',
+    ),
+    path(
+        'api/zarr/uploads/initialize/',
+        zarr_upload_initialize_view,
+        name='zarr-upload-initialize',
+    ),
+    re_path(
+        rf'^api/zarr/uploads/{UPLOAD_ID_URLPATTERN}/complete/$',
+        zarr_upload_complete_view,
+        name='zarr-upload-complete',
+    ),
+    re_path(
+        rf'^api/zarr/uploads/{UPLOAD_ID_URLPATTERN}/validate/$',
+        zarr_upload_validate_view,
+        name='zarr-upload-validate',
     ),
     path('api/users/me/', users_me_view),
     path('api/users/search/', users_search_view),

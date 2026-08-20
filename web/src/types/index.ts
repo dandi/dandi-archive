@@ -119,4 +119,6 @@ export interface IncompleteUpload {
   upload_id: string;
   etag: string;
   size: number;
+  // Set only on zarr chunk uploads, identifying the zarr and chunk they belong to
+  zarr: { zarr_id: string, chunk_key: string } | null;
 }

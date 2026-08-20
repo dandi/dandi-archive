@@ -22,8 +22,10 @@ from dandiapi.api.tests.factories import (
 )
 from dandiapi.zarr.tests.factories import (
     EmbargoedZarrArchiveFactory,
+    EmbargoedZarrUploadFactory,
     ZarrArchiveFactory,
     ZarrFileFactory,
+    ZarrUploadFactory,
 )
 
 register(PublishedAssetFactory, _name='published_asset')
@@ -44,6 +46,8 @@ register(UploadFactory)
 register(ZarrArchiveFactory)
 register(EmbargoedZarrArchiveFactory, _name='embargoed_zarr_archive')
 register(ZarrFileFactory, name='zarr_file')
+register(ZarrUploadFactory)
+register(EmbargoedZarrUploadFactory, _name='embargoed_zarr_upload')
 
 
 @pytest.fixture(autouse=True)
