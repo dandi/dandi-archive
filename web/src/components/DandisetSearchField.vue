@@ -149,7 +149,7 @@ const operatorHelp = [
   { example: 'species:mouse', description: 'Has assets attributed to a species' },
   { example: 'approach:electrophysiology', description: 'Has assets using an approach' },
   { example: 'technique:"patch clamp"', description: 'Has assets using a measurement technique' },
-  { example: 'file_type:nwb', description: 'Has assets of a file type (nwb, image, text, video)' },
+  { example: 'standard:nwb', description: 'Has assets in a data standard (e.g. nwb, bids)' },
   { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, GitHub username, or email)' },
 ];
 
