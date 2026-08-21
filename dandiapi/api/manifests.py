@@ -4,6 +4,7 @@ from contextlib import contextmanager
 import tempfile
 from typing import IO, TYPE_CHECKING, Any
 from urllib.parse import urlparse, urlunparse
+from xml.etree import ElementTree
 
 from django.conf import settings
 from django.core.files.base import File
@@ -57,6 +58,10 @@ def _assets_yaml_path(version: Version) -> str:
     return f'{_manifests_path(version)}/assets.yaml'
 
 
+def _assets_metalink_path(version: Version) -> str:
+    return f'{_manifests_path(version)}/assets.meta4'
+
+
 def _collection_jsonld_path(version: Version) -> str:
     return f'{_manifests_path(version)}/collection.jsonld'
 
@@ -67,6 +72,7 @@ def all_manifest_filepaths(version: Version) -> list[str]:
         _assets_jsonld_path(version),
         _dandiset_yaml_path(version),
         _assets_yaml_path(version),
+        _assets_metalink_path(version),
         _collection_jsonld_path(version),
     ]
 
@@ -139,6 +145,21 @@ def write_assets_yaml(version: Version) -> None:
                 .iterator()
             ),
         )
+
+
+def write_assets_metalink(version: Version) -> None:
+    ElementTree.register_namespace('', 'urn:ietf:params:xml:ns:metalink')
+    root = ElementTree.Element('{urn:ietf:params:xml:ns:metalink}metalink')
+    for asset in version.assets.select_related('blob', 'zarr', 'zarr__dandiset').iterator():
+        file_el = ElementTree.SubElement(root, '{urn:ietf:params:xml:ns:metalink}file')
+        file_el.set('name', asset.path)
+        for content_url in asset.full_metadata['contentUrl']:
+            url_el = ElementTree.SubElement(file_el, '{urn:ietf:params:xml:ns:metalink}url')
+            url_el.text = content_url
+
+    embargoed = version.dandiset.embargoed
+    with _streaming_file_upload(_assets_metalink_path(version), embargoed=embargoed) as stream:
+        ElementTree.ElementTree(root).write(stream, encoding='utf-8', xml_declaration=True)
 
 
 def write_collection_jsonld(version: Version) -> None:

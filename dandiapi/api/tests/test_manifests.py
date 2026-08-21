@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from xml.etree import ElementTree
+
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 import pytest
@@ -9,7 +11,9 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework_yaml.renderers import YAMLRenderer
 
 from dandiapi.api.manifests import (
+    _assets_metalink_path,
     _streaming_file_upload,
+    write_assets_metalink,
     write_assets_jsonld,
     write_assets_yaml,
     write_collection_jsonld,
@@ -111,6 +115,25 @@ def test_write_assets_yaml(version: Version, asset_factory):
     assets_yaml_path = f'dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
     with default_storage.open(assets_yaml_path) as f:
         assert f.read() == expected
+
+
+@pytest.mark.django_db
+def test_write_assets_metalink(version: Version, asset_factory):
+    asset = asset_factory()
+    version.assets.add(asset)
+
+    write_assets_metalink(version)
+
+    with default_storage.open(_assets_metalink_path(version), 'rb') as f:
+        root = ElementTree.fromstring(f.read())
+
+    namespace = {'ml': 'urn:ietf:params:xml:ns:metalink'}
+    metalink_file = root.find('ml:file', namespace)
+    assert metalink_file is not None
+    assert metalink_file.attrib['name'] == asset.path
+    assert [
+        url.text for url in metalink_file.findall('ml:url', namespace)
+    ] == asset.full_metadata['contentUrl']
 
 
 @pytest.mark.django_db

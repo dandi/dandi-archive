@@ -7,6 +7,8 @@ from dandischema.conf import get_instance_config
 from django.conf import settings
 import requests
 
+from dandiapi.api.manifests import _assets_metalink_path, _s3_url
+
 if TYPE_CHECKING:
     from dandiapi.api.models import Version
 
@@ -20,9 +22,30 @@ DANDI_DOI_SETTINGS = [
 
 logger = logging.getLogger(__name__)
 
+D3A_METALINK_MEDIA_TYPE = 'application/metalink4+xml'
+DATACITE_CONTENT_TYPE = 'application/vnd.api+json'
+
 
 def doi_configured() -> bool:
     return all(setting is not None for setting, _ in DANDI_DOI_SETTINGS)
+
+
+def _d3a_metalink_url(version: Version) -> str:
+    return _s3_url(_assets_metalink_path(version))
+
+
+def _add_d3a_related_identifier(request_body: dict, version: Version) -> None:
+    related_identifier = {
+        'relatedIdentifier': _d3a_metalink_url(version),
+        'relatedIdentifierType': 'URL',
+        'relationType': 'HasMetadata',
+        'relatedMetadataScheme': 'Metalink 4.0',
+        'schemeURI': 'urn:ietf:params:xml:ns:metalink',
+        'schemeType': D3A_METALINK_MEDIA_TYPE,
+    }
+    related_identifiers = request_body['data']['attributes'].setdefault('relatedIdentifiers', [])
+    if related_identifier not in related_identifiers:
+        related_identifiers.append(related_identifier)
 
 
 def _generate_doi_data(version: Version):
@@ -35,9 +58,32 @@ def _generate_doi_data(version: Version):
     dandiset_id = version.dandiset.identifier
     version_id = version.version
     doi = f'{prefix}/{instance_name.lower()}.{dandiset_id}/{version_id}'
-    metadata = version.metadata
+    metadata = {**version.metadata}
     metadata['doi'] = doi
-    return (doi, to_datacite(metadata, publish=publish))
+    request_body = to_datacite(metadata, publish=publish)
+    _add_d3a_related_identifier(request_body, version)
+    return (doi, request_body)
+
+
+def _register_doi_d3a_media(doi: str, version: Version) -> None:
+    requests.post(
+        settings.DANDI_DOI_API_URL.rstrip('/') + '/' + doi + '/media',
+        json={
+            'data': {
+                'type': 'media',
+                'attributes': {
+                    'mediaType': D3A_METALINK_MEDIA_TYPE,
+                    'url': _d3a_metalink_url(version),
+                },
+            }
+        },
+        headers={'Content-Type': DATACITE_CONTENT_TYPE},
+        auth=requests.auth.HTTPBasicAuth(
+            settings.DANDI_DOI_API_USER,
+            settings.DANDI_DOI_API_PASSWORD,
+        ),
+        timeout=30,
+    ).raise_for_status()
 
 
 def create_doi(version: Version) -> str:
@@ -48,12 +94,14 @@ def create_doi(version: Version) -> str:
             requests.post(
                 settings.DANDI_DOI_API_URL,
                 json=request_body,
+                headers={'Content-Type': DATACITE_CONTENT_TYPE},
                 auth=requests.auth.HTTPBasicAuth(
                     settings.DANDI_DOI_API_USER,
                     settings.DANDI_DOI_API_PASSWORD,
                 ),
                 timeout=30,
             ).raise_for_status()
+            _register_doi_d3a_media(doi, version)
         except requests.exceptions.HTTPError as e:
             logger.exception('Failed to create DOI %s', doi)
             logger.exception(request_body)

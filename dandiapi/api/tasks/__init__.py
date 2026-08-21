@@ -10,6 +10,7 @@ from django.contrib.auth.models import User
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.mail import send_dandiset_unembargo_failed_message
 from dandiapi.api.manifests import (
+    write_assets_metalink,
     write_assets_jsonld,
     write_assets_yaml,
     write_collection_jsonld,
@@ -57,6 +58,7 @@ def write_manifest_files(version_id: int) -> None:
 
     write_dandiset_yaml(version)
     write_assets_yaml(version)
+    write_assets_metalink(version)
     write_dandiset_jsonld(version)
     write_assets_jsonld(version)
     write_collection_jsonld(version)
