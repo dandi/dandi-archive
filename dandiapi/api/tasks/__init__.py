@@ -10,8 +10,8 @@ from django.contrib.auth.models import User
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.mail import send_dandiset_unembargo_failed_message
 from dandiapi.api.manifests import (
-    write_assets_metalink,
     write_assets_jsonld,
+    write_assets_metalink,
     write_assets_yaml,
     write_collection_jsonld,
     write_dandiset_jsonld,

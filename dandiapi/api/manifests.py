@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import tempfile
 from typing import IO, TYPE_CHECKING, Any
 from urllib.parse import urlparse, urlunparse
-from xml.etree import ElementTree
+from xml.sax.saxutils import escape, quoteattr
 
 from django.conf import settings
 from django.core.files.base import File
@@ -40,6 +40,10 @@ def manifest_location(version: Version) -> list[str]:
             )
         ]
     return [_s3_url(_assets_yaml_path(version))]
+
+
+def metalink_location(version: Version) -> str:
+    return _s3_url(_assets_metalink_path(version))
 
 
 def _dandiset_jsonld_path(version: Version) -> str:
@@ -148,18 +152,29 @@ def write_assets_yaml(version: Version) -> None:
 
 
 def write_assets_metalink(version: Version) -> None:
-    ElementTree.register_namespace('', 'urn:ietf:params:xml:ns:metalink')
-    root = ElementTree.Element('{urn:ietf:params:xml:ns:metalink}metalink')
-    for asset in version.assets.select_related('blob', 'zarr', 'zarr__dandiset').iterator():
-        file_el = ElementTree.SubElement(root, '{urn:ietf:params:xml:ns:metalink}file')
-        file_el.set('name', asset.path)
-        for content_url in asset.full_metadata['contentUrl']:
-            url_el = ElementTree.SubElement(file_el, '{urn:ietf:params:xml:ns:metalink}url')
-            url_el.text = content_url
-
     embargoed = version.dandiset.embargoed
     with _streaming_file_upload(_assets_metalink_path(version), embargoed=embargoed) as stream:
-        ElementTree.ElementTree(root).write(stream, encoding='utf-8', xml_declaration=True)
+        stream.write(
+            b'<?xml version="1.0" encoding="utf-8"?>\n'
+            b'<metalink xmlns="urn:ietf:params:xml:ns:metalink">\n'
+        )
+        for asset in (
+            version.assets.select_related('blob', 'zarr', 'zarr__dandiset')
+            .order_by('created')
+            .iterator()
+        ):
+            stream.write(f'  <file name={quoteattr(asset.path)}>\n'.encode())
+            stream.write(f'    <size>{asset.size}</size>\n'.encode())
+            try:
+                sha256 = asset.sha256
+            except RuntimeError:
+                sha256 = None
+            if sha256 is not None:
+                stream.write(f'    <hash type="sha-256">{sha256}</hash>\n'.encode())
+            for content_url in asset.full_metadata['contentUrl']:
+                stream.write(f'    <url>{escape(content_url)}</url>\n'.encode())
+            stream.write(b'  </file>\n')
+        stream.write(b'</metalink>\n')
 
 
 def write_collection_jsonld(version: Version) -> None:

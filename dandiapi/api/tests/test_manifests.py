@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-
-from xml.etree import ElementTree
+from xml.etree import ElementTree as ET
 
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -13,8 +12,8 @@ from rest_framework_yaml.renderers import YAMLRenderer
 from dandiapi.api.manifests import (
     _assets_metalink_path,
     _streaming_file_upload,
-    write_assets_metalink,
     write_assets_jsonld,
+    write_assets_metalink,
     write_assets_yaml,
     write_collection_jsonld,
     write_dandiset_jsonld,
@@ -125,15 +124,20 @@ def test_write_assets_metalink(version: Version, asset_factory):
     write_assets_metalink(version)
 
     with default_storage.open(_assets_metalink_path(version), 'rb') as f:
-        root = ElementTree.fromstring(f.read())
+        root = ET.fromstring(f.read())
 
     namespace = {'ml': 'urn:ietf:params:xml:ns:metalink'}
     metalink_file = root.find('ml:file', namespace)
     assert metalink_file is not None
     assert metalink_file.attrib['name'] == asset.path
-    assert [
-        url.text for url in metalink_file.findall('ml:url', namespace)
-    ] == asset.full_metadata['contentUrl']
+    assert metalink_file.findtext('ml:size', namespaces=namespace) == str(asset.size)
+    assert metalink_file.findtext('ml:hash', namespaces=namespace) == asset.sha256
+    hash_element = metalink_file.find('ml:hash', namespace)
+    assert hash_element is not None
+    assert hash_element.attrib['type'] == 'sha-256'
+    assert [url.text for url in metalink_file.findall('ml:url', namespace)] == asset.full_metadata[
+        'contentUrl'
+    ]
 
 
 @pytest.mark.django_db
