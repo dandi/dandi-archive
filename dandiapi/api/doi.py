@@ -7,6 +7,8 @@ from dandischema.conf import get_instance_config
 from django.conf import settings
 import requests
 
+from dandiapi.api.manifests import metalink_location
+
 if TYPE_CHECKING:
     from dandiapi.api.models import Version
 
@@ -20,9 +22,25 @@ DANDI_DOI_SETTINGS = [
 
 logger = logging.getLogger(__name__)
 
+D3A_METALINK_MEDIA_TYPE = 'application/metalink4+xml'
+DATACITE_CONTENT_TYPE = 'application/vnd.api+json'
+
 
 def doi_configured() -> bool:
     return all(setting is not None for setting, _ in DANDI_DOI_SETTINGS)
+
+
+def _add_d3a_related_identifier(request_body: dict, version: Version) -> None:
+    related_identifier = {
+        'relatedIdentifier': metalink_location(version),
+        'relatedIdentifierType': 'URL',
+        'relationType': 'HasMetadata',
+        'relatedMetadataScheme': 'Metalink 4.0',
+        'schemeURI': 'urn:ietf:params:xml:ns:metalink',
+        'schemeType': D3A_METALINK_MEDIA_TYPE,
+    }
+    related_identifiers = request_body['data']['attributes'].setdefault('relatedIdentifiers', [])
+    related_identifiers.append(related_identifier)
 
 
 def _generate_doi_data(version: Version):
@@ -37,7 +55,30 @@ def _generate_doi_data(version: Version):
     doi = f'{prefix}/{instance_name.lower()}.{dandiset_id}/{version_id}'
     metadata = version.metadata
     metadata['doi'] = doi
-    return (doi, to_datacite(metadata, publish=publish))
+    request_body = to_datacite(metadata, publish=publish)
+    _add_d3a_related_identifier(request_body, version)
+    return (doi, request_body)
+
+
+def _register_doi_d3a_media(doi: str, version: Version) -> None:
+    requests.post(
+        settings.DANDI_DOI_API_URL.rstrip('/') + '/' + doi + '/media',
+        json={
+            'data': {
+                'type': 'media',
+                'attributes': {
+                    'mediaType': D3A_METALINK_MEDIA_TYPE,
+                    'url': metalink_location(version),
+                },
+            }
+        },
+        headers={'Content-Type': DATACITE_CONTENT_TYPE},
+        auth=requests.auth.HTTPBasicAuth(
+            settings.DANDI_DOI_API_USER,
+            settings.DANDI_DOI_API_PASSWORD,
+        ),
+        timeout=30,
+    ).raise_for_status()
 
 
 def create_doi(version: Version) -> str:
@@ -60,6 +101,10 @@ def create_doi(version: Version) -> str:
             if e.response:
                 logger.exception(e.response.text)
             raise
+        try:
+            _register_doi_d3a_media(doi, version)
+        except requests.exceptions.RequestException:
+            logger.exception('Failed to register D3A media for DOI %s', doi)
     return doi
 
 
