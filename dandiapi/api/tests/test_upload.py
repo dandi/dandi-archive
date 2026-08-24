@@ -7,9 +7,7 @@ import pytest
 import requests
 
 from dandiapi.api.models import AssetBlob, Dandiset, Upload
-from dandiapi.api.tests.factories import DandisetFactory, UserFactory, ZarrUploadFactory
-from dandiapi.zarr.models import ZarrUploadType
-from dandiapi.zarr.tests.factories import EmbargoedZarrArchiveFactory, ZarrArchiveFactory
+from dandiapi.api.tests.factories import DandisetFactory, UserFactory
 
 from .fuzzy import HTTP_URL_RE, UUID_RE, Re
 
@@ -436,8 +434,6 @@ def test_upload_validate(api_client, upload):
         'etag': upload.etag,
         'sha256': None,
         'size': upload.size,
-        'zarr_id': None,
-        'chunk_key': None,
     }
 
     # Verify that a new AssetBlob was created
@@ -464,8 +460,6 @@ def test_upload_validate_embargo(api_client, embargoed_upload_factory):
         'etag': embargoed_upload.etag,
         'sha256': None,
         'size': embargoed_upload.size,
-        'zarr_id': None,
-        'chunk_key': None,
     }
 
     # Verify that a new embargoed AssetBlob was created
@@ -578,203 +572,3 @@ def test_upload_validate_embargo_existing_embargoed_assetblob(
     assert resp.status_code == 409
 
     assert AssetBlob.objects.all().count() == 1
-
-
-# == Zarr upload tests ==
-
-
-@pytest.mark.django_db
-def test_upload_initialize_empty(api_client):
-    """Not providing dandiset or zarr data is invalid."""
-    user = UserFactory.create()
-    api_client.force_authenticate(user=user)
-
-    resp = api_client.post(
-        '/api/uploads/initialize/',
-        {
-            'contentSize': 123,
-            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
-        },
-    )
-    assert resp.status_code == 400
-    assert not Upload.objects.exists()
-
-
-@pytest.mark.django_db
-@pytest.mark.parametrize('embargoed', [True, False])
-def test_upload_initialize_zarr(api_client, embargoed):
-    user = UserFactory.create()
-    zarr_archive = (
-        EmbargoedZarrArchiveFactory.create(
-            dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART
-        )
-        if embargoed
-        else ZarrArchiveFactory.create(
-            dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART
-        )
-    )
-    api_client.force_authenticate(user=user)
-
-    content_size = 100
-    chunk_key = '0/chunk'
-
-    resp = api_client.post(
-        '/api/uploads/initialize/',
-        {
-            'contentSize': content_size,
-            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
-            'zarr_id': str(zarr_archive.zarr_id),
-            'chunk_key': chunk_key,
-        },
-    )
-    assert resp.status_code == 200
-    assert 'upload_id' in resp.data
-    assert 'parts' in resp.data
-
-    upload = Upload.objects.get(upload_id=resp.data['upload_id'])
-    assert upload.zarr == zarr_archive
-    assert upload.dandiset is None
-    assert upload.blob.name == zarr_archive.s3_path(chunk_key)
-    assert upload.embargoed == embargoed
-
-
-@pytest.mark.django_db
-def test_upload_initialize_zarr_single_part_rejected(api_client):
-    """Multipart upload to a single-part zarr must be rejected."""
-    user = UserFactory.create()
-    api_client.force_authenticate(user=user)
-    zarr_archive = ZarrArchiveFactory.create(
-        dandiset__owners=[user], upload_type=ZarrUploadType.SINGLEPART
-    )
-
-    resp = api_client.post(
-        '/api/uploads/initialize/',
-        {
-            'contentSize': 100,
-            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
-            'zarr_id': str(zarr_archive.zarr_id),
-            'chunk_key': '0/chunk',
-        },
-    )
-    assert resp.status_code == 400
-    assert not Upload.objects.exists()
-
-
-@pytest.mark.django_db
-def test_upload_initialize_zarr_not_found(api_client):
-    user = UserFactory.create()
-    api_client.force_authenticate(user=user)
-
-    resp = api_client.post(
-        '/api/uploads/initialize/',
-        {
-            'contentSize': 100,
-            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
-            'zarr_id': str(uuid.uuid4()),
-            'chunk_key': 'some/key',
-        },
-    )
-    assert resp.status_code == 404
-    assert not Upload.objects.exists()
-
-
-@pytest.mark.django_db(transaction=True)
-def test_upload_complete_zarr(api_client):
-    user = UserFactory.create()
-    api_client.force_authenticate(user=user)
-    zarr_upload = ZarrUploadFactory.create()
-
-    content_size = 100
-
-    assert api_client.post(
-        f'/api/uploads/{zarr_upload.upload_id}/complete/',
-        {'parts': [{'part_number': 1, 'size': content_size, 'etag': 'test-etag'}]},
-    ).data == {
-        'complete_url': HTTP_URL_RE,
-        'body': Re(r'.*'),
-    }
-
-
-@pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize('chunk_key', ['.zattrs', '0/0/0'])
-def test_upload_validate_zarr(api_client, chunk_key):
-    """Validating a zarr upload returns the zarr ID and chunk key."""
-    from zarr_checksum.checksum import EMPTY_CHECKSUM
-
-    from dandiapi.zarr.models import ZarrArchiveStatus
-
-    user = UserFactory.create()
-    api_client.force_authenticate(user=user)
-    zarr = ZarrArchiveFactory.create(status=ZarrArchiveStatus.COMPLETE, checksum=EMPTY_CHECKSUM)
-
-    zarr_upload = ZarrUploadFactory.create(zarr=zarr, blob__filename=zarr.s3_path(chunk_key))
-
-    resp = api_client.post(f'/api/uploads/{zarr_upload.upload_id}/validate/')
-    assert resp.status_code == 200
-    assert resp.data == {
-        'blob_id': None,
-        'etag': None,
-        'sha256': None,
-        'size': None,
-        'zarr_id': str(zarr.zarr_id),
-        'chunk_key': chunk_key,
-    }
-
-    assert not Upload.objects.exists()
-
-    # Check that zarr is now in a `PENDING` state
-    zarr.refresh_from_db()
-    assert zarr.status == ZarrArchiveStatus.PENDING
-    assert zarr.checksum is None
-
-
-@pytest.mark.django_db(transaction=True)
-def test_upload_initialize_and_complete_zarr(api_client):
-    user = UserFactory.create()
-    zarr_archive = ZarrArchiveFactory.create(
-        dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART
-    )
-    api_client.force_authenticate(user=user)
-
-    chunk_key = '0/chunk'
-    content_size = 100
-
-    initialization = api_client.post(
-        '/api/uploads/initialize/',
-        {
-            'contentSize': content_size,
-            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
-            'zarr_id': str(zarr_archive.zarr_id),
-            'chunk_key': chunk_key,
-        },
-    ).data
-
-    upload_id = initialization['upload_id']
-    parts = initialization['parts']
-
-    transferred_parts = []
-    for part_number, part in enumerate(parts, start=1):
-        part_transfer = requests.put(part['upload_url'], data=b'X' * part['size'], timeout=5)
-        transferred_parts.append(
-            {
-                'part_number': part_number,
-                'size': part['size'],
-                'etag': part_transfer.headers['etag'],
-            }
-        )
-
-    completion = api_client.post(
-        f'/api/uploads/{upload_id}/complete/',
-        {'parts': transferred_parts},
-    ).data
-
-    completion_response = requests.post(
-        completion['complete_url'], data=completion['body'], timeout=5
-    )
-    assert completion_response.status_code == 200
-
-    upload = Upload.objects.get(upload_id=upload_id)
-    assert upload.blob.storage.exists(upload.blob.name)
-    assert upload.blob.name == zarr_archive.s3_path(chunk_key)
-    assert upload.zarr == zarr_archive
-    assert upload.dandiset is None

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+from typing import TYPE_CHECKING
 
 from allauth.socialaccount.models import SocialAccount
 from dandischema.conf import get_instance_config
@@ -22,6 +23,9 @@ from dandiapi.api.models import (
 )
 from dandiapi.api.services.dandiset import star_dandiset
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
+
+if TYPE_CHECKING:
+    from dandiapi.api.models.upload import BaseUpload
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -269,9 +273,11 @@ class PublishedAssetFactory(DraftAssetFactory):
         return asset
 
 
-class UploadFactory(factory.django.DjangoModelFactory):
+class BaseUploadFactory(factory.django.DjangoModelFactory):
+    """The fields shared by all upload factories, e.g. `UploadFactory`, `ZarrUploadFactory`."""
+
     class Meta:
-        model = Upload
+        abstract = True
         skip_postgeneration_save = True
 
     upload_id = factory.Faker('uuid4')
@@ -282,9 +288,6 @@ class UploadFactory(factory.django.DjangoModelFactory):
         data=factory.Faker('binary', length=100),
     )
     size = factory.LazyAttribute(lambda self: len(self.blob))
-
-    dandiset = factory.SubFactory(DandisetFactory)
-    zarr = None
 
     @factory.lazy_attribute
     def etag(self) -> str:
@@ -300,7 +303,7 @@ class UploadFactory(factory.django.DjangoModelFactory):
         return etag
 
     @classmethod
-    def _after_postgeneration(cls, obj: Upload, create: bool, results=None) -> None:  # noqa: FBT001
+    def _after_postgeneration(cls, obj: BaseUpload, create: bool, results=None) -> None:  # noqa: FBT001
         super()._after_postgeneration(obj, create, results)
         if not create:
             return
@@ -308,15 +311,14 @@ class UploadFactory(factory.django.DjangoModelFactory):
             obj.blob.storage.put_tags(obj.blob.name, {'embargoed': 'true'})
 
 
+class UploadFactory(BaseUploadFactory):
+    class Meta:
+        model = Upload
+        skip_postgeneration_save = True
+
+    dandiset = factory.SubFactory(DandisetFactory)
+
+
 class EmbargoedUploadFactory(UploadFactory):
     # Embargoed is a property based on the embargo status of the dandiset
     dandiset = factory.SubFactory(DandisetFactory, embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-
-
-class ZarrUploadFactory(UploadFactory):
-    dandiset = None
-    zarr = factory.SubFactory('dandiapi.zarr.tests.factories.ZarrArchiveFactory')
-
-
-class EmbargoedZarrUploadFactory(ZarrUploadFactory):
-    zarr = factory.SubFactory('dandiapi.zarr.tests.factories.EmbargoedZarrArchiveFactory')

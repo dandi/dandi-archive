@@ -12,6 +12,7 @@ from django_extensions.db.models import TimeStampedModel
 from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Dandiset
+from dandiapi.api.models.upload import BaseUpload
 
 if TYPE_CHECKING:
     from dandiapi.storage import DandiS3Storage
@@ -143,3 +144,48 @@ class ZarrArchive(TimeStampedModel):
         # Files deleted, mark pending
         self.mark_pending()
         self.save()
+
+
+class ZarrUpload(BaseUpload):
+    """A multipart upload of a single chunk of a zarr archive."""
+
+    zarr = models.ForeignKey(ZarrArchive, related_name='uploads', on_delete=models.CASCADE)
+    # The path of this chunk within the zarr archive
+    chunk_key = models.CharField(max_length=1024)
+
+    class Meta(BaseUpload.Meta):
+        abstract = False
+
+    @property
+    def embargoed(self) -> bool:
+        return self.zarr.embargoed
+
+    # Note that `abort` is deliberately not overridden to delete the object, as `Upload` does.
+    # A zarr upload writes directly to the chunk's final location in the zarr, and nothing
+    # prevents several uploads (e.g. an abandoned attempt and the retry that succeeded) from
+    # targeting the same chunk key. Deleting the object would therefore risk destroying a chunk
+    # that is live in the zarr. Aborting the multipart upload discards only this upload's parts.
+
+    @classmethod
+    def initialize_multipart_upload(cls, etag, size, zarr: ZarrArchive, chunk_key: str):
+        upload_id = uuid4()
+        chunk_key = chunk_key.lstrip('/')
+        object_key = zarr.s3_path(chunk_key)
+        multipart_initialization = cls._initialize_multipart_upload(
+            size=size, object_key=object_key, embargoed=zarr.embargoed
+        )
+
+        upload = cls(
+            upload_id=upload_id,
+            blob=object_key,
+            etag=etag,
+            size=size,
+            zarr=zarr,
+            chunk_key=chunk_key,
+            multipart_upload_id=multipart_initialization.upload_id,
+        )
+
+        return upload, {
+            'upload_id': upload.upload_id,
+            'parts': multipart_initialization.parts,
+        }
