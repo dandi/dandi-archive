@@ -164,6 +164,7 @@
     <div
       v-else-if="searchActive && djangoDandisetRequest"
       class="mx-4 mx-md-8 mt-4 text-h6"
+      role="status"
     >
       <template v-if="loading">
         Searching&hellip;
@@ -180,6 +181,7 @@
       v-if="dandisets && dandisets.length"
       :dandisets="dandisets"
       :class="{ 'results-stale': loading }"
+      :inert="loading"
     />
     <v-container v-else>
       <v-row
@@ -285,6 +287,11 @@ watchEffect(async () => {
   latestRequest += 1;
   const thisRequest = latestRequest;
   loading.value = true;
+  // Clear the previous query's error, or its alert keeps rendering and
+  // suppresses the loading state below it for the whole of this request.
+  // `searchError` is only read in the template, so writing it here doesn't
+  // feed back into this effect.
+  searchError.value = null;
   try {
     const response = await dandiRest.dandisets(params);
     if (thisRequest !== latestRequest) {
@@ -354,10 +361,10 @@ watch(queryParams, (params) => {
 </script>
 
 <style scoped>
+/* Purely visual; `inert` on the list itself is what stops interaction. */
 .results-stale {
   opacity: 0.5;
   transition: opacity 0.2s ease;
-  pointer-events: none;
 }
 
 .btn-group--sort-options {
