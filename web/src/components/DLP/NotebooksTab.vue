@@ -73,16 +73,12 @@
               :key="notebook.path"
             >
               <div class="d-flex align-center flex-wrap ga-2">
-                <a
-                  :href="notebook.github_url"
-                  target="_blank"
-                  rel="noopener"
-                  class="text-subtitle-1 font-weight-medium text-primary text-decoration-none"
+                <span
+                  class="text-subtitle-1 font-weight-medium"
                   :title="notebook.path"
                 >
                   {{ notebookTitle(notebook.path) }}
-                </a>
-                <v-spacer />
+                </span>
                 <a
                   v-if="notebook.colab_url"
                   :href="notebook.colab_url"
