@@ -1,3 +1,39 @@
+# v1.0.1 (Mon Aug 24 2026)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger a release [#2898](https://github.com/dandi/dandi-archive/pull/2898) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix frontend lint command [#2892](https://github.com/dandi/dandi-archive/pull/2892) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Update dev dependencies [#2823](https://github.com/dandi/dandi-archive/pull/2823) ([@renovate[bot]](https://github.com/renovate[bot]) [@jjnesbitt](https://github.com/jjnesbitt))
+- Match owner: against GitHub login instead of User.username [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Merge remote-tracking branch 'origin/master' into advanced-search-owner [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add a redirect directive for hub.dandiarchive.org [#2888](https://github.com/dandi/dandi-archive/pull/2888) ([@waxlamp](https://github.com/waxlamp))
+- fix: import `migrate` from `dandischema.metadata` [#2886](https://github.com/dandi/dandi-archive/pull/2886) ([@candleindark](https://github.com/candleindark))
+- Auto-approve users with an EPFL email [#2836](https://github.com/dandi/dandi-archive/pull/2836) ([@kabilar](https://github.com/kabilar))
+- Match species/approach/technique against assetsSummary instead of per-asset metadata [#2882](https://github.com/dandi/dandi-archive/pull/2882) ([@bendichter](https://github.com/bendichter))
+- Merge remote-tracking branch 'origin/master' into advanced-search-owner [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@bendichter](https://github.com/bendichter))
+- Drop owner:me magic alias (defer to a follow-up PR) [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@bendichter](https://github.com/bendichter))
+- owner: keep owner:me magic; add quoted-form escape; consolidate tests [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@bendichter](https://github.com/bendichter))
+- Apply ruff format to test_dandiset.py [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@bendichter](https://github.com/bendichter))
+- owner: also match by display name (first/last/full) [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@bendichter](https://github.com/bendichter))
+- Add owner: operator to advanced search [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@bendichter](https://github.com/bendichter))
+
+#### 🔩 Dependency Updates
+
+- Remove dependabot [#2880](https://github.com/dandi/dandi-archive/pull/2880) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 7
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v1.0.0 (Wed Aug 05 2026)
 
 :tada: This release contains work from a new contributor! :tada:
