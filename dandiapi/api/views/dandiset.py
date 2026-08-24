@@ -184,7 +184,7 @@ def _serialize_uploads(rows: list[dict]) -> list[dict]:
     # Upload ID is a UUID, so filtering each model by the entire
     # list will only return that model's respective entries.
     serialized_zarr_uploads = DandisetZarrUploadSerializer(
-        ZarrUpload.objects.filter(upload_id__in=upload_ids), many=True
+        ZarrUpload.objects.select_related('zarr').filter(upload_id__in=upload_ids), many=True
     ).data
     serialized_blob_uploads = DandisetUploadSerializer(
         Upload.objects.filter(upload_id__in=upload_ids), many=True
@@ -649,7 +649,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         zarr_uploads = ZarrUpload.objects.filter(zarr__dandiset=dandiset).values(
             'upload_id', 'created'
         )
-        unioned_uploads = blob_uploads.union(zarr_uploads).order_by('created')
+        unioned_uploads = blob_uploads.union(zarr_uploads, all=True).order_by('created')
 
         # Paginate and return
         page = self.paginate_queryset(unioned_uploads)
