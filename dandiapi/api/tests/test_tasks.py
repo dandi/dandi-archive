@@ -18,6 +18,7 @@ from zarr_checksum.generators import ZarrArchiveFile
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
+from dandiapi.api.services.metadata import MAX_VALIDATION_ERROR_VALUE_LENGTH
 from dandiapi.api.tests.factories import DraftVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchiveStatus
 
@@ -137,7 +138,7 @@ def test_validate_asset_metadata_malformed_keywords(draft_asset: Asset):
 
     assert draft_asset.status == Asset.Status.INVALID
     assert draft_asset.validation_errors == [
-        {'field': 'keywords', 'message': "'foo' is not of type 'array'"}
+        {'field': 'keywords', 'message': "'foo' is not of type 'array'", 'value': 'foo'}
     ]
 
 
@@ -273,8 +274,67 @@ def test_validate_version_metadata_malformed_license(asset: Asset):
 
     assert draft_version.status == Version.Status.INVALID
     assert draft_version.validation_errors == [
-        {'field': 'license', 'message': "'foo' is not of type 'array'"}
+        {'field': 'license', 'message': "'foo' is not of type 'array'", 'value': 'foo'}
     ]
+
+
+@pytest.mark.django_db
+def test_validate_version_metadata_malformed_contributor_name(asset: Asset):
+    draft_version = DraftVersionFactory.create()
+    draft_version.assets.add(asset)
+
+    # The name of a Person contributor must be given as "Family, Given"
+    draft_version.metadata['contributor'][0]['name'] = 'Yemini Eviatar'
+    draft_version.save()
+
+    tasks.validate_version_metadata_task(draft_version.id)
+
+    draft_version.refresh_from_db()
+
+    assert draft_version.status == Version.Status.INVALID
+    assert len(draft_version.validation_errors) == 1
+    error = draft_version.validation_errors[0]
+    # The error must identify which contributor failed, not just the `contributor` field
+    assert error['field'] == 'contributor.0.Person.name'
+    assert error['value'] == 'Yemini Eviatar'
+    assert error['message'].startswith('String should match pattern')
+
+
+@pytest.mark.django_db
+def test_validate_version_metadata_long_value_truncated(asset: Asset):
+    draft_version = DraftVersionFactory.create()
+    draft_version.assets.add(asset)
+
+    name = 'x' * (MAX_VALIDATION_ERROR_VALUE_LENGTH + 10)
+    draft_version.metadata['contributor'][0]['name'] = name
+    draft_version.save()
+
+    tasks.validate_version_metadata_task(draft_version.id)
+
+    draft_version.refresh_from_db()
+
+    assert draft_version.status == Version.Status.INVALID
+    assert draft_version.validation_errors[0]['value'] == (
+        name[:MAX_VALIDATION_ERROR_VALUE_LENGTH] + '\u2026'
+    )
+
+
+@pytest.mark.django_db
+def test_validate_version_metadata_no_value_for_containers(asset: Asset):
+    draft_version = DraftVersionFactory.create()
+    draft_version.assets.add(asset)
+
+    del draft_version.metadata['contributor'][0]['name']
+    draft_version.save()
+
+    tasks.validate_version_metadata_task(draft_version.id)
+
+    draft_version.refresh_from_db()
+
+    assert draft_version.status == Version.Status.INVALID
+    # The failing value here is the whole contributor object, which is too large to be
+    # worth showing, so only the location and the message are reported
+    assert all('value' not in error for error in draft_version.validation_errors)
 
 
 @pytest.mark.django_db
