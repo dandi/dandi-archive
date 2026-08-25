@@ -44,7 +44,6 @@ What a backup potentially adds beyond what is mentioned above is protection agai
 
 In addition to implementing a longer recovery window, we propose to create an "fsck" style script that can report inconsistencies in the garbage collection state between the application database and the S3 bucket. Such a script can run on a schedule and would report the following items:
 
-- Live `Asset` objects with no corresponding `AssetBlob`
 - Live `AssetBlob` objects with no corresponding live S3 object
 - `GarbageCollectionEventRecord` objects with no corresponding deleted S3 object
 - Live S3 objects that are not already slated for garbage collection
