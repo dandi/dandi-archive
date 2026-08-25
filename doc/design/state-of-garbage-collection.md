@@ -46,7 +46,7 @@ In addition to implementing a longer recovery window, we propose to create an "f
 
 - Live `AssetBlob` objects with no corresponding live S3 object
 - `GarbageCollectionEventRecord` objects with no corresponding deleted S3 object
-- Live S3 objects that are not already slated for garbage collection
+- Live S3 objects that are not associated with any AssetBlob/Upload and are not already slated for garbage collection
 
 Any of the above categories would indicate an error in the garbage collection logic, or some other issue that needs to be addressed. If such problems are reported within the recovery window, they can be corrected by hand.
 
