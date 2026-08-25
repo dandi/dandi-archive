@@ -40,11 +40,22 @@ Even a worst-case GC bug that "deleted" every object in the bucket could not per
 
 What a backup potentially adds beyond what is mentioned above is protection against threats like malicious behavior of DANDI admins or compromise of the AWS account by outside actors. However, we've already established that these scenarios are outside of the threat model, and aren't something the backup design exists to prevent in the first place.
 
+## Proposal: develop `fsck`-style scripts to monitor GC health
+
+In addition to implementing a longer recovery window, we propose to create an "fsck" style script that can report inconsistencies in the garbage collection state between the application database and the S3 bucket. Such a script can run on a schedule and would report the following items:
+
+- Live `AssetBlob` objects with no corresponding live S3 object
+- `GarbageCollectionEventRecord` objects with no corresponding deleted S3 object
+- Live S3 objects that are not associated with any AssetBlob/Upload and are not already slated for garbage collection
+
+Any of the above categories would indicate an error in the garbage collection logic, or some other issue that needs to be addressed. If such problems are reported within the recovery window, they can be corrected by hand.
+
 ## What remains to get GC fully live (assuming no funding for backup/we're relying on undelete)
 
-1. **Extend the recovery window (if applicable)** - if we decide to accept extended recovery window instead of backup, we'll need a Terraform change to the trailing-delete lifecycle rule (30 → whatever we decide on days [here](https://github.com/dandi/dandi-infrastructure/blob/5ead0bd081b18082ccd8741ece8da19197cb631e/terraform/modules/dandiset_bucket/main.tf#L296-L299)), keeping the GC code's restoration window aligned with it.
-2. **Merge `Asset` GC** - review and land PRs [#2367](https://github.com/dandi/dandi-archive/pull/2367) and [#2368](https://github.com/dandi/dandi-archive/pull/2368).
-3. **Enable the daily task** - uncomment the beat schedule and monitor the first runs.
+1. **Implement the `fsck` script(s)** - this will help us keep the system healthy and, in particular, prevent catastrophic data loss.
+2. **Extend the recovery window (if applicable)** - if we decide to accept extended recovery window instead of backup, we'll need a Terraform change to the trailing-delete lifecycle rule (30 → whatever we decide on days [here](https://github.com/dandi/dandi-infrastructure/blob/5ead0bd081b18082ccd8741ece8da19197cb631e/terraform/modules/dandiset_bucket/main.tf#L296-L299)), keeping the GC code's restoration window aligned with it.
+3. **Merge `Asset` GC** - review and land PRs [#2367](https://github.com/dandi/dandi-archive/pull/2367) and [#2368](https://github.com/dandi/dandi-archive/pull/2368).
+4. **Enable the daily task** - uncomment the beat schedule, schedule the `fsck` scripts to run, and monitor the first runs.
 
 ---
 
