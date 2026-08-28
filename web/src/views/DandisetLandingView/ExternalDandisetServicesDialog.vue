@@ -142,9 +142,7 @@ const aiEditorURL = computed(() => {
 
 // The atlas viewer only indexes Dandisets on the production instance, so identifiers
 // from any other deployment would resolve to unrelated data.
-const isProductionDandiset = computed(
-  () => !!currentDandiset.value?.metadata?.url?.startsWith('https://dandiarchive.org/'),
-);
+const isProductionDandiset = computed(() => instanceStore.isProduction);
 
 const atlas = ref<Atlas | undefined>();
 
