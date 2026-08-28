@@ -150,11 +150,11 @@ const atlas = ref<Atlas | undefined>();
 
 watch([currentDandiset, isProductionDandiset], async () => {
   atlas.value = undefined;
-  if (!isProductionDandiset.value) {
+  if (!currentDandiset.value || !isProductionDandiset.value) {
     return;
   }
 
-  const dandisetId = currentDandiset.value!.dandiset.identifier;
+  const dandisetId = currentDandiset.value.dandiset.identifier;
   const result = await getAtlasForDandiset(dandisetId);
 
   // Discard the result if the user navigated to another Dandiset while it was in flight.
