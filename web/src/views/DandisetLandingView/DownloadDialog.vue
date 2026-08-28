@@ -130,17 +130,21 @@
   </v-menu>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useDandisetStore } from '@/stores/dandiset';
+import { useInstanceStore } from '@/stores/instance';
 import CopyText from '@/components/CopyText.vue';
 import { dandiDocumentationUrl } from '@/utils/constants';
-import { dandiRest } from '@/rest';
+
+const instanceStore = useInstanceStore();
+instanceStore.load();
 
 function downloadCommand(identifier: string, version: string): string {
-  // Use the special 'DANDI:' url prefix if appropriate.
+  // Use the special 'DANDI:' url prefix if the dandiset lives on the production
+  // instance, since that is the instance the CLI resolves those IDs against.
   const generalUrl = `${window.location.origin}/dandiset/${identifier}`;
   const dandiUrl = `DANDI:${identifier}`;
-  const url = window.location.origin == 'https://dandiarchive.org' ? dandiUrl : generalUrl;
+  const url = instanceStore.isProduction ? dandiUrl : generalUrl;
 
   // Prepare a url suffix to specify a specific version (or not).
   const versionPath = version ? `/${version}` : '';
@@ -154,13 +158,8 @@ const currentDandiset = computed(() => store.dandiset);
 const publishedVersions = computed(() => store.versions);
 const currentVersion = computed(() => store.version);
 
-const cliMinimalVersion = ref<string>();
-const cliRequiresPython = ref<string>();
-onMounted(async () => {
-  const info = await dandiRest.info();
-  cliMinimalVersion.value = info['cli-minimal-version'];
-  cliRequiresPython.value = info['cli-requires-python'];
-});
+const cliMinimalVersion = computed(() => instanceStore.info?.['cli-minimal-version']);
+const cliRequiresPython = computed(() => instanceStore.info?.['cli-requires-python']);
 
 const selectedDownloadOption = ref('draft');
 const selectedVersion = ref(0);

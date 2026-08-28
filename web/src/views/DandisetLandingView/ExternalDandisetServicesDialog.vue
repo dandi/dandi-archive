@@ -78,8 +78,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useDandisetStore } from '@/stores/dandiset';
+import { useInstanceStore } from '@/stores/instance';
 
 const store = useDandisetStore();
+const instanceStore = useInstanceStore();
+instanceStore.load();
 
 const currentDandiset = computed(() => store.dandiset);
 
@@ -92,14 +95,10 @@ const neurosiftURL = computed(() => {
     throw new Error('Dandiset metadata is undefined');
   }
 
-  if (!currentDandiset.value.metadata.url) {
-    throw new Error('Dandiset metadata.url is undefined');
-  }
-
   const metadata = currentDandiset.value.metadata;
   const dandisetId = currentDandiset.value.dandiset.identifier;
   const dandisetVersion = metadata.version;
-  const stagingParam = metadata.url!.startsWith('https://sandbox.dandiarchive.org/') ? '&staging=1' : '';
+  const stagingParam = instanceStore.isSandbox ? '&staging=1' : '';
 
   return `https://neurosift.app/dandiset/${dandisetId}?dandisetVersion=${dandisetVersion}${stagingParam}`;
 });
