@@ -131,6 +131,12 @@ Defaults follow operational ergonomics for the live deployment:
   fan out across workers.
 - `--fix-doi` is on so that a single sweep restores both DOIs and manifests
   "once and for all"; opt-out with `--no-fix-doi` for a manifest-only run.
+  It is a no-op (with a warning on stderr and a note in the summary) when
+  `doi.doi_configured()` is False: `create_doi` derives the DOI string
+  deterministically and only *registers* it with DataCite when the
+  `DANDI_DOI_API_*` settings are present, so without them the command would
+  persist -- and publish in the manifests -- a well-formed DOI that resolves
+  nowhere. That is worse than the `null` it would replace.
 
 Comparison is **semantic**: both sides are parsed as JSON and compared as
 Python objects, so whitespace/key-ordering differences do not produce false
@@ -262,6 +268,8 @@ no new harness is required.
 | A15 | Mutually-exclusive arg validation                     | `--all` + positional, or neither → `ClickException`                                                                                                                                       |
 | A16 | Embargoed manifest re-tagged on regeneration          | embargoed dandiset, mutate metadata → run → `default_storage.get_tags(path)` includes `embargoed: 'true'`                                                                                  |
 | A17 | `--show-diff` produces diff output                    | mutate metadata → run with `--show-diff` → captured stdout contains the unified-diff headers                                                                                              |
+| A18 | DOI repair is skipped when DataCite is unconfigured    | published version with `doi=None`, no `DANDI_DOI_API_*` settings → run with default `--fix-doi` → `version.doi` still NULL, warning on stderr                                              |
+| P1  | Publish writes the DOI into the manifest              | publish a draft with `django_capture_on_commit_callbacks` → S3 `dandiset.jsonld` has `doi` == `version.doi` and a doi.org citation (regression test for the race fixed in #2)              |
 
 ### Notes / caveats
 
@@ -291,7 +299,11 @@ no new harness is required.
 - Should DOI re-minting attempt to *recover* an existing DataCite DOI
   (e.g. via `GET` before `POST`) so it does not fail-loud on duplicate
   creation when `version.doi` is NULL but the DOI was actually minted in
-  a prior partially-failed run?
+  a prior partially-failed run? This needs deciding *before* the sweep:
+  "minted at DataCite but not persisted in the DB" is one of the failure
+  modes #2759 covers, the DOI string is deterministic, and a `POST` for an
+  already-registered DOI is rejected by DataCite -- so those versions would
+  all report `DOI remint FAILED` and stay NULL.
 - Do we want a periodic/scheduled invocation (celery beat) of a
   manifest-consistency audit, or is on-demand operator invocation
   sufficient?

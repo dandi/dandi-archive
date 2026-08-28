@@ -37,6 +37,12 @@ _DUMMY_DOI_RE = re.compile(r'\.123456/0\.123456\.1234$')
 VERSION_CHOICES = ('draft', 'published', 'all')
 TARGET_CHOICES = ('dandiset', 'assets', 'both')
 
+# Outcomes of the per-version DOI repair step.
+DOI_SKIPPED = 'skipped'
+DOI_WOULD_FIX = 'would-fix'
+DOI_FIXED = 'fixed'
+DOI_FAILED = 'failed'
+
 
 def _is_dummy_doi(doi: str | None) -> bool:
     return bool(doi) and bool(_DUMMY_DOI_RE.search(doi))
@@ -123,19 +129,20 @@ def _assets_jsonld_matches(version: Version, *, show_diff: bool) -> tuple[bool, 
     return False, msg
 
 
-def _fix_missing_doi(version: Version, *, dry_run: bool) -> tuple[bool, str]:
+def _fix_missing_doi(version: Version, *, dry_run: bool) -> tuple[str, str]:
     """Re-mint the DOI for a published Version whose DOI is missing/placeholder.
 
-    Returns (changed, message).
+    Returns ``(status, message)``, where status is one of ``DOI_SKIPPED``,
+    ``DOI_WOULD_FIX``, ``DOI_FIXED`` or ``DOI_FAILED``.
     """
     if version.version == 'draft':
-        return False, ''
+        return DOI_SKIPPED, ''
     if version.doi and not _is_dummy_doi(version.doi):
-        return False, ''
+        return DOI_SKIPPED, ''
 
     reason = 'NULL' if not version.doi else 'placeholder'
     if dry_run:
-        return True, f'  DOI would be re-minted ({reason})'
+        return DOI_WOULD_FIX, f'  DOI would be re-minted ({reason})'
 
     try:
         new_doi = doi_module.create_doi(version)
@@ -146,13 +153,13 @@ def _fix_missing_doi(version: Version, *, dry_run: bool) -> tuple[bool, str]:
         # which would then make the immediately-following compare-to-S3 step
         # report a spurious mismatch. Re-load from the DB to discard it.
         version.refresh_from_db()
-        return False, f'  DOI remint FAILED ({reason}): {e}'
+        return DOI_FAILED, f'  DOI remint FAILED ({reason}): {e}'
 
     # Save doi column; Version.save() re-populates metadata with the real DOI
     # and a DOI-based citation.
     version.doi = new_doi
     version.save()
-    return True, f'  DOI re-minted ({reason}) -> {new_doi}'
+    return DOI_FIXED, f'  DOI re-minted ({reason}) -> {new_doi}'
 
 
 def _select_versions(
@@ -279,6 +286,21 @@ def sync_manifest_files(  # noqa: C901, PLR0912, PLR0913, PLR0915
     compare_dandiset = targets in ('dandiset', 'both')
     compare_assets = targets in ('assets', 'both')
 
+    # ``doi.create_doi`` computes the DOI string deterministically and only
+    # *registers* it with DataCite when all DANDI_DOI_API_* settings are set.
+    # Without them it would still return a well-formed DOI, which we would then
+    # persist and publish in the manifests -- advertising a DOI that resolves
+    # nowhere. That is worse than the NULL we are trying to repair, so refuse
+    # to touch DOIs at all in that case.
+    doi_unconfigured = fix_doi and not doi_module.doi_configured()
+    if doi_unconfigured:
+        fix_doi = False
+        click.echo(
+            'WARNING: DOI minting is not configured (DANDI_DOI_API_URL/USER/PASSWORD/PREFIX); '
+            'skipping DOI repair. Manifests are still reconciled.',
+            err=True,
+        )
+
     versions_qs = _select_versions(
         dandisets,
         include_all=include_all,
@@ -299,6 +321,7 @@ def sync_manifest_files(  # noqa: C901, PLR0912, PLR0913, PLR0915
 
     n_doi_fixed = 0
     n_doi_would_fix = 0
+    n_doi_failed = 0
     n_manifest_mismatch = 0
     n_manifest_regen = 0
     n_regen_failed = 0
@@ -308,23 +331,21 @@ def sync_manifest_files(  # noqa: C901, PLR0912, PLR0913, PLR0915
         messages: list[str] = []
         need_regen = False
 
-        # 1) DOI fix (only for published versions; draft versions have no DOI,
-        # and skip if doi already looks OK).
-        if (
-            fix_doi
-            and version.version != 'draft'
-            and (not version.doi or _is_dummy_doi(version.doi))
-        ):
-            changed, msg = _fix_missing_doi(version, dry_run=dry_run)
+        # 1) DOI fix. ``_fix_missing_doi`` itself skips draft versions and
+        # versions whose DOI already looks fine.
+        if fix_doi:
+            status, msg = _fix_missing_doi(version, dry_run=dry_run)
             if msg:
                 messages.append(msg)
-            if changed:
-                if dry_run:
-                    n_doi_would_fix += 1
-                else:
-                    n_doi_fixed += 1
+            if status == DOI_WOULD_FIX:
+                n_doi_would_fix += 1
                 # DOI fix updates metadata -> manifest definitely needs rewrite
                 need_regen = True
+            elif status == DOI_FIXED:
+                n_doi_fixed += 1
+                need_regen = True
+            elif status == DOI_FAILED:
+                n_doi_failed += 1
 
         # 2) Compare manifests
         if compare_dandiset:
@@ -341,26 +362,29 @@ def sync_manifest_files(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 n_manifest_mismatch += 1
                 messages.append(msg)
 
-        if not need_regen:
-            continue
+        if need_regen:
+            if dry_run:
+                messages.append('  -> would regenerate all manifest files')
+            else:
+                try:
+                    if run_sync:
+                        write_manifest_files(version.id)
+                    else:
+                        write_manifest_files.delay(version.id)
+                    n_manifest_regen += 1
+                    messages.append(
+                        '  -> regenerated all manifest files'
+                        if run_sync
+                        else '  -> enqueued manifest regeneration'
+                    )
+                except Exception as e:  # noqa: BLE001
+                    n_regen_failed += 1
+                    messages.append(f'  -> regeneration FAILED: {e}')
 
-        if dry_run:
-            messages.append('  -> would regenerate all manifest files')
-        else:
-            try:
-                if run_sync:
-                    write_manifest_files(version.id)
-                else:
-                    write_manifest_files.delay(version.id)
-                n_manifest_regen += 1
-                messages.append(
-                    '  -> regenerated all manifest files'
-                    if run_sync
-                    else '  -> enqueued manifest regeneration'
-                )
-            except Exception as e:  # noqa: BLE001
-                n_regen_failed += 1
-                messages.append(f'  -> regeneration FAILED: {e}')
+        # Report anything worth reporting -- in particular a failed DOI remint
+        # on a version whose manifests are otherwise in sync.
+        if not messages:
+            continue
 
         click.echo(f'{label}:')
         for m in messages:
@@ -375,8 +399,12 @@ def sync_manifest_files(  # noqa: C901, PLR0912, PLR0913, PLR0915
         click.echo('  (dry run: no changes made)')
     else:
         click.echo(f'  DOIs re-minted:         {n_doi_fixed}')
+        if n_doi_failed:
+            click.echo(f'  DOI remint failures:    {n_doi_failed}')
         click.echo(
             f'  manifest regenerations: {n_manifest_regen} ({"sync" if run_sync else "enqueued"})'
         )
         if n_regen_failed:
             click.echo(f'  regeneration failures:  {n_regen_failed}')
+    if doi_unconfigured:
+        click.echo('  (DOI repair skipped: DOI minting is not configured)')

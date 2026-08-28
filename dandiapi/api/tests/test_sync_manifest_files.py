@@ -40,6 +40,16 @@ def _seed(version: Version) -> None:
     write_manifest_files(version.id)
 
 
+def _pretend_doi_configured(monkeypatch) -> None:
+    """Make the command believe DataCite credentials are present.
+
+    They are not under test settings, and the command refuses to touch DOIs
+    without them (an unregistered DOI in a published manifest is worse than
+    the NULL it would replace).
+    """
+    monkeypatch.setattr(doi_module, 'doi_configured', lambda: True)
+
+
 def _install_fake_create_doi(monkeypatch, value: str = _FAKE_DOI) -> None:
     """Replace ``doi.create_doi`` with a deterministic, no-op shim.
 
@@ -52,6 +62,7 @@ def _install_fake_create_doi(monkeypatch, value: str = _FAKE_DOI) -> None:
         version.metadata['doi'] = value
         return value
 
+    _pretend_doi_configured(monkeypatch)
     monkeypatch.setattr(doi_module, 'create_doi', _shim)
 
 
@@ -272,16 +283,39 @@ def test_doi_remint_failure_is_reported_not_fatal(monkeypatch, capsys):
     def _boom(_v):
         raise RuntimeError('datacite is on fire')
 
+    _pretend_doi_configured(monkeypatch)
     monkeypatch.setattr(doi_module, 'create_doi', _boom)
 
     # Must not raise.
     sync_manifest_files(str(version.dandiset_id), '--version', 'published')
 
     out = capsys.readouterr().out
+    # Reported even though the manifests themselves are in sync and nothing
+    # needed to be regenerated for this version.
     assert 'DOI remint FAILED' in out
+    assert 'DOI remint failures:    1' in out
 
     version.refresh_from_db()
     assert version.doi is None
+
+
+@pytest.mark.django_db
+def test_doi_repair_skipped_when_doi_not_configured(capsys):
+    """Without DataCite credentials the command must not invent DOIs."""
+    version = PublishedVersionFactory.create(doi=None)
+    version.metadata.pop('doi', None)
+    Version.objects.filter(id=version.id).update(metadata=version.metadata)
+    _seed(version)
+
+    # Test settings leave DANDI_DOI_API_URL/USER/PASSWORD unset, so
+    # ``doi.doi_configured()`` is False here without any patching.
+    sync_manifest_files(str(version.dandiset_id), '--version', 'published')
+
+    version.refresh_from_db()
+    assert version.doi is None
+    captured = capsys.readouterr()
+    assert 'DOI minting is not configured' in captured.err
+    assert 'DOI repair skipped' in captured.out
 
 
 @pytest.mark.django_db
