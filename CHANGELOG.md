@@ -1,3 +1,27 @@
+# v1.0.2 (Mon Aug 31 2026)
+
+#### 🐛 Bug Fix
+
+- Add a DANDI Atlas entry to the Open with menu [#2873](https://github.com/dandi/dandi-archive/pull/2873) ([@bendichter](https://github.com/bendichter) [@mvandenburgh](https://github.com/mvandenburgh))
+- Add `.DS_Store` to `.gitignore` [#2906](https://github.com/dandi/dandi-archive/pull/2906) ([@kabilar](https://github.com/kabilar))
+
+#### 🏠 Internal
+
+- Centralize `/api/info` calls + cleaner production/sandbox identification [#2903](https://github.com/dandi/dandi-archive/pull/2903) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🔩 Dependency Updates
+
+- Lock file maintenance [#2860](https://github.com/dandi/dandi-archive/pull/2860) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 4
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v1.0.1 (Mon Aug 24 2026)
 
 #### 🐛 Bug Fix
