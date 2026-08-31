@@ -3,29 +3,10 @@
     prepend-icon="mdi-brain"
     variant="outlined"
     height="100%"
-    :color="hasAnatomy ? undefined : 'warning'"
   >
     <template #title>
       <div class="d-flex align-center justify-space-between">
         <span>Anatomy</span>
-        <v-chip
-          v-if="hasAnatomy"
-          size="small"
-          color="success"
-          variant="flat"
-          prepend-icon="mdi-check-circle"
-        >
-          Provided
-        </v-chip>
-        <v-chip
-          v-else
-          size="small"
-          color="warning"
-          variant="flat"
-          prepend-icon="mdi-alert-circle"
-        >
-          Missing
-        </v-chip>
       </div>
     </template>
 
@@ -81,15 +62,15 @@
     </v-list>
 
     <!-- Anatomy information is missing -->
-    <v-card-text
+    <v-sheet
       v-else
-      class="pt-0"
+      class="mx-5 mt-1 mb-4 pa-0"
     >
       <v-alert
-        type="warning"
-        variant="tonal"
+        variant="text"
         density="comfortable"
-        class="mb-0"
+        class="mb-0 bg-blue-grey-lighten-5"
+        icon="mdi-information-outline"
       >
         <div class="font-weight-bold">
           No anatomical information provided.
@@ -100,7 +81,7 @@
           metadata editor makes this dataset discoverable by anatomical location.
         </div>
       </v-alert>
-    </v-card-text>
+    </v-sheet>
   </v-card>
 </template>
 

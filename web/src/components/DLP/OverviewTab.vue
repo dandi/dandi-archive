@@ -57,9 +57,16 @@
         </div>
       </template>
       <template #emptyFallback>
-        <span class="font-italic font-weight-bold">
-          No funding information available.
-        </span>
+        <v-alert
+          variant="text"
+          density="comfortable"
+          class="mb-0 bg-blue-grey-lighten-5"
+          icon="mdi-information-outline"
+        >
+          <div class="font-weight-bold">
+            No funding information provided.
+          </div>
+        </v-alert>
       </template>
     </MetadataCard>
 
