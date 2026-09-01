@@ -50,7 +50,7 @@
             </div>
             <div class="text-body-2 mb-2">
               Combine free text with <code>key:value</code> filters.
-              Quote multi-word values: <code>technique:"patch clamp"</code>.
+              Quote multi-word values: <code>technique:"spike sorting"</code>.
             </div>
             <v-table density="compact">
               <tbody>
@@ -148,7 +148,7 @@ const operatorHelp = [
   { example: 'published_before:2024-01-01', description: 'Most recent publication before' },
   { example: 'species:mouse', description: 'Has assets attributed to a species' },
   { example: 'approach:electrophysiology', description: 'Has assets using an approach' },
-  { example: 'technique:"patch clamp"', description: 'Has assets using a measurement technique' },
+  { example: 'technique:"spike sorting"', description: 'Has assets using a measurement technique' },
   { example: 'file_type:nwb', description: 'Has assets of a file type (nwb, image, text, video)' },
   { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, GitHub username, or email)' },
 ];
