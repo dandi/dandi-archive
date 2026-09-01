@@ -4,16 +4,16 @@ import { computed } from "vue";
 import type { AssetFile, AssetPath } from "@/types";
 import { useDandisetStore } from "@/stores/dandiset";
 
-type ExternalServiceEndpoint = string | ((item: ServiceUrlData) => string | null);
+type ExternalAssetServiceEndpoint = string | ((item: ServiceUrlData) => string | null);
 
-interface ExternalService {
+interface ExternalAssetService {
   name: string;
   regex: RegExp;
   maxsize: number;
-  endpoint: ExternalServiceEndpoint;
+  endpoint: ExternalAssetServiceEndpoint;
 }
 
-const EXTERNAL_SERVICES: ExternalService[] = [
+const EXTERNAL_ASSET_SERVICES: ExternalAssetService[] = [
   {
     name: "Bioimagesuite/Viewer",
     regex: /\.nii(\.gz)?$/,
@@ -101,7 +101,7 @@ interface ServiceUrlData {
   assetPath: string,
 }
 
-function serviceURL(endpoint: ExternalServiceEndpoint, data: ServiceUrlData): string | null {
+function serviceURL(endpoint: ExternalAssetServiceEndpoint, data: ServiceUrlData): string | null {
   let resolvedEndpoint;
   if (typeof endpoint == 'string') {
     resolvedEndpoint = endpoint;
@@ -125,7 +125,7 @@ function serviceURL(endpoint: ExternalServiceEndpoint, data: ServiceUrlData): st
     .replaceAll('$asset_path$', data.assetPath);
 }
 
-export function getExternalServices(path: AssetPath, info: {dandisetId: string, dandisetVersion: string}) {
+export function getExternalAssetServices(path: AssetPath, info: {dandisetId: string, dandisetVersion: string}) {
   if (path.asset === null) {
     return [];
   }
@@ -133,7 +133,7 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
   const store = useDandisetStore();
   const embargoed = computed(() => store.dandiset?.dandiset.embargo_status === 'EMBARGOED');
 
-  const servicePredicate = (service: ExternalService, _path: AssetPath) => (
+  const servicePredicate = (service: ExternalAssetService, _path: AssetPath) => (
     new RegExp(service.regex).test(path.path)
           && _path.asset !== null
           && _path.aggregate_size <= service.maxsize
@@ -158,7 +158,7 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
   // dandisets (since the ready-made S3 URL will prevent access in that case).
   const assetUrl = embargoed.value ? assetDandiUrl : assetS3Url;
 
-  return EXTERNAL_SERVICES
+  return EXTERNAL_ASSET_SERVICES
     .filter((service) => servicePredicate(service, path))
     .flatMap((service) => {
       const url = serviceURL(service.endpoint, {
