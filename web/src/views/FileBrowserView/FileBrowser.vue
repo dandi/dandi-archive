@@ -287,7 +287,7 @@ import axios from 'axios';
 import { dandiRest, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { AssetPath } from '@/types';
-import { getExternalServices } from '@/utils/externalServices';
+import { getExternalAssetServices } from '@/utils/externalAssetServices';
 import FileBrowserPagination from '@/components/FileBrowser/FileBrowserPagination.vue';
 import FileUploadInstructions from '@/components/FileBrowser/FileUploadInstructions.vue';
 
@@ -434,7 +434,7 @@ async function getItems() {
       // Inject relative path
       name: path.path.split('/').pop()!,
       // Inject services
-      services: getExternalServices(path, {
+      services: getExternalAssetServices(path, {
         dandisetId: props.identifier,
         dandisetVersion: props.version,
       }) || undefined,
