@@ -293,6 +293,9 @@ async function fetchAllAssets(
   let page = 1;
   for (;;) {
     const data = await dandiRest.assets(id, version, { params: { page, page_size: 1000 }, signal });
+    if (page === 1 && data === null) {
+      throw new Error('Failed to fetch assets for the current Dandiset');
+    }
     if (!data) {
       break;
     }
