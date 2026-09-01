@@ -81,6 +81,9 @@
                 Cancel
               </v-btn>
             </v-list-item>
+            <v-list-item density="compact">
+              <em>Leaving this Dandiset page or changing versions will cancel the download</em>
+            </v-list-item>
           </template>
           <v-list-item
             v-else
@@ -183,7 +186,7 @@
   </v-menu>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { filesize } from 'filesize';
 import { useDandisetStore } from '@/stores/dandiset';
 import { useZipDownload, type ZipEntry } from '@/composables/useZipDownload';
@@ -267,6 +270,12 @@ const {
   cancel: cancelZip,
   download: downloadEntriesAsZip,
 } = useZipDownload();
+
+onUnmounted(() => {
+  cancelZip();
+});
+
+watch([identifier, currentVersion], () => cancelZip());
 
 const zipError = ref('');
 
