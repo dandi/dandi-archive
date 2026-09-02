@@ -43,8 +43,8 @@ test.describe("dandiset landing page", async () => {
     await newPage.waitForTimeout(250);
     await newPage.getByRole("dialog").getByRole("button").nth(1).click();
     await newPage.getByRole("button", { name: "Done" }).click();
-    // Saving the owner change and re-rendering the owners list is an async
-    // round-trip; give it more room than the default 5s expect timeout.
+    // With high concurrency, the default timeout of 5s was not enough, raising the
+    // timeout reduces flakiness of this assertion.
     await expect(newPage.getByText(otherUserName)).toHaveCount(1, { timeout: 15000 });
     await context.close();
   });
@@ -55,11 +55,9 @@ test.describe("dandiset landing page", async () => {
   });
 
   test.describe("how to cite tab", () => {
-    // These tests only read the "How to Cite" tab of a single dandiset, so a fresh
-    // user + dandiset is registered once for the whole block instead of once per
-    // test. Registering per-test (7x) under 4-way parallelism was overloading the
-    // backend and causing frequent beforeEach timeouts; this also requires the
-    // tests to run serially, since they now share one page.
+    // Run these tests serially so we can create a single user + dandiset for the entire
+    // set, instead of creating a fresh user + dandiset per-test. This reduces load on the
+    // test server, which can cause flaky behavior.
     test.describe.configure({ mode: "serial" });
 
     let dandisetId: string | undefined;
