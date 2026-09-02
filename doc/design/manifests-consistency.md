@@ -46,10 +46,12 @@ In `dandiapi/api/services/publish/__init__.py` the publish path schedules two
 ```python
 transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
 
+
 def _create_doi(version_id: int):
     version = Version.objects.get(id=version_id)
     version.doi = doi.create_doi(version)
     version.save()
+
 
 transaction.on_commit(lambda: _create_doi(new_version.id))
 ```
@@ -208,9 +210,11 @@ def _create_doi_and_write_manifests(version_id: int):
         except Exception:
             logger.exception(
                 'Minted DOI %s but failed to persist it on version %s',
-                new_doi, version_id,
+                new_doi,
+                version_id,
             )
     write_manifest_files.delay(version_id)
+
 
 transaction.on_commit(lambda: _create_doi_and_write_manifests(new_version.id))
 ```
