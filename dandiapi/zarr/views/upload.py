@@ -46,6 +46,7 @@ class ZarrUploadInitializationRequestSerializer(serializers.Serializer):
     zarr_id = serializers.UUIDField()
     chunk_key = serializers.CharField(validators=[validate_zarr_path])
     contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
+    content_type = serializers.CharField(required=False, default='application/octet-stream')
     digest = DigestSerializer()
 
     def get_digest_data(self) -> tuple[str, int]:
@@ -109,7 +110,11 @@ def zarr_upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBa
         raise ValidationError(ZarrArchive.INGEST_ERROR_MSG)
 
     upload, initialization = ZarrUpload.initialize_multipart_upload(
-        etag, content_size, zarr=zarr_archive, chunk_key=data['chunk_key']
+        etag,
+        content_size,
+        zarr=zarr_archive,
+        chunk_key=data['chunk_key'],
+        content_type=data['content_type'],
     )
     with transaction.atomic():
         upload.save()

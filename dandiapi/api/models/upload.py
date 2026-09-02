@@ -52,14 +52,19 @@ class BaseUpload(models.Model):
         raise NotImplementedError
 
     @classmethod
-    def _initialize_multipart_upload(cls, *, size: int, object_key: str, embargoed: bool):
+    def _initialize_multipart_upload(
+        cls,
+        *,
+        size: int,
+        object_key: str,
+        embargoed: bool,
+        content_type: str = 'application/octet-stream',
+    ):
         """Initialize a multipart upload in the object store."""
         return DandiS3MultipartManager(cls._meta.get_field('blob').storage).initialize_upload(
             object_key,
             size,
-            # The upload HTTP API does not pass the file name or content type, and it would be a
-            # breaking change to start requiring this.
-            'application/octet-stream',
+            content_type,
             tags={'embargoed': 'true'} if embargoed else None,
         )
 
