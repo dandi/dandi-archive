@@ -6,9 +6,10 @@ would be generated now from `version.metadata` / `version.assets` to what's
 currently stored on S3. If they differ (or if the S3 object is missing),
 trigger `write_manifest_files` to rewrite all manifest files for that version.
 
-Optionally also re-mint DOIs for published versions whose `version.doi` is
+Optionally also repair DOIs for published versions whose `version.doi` is
 NULL or equals the placeholder ``.../123456/0.123456.1234`` (symptom of a
-failed DOI creation at publish time).
+failed DOI creation at publish time): adopt the DOI if it turns out to be
+registered at DataCite already, otherwise mint it.
 
 Context: https://github.com/dandi/dandi-archive/issues/2759
 """
@@ -39,8 +40,10 @@ TARGET_CHOICES = ('dandiset', 'assets', 'both')
 
 # Outcomes of the per-version DOI repair step.
 DOI_SKIPPED = 'skipped'
-DOI_WOULD_FIX = 'would-fix'
-DOI_FIXED = 'fixed'
+DOI_WOULD_MINT = 'would-mint'
+DOI_WOULD_ADOPT = 'would-adopt'
+DOI_MINTED = 'minted'
+DOI_ADOPTED = 'adopted'
 DOI_FAILED = 'failed'
 
 
@@ -129,11 +132,44 @@ def _assets_jsonld_matches(version: Version, *, show_diff: bool) -> tuple[bool, 
     return False, msg
 
 
-def _fix_missing_doi(version: Version, *, dry_run: bool) -> tuple[str, str]:
-    """Re-mint the DOI for a published Version whose DOI is missing/placeholder.
+def _unadoptable_reason(version: Version, attributes: dict) -> str | None:
+    """Say why an existing DataCite record must not be adopted, or None if it can be.
+
+    Two ways a registered DOI is not the DOI we want to advertise:
+
+    * it describes something else -- a misconfigured prefix or instance name
+      would otherwise silently attach an unrelated DOI to this version. (A
+      version published before ``DANDI_WEB_APP_URL`` last changed also lands
+      here; that is a report-and-let-a-human-look case, not an auto-fix.)
+    * it is still a DataCite ``draft``, which does not resolve. Publishing a
+      dead doi.org link in the manifest is what we are trying to fix, not
+      something to introduce. Promoting it would mean writing to DataCite,
+      which this command deliberately never does.
+    """
+    expected_url = version.metadata.get('url')
+    actual_url = attributes.get('url')
+    if expected_url and actual_url and actual_url != expected_url:
+        return f'it points at {actual_url} rather than {expected_url}'
+
+    state = attributes.get('state')
+    if state == 'draft':
+        return 'it is still in DataCite "draft" state and would not resolve'
+
+    return None
+
+
+def _fix_missing_doi(version: Version, *, dry_run: bool) -> tuple[str, str]:  # noqa: PLR0911
+    """Repair the DOI of a published Version whose DOI is missing/placeholder.
+
+    The DOI string is deterministic, so a NULL ``version.doi`` does not mean
+    there is no DOI: publish may have minted one and then failed to persist it
+    (``services/publish`` logs exactly that). DataCite rejects a POST for an
+    already-registered DOI, so look the DOI up first and adopt what is already
+    there; only mint when nothing is registered.
 
     Returns ``(status, message)``, where status is one of ``DOI_SKIPPED``,
-    ``DOI_WOULD_FIX``, ``DOI_FIXED`` or ``DOI_FAILED``.
+    ``DOI_WOULD_MINT``, ``DOI_WOULD_ADOPT``, ``DOI_MINTED``, ``DOI_ADOPTED``
+    or ``DOI_FAILED``.
     """
     if version.version == 'draft':
         return DOI_SKIPPED, ''
@@ -141,8 +177,31 @@ def _fix_missing_doi(version: Version, *, dry_run: bool) -> tuple[str, str]:
         return DOI_SKIPPED, ''
 
     reason = 'NULL' if not version.doi else 'placeholder'
+    expected_doi = doi_module.doi_for_version(version)
+
+    # Read-only, so it runs under --dry-run too: that is what tells an operator
+    # how many versions need a mint vs. only a DB write.
+    try:
+        existing = doi_module.get_doi(expected_doi)
+    except Exception as e:  # noqa: BLE001
+        return DOI_FAILED, f'  DOI lookup FAILED ({reason}) for {expected_doi}: {e}'
+
+    if existing is not None:
+        unadoptable = _unadoptable_reason(version, existing)
+        if unadoptable:
+            return DOI_FAILED, (
+                f'  DOI {expected_doi} is registered at DataCite but {unadoptable}; not adopting'
+            )
+        if dry_run:
+            return DOI_WOULD_ADOPT, f'  DOI would be adopted ({reason}) -> {expected_doi}'
+        # Registered already: no DataCite write, just record it and let the
+        # manifest be rewritten with the DOI and a doi.org citation.
+        version.doi = expected_doi
+        version.save()
+        return DOI_ADOPTED, f'  DOI adopted from DataCite ({reason}) -> {expected_doi}'
+
     if dry_run:
-        return DOI_WOULD_FIX, f'  DOI would be re-minted ({reason})'
+        return DOI_WOULD_MINT, f'  DOI would be minted ({reason}) -> {expected_doi}'
 
     try:
         new_doi = doi_module.create_doi(version)
@@ -153,13 +212,13 @@ def _fix_missing_doi(version: Version, *, dry_run: bool) -> tuple[str, str]:
         # which would then make the immediately-following compare-to-S3 step
         # report a spurious mismatch. Re-load from the DB to discard it.
         version.refresh_from_db()
-        return DOI_FAILED, f'  DOI remint FAILED ({reason}): {e}'
+        return DOI_FAILED, f'  DOI mint FAILED ({reason}): {e}'
 
     # Save doi column; Version.save() re-populates metadata with the real DOI
     # and a DOI-based citation.
     version.doi = new_doi
     version.save()
-    return DOI_FIXED, f'  DOI re-minted ({reason}) -> {new_doi}'
+    return DOI_MINTED, f'  DOI minted ({reason}) -> {new_doi}'
 
 
 def _select_versions(
@@ -241,7 +300,8 @@ def _select_versions(
     'fix_doi',
     default=True,
     show_default=True,
-    help='Also re-mint DOIs for published versions whose version.doi is NULL or a placeholder.',
+    help='Also repair DOIs for published versions whose version.doi is NULL or a placeholder '
+    '(adopting an already-registered DataCite DOI in preference to minting a new one).',
 )
 @click.option(
     '--show-diff',
@@ -271,9 +331,11 @@ def sync_manifest_files(  # noqa: C901, PLR0912, PLR0913, PLR0915
     default the regeneration is enqueued via Celery (use ``--sync`` to run
     inline).
 
-    Optionally (on by default) re-mint DOIs for published versions whose
+    Optionally (on by default) repair DOIs for published versions whose
     ``version.doi`` column is NULL or is the publishing-time placeholder
-    (...`.123456/0.123456.1234`).
+    (...`.123456/0.123456.1234`). Because the DOI string is deterministic,
+    such a version may already have its DOI registered at DataCite; that one
+    is adopted (no DataCite write) and only a genuinely absent DOI is minted.
 
     Motivated by https://github.com/dandi/dandi-archive/issues/2759.
     """
@@ -319,8 +381,10 @@ def sync_manifest_files(  # noqa: C901, PLR0912, PLR0913, PLR0915
         f'async={not run_sync}, fix_doi={fix_doi}).'
     )
 
-    n_doi_fixed = 0
-    n_doi_would_fix = 0
+    n_doi_minted = 0
+    n_doi_adopted = 0
+    n_doi_would_mint = 0
+    n_doi_would_adopt = 0
     n_doi_failed = 0
     n_manifest_mismatch = 0
     n_manifest_regen = 0
@@ -337,12 +401,18 @@ def sync_manifest_files(  # noqa: C901, PLR0912, PLR0913, PLR0915
             status, msg = _fix_missing_doi(version, dry_run=dry_run)
             if msg:
                 messages.append(msg)
-            if status == DOI_WOULD_FIX:
-                n_doi_would_fix += 1
+            if status == DOI_WOULD_MINT:
+                n_doi_would_mint += 1
                 # DOI fix updates metadata -> manifest definitely needs rewrite
                 need_regen = True
-            elif status == DOI_FIXED:
-                n_doi_fixed += 1
+            elif status == DOI_WOULD_ADOPT:
+                n_doi_would_adopt += 1
+                need_regen = True
+            elif status == DOI_MINTED:
+                n_doi_minted += 1
+                need_regen = True
+            elif status == DOI_ADOPTED:
+                n_doi_adopted += 1
                 need_regen = True
             elif status == DOI_FAILED:
                 n_doi_failed += 1
@@ -381,7 +451,7 @@ def sync_manifest_files(  # noqa: C901, PLR0912, PLR0913, PLR0915
                     n_regen_failed += 1
                     messages.append(f'  -> regeneration FAILED: {e}')
 
-        # Report anything worth reporting -- in particular a failed DOI remint
+        # Report anything worth reporting -- in particular a failed DOI repair
         # on a version whose manifests are otherwise in sync.
         if not messages:
             continue
@@ -395,12 +465,16 @@ def sync_manifest_files(  # noqa: C901, PLR0912, PLR0913, PLR0915
     click.echo(f'  versions checked:       {total}')
     click.echo(f'  manifest mismatches:    {n_manifest_mismatch}')
     if dry_run:
-        click.echo(f'  DOIs to re-mint:        {n_doi_would_fix}')
+        click.echo(f'  DOIs to mint:           {n_doi_would_mint}')
+        click.echo(f'  DOIs to adopt:          {n_doi_would_adopt}')
+        if n_doi_failed:
+            click.echo(f'  DOI repair problems:    {n_doi_failed}')
         click.echo('  (dry run: no changes made)')
     else:
-        click.echo(f'  DOIs re-minted:         {n_doi_fixed}')
+        click.echo(f'  DOIs minted:            {n_doi_minted}')
+        click.echo(f'  DOIs adopted:           {n_doi_adopted}')
         if n_doi_failed:
-            click.echo(f'  DOI remint failures:    {n_doi_failed}')
+            click.echo(f'  DOI repair failures:    {n_doi_failed}')
         click.echo(
             f'  manifest regenerations: {n_manifest_regen} ({"sync" if run_sync else "enqueued"})'
         )

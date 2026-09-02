@@ -143,8 +143,38 @@ Python objects, so whitespace/key-ordering differences do not produce false
 mismatches. With `--show-diff` a `difflib.unified_diff` of the
 sort-keyed pretty-printed forms is emitted.
 
-DOI re-minting calls `dandiapi.api.doi.create_doi(version)` synchronously
-(so failures surface in the operator's terminal). When DataCite is not
+#### DOI repair
+
+`version.doi` being NULL does not mean no DOI exists. `create_doi` derives
+the DOI deterministically (`{prefix}/{instance}.{dandiset_id}/{version}`)
+and only then POSTs it, so publish can (and does) mint a DOI at DataCite and
+then fail to persist it -- `_create_doi_and_write_manifests` logs exactly
+that case. DataCite rejects a POST for an already-registered DOI, so a
+mint-only repair would report a failure and leave NULL precisely those
+versions that already have a working DOI.
+
+The command therefore looks first (`doi.get_doi`, a `GET` mirroring the one
+already in `delete_doi`) and:
+
+- **registered and consistent** -> adopt it: write `version.doi`, let
+  `Version.save()` rebuild `metadata['doi']` and the doi.org citation, and
+  regenerate the manifests. No write to DataCite.
+- **registered but inconsistent** -> report, do not adopt. Two cases: the
+  record's `url` disagrees with the version's (a misconfigured prefix or
+  instance name must not silently attach an unrelated DOI; a version
+  published before `DANDI_WEB_APP_URL` last changed lands here too), or the
+  record is still in DataCite `draft` state, which does not resolve --
+  publishing a dead doi.org link is the bug being fixed, not one to add.
+  Promoting a draft would mean writing to DataCite, which this command
+  deliberately never does.
+- **not registered** -> mint it, as before.
+
+The lookup is read-only and so also runs under `--dry-run`, which makes the
+dry run the measurement tool: its summary separates "DOIs to mint" (DataCite
+was never told) from "DOIs to adopt" (DataCite knows, the DB does not).
+
+Everything happens synchronously, so failures surface in the operator's
+terminal. When DataCite is not
 configured the HTTP call itself is skipped, but `_generate_doi_data` still
 runs full `PublishedDandiset` schema validation via
 `dandischema.datacite.to_datacite`; the function only returns the
@@ -268,6 +298,10 @@ no new harness is required.
 | A15 | Mutually-exclusive arg validation                     | `--all` + positional, or neither → `ClickException`                                                                                                                                       |
 | A16 | Embargoed manifest re-tagged on regeneration          | embargoed dandiset, mutate metadata → run → `default_storage.get_tags(path)` includes `embargoed: 'true'`                                                                                  |
 | A17 | `--show-diff` produces diff output                    | mutate metadata → run with `--show-diff` → captured stdout contains the unified-diff headers                                                                                              |
+| A19 | Already-registered DOI is adopted, not re-POSTed      | published version with `doi=None`, `get_doi` returns a matching findable record → `version.doi` set from it, manifest rewritten, `create_doi` never called                                  |
+| A20 | Registered DOI describing something else is refused   | `get_doi` returns a record whose `url` differs → `version.doi` still NULL, "not adopting" reported                                                                                          |
+| A21 | `draft`-state DOI is refused                          | `get_doi` returns `state='draft'` → not adopted, reported                                                                                                                                 |
+| A22 | `--dry-run` separates mint from adopt                 | one registered + one unregistered version → summary shows 1 to mint, 1 to adopt, nothing written                                                                                           |
 | A18 | DOI repair is skipped when DataCite is unconfigured    | published version with `doi=None`, no `DANDI_DOI_API_*` settings → run with default `--fix-doi` → `version.doi` still NULL, warning on stderr                                              |
 | P1  | Publish writes the DOI into the manifest              | publish a draft with `django_capture_on_commit_callbacks` → S3 `dandiset.jsonld` has `doi` == `version.doi` and a doi.org citation (regression test for the race fixed in #2)              |
 
@@ -296,14 +330,8 @@ no new harness is required.
   all five from a `dandiset.jsonld` mismatch sufficient? (Current design:
   any mismatch triggers full regeneration via `write_manifest_files`,
   which rewrites all five.)
-- Should DOI re-minting attempt to *recover* an existing DataCite DOI
-  (e.g. via `GET` before `POST`) so it does not fail-loud on duplicate
-  creation when `version.doi` is NULL but the DOI was actually minted in
-  a prior partially-failed run? This needs deciding *before* the sweep:
-  "minted at DataCite but not persisted in the DB" is one of the failure
-  modes #2759 covers, the DOI string is deterministic, and a `POST` for an
-  already-registered DOI is rejected by DataCite -- so those versions would
-  all report `DOI remint FAILED` and stay NULL.
+- ~~Should DOI re-minting attempt to *recover* an existing DataCite DOI?~~
+  Resolved: yes, see "DOI repair" below.
 - Do we want a periodic/scheduled invocation (celery beat) of a
   manifest-consistency audit, or is on-demand operator invocation
   sufficient?

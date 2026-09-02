@@ -40,6 +40,10 @@ def _seed(version: Version) -> None:
     write_manifest_files(version.id)
 
 
+def _never_mint(_version):
+    raise AssertionError('create_doi must not be called in this scenario')
+
+
 def _pretend_doi_configured(monkeypatch) -> None:
     """Make the command believe DataCite credentials are present.
 
@@ -63,6 +67,8 @@ def _install_fake_create_doi(monkeypatch, value: str = _FAKE_DOI) -> None:
         return value
 
     _pretend_doi_configured(monkeypatch)
+    # Nothing registered at DataCite yet, so the command mints rather than adopts.
+    monkeypatch.setattr(doi_module, 'get_doi', lambda _doi: None)
     monkeypatch.setattr(doi_module, 'create_doi', _shim)
 
 
@@ -284,6 +290,7 @@ def test_doi_remint_failure_is_reported_not_fatal(monkeypatch, capsys):
         raise RuntimeError('datacite is on fire')
 
     _pretend_doi_configured(monkeypatch)
+    monkeypatch.setattr(doi_module, 'get_doi', lambda _doi: None)
     monkeypatch.setattr(doi_module, 'create_doi', _boom)
 
     # Must not raise.
@@ -292,8 +299,8 @@ def test_doi_remint_failure_is_reported_not_fatal(monkeypatch, capsys):
     out = capsys.readouterr().out
     # Reported even though the manifests themselves are in sync and nothing
     # needed to be regenerated for this version.
-    assert 'DOI remint FAILED' in out
-    assert 'DOI remint failures:    1' in out
+    assert 'DOI mint FAILED' in out
+    assert 'DOI repair failures:    1' in out
 
     version.refresh_from_db()
     assert version.doi is None
@@ -316,6 +323,118 @@ def test_doi_repair_skipped_when_doi_not_configured(capsys):
     captured = capsys.readouterr()
     assert 'DOI minting is not configured' in captured.err
     assert 'DOI repair skipped' in captured.out
+
+
+def _published_version_without_doi() -> Version:
+    version = PublishedVersionFactory.create(doi=None)
+    version.metadata.pop('doi', None)
+    Version.objects.filter(id=version.id).update(metadata=version.metadata)
+    _seed(version)
+    version.refresh_from_db()
+    return version
+
+
+@pytest.mark.django_db
+def test_doi_already_registered_is_adopted_not_reminted(monkeypatch):
+    """A DOI minted at publish time but never persisted must be adopted, not re-POSTed.
+
+    DataCite rejects a POST for an existing DOI, so minting again would fail
+    and leave the version NULL forever.
+    """
+    version = _published_version_without_doi()
+    expected_doi = doi_module.doi_for_version(version)
+
+    _pretend_doi_configured(monkeypatch)
+    monkeypatch.setattr(
+        doi_module,
+        'get_doi',
+        lambda doi: (
+            {'url': version.metadata['url'], 'state': 'findable'} if doi == expected_doi else None
+        ),
+    )
+
+    def _must_not_be_called(_v):
+        raise AssertionError('create_doi must not be called for an already-registered DOI')
+
+    monkeypatch.setattr(doi_module, 'create_doi', _must_not_be_called)
+
+    sync_manifest_files(str(version.dandiset_id), '--version', 'published')
+
+    version.refresh_from_db()
+    assert version.doi == expected_doi
+    # ... and the manifest was rewritten with it.
+    s3 = _read_jsonld(_dandiset_jsonld_path(version))
+    assert s3['doi'] == expected_doi
+    assert expected_doi in s3['citation']
+
+
+@pytest.mark.django_db
+def test_registered_doi_pointing_elsewhere_is_not_adopted(monkeypatch, capsys):
+    """A DataCite record describing something else must never be attached."""
+    version = _published_version_without_doi()
+
+    _pretend_doi_configured(monkeypatch)
+    monkeypatch.setattr(
+        doi_module,
+        'get_doi',
+        lambda _doi: {'url': 'https://example.org/somebody/elses/thing', 'state': 'findable'},
+    )
+    monkeypatch.setattr(doi_module, 'create_doi', _never_mint)
+
+    sync_manifest_files(str(version.dandiset_id), '--version', 'published')
+
+    version.refresh_from_db()
+    assert version.doi is None
+    out = capsys.readouterr().out
+    assert 'not adopting' in out
+    assert 'DOI repair failures:    1' in out
+
+
+@pytest.mark.django_db
+def test_draft_state_doi_is_not_adopted(monkeypatch, capsys):
+    """A DataCite ``draft`` DOI does not resolve, so it must not reach the manifest."""
+    version = _published_version_without_doi()
+
+    _pretend_doi_configured(monkeypatch)
+    monkeypatch.setattr(
+        doi_module,
+        'get_doi',
+        lambda _doi: {'url': version.metadata['url'], 'state': 'draft'},
+    )
+    monkeypatch.setattr(doi_module, 'create_doi', _never_mint)
+
+    sync_manifest_files(str(version.dandiset_id), '--version', 'published')
+
+    version.refresh_from_db()
+    assert version.doi is None
+    assert 'draft' in capsys.readouterr().out
+
+
+@pytest.mark.django_db
+def test_dry_run_distinguishes_mint_from_adopt(monkeypatch, capsys):
+    """``--dry-run`` is the measurement tool: how many need DataCite, how many just the DB."""
+    to_adopt = _published_version_without_doi()
+    to_mint = _published_version_without_doi()
+    adoptable_doi = doi_module.doi_for_version(to_adopt)
+
+    _pretend_doi_configured(monkeypatch)
+    monkeypatch.setattr(
+        doi_module,
+        'get_doi',
+        lambda doi: (
+            {'url': to_adopt.metadata['url'], 'state': 'findable'} if doi == adoptable_doi else None
+        ),
+    )
+    monkeypatch.setattr(doi_module, 'create_doi', _never_mint)
+
+    sync_manifest_files('--all', '--version', 'published', '--dry-run')
+
+    for version in (to_adopt, to_mint):
+        version.refresh_from_db()
+        assert version.doi is None
+    out = capsys.readouterr().out
+    assert 'DOIs to mint:           1' in out
+    assert 'DOIs to adopt:          1' in out
 
 
 @pytest.mark.django_db
