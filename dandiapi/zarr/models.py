@@ -167,12 +167,22 @@ class ZarrUpload(BaseUpload):
     # that is live in the zarr. Aborting the multipart upload discards only this upload's parts.
 
     @classmethod
-    def initialize_multipart_upload(cls, etag, size, zarr: ZarrArchive, chunk_key: str):
+    def initialize_multipart_upload(
+        cls,
+        etag,
+        size,
+        zarr: ZarrArchive,
+        chunk_key: str,
+        content_type: str = 'application/octet-stream',
+    ):
         upload_id = uuid4()
         chunk_key = chunk_key.lstrip('/')
         object_key = zarr.s3_path(chunk_key)
         multipart_initialization = cls._initialize_multipart_upload(
-            size=size, object_key=object_key, embargoed=zarr.embargoed
+            size=size,
+            object_key=object_key,
+            embargoed=zarr.embargoed,
+            content_type=content_type,
         )
 
         upload = cls(
