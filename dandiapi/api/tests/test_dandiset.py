@@ -13,7 +13,7 @@ from django.utils import timezone
 import pytest
 
 from dandiapi.api.asset_paths import add_asset_paths, add_version_asset_paths
-from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.models import Dandiset, Upload, Version
 from dandiapi.api.services.permissions.dandiset import (
     get_dandiset_owners,
     get_visible_dandisets,
@@ -26,6 +26,7 @@ from dandiapi.api.tests.factories import (
     UserFactory,
 )
 from dandiapi.conftest import get_first_allowed_license
+from dandiapi.zarr.models import ZarrUpload
 
 from .fuzzy import (
     DANDISET_ID_RE,
@@ -1414,6 +1415,72 @@ def test_dandiset_rest_list_active_uploads(api_client, upload_factory):
     assert data['count'] == 1
     assert len(data['results']) == 1
     assert data['results'][0]['upload_id'] == upload.upload_id
+    assert data['results'][0]['zarr'] is None
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_list_active_uploads_zarr(
+    api_client, upload_factory, zarr_archive_factory, zarr_upload_factory
+):
+    """Zarr chunk uploads are listed alongside asset blob uploads, oldest first."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    dandiset = draft_version.dandiset
+
+    # The blob upload is created first, so that the two types must be sorted into each other
+    # rather than simply grouped by type
+    upload = upload_factory(dandiset=dandiset)
+    zarr = zarr_archive_factory(dandiset=dandiset)
+    zarr_upload = zarr_upload_factory(zarr=zarr, chunk_key='0/0/0')
+
+    # An upload in an unrelated dandiset must not be included
+    zarr_upload_factory(zarr=zarr_archive_factory())
+
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/uploads/')
+    assert response.status_code == 200
+    data = response.json()
+    assert data['count'] == 2
+    assert [result['upload_id'] for result in data['results']] == [
+        str(upload.upload_id),
+        str(zarr_upload.upload_id),
+    ]
+
+    assert data['results'][0]['zarr'] is None
+    assert data['results'][1]['zarr'] == {'zarr_id': str(zarr.zarr_id), 'chunk_key': '0/0/0'}
+
+    # Both upload types must present the same fields
+    assert set(data['results'][0]) == set(data['results'][1])
+    assert set(data['results'][0]) == {'created', 'blob', 'upload_id', 'etag', 'size', 'zarr'}
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_list_active_uploads_pagination(
+    api_client, zarr_archive_factory, zarr_upload_factory, upload_factory
+):
+    """Pagination must span both upload types, in `created` order."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    dandiset = draft_version.dandiset
+
+    zarr = zarr_archive_factory(dandiset=dandiset)
+    uploads = [
+        upload_factory(dandiset=dandiset),
+        zarr_upload_factory(zarr=zarr),
+        upload_factory(dandiset=dandiset),
+        zarr_upload_factory(zarr=zarr),
+    ]
+
+    upload_ids = []
+    for page in (1, 2):
+        response = api_client.get(
+            f'/api/dandisets/{dandiset.identifier}/uploads/', {'page': page, 'page_size': 2}
+        )
+        assert response.status_code == 200
+        upload_ids += [result['upload_id'] for result in response.json()['results']]
+
+    assert upload_ids == [str(upload.upload_id) for upload in uploads]
 
 
 @pytest.mark.django_db
@@ -1441,16 +1508,24 @@ def test_dandiset_rest_clear_active_uploads_not_owner(api_client, upload_factory
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_clear_active_uploads(api_client, upload_factory):
+def test_dandiset_rest_clear_active_uploads(
+    api_client, upload_factory, zarr_upload_factory, zarr_archive_factory
+):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
     draft_version = DraftVersionFactory.create(dandiset__owners=[user])
     dandiset = draft_version.dandiset
+
     upload_factory(dandiset=dandiset)
+    zarr_upload_factory(zarr=zarr_archive_factory(dandiset=dandiset))
+
+    # Uploads in an unrelated dandiset must be left alone
+    other_blob_upload = upload_factory()
+    other_zarr_upload = zarr_upload_factory(zarr=zarr_archive_factory())
 
     response = api_client.get(f'/api/dandisets/{dandiset.identifier}/uploads/').json()
-    assert response['count'] == 1
-    assert len(response['results']) == 1
+    assert response['count'] == 2
+    assert len(response['results']) == 2
 
     response = api_client.delete(f'/api/dandisets/{dandiset.identifier}/uploads/')
     assert response.status_code == 204
@@ -1459,6 +1534,10 @@ def test_dandiset_rest_clear_active_uploads(api_client, upload_factory):
     response = api_client.get(f'/api/dandisets/{dandiset.identifier}/uploads/').json()
     assert response['count'] == 0
     assert len(response['results']) == 0
+
+    # Ensure unrelated uploads not touched
+    Upload.objects.get(upload_id=other_blob_upload.upload_id)
+    ZarrUpload.objects.get(upload_id=other_zarr_upload.upload_id)
 
 
 @pytest.mark.django_db

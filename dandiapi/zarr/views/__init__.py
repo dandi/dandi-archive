@@ -20,14 +20,26 @@ from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import DandisetIdentifierField
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, validate_zarr_path
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadType, validate_zarr_path
 from dandiapi.zarr.tasks import ingest_zarr_archive
+from dandiapi.zarr.views.upload import (
+    zarr_upload_complete_view,
+    zarr_upload_initialize_view,
+    zarr_upload_validate_view,
+)
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AnonymousUser, User
     from django.db.models.query import QuerySet
 
 logger = logging.getLogger(__name__)
+
+__all__ = [
+    'ZarrViewSet',
+    'zarr_upload_complete_view',
+    'zarr_upload_initialize_view',
+    'zarr_upload_validate_view',
+]
 
 
 class ZarrFileCreationSerializer(serializers.Serializer):
@@ -49,7 +61,13 @@ class ZarrArchiveSerializer(serializers.ModelSerializer):
             'file_count',
             'size',
         ]
-        fields = ['name', 'dandiset', *read_only_fields]
+        fields = ['name', 'dandiset', 'upload_type', *read_only_fields]
+
+    # `upload_type` is settable at creation (default singlepart) but fixed thereafter, since the
+    # zarr's upload scheme cannot change without a full re-upload.
+    upload_type = serializers.ChoiceField(
+        choices=ZarrUploadType.choices, default=ZarrUploadType.SINGLEPART
+    )
 
     dandiset = serializers.PrimaryKeyRelatedField(
         queryset=Dandiset.objects.all(),
@@ -91,6 +109,7 @@ class ZarrListSerializer(serializers.ModelSerializer):
             'checksum',
             'file_count',
             'size',
+            'upload_type',
         ]
         fields = ['name', 'dandiset', *read_only_fields]
 
@@ -307,6 +326,14 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
             if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+
+            # This endpoint uploads chunks via single-part PUT. A multipart zarr's chunks must
+            # be uploaded through the multipart flow, or its checksum cannot be reconciled.
+            if zarr_archive.upload_type != ZarrUploadType.SINGLEPART:
+                return Response(
+                    'This zarr archive requires multipart upload.',
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             # Deny if the user doesn't have ownership permission
             if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
