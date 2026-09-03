@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import copy
 import datetime
-import logging
 from typing import TYPE_CHECKING
 
 from dandischema.conf import get_instance_config
@@ -29,8 +28,6 @@ from dandiapi.api.tasks import write_manifest_files
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
-
-logger = logging.getLogger(__name__)
 
 
 def publish_asset(*, asset: Asset) -> None:
