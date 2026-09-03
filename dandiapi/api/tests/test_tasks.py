@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from dandischema.conf import get_instance_config
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.forms.models import model_to_dict
@@ -20,7 +21,10 @@ from zarr_checksum.generators import ZarrArchiveFile
 from dandiapi.api import tasks
 from dandiapi.api.manifests import _dandiset_jsonld_path
 from dandiapi.api.models import Asset, Version
-from dandiapi.api.tests.factories import DraftVersionFactory, UserFactory
+from dandiapi.api.services.asset import _add_asset_to_version
+from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
+from dandiapi.api.services.publish import _lock_dandiset_for_publishing
+from dandiapi.api.tests.factories import AssetBlobFactory, DraftVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchiveStatus
 
 from .fuzzy import DEFAULT_WAS_ASSOCIATED_WITH, HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
@@ -452,26 +456,46 @@ def test_publish_task(
     assert new_published_asset.metadata == old_published_asset.metadata
 
 
+@pytest.fixture
+def publishing_dandiset():
+    """Create a draft version locked for publishing, and return it with its owner."""
+    user = UserFactory.create()
+    draft_version: Version = DraftVersionFactory.create(
+        status=Version.Status.VALID, dandiset__owners=[user]
+    )
+    asset = _add_asset_to_version(
+        version=draft_version,
+        asset_blob=AssetBlobFactory(),
+        zarr_archive=None,
+        metadata={
+            'path': 'foo.txt',
+            'schemaVersion': DANDI_SCHEMA_VERSION,
+            'schemaKey': 'Asset',
+            'encodingFormat': 'application/x-nwb',
+        },
+    )
+    validate_asset_metadata(asset=asset)
+    validate_version_metadata(version=draft_version)
+
+    _lock_dandiset_for_publishing(user=user, dandiset=draft_version.dandiset)
+    draft_version.refresh_from_db()
+
+    return draft_version, user
+
+
 @pytest.mark.django_db
 def test_publish_task_writes_doi_into_manifest(
-    draft_asset_factory,
-    published_asset_factory,
-    django_capture_on_commit_callbacks,
+    publishing_dandiset, django_capture_on_commit_callbacks
 ):
     """The published dandiset.jsonld must carry the DOI minted at publish time.
 
     Regression test for dandi/dandi-archive#2759: the manifest write used to be
-    enqueued from an ``on_commit`` callback independent of the one minting the
-    DOI, so it could run before ``version.doi`` was saved -- leaving ``doi:
-    null`` and a non-DOI ``citation`` in the on-S3 manifest forever.
+    enqueued from an ``on_commit`` callback registered *before* the one minting
+    the DOI, so the Celery task could run before ``version.doi`` was saved --
+    leaving ``doi: null`` and a non-DOI ``citation`` in the on-S3 manifest
+    forever.
     """
-    user = UserFactory.create()
-    draft_version: Version = DraftVersionFactory.create(
-        status=Version.Status.PUBLISHING, dandiset__owners=[user]
-    )
-    draft_version.assets.set(
-        [draft_asset_factory(status=Asset.Status.VALID), published_asset_factory()]
-    )
+    draft_version, user = publishing_dandiset
 
     with django_capture_on_commit_callbacks(execute=True):
         tasks.publish_dandiset_task(draft_version.dandiset.id, user.id)
@@ -485,3 +509,32 @@ def test_publish_task_writes_doi_into_manifest(
     assert manifest['doi'] == published_version.doi
     assert published_version.doi in manifest['citation']
     assert manifest == published_version.metadata
+
+
+@pytest.mark.django_db
+def test_publish_task_writes_manifest_without_doi_when_minting_fails(
+    publishing_dandiset, django_capture_on_commit_callbacks, mocker
+):
+    """A DataCite failure must not block publishing or writing the manifest.
+
+    ``_create_doi`` is registered with ``on_commit(..., robust=True)``, so an
+    exception there is swallowed (and logged) rather than propagating -- the
+    publish is already committed by that point, and ``write_manifest_files``
+    is still enqueued right after.
+    """
+    draft_version, user = publishing_dandiset
+    mocker.patch('dandiapi.api.doi.create_doi', side_effect=RuntimeError('DataCite is down'))
+
+    with django_capture_on_commit_callbacks(execute=True):
+        tasks.publish_dandiset_task(draft_version.dandiset.id, user.id)
+
+    published_version: Version = draft_version.dandiset.versions.exclude(version='draft').get()
+    assert not published_version.doi
+
+    with default_storage.open(_dandiset_jsonld_path(published_version)) as f:
+        manifest = json.loads(f.read())
+
+    assert not manifest.get('doi')
+
+    draft_version.refresh_from_db()
+    assert draft_version.status == Version.Status.PUBLISHED

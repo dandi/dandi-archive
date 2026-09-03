@@ -198,38 +198,16 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
 
         validate(new_version.metadata, schema_key='PublishedDandiset', json_validation=True)
 
-        # After the published version is committed, mint the DOI first and
-        # only then write the manifest files. Doing these as two independent
-        # ``on_commit`` callbacks raced — the manifest task could run before
-        # the DOI was saved, leaving ``dandiset.jsonld`` on S3 without
-        # ``doi`` (and with a non-DOI ``citation``) and never rewritten. See
-        # https://github.com/dandi/dandi-archive/issues/2759.
-        #
-        # Failures at either substep are logged distinctly but do not abort
-        # the manifest write: even a DOI-less published version is better
-        # represented by an on-S3 manifest than by nothing.
-        # ``sync_manifest_files --fix-doi`` can later remint the DOI and
-        # rewrite the manifest if either substep below was skipped or failed.
-        def _create_doi_and_write_manifests(version_id: int):
+        def _create_doi(version_id: int):
             version = Version.objects.get(id=version_id)
-            new_doi: str | None = None
-            try:
-                new_doi = doi.create_doi(version)
-            except Exception:
-                logger.exception('Failed to mint DOI for version %s', version_id)
-            if new_doi is not None:
-                try:
-                    version.doi = new_doi
-                    version.save()
-                except Exception:
-                    logger.exception(
-                        'Minted DOI %s but failed to persist it on version %s',
-                        new_doi,
-                        version_id,
-                    )
-            write_manifest_files.delay(version_id)
+            version.doi = doi.create_doi(version)
+            version.save()
 
-        transaction.on_commit(lambda: _create_doi_and_write_manifests(new_version.id))
+        # Call _create_doi before writing manifest files, so that the new DOI is included in the
+        # manifests. If DOI creation fails, proceed to writing manifests anyway, to maintain
+        # existing behavior.
+        transaction.on_commit(lambda: _create_doi(new_version.id), robust=True)
+        transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
 
         user = User.objects.get(id=user_id)
         audit.publish_dandiset(
