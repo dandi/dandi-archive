@@ -42,6 +42,12 @@ export default defineConfig({
   plugins: [
     VueRouter(),
     Vue({
+      // This is @vitejs/plugin-vue's own default, but it must be passed
+      // explicitly: v6 stopped seeding the default `include` into `api.options`
+      // (it lives on `api.include` now), and vite-plugin-vuetify builds its
+      // auto-import filter from `api.options.include`. Without this it receives
+      // `undefined`, which matches every module rather than just .vue files.
+      include: /\.vue$/,
       template: { transformAssetUrls },
     }),
     // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
