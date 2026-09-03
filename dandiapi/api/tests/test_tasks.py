@@ -18,7 +18,8 @@ from zarr_checksum.generators import ZarrArchiveFile
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
-from dandiapi.api.tests.factories import DraftVersionFactory, UserFactory
+from dandiapi.api.tasks.scheduled import aggregate_assets_summary_task
+from dandiapi.api.tests.factories import DraftVersionFactory, PublishedVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchiveStatus
 
 from .fuzzy import DEFAULT_WAS_ASSOCIATED_WITH, HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
@@ -156,6 +157,66 @@ def test_validate_asset_metadata_saves_version(draft_asset: Asset):
     # Test that version has new modified timestamp
     draft_version.refresh_from_db()
     assert draft_version.modified != old_datetime
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('invalid_metadata', [False, True])
+def test_validate_asset_metadata_requeues_draft_version(draft_asset: Asset, invalid_metadata: bool):
+    draft_version = DraftVersionFactory.create(status=Version.Status.VALID)
+    draft_version.assets.add(draft_asset)
+
+    if invalid_metadata:
+        del draft_asset.metadata['encodingFormat']
+        draft_asset.save()
+
+    tasks.validate_asset_metadata_task(draft_asset.id)
+
+    draft_version.refresh_from_db()
+    draft_asset.refresh_from_db()
+    assert draft_version.status == Version.Status.PENDING
+    assert draft_asset.status == (
+        Asset.Status.INVALID if invalid_metadata else Asset.Status.VALID
+    )
+
+
+@pytest.mark.django_db
+def test_validate_asset_metadata_requeues_version_after_replacement(draft_asset_factory):
+    draft_version = DraftVersionFactory.create(status=Version.Status.VALID)
+    original_asset = draft_asset_factory(status=Asset.Status.VALID)
+    replacement_asset = draft_asset_factory()
+    draft_version.assets.add(original_asset)
+
+    # Establish the summary for the original asset, then replace it while the replacement is
+    # still pending.  This is the state in which an early scheduled aggregation can go stale.
+    aggregate_assets_summary_task(draft_version.id)
+    draft_version.assets.remove(original_asset)
+    draft_version.assets.add(replacement_asset)
+    aggregate_assets_summary_task(draft_version.id)
+    draft_version.refresh_from_db()
+    assert draft_version.metadata['assetsSummary']['numberOfFiles'] == 0
+
+    # Model the version validator finishing before the replacement asset validator.
+    Version.objects.filter(id=draft_version.id).update(status=Version.Status.VALID)
+    tasks.validate_asset_metadata_task(replacement_asset.id)
+
+    draft_version.refresh_from_db()
+    assert draft_version.status == Version.Status.PENDING
+
+    # The scheduler can now see the pending version and recompute the replacement in its summary.
+    aggregate_assets_summary_task(draft_version.id)
+    draft_version.refresh_from_db()
+    assert draft_version.metadata['assetsSummary']['numberOfFiles'] == 1
+
+
+@pytest.mark.django_db
+def test_validate_asset_metadata_does_not_requeue_published_version(draft_asset: Asset):
+    published_version = PublishedVersionFactory.create()
+    published_version.assets.add(draft_asset)
+
+    tasks.validate_asset_metadata_task(draft_asset.id)
+
+    published_version.refresh_from_db()
+    assert published_version.status == Version.Status.PUBLISHED
 
 
 @pytest.mark.django_db
