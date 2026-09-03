@@ -32,6 +32,8 @@ export interface ValidationError {
   field: string,
   message: string,
   path: string,
+  // The value that failed validation, present only when it's a simple scalar
+  value?: string,
 }
 
 export interface Version {
