@@ -161,7 +161,9 @@ def test_validate_asset_metadata_saves_version(draft_asset: Asset):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('invalid_metadata', [False, True])
-def test_validate_asset_metadata_requeues_draft_version(draft_asset: Asset, invalid_metadata: bool):
+def test_validate_asset_metadata_requeues_draft_version(
+    draft_asset: Asset, *, invalid_metadata: bool
+):
     draft_version = DraftVersionFactory.create(status=Version.Status.VALID)
     draft_version.assets.add(draft_asset)
 
@@ -174,9 +176,7 @@ def test_validate_asset_metadata_requeues_draft_version(draft_asset: Asset, inva
     draft_version.refresh_from_db()
     draft_asset.refresh_from_db()
     assert draft_version.status == Version.Status.PENDING
-    assert draft_asset.status == (
-        Asset.Status.INVALID if invalid_metadata else Asset.Status.VALID
-    )
+    assert draft_asset.status == (Asset.Status.INVALID if invalid_metadata else Asset.Status.VALID)
 
 
 @pytest.mark.django_db
