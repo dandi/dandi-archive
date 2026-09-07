@@ -54,7 +54,7 @@ async function registerDandiset(page: Page, name: string, description: string) {
   await page.getByLabel("Title").fill(name);
   await page.getByLabel("Description").click();
   await page.getByLabel("Description").fill(description);
-  await page.getByLabel("License").click();
+  await page.getByTestId("license-select").locator(".v-field__input").click();
   await page.getByRole("option", { name: "spdx:CC0-" }).click();
   await page.getByRole("button", { name: "Register Dandiset" }).click();
   await page.waitForTimeout(1000);

@@ -141,6 +141,7 @@
             v-model="license"
             :items="dandiLicenses"
             label="License"
+            data-testid="license-select"
             class="my-4"
             variant="outlined"
             density="compact"
