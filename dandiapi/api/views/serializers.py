@@ -44,6 +44,12 @@ class UserDetailSerializer(serializers.Serializer):
     status = serializers.CharField()
 
 
+class UserMeSerializer(UserDetailSerializer):
+    """The authenticated user's own details, which include their email address."""
+
+    email = serializers.EmailField(allow_blank=True)
+
+
 class DandisetIdentifierField(serializers.Field[int, str | int, str, Any]):
     default_error_messages = {'invalid': 'A valid Dandiset identifier is required.'}
 

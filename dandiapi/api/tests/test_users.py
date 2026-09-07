@@ -87,7 +87,7 @@ def test_user_me(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
 
-    assert api_client.get('/api/users/me/').data == serialize_user(user)
+    assert api_client.get('/api/users/me/').data == {**serialize_user(user), 'email': user.email}
 
 
 @pytest.mark.django_db
