@@ -7,7 +7,7 @@ from zarr_checksum.checksum import EMPTY_CHECKSUM
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.tests.factories import UserFactory
 from dandiapi.api.tests.fuzzy import HTTP_URL_RE
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadType
 from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
 
@@ -64,6 +64,22 @@ def test_zarr_rest_upload_start(
         assert tags == {'embargoed': 'true'}
     else:
         assert tags == {}
+
+
+@pytest.mark.django_db
+def test_zarr_rest_upload_start_multipart_rejected(api_client):
+    """Single-part upload to a multipart zarr must be rejected."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create(
+        dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART
+    )
+
+    resp = api_client.post(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
+        [{'path': 'foo/bar.txt', 'base64md5': 'DMF1ucDxtqgxw5niaXcmYQ=='}],
+    )
+    assert resp.status_code == 400
 
 
 @pytest.mark.django_db

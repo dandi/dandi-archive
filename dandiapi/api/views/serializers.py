@@ -14,6 +14,7 @@ from rest_framework.validators import ValidationError
 
 from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Upload, Version
 from dandiapi.search.models import AssetSearch
+from dandiapi.zarr.models import ZarrUpload
 
 if TYPE_CHECKING:
     from collections import OrderedDict
@@ -437,15 +438,63 @@ class VersionDetailSerializer(VersionSerializer):
         return extract_contact_person(obj)
 
 
+ZARR_UPLOAD_INFO_HELP_TEXT = (
+    'The zarr archive and chunk this upload belongs to. Null for asset blob uploads.'
+)
+
+
+class ZarrUploadInfoSerializer(serializers.ModelSerializer):
+    """
+    The zarr archive and chunk key that an in-progress zarr chunk upload belongs to.
+
+    Marked nullable in the generated schema, as this is null for asset blob uploads.
+    """
+
+    zarr_id = serializers.UUIDField(source='zarr.zarr_id')
+
+    class Meta:
+        model = ZarrUpload
+        swagger_schema_fields = {'x-nullable': True}
+        fields = [
+            'zarr_id',
+            'chunk_key',
+        ]
+
+
 class DandisetUploadSerializer(serializers.ModelSerializer):
+    """An in-progress upload of an asset blob."""
+
+    zarr = serializers.SerializerMethodField(help_text=ZARR_UPLOAD_INFO_HELP_TEXT)
+
     class Meta:
         model = Upload
         exclude = [
             'dandiset',
-            'embargoed',
             'id',
             'multipart_upload_id',
         ]
+
+    @swagger_serializer_method(serializer_or_field=ZarrUploadInfoSerializer)
+    def get_zarr(self, upload: Upload) -> None:
+        """Asset blob uploads have no zarr to report."""
+
+
+class DandisetZarrUploadSerializer(serializers.ModelSerializer):
+    """An in-progress upload of a single chunk of a zarr archive within a dandiset."""
+
+    zarr = serializers.SerializerMethodField(help_text=ZARR_UPLOAD_INFO_HELP_TEXT)
+
+    class Meta:
+        model = ZarrUpload
+        exclude = [
+            'chunk_key',
+            'id',
+            'multipart_upload_id',
+        ]
+
+    @swagger_serializer_method(serializer_or_field=ZarrUploadInfoSerializer)
+    def get_zarr(self, upload: ZarrUpload) -> dict:
+        return ZarrUploadInfoSerializer(upload).data
 
 
 class AssetBlobSerializer(serializers.ModelSerializer):
