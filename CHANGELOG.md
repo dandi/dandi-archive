@@ -1,3 +1,35 @@
+# v1.0.3 (Tue Sep 08 2026)
+
+:tada: This release contains work from new contributors! :tada:
+
+Thanks for all your work!
+
+:heart: Claude ([@claude](https://github.com/claude))
+
+:heart: Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🐛 Bug Fix
+
+- Lock file maintenance [#2916](https://github.com/dandi/dandi-archive/pull/2916) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Merge pull request #2856 from dandi/anatomy-info-card [#2856](https://github.com/dandi/dandi-archive/pull/2856) ([@bendichter](https://github.com/bendichter))
+- e2e: reduce flakiness of playwright tests [#2893](https://github.com/dandi/dandi-archive/pull/2893) ([@naglepuff](https://github.com/naglepuff))
+- Use 'spike sorting' instead of 'patch clamp' in technique search example [#2909](https://github.com/dandi/dandi-archive/pull/2909) ([@claude](https://github.com/claude) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🔩 Dependency Updates
+
+- Update dev dependencies [#2910](https://github.com/dandi/dandi-archive/pull/2910) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update astral-sh/setup-uv action to v10 [#2911](https://github.com/dandi/dandi-archive/pull/2911) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 5
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+
+---
+
 # v1.0.2 (Mon Aug 31 2026)
 
 #### 🐛 Bug Fix
