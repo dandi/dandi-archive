@@ -8,13 +8,15 @@ from dandischema.conf import get_instance_config
 from dandischema.consts import DANDI_SCHEMA_VERSION
 from dandischema.models import AccessType
 from django.conf import settings
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from freezegun import freeze_time
 import pytest
 
 from dandiapi.api import tasks
 from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import Asset, Version
-from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.models.dandiset import Dandiset, DandisetStar
 from dandiapi.api.services.metadata import (
     validate_asset_metadata,
     validate_version_metadata,
@@ -456,6 +458,59 @@ def test_version_rest_list(api_client, version):
             }
         ],
     }
+
+
+@pytest.mark.django_db
+def test_version_rest_list_stats(api_client, draft_asset_factory):
+    """The version list should report per-version asset stats and dandiset-level stats."""
+    user = UserFactory.create()
+    dandiset = DandisetFactory.create()
+    published_version = PublishedVersionFactory.create(dandiset=dandiset)
+    draft_version = DraftVersionFactory.create(dandiset=dandiset)
+    asset = draft_asset_factory()
+    draft_version.assets.add(asset)
+    add_version_asset_paths(version=draft_version)
+    DandisetStar.objects.create(dandiset=dandiset, user=user)
+
+    api_client.force_authenticate(user=user)
+    results = api_client.get(f'/api/dandisets/{dandiset.identifier}/versions/').data['results']
+    results_by_version = {result['version']: result for result in results}
+
+    assert results_by_version.keys() == {published_version.version, 'draft'}
+    assert results_by_version['draft']['asset_count'] == 1
+    assert results_by_version['draft']['size'] == asset.size
+    assert results_by_version[published_version.version]['asset_count'] == 0
+    assert results_by_version[published_version.version]['size'] == 0
+    for result in results:
+        assert result['dandiset']['star_count'] == 1
+        assert result['dandiset']['is_starred'] is True
+        assert (
+            result['dandiset']['contact_person']
+            == (draft_version.metadata['contributor'][0]['name'])
+        )
+
+
+@pytest.mark.django_db
+def test_version_rest_list_query_count(api_client):
+    """The number of queries issued by the version list should not scale with the versions."""
+    user = UserFactory.create()
+    dandiset = DandisetFactory.create()
+    DraftVersionFactory.create(dandiset=dandiset)
+    PublishedVersionFactory.create(dandiset=dandiset)
+    api_client.force_authenticate(user=user)
+    url = f'/api/dandisets/{dandiset.identifier}/versions/'
+    # Warm up per-process caches (e.g. the Site cache) which only issue queries on the first request
+    api_client.get(url)
+
+    with CaptureQueriesContext(connection) as few_versions:
+        assert api_client.get(url).data['count'] == 2
+
+    PublishedVersionFactory.create_batch(10, dandiset=dandiset)
+
+    with CaptureQueriesContext(connection) as many_versions:
+        assert api_client.get(url).data['count'] == 12
+
+    assert len(many_versions) == len(few_versions)
 
 
 @pytest.mark.django_db

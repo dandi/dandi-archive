@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.db import transaction
+from django.db.models import Sum
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -11,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
+from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
@@ -27,6 +29,7 @@ from dandiapi.api.views.serializers import (
     VersionDetailSerializer,
     VersionMetadataSerializer,
     VersionSerializer,
+    extract_contact_person,
 )
 
 
@@ -63,6 +66,44 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 # The user does not have ownership permission
                 raise PermissionDenied
         return super().get_queryset()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        versions: list[Version] = list(page) if page is not None else list(queryset)
+
+        # Serializing each version independently would issue several queries per version, for
+        # the nested dandiset (contact person, stars) and for the version's aggregate asset stats.
+        # Every version here belongs to the same dandiset, so compute these once, in bulk.
+        context = self.get_serializer_context()
+        if versions:
+            dandiset = versions[0].dandiset
+            context['contact_persons'] = {
+                dandiset.id: extract_contact_person(dandiset.versions.order_by('-created').first())
+            }
+            context['stars'] = {
+                dandiset.id: {
+                    'total': dandiset.star_count,
+                    'starred_by_current_user': dandiset.is_starred_by(request.user),
+                }
+            }
+
+            version_stats = {
+                entry['version_id']: entry
+                for entry in get_root_paths_many(versions=versions)
+                .values('version_id')
+                .annotate(total_size=Sum('aggregate_size'), num_assets=Sum('aggregate_files'))
+                .order_by()
+            }
+            for version in versions:
+                stats = version_stats.get(version.id, {})
+                version.num_assets = stats.get('num_assets') or 0
+                version.total_size = stats.get('total_size') or 0
+
+        serializer = self.get_serializer(versions, many=True, context=context)
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
 
     @swagger_auto_schema(
         responses={

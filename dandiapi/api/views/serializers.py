@@ -81,7 +81,15 @@ class DandisetSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['created']
 
+    # Each of these methods issues a query per dandiset. Views which serialize many dandisets
+    # (or many versions of the same dandiset) should precompute these values in bulk and
+    # provide them via the "contact_persons" and "stars" serializer context keys instead.
+
     def get_contact_person(self, dandiset: Dandiset):
+        contact_persons = self.context.get('contact_persons')
+        if contact_persons is not None:
+            return contact_persons.get(dandiset.id, '')
+
         latest_version = dandiset.versions.order_by('-created').first()
 
         if latest_version is None:
@@ -90,9 +98,17 @@ class DandisetSerializer(serializers.ModelSerializer):
         return extract_contact_person(latest_version)
 
     def get_star_count(self, dandiset):
+        stars = self.context.get('stars')
+        if stars is not None:
+            return stars[dandiset.id]['total']
+
         return dandiset.star_count
 
     def get_is_starred(self, dandiset):
+        stars = self.context.get('stars')
+        if stars is not None:
+            return stars[dandiset.id]['starred_by_current_user']
+
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
@@ -202,6 +218,24 @@ class VersionSerializer(serializers.ModelSerializer):
     def get_release_notes(self, obj: Version) -> str:
         return obj.metadata.get('releaseNotes', '')
 
+    # The "asset_count" and "size" model properties each issue an aggregate query. Views which
+    # serialize many versions should precompute these in bulk and attach them to each instance
+    # as "num_assets" and "total_size" (see VersionViewSet.list), which are used when present.
+    asset_count = serializers.SerializerMethodField()
+    size = serializers.SerializerMethodField()
+
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField())
+    def get_asset_count(self, version: Version) -> int:
+        if hasattr(version, 'num_assets'):
+            return version.num_assets
+        return version.asset_count
+
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField())
+    def get_size(self, version: Version) -> int:
+        if hasattr(version, 'total_size'):
+            return version.total_size
+        return version.size
+
     def __init__(self, *args, child_context=False, **kwargs):
         if child_context:
             del self.fields['dandiset']
@@ -263,12 +297,6 @@ class DandisetListSerializer(DandisetSerializer):
             contact = extract_contact_person(draft)
 
         return contact
-
-    def get_star_count(self, dandiset):
-        return self.context['stars'][dandiset.id]['total']
-
-    def get_is_starred(self, dandiset):
-        return self.context['stars'][dandiset.id]['starred_by_current_user']
 
     most_recent_published_version = serializers.SerializerMethodField()
     draft_version = serializers.SerializerMethodField()
