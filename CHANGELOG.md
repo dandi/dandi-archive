@@ -1,3 +1,15 @@
+# v1.0.4 (Wed Sep 09 2026)
+
+#### 🐛 Bug Fix
+
+- Remove user-facing dandihub references following service sunset [#2905](https://github.com/dandi/dandi-archive/pull/2905) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v1.0.3 (Tue Sep 08 2026)
 
 :tada: This release contains work from new contributors! :tada:
