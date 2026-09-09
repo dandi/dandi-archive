@@ -1,0 +1,10 @@
+services:
+  django:
+    # Don't expose ports, devcontainer forwarding is superior, since we can just bind to localhost.
+    ports: !reset []
+    # Don't auto-run the default command, launch.json or the terminal will be used.
+    command: !reset []
+
+  celery:
+    # Celery will be started via launch.json or the terminal.
+    profiles: ["celery"]
