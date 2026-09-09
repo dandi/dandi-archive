@@ -798,7 +798,7 @@ const descriptionPlaceholder = 'Extracellular recordings from primary visual cor
 // to be useful. Thresholds are loose so that genuinely brief but adequate text
 // does not trigger them.
 const MIN_TITLE_WORDS = 5;
-const MIN_DESCRIPTION_WORDS = 50;
+const MIN_DESCRIPTION_WORDS = 40;
 function wordCount(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
