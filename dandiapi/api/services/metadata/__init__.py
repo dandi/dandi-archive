@@ -25,16 +25,50 @@ if TYPE_CHECKING:
 logger = get_task_logger(__name__)
 
 
+# Values longer than this are truncated before being stored on the error, so that
+# a single oversized string can't bloat the validation errors of every version.
+MAX_VALIDATION_ERROR_VALUE_LENGTH = 200
+
+
+def _encode_error_path(path) -> str:
+    """
+    Render the location of a validation error as a dotted path.
+
+    The path may be empty, e.g. for an error raised by a top-level
+    `@model_validator`, which attaches the error to the model root.
+    """
+    return '.'.join(str(part) for part in path)
+
+
+def _encode_error_value(value) -> str | None:
+    """
+    Render the value that failed validation, if it's simple enough to be worth showing.
+
+    Containers (a whole contributor object, say) are omitted: they're large, and the
+    error path already identifies them.
+    """
+    if not isinstance(value, str | int | float | bool):
+        return None
+    value = str(value)
+    if len(value) > MAX_VALIDATION_ERROR_VALUE_LENGTH:
+        value = value[:MAX_VALIDATION_ERROR_VALUE_LENGTH] + '\u2026'
+    return value
+
+
+def _encode_error(path, message: str, value) -> dict[str, str]:
+    error = {'field': _encode_error_path(path), 'message': message}
+    encoded_value = _encode_error_value(value)
+    if encoded_value is not None:
+        error['value'] = encoded_value
+    return error
+
+
 def _encode_pydantic_error(error) -> dict[str, str]:
-    # `loc` may be an empty tuple, e.g. for an error raised by a top-level
-    # `@model_validator`, which attaches the error to the model root. Mirror how
-    # `_encode_jsonschema_error` tolerates an empty path so we don't IndexError.
-    loc = error['loc']
-    return {'field': str(loc[0]) if loc else '', 'message': error['msg']}
+    return _encode_error(error['loc'], error['msg'], error.get('input'))
 
 
 def _encode_jsonschema_error(error: jsonschema.exceptions.ValidationError) -> dict[str, str]:
-    return {'field': '.'.join([str(p) for p in error.path]), 'message': error.message}
+    return _encode_error(error.path, error.message, error.instance)
 
 
 def _collect_validation_errors(

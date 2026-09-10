@@ -40,10 +40,7 @@
                 </v-icon>
               </v-list-item>
 
-              <template v-if="error.field">
-                {{ error.field }}:
-              </template>
-              {{ error.message }}
+              {{ formatValidationError(error) }}
             </v-list-item>
             <v-divider />
           </div>
@@ -79,10 +76,7 @@
                 <!-- Inline single errors -->
                 <template v-if="errors.length === 1">
                   <strong>{{ path }}</strong>
-                  <template v-if="errors[0].field">
-                    {{ errors[0].field }} -
-                  </template>
-                  {{ errors[0].message }}
+                  {{ formatValidationError(errors[0]) }}
                 </template>
 
                 <!-- Group multiple asset errors -->
@@ -103,10 +97,7 @@
                         </v-icon>
                       </v-list-item>
 
-                      <template v-if="error.field">
-                        {{ error.field }}:
-                      </template>
-                      {{ error.message }}
+                      {{ formatValidationError(error) }}
                     </v-list-item>
                   </v-list-group>
                 </template>
@@ -168,8 +159,19 @@ const groupedAssetValidationErrors = computed(() => {
   return path_asset_map;
 });
 
+// Render an error as "<path>: <message> (value: <offending value>)", omitting the
+// path and the value when the backend didn't supply them.
+function formatValidationError(error: ValidationError): string {
+  const field = error.field ? `${error.field}: ` : '';
+  const value = error.value === undefined ? '' : ` (value: ${JSON.stringify(error.value)})`;
+  return `${field}${error.message}${value}`;
+}
+
 function getValidationErrorIcon(errorField: string): string {
-  const icons = Object.keys(VALIDATION_ICONS).filter((field) => errorField.includes(field));
+  // Icons are keyed by top-level field, so only the head of the error path is matched
+  // ("contributor" in "contributor.0.Person.name").
+  const topLevelField = errorField.split('.')[0];
+  const icons = Object.keys(VALIDATION_ICONS).filter((field) => topLevelField.includes(field));
   if (icons.length > 0) {
     return (VALIDATION_ICONS as any)[icons[0]];
   }
