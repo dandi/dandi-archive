@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -17,6 +18,7 @@ from zarr_checksum.checksum import EMPTY_CHECKSUM
 from zarr_checksum.generators import ZarrArchiveFile
 
 from dandiapi.api import tasks
+from dandiapi.api.manifests import _dandiset_jsonld_path
 from dandiapi.api.models import Asset, Version
 from dandiapi.api.tests.factories import DraftVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchiveStatus
@@ -448,3 +450,38 @@ def test_publish_task(
     assert new_published_asset.path == old_published_asset.path
     assert new_published_asset.blob == old_published_asset.blob
     assert new_published_asset.metadata == old_published_asset.metadata
+
+
+@pytest.mark.django_db
+def test_publish_task_writes_doi_into_manifest(
+    draft_asset_factory,
+    published_asset_factory,
+    django_capture_on_commit_callbacks,
+):
+    """The published dandiset.jsonld must carry the DOI minted at publish time.
+
+    Regression test for dandi/dandi-archive#2759: the manifest write used to be
+    enqueued from an ``on_commit`` callback independent of the one minting the
+    DOI, so it could run before ``version.doi`` was saved -- leaving ``doi:
+    null`` and a non-DOI ``citation`` in the on-S3 manifest forever.
+    """
+    user = UserFactory.create()
+    draft_version: Version = DraftVersionFactory.create(
+        status=Version.Status.PUBLISHING, dandiset__owners=[user]
+    )
+    draft_version.assets.set(
+        [draft_asset_factory(status=Asset.Status.VALID), published_asset_factory()]
+    )
+
+    with django_capture_on_commit_callbacks(execute=True):
+        tasks.publish_dandiset_task(draft_version.dandiset.id, user.id)
+
+    published_version: Version = draft_version.dandiset.versions.exclude(version='draft').get()
+    assert published_version.doi
+
+    with default_storage.open(_dandiset_jsonld_path(published_version)) as f:
+        manifest = json.loads(f.read())
+
+    assert manifest['doi'] == published_version.doi
+    assert published_version.doi in manifest['citation']
+    assert manifest == published_version.metadata
