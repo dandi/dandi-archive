@@ -57,16 +57,27 @@
         </div>
       </template>
       <template #emptyFallback>
-        <v-alert
-          variant="text"
+        <v-banner
           density="comfortable"
           class="mb-0 bg-blue-grey-lighten-5"
           icon="mdi-information-outline"
         >
-          <div class="font-weight-bold">
-            No funding information provided.
-          </div>
-        </v-alert>
+          <v-banner-text>
+            <div class="font-weight-bold">
+              No funding information provided.
+            </div>
+          </v-banner-text>
+          <v-spacer />
+          <v-banner-actions v-if="!readonly">
+            <v-btn
+              variant="outlined"
+              @click="openMeditor"
+            >
+              <v-icon>mdi-plus</v-icon>
+              Add funding information
+            </v-btn>
+          </v-banner-actions>
+        </v-banner>
       </template>
     </MetadataCard>
 
@@ -257,6 +268,7 @@ import { useDisplay, useTheme } from 'vuetify';
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
 import AnatomyCard from '@/components/DLP/AnatomyCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
+import { open } from '@/components/Meditor/state';
 
 import type { ComputedRef, PropType } from 'vue';
 import type { AssociatedProjects, DandisetMetadata, RelatedResource, Protocol } from '@/types';
@@ -298,6 +310,7 @@ const display = useDisplay();
 
 const store = useDandisetStore();
 const currentDandiset = computed(() => store.dandiset);
+const readonly = computed(() => !store.userCanModifyDandiset);
 
 const contributors = computed(
   () => props.meta.contributor?.filter(
@@ -352,6 +365,10 @@ const contactPeople = computed(
     .filter((contributor) => contributor.roleName?.includes('dcite:ContactPerson'))
     .map((contributor) => contributor.name)),
 );
+
+function openMeditor() {
+  open.value = true;
+}
 
 let timer: number | undefined;
 onMounted(() => {

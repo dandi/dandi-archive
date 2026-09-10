@@ -66,21 +66,34 @@
       v-else
       class="mx-5 mt-1 mb-4 pa-0"
     >
-      <v-alert
-        variant="text"
+      <v-banner
         density="comfortable"
         class="mb-0 bg-blue-grey-lighten-5"
         icon="mdi-information-outline"
       >
-        <div class="font-weight-bold">
-          No anatomical information provided.
-        </div>
-        <div class="text-caption mt-1">
-          This Dandiset does not specify which brain regions or anatomical
-          structures it covers. Adding indexed anatomy (e.g. UBERON terms) in the
-          metadata editor makes this dataset discoverable by anatomical location.
-        </div>
-      </v-alert>
+        <v-banner-text>
+          <div class="font-weight-bold">
+            No anatomical information provided.
+          </div>
+          <div
+            v-if="!readonly"
+            class="text-caption mt-1"
+          >
+            This Dandiset does not specify which brain regions or anatomical
+            structures it covers. Adding indexed anatomy (e.g. UBERON terms) in the
+            metadata editor makes this dataset discoverable by anatomical location.
+          </div>
+        </v-banner-text>
+        <v-banner-actions v-if="!readonly">
+          <v-btn
+            variant="outlined"
+            @click="openMeditor"
+          >
+            <v-icon>mdi-plus</v-icon>
+            Add anatomical information
+          </v-btn>
+        </v-banner-actions>
+      </v-banner>
     </v-sheet>
   </v-card>
 </template>
@@ -91,6 +104,12 @@ import { useDisplay, useTheme } from 'vuetify';
 
 import type { PropType } from 'vue';
 import type { Anatomy, SubjectMatterOfTheDataset } from '@/types/schema';
+
+import { useDandisetStore } from '@/stores/dandiset';
+import { open } from '@/components/Meditor/state';
+
+const store = useDandisetStore();
+const readonly = computed(() => !store.userCanModifyDandiset);
 
 const MAX_COLUMNS = 3;
 
@@ -166,5 +185,13 @@ function ontologyLink(identifier?: string): string | undefined {
     return `http://purl.obolibrary.org/obo/${match[1]}_${match[2]}`;
   }
   return undefined;
+}
+
+function openMeditor() {
+  // TODO: Scope out how reliably the meditor can be opened
+  // to a specific tab. Currently tabs are determined by the
+  // DANDI schame and keyed by index, not tab name.
+  // Can we always determine "anatomy info is edited on tab XYZ?"
+  open.value = true;
 }
 </script>
