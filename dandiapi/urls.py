@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path, re_path, register_converter, reverse_lazy
 from django.views.generic import RedirectView
 from drf_yasg import openapi
@@ -36,7 +37,9 @@ from dandiapi.api.views import (
     users_search_view,
     webdav,
 )
+from dandiapi.api.views.robots import frontend_robots_txt_view
 from dandiapi.search.views import search_genotypes, search_species
+from dandiapi.sitemaps import sitemaps
 from dandiapi.zarr.views import ZarrViewSet
 
 router = ExtendedSimpleRouter()
@@ -129,6 +132,7 @@ register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
     path('', root_content_view),
     path('robots.txt', robots_txt_view, name='robots_txt'),
+    path('frontend/robots.txt', frontend_robots_txt_view, name='frontend_robots_txt'),
     path('api/audit/events/asset', asset_audit_events, name='asset_audit_events'),
     *api_urlpatterns,
     *webdav_urlpatterns,
@@ -162,6 +166,16 @@ urlpatterns = [
         name='webdav-schema-swagger-ui',
     ),
 ]
+
+if settings.DANDI_ENABLE_SITEMAP_XML:
+    urlpatterns += [
+        path(
+            'frontend/sitemap.xml',
+            sitemap,
+            {'sitemaps': sitemaps},
+            name='frontend_sitemap',
+        ),
+    ]
 
 if settings.DEBUG:
     import debug_toolbar.toolbar
