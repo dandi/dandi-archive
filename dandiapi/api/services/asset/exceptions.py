@@ -31,3 +31,11 @@ class AssetPathConflictError(DandiError):
 class ZarrArchiveBelongsToDifferentDandisetError(DandiError):
     http_status_code = status.HTTP_400_BAD_REQUEST
     message = 'The zarr archive belongs to a different dandiset'
+
+
+class AssetsNotFoundError(DandiError):
+    http_status_code = status.HTTP_404_NOT_FOUND
+
+    def __init__(self, asset_ids: list[str]) -> None:
+        message = f'The following assets do not belong to this version: {asset_ids}'
+        super().__init__(message)

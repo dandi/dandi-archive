@@ -11,6 +11,7 @@ AuditRecordType = Literal[
     'add_asset',
     'update_asset',
     'remove_asset',
+    'bulk_remove_assets',
     'create_zarr',
     'upload_zarr_chunks',
     'delete_zarr_chunks',
