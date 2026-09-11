@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING
 from django.db import transaction
 from django.utils import timezone
 
-from dandiapi.api.asset_paths import add_asset_paths, delete_asset_paths, get_conflicting_paths
+from dandiapi.api.asset_paths import (
+    add_asset_paths,
+    delete_asset_paths,
+    delete_asset_paths_many,
+    get_conflicting_paths,
+)
 from dandiapi.api.models.asset import Asset, AssetBlob
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
@@ -13,6 +18,7 @@ from dandiapi.api.services import audit
 from dandiapi.api.services.asset.exceptions import (
     AssetAlreadyExistsError,
     AssetPathConflictError,
+    AssetsNotFoundError,
     DandisetOwnerRequiredError,
     DraftDandisetNotModifiableError,
     ZarrArchiveBelongsToDifferentDandisetError,
@@ -21,6 +27,10 @@ from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.api.tasks import remove_asset_blob_embargoed_tag_task
 
 if TYPE_CHECKING:
+    from uuid import UUID
+
+    from django.contrib.auth.models import User
+
     from dandiapi.zarr.models import ZarrArchive
 
 
@@ -210,3 +220,47 @@ def remove_asset_from_version(*, user, asset: Asset, version: Version) -> Versio
         audit.remove_asset(dandiset=version.dandiset, user=user, asset=asset)
 
     return version
+
+
+def bulk_remove_assets_from_version(*, user: User, version: Version, asset_ids: list[UUID]) -> int:
+    """
+    Remove many assets from a version, returning the number removed.
+
+    The removal is performed synchronously, within a single transaction.
+    """
+    if not is_dandiset_owner(version.dandiset, user):
+        raise DandisetOwnerRequiredError
+    if version.version != 'draft':
+        raise DraftDandisetNotModifiableError
+
+    # Ensure all of the supplied assets actually belong to this version, so that a request
+    # naming an unknown asset fails without removing any of the others.
+    existing = set(version.assets.filter(asset_id__in=asset_ids).values_list('asset_id', flat=True))
+    missing = [str(asset_id) for asset_id in asset_ids if asset_id not in existing]
+    if missing:
+        raise AssetsNotFoundError(missing)
+
+    with transaction.atomic():
+        # Lock the assets for the duration of the transaction. The ordering is required to
+        # ensure a consistent lock acquisition order between concurrent deletions.
+        assets = list(
+            version.assets.filter(asset_id__in=asset_ids).select_for_update().order_by('id')
+        )
+        if not assets:
+            return 0
+
+        # Remove asset paths and the assets themselves from the version. Both of these are
+        # performed for all assets at once, which is what makes this faster than deleting
+        # each asset individually.
+        delete_asset_paths_many(assets, version)
+        version.assets.remove(*assets)
+
+        # Trigger a version metadata validation, as saving the version might change the metadata.
+        # Unlike the single asset case, this only needs to happen once for the whole batch.
+        Version.objects.filter(id=version.id).update(
+            status=Version.Status.PENDING, modified=timezone.now()
+        )
+
+        audit.bulk_remove_assets(dandiset=version.dandiset, user=user, assets=assets)
+
+    return len(assets)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.db import IntegrityError, transaction
-from django.db.models import F, QuerySet, Sum
+from django.db.models import Count, F, OuterRef, QuerySet, Subquery, Sum
 from django.db.models.functions import Coalesce
 from tqdm import tqdm
 
@@ -207,6 +207,47 @@ def _delete_asset_paths(asset: Asset, version: Version):
 
     # Delete leaf node and any other now empty asset paths. Only the leaf and its
     # ancestors can have reached zero, so restrict the delete to those rows.
+    AssetPath.objects.filter(id__in=ancestor_ids, aggregate_files=0).delete()
+
+
+@transaction.atomic
+def delete_asset_paths_many(assets: list[Asset], version: Version):
+    """Delete the paths of many assets from a version, in one atomic operation."""
+    leaf_ids = list(
+        AssetPath.objects.filter(asset__in=assets, version=version).values_list('id', flat=True)
+    )
+    if not leaf_ids:
+        return
+
+    # Construct a subquery that summarizes the aggregate_size and file_count of all descendant
+    # asset paths of the parent asset path, filtered to only include the provided assets.
+    # This subquery can then be directly inserted into the asset path update query.
+    deltas = (
+        AssetPathRelation.objects.filter(child_id__in=leaf_ids, parent_id=OuterRef('id'))
+        .order_by()
+        .values('parent_id')
+        .annotate(
+            size=Sum('child__aggregate_size'),
+            files=Count('child_id'),
+        )
+    )
+
+    # Subtract the aggregate size and file count of all relevant child paths from all relevant
+    # parent paths. This will also reduce all leaf asset paths to have a size and file count of
+    # zero, since all asset paths point to themselves exactly once.
+    ancestor_ids = AssetPathRelation.objects.filter(child_id__in=leaf_ids).values('parent_id')
+    AssetPath.objects.filter(id__in=ancestor_ids).update(
+        aggregate_size=F('aggregate_size') - Subquery(deltas.values('size')),
+        aggregate_files=F('aggregate_files') - Subquery(deltas.values('files')),
+    )
+
+    # Ensure that none of the leaf nodes have a remaining size or file count
+    if AssetPath.objects.filter(id__in=leaf_ids).exclude(aggregate_size=0).exists():
+        raise RuntimeError('Remaining non-zero aggregate_size')
+    if AssetPath.objects.filter(id__in=leaf_ids).exclude(aggregate_files=0).exists():
+        raise RuntimeError('Remaining non-zero aggregate_files')
+
+    # Delete leaf nodes and any other ancestor paths with no contained files
     AssetPath.objects.filter(id__in=ancestor_ids, aggregate_files=0).delete()
 
 
