@@ -55,7 +55,7 @@ class AssetAuditEventPagination(CursorPagination):
 @permission_classes([IsAdminUser])
 def asset_audit_events(request: Request) -> Response:
     queryset = AuditRecord.objects.filter(
-        record_type__in=['add_asset', 'update_asset', 'remove_asset']
+        record_type__in=['add_asset', 'update_asset', 'remove_asset', 'bulk_remove_assets']
     )
 
     query_serializer = AssetAuditEventQuerySerializer(data=request.query_params)
