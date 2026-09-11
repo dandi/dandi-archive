@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from dandiapi.zarr.models import ZarrArchive
 
 
-def _make_audit_record(
+def _build_audit_record(
     *,
     dandiset: Dandiset,
     user: User | None,
@@ -26,11 +26,30 @@ def _make_audit_record(
     if not admin and user is None:
         raise ValueError('Non-null `user` required when `admin` is False')
 
-    audit_record = AuditRecord(
+    return AuditRecord(
         dandiset_id=dandiset.id,
         username=user.username if user else '',
         user_email=user.email if user else '',
         user_fullname=f'{user.first_name} {user.last_name}' if user else '',
+        record_type=record_type,
+        details=details,
+        admin=admin,
+        description=description,
+    )
+
+
+def _make_audit_record(
+    *,
+    dandiset: Dandiset,
+    user: User | None,
+    record_type: AuditRecordType,
+    details: dict,
+    admin: bool = False,
+    description: str = '',
+) -> AuditRecord:
+    audit_record = _build_audit_record(
+        dandiset=dandiset,
+        user=user,
         record_type=record_type,
         details=details,
         admin=admin,
@@ -180,6 +199,34 @@ def remove_asset(
         dandiset=dandiset,
         user=user,
         record_type='remove_asset',
+        details=details,
+        admin=admin,
+        description=description,
+    )
+
+
+def bulk_remove_assets(
+    *,
+    dandiset: Dandiset,
+    user: User | None,
+    assets: list[Asset],
+    admin: bool = False,
+    description: str = '',
+) -> AuditRecord:
+    """Record the removal of many assets at once."""
+    details = {
+        'entries': [
+            {
+                'path': asset.path,
+                'asset_id': str(asset.asset_id),
+            }
+            for asset in assets
+        ]
+    }
+    return _make_audit_record(
+        dandiset=dandiset,
+        user=user,
+        record_type='bulk_remove_assets',
         details=details,
         admin=admin,
         description=description,

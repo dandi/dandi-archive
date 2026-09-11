@@ -15,8 +15,12 @@ from rest_framework.validators import ValidationError
 from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Upload, Version
 from dandiapi.search.models import AssetSearch
 
+# The maximum number of assets that may be deleted in a single bulk delete request
+MAX_BULK_DELETE_ASSETS = 1000
+
 if TYPE_CHECKING:
     from collections import OrderedDict
+    from uuid import UUID
 
 
 def extract_contact_person(version: Version) -> str:
@@ -506,6 +510,18 @@ class AssetListSerializer(serializers.Serializer):
     glob = serializers.CharField(required=False)
     metadata = serializers.BooleanField(required=False, default=False)
     zarr = serializers.BooleanField(required=False, default=False)
+
+
+class AssetBulkDeleteRequestSerializer(serializers.Serializer):
+    # Cap the number of assets in a single request, so that a single request (and the
+    # transaction it runs in) can't grow without bound.
+    asset_ids = serializers.ListField(
+        child=serializers.UUIDField(), allow_empty=False, max_length=MAX_BULK_DELETE_ASSETS
+    )
+
+    def validate_asset_ids(self, value: list[UUID]) -> list[UUID]:
+        # Deduplicate while preserving order, so that a caller repeating an ID isn't an error
+        return list(dict.fromkeys(value))
 
 
 class AssetPathsQueryParameterSerializer(serializers.Serializer):
