@@ -21,6 +21,7 @@ from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.models.asset import validate_asset_path
 from dandiapi.api.services.asset import (
     add_asset_to_version,
+    bulk_remove_assets_from_version,
     change_asset,
     remove_asset_from_version,
 )
@@ -38,6 +39,7 @@ from dandiapi.api.views.common import (
 )
 from dandiapi.api.views.pagination import DandiPagination, LazyPagination
 from dandiapi.api.views.serializers import (
+    AssetBulkDeleteRequestSerializer,
     AssetDetailSerializer,
     AssetDownloadQueryParameterSerializer,
     AssetListSerializer,
@@ -406,6 +408,40 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
                 version.assets.select_for_update(), id=self.get_object().id
             )
             remove_asset_from_version(user=request.user, asset=locked_asset, version=version)
+
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        method='POST',
+        request_body=AssetBulkDeleteRequestSerializer,
+        responses={
+            204: 'If the assets were successfully removed',
+            404: 'If any of the given assets do not belong to this version',
+        },
+        manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        operation_summary='Remove multiple assets from a version.',
+        operation_description='Assets are never deleted, only disassociated from a version.\
+                               Only draft versions can be modified.',
+    )
+    @require_dandiset_owner_or_403('versions__dandiset__pk')
+    @action(detail=False, methods=['POST'], url_path='bulk-delete', filter_backends=[])
+    def bulk_delete(self, request, versions__dandiset__pk, versions__version, **kwargs):
+        version = get_object_or_404(
+            Version.objects.select_related('dandiset'),
+            dandiset__pk=versions__dandiset__pk,
+            version=versions__version,
+        )
+        if version.dandiset.unembargo_in_progress:
+            raise DandisetUnembargoInProgressError
+
+        serializer = AssetBulkDeleteRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        bulk_remove_assets_from_version(
+            user=request.user,
+            version=version,
+            asset_ids=serializer.validated_data['asset_ids'],
+        )
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 

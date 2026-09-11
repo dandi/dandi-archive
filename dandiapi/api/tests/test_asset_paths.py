@@ -8,6 +8,7 @@ from dandiapi.api.asset_paths import (
     add_asset_paths,
     add_version_asset_paths,
     delete_asset_paths,
+    delete_asset_paths_many,
     extract_paths,
     get_root_paths,
     get_root_paths_many,
@@ -403,3 +404,52 @@ def test_asset_path_ordering(asset_blob):
     )
     assert paths[0].path == 'a/z'
     assert paths[1].path == 'aa/z'
+
+
+@pytest.mark.django_db
+def test_delete_asset_paths_many_matches_individual_deletes(draft_version_factory, asset_factory):
+    """Deleting many asset paths at once must leave the same state as deleting them one by one."""
+    paths = ['foo/bar/a.txt', 'foo/bar/b.txt', 'foo/c.txt', 'foo/bar/baz/d.txt', 'e.txt']
+
+    def build_version() -> tuple[Version, list[Asset]]:
+        version = draft_version_factory()
+        assets = []
+        for path in paths:
+            asset = asset_factory(path=path)
+            version.assets.add(asset)
+            add_asset_paths(asset, version)
+            assets.append(asset)
+        return version, assets
+
+    # Delete a subset of the assets, so that some parent paths survive with nonzero aggregates
+    deleted = [0, 1, 3]
+
+    individual_version, individual_assets = build_version()
+    for i in deleted:
+        delete_asset_paths(individual_assets[i], individual_version)
+
+    bulk_version, bulk_assets = build_version()
+    delete_asset_paths_many([bulk_assets[i] for i in deleted], bulk_version)
+
+    def snapshot(version: Version) -> list[tuple[str, int, int]]:
+        return list(
+            AssetPath.objects.filter(version=version)
+            .order_by('path')
+            .values_list('path', 'aggregate_files', 'aggregate_size')
+        )
+
+    assert snapshot(bulk_version) == snapshot(individual_version)
+
+
+@pytest.mark.django_db
+def test_delete_asset_paths_many_noop(draft_version_factory, asset_factory):
+    """Deleting assets whose paths aren't in the version must be a no-op."""
+    version = draft_version_factory()
+    asset = asset_factory(path='foo/bar.txt')
+    version.assets.add(asset)
+    add_asset_paths(asset, version)
+
+    unrelated = asset_factory(path='baz.txt')
+    delete_asset_paths_many([unrelated], version)
+
+    assert AssetPath.objects.filter(version=version).count() == 2
