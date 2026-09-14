@@ -8,7 +8,6 @@ from dandischema.conf import get_instance_config
 from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
-from django.db import connection
 from django.utils import timezone
 import pytest
 
@@ -20,7 +19,6 @@ from dandiapi.api.services.permissions.dandiset import (
 )
 from dandiapi.api.tests.factories import (
     DandisetFactory,
-    DraftAssetFactory,
     DraftVersionFactory,
     PublishedVersionFactory,
     UserFactory,
@@ -1593,30 +1591,6 @@ def test_dandiset_list_starred_unauthenticated(api_client):
 # --- Advanced (Gmail-style) search ---------------------------------------------------------------
 
 
-def _refresh_asset_search():
-    with connection.cursor() as cursor:
-        cursor.execute('REFRESH MATERIALIZED VIEW asset_search;')
-
-
-def _seed_dandiset_with_asset(*, asset_metadata: dict, embargoed: bool = False) -> Dandiset:
-    """Create a draft dandiset + version + single asset with the given metadata.
-
-    Caller is responsible for `_refresh_asset_search()` after seeding all
-    fixtures so the materialized view sees them.
-    """
-    embargo_status = Dandiset.EmbargoStatus.EMBARGOED if embargoed else Dandiset.EmbargoStatus.OPEN
-    dandiset = DandisetFactory.create(embargo_status=embargo_status)
-    version = DraftVersionFactory.create(dandiset=dandiset)
-    base_metadata = {
-        'schemaVersion': DANDI_SCHEMA_VERSION,
-        'schemaKey': 'Asset',
-        'encodingFormat': 'application/x-nwb',
-    }
-    version.assets.add(DraftAssetFactory.create(metadata={**base_metadata, **asset_metadata}))
-    add_version_asset_paths(version)
-    return dandiset
-
-
 def _seed_dandiset_with_summary(*, assets_summary: dict, embargoed: bool = False) -> Dandiset:
     """Create a draft dandiset + version whose metadata carries the given assetsSummary.
 
@@ -1966,19 +1940,33 @@ def test_advanced_search_technique_with_quoted_phrase(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_file_type_alias_and_mime(api_client):
-    nwb = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'application/x-nwb'})
-    image = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'image/tiff'})
-    text = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'text/plain'})
-    _refresh_asset_search()
+def test_advanced_search_standard_matches_data_standard(api_client):
+    # `standard:` matches the version's assetsSummary.dataStandard — real
+    # entries are like "Neurodata Without Borders (NWB)" or "Brain Imaging
+    # Data Structure (BIDS)", so short tokens match by substring.
+    nwb = _seed_dandiset_with_summary(
+        assets_summary={'dataStandard': [{'name': 'Neurodata Without Borders (NWB)'}]},
+    )
+    bids = _seed_dandiset_with_summary(
+        assets_summary={'dataStandard': [{'name': 'Brain Imaging Data Structure (BIDS)'}]},
+    )
 
-    # The short alias `nwb` resolves to the application/x-nwb mime prefix.
-    assert _search_ids(api_client, 'file_type:nwb') == {nwb.identifier}
-    # The `image` alias matches anything starting with `image/`.
-    assert _search_ids(api_client, 'file_type:image') == {image.identifier}
-    assert _search_ids(api_client, 'file_type:text') == {text.identifier}
-    # Direct MIME prefixes also work.
-    assert _search_ids(api_client, 'file_type:application/x-nwb') == {nwb.identifier}
+    assert _search_ids(api_client, 'standard:nwb') == {nwb.identifier}
+    assert _search_ids(api_client, 'standard:bids') == {bids.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_removed_file_type_returns_helpful_400(api_client):
+    # `file_type:` was removed in favor of `standard:` and the faceted
+    # file_type query parameter. The generic unknown-operator error has no
+    # close-enough suggestion for it, so pin the explicit pointer.
+    response = api_client.get(
+        '/api/dandisets/',
+        {'draft': 'true', 'empty': 'true', 'search': 'file_type:nwb'},
+    )
+    assert response.status_code == 400
+    assert 'standard:' in response.json()['search']
 
 
 @pytest.mark.ai_generated

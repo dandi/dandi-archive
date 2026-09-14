@@ -13,23 +13,12 @@ from django.db.models.functions import Concat
 from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
 from dandiapi.api.services.search.parser import SearchSyntaxError
-from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
-    from django.contrib.auth.models import AnonymousUser
     from django.db.models import QuerySet
 
     from dandiapi.api.models import Dandiset
     from dandiapi.api.services.search.parser import ParsedSearch
-
-# Aliases for the file-type operator: short name → MIME prefix matched with
-# istartswith. Keep in sync with DandisetSearchQueryParameterSerializer.
-_FILE_TYPE_ALIASES = {
-    'nwb': 'application/x-nwb',
-    'image': 'image/',
-    'text': 'text/',
-    'video': 'video/',
-}
 
 _DATE_OPS = frozenset(
     {
@@ -41,7 +30,6 @@ _DATE_OPS = frozenset(
         'published_after',
     }
 )
-_ASSET_OPS = frozenset({'file_type'})
 _OWNER_OPS = frozenset({'owner'})
 
 
@@ -70,6 +58,7 @@ _SUMMARY_PATH_OPS = {
     'species': '$.assetsSummary.species[*].name',
     'approach': '$.assetsSummary.approach[*].name',
     'technique': '$.assetsSummary.measurementTechnique[*].name',
+    'standard': '$.assetsSummary.dataStandard[*].name',
 }
 
 
@@ -104,17 +93,6 @@ def _apply_summary_filters(
         # is bound via params (and regex-escaped).
         version_qs = version_qs.extra(where=[where], params=params)  # noqa: S610
     return queryset.filter(id__in=version_qs.values_list('dandiset_id', flat=True).distinct())
-
-
-def _apply_file_type_filters(
-    queryset: QuerySet[Dandiset], values: list[str], user: User | AnonymousUser
-) -> QuerySet[Dandiset]:
-    """Restrict dandisets to those with an asset matching every file_type value."""
-    asset_qs = AssetSearch.objects.visible_to(user)
-    for value in values:
-        mime_prefix = _FILE_TYPE_ALIASES.get(value.lower(), value)
-        asset_qs = asset_qs.filter(asset_metadata__encodingFormat__istartswith=mime_prefix)
-    return queryset.filter(id__in=asset_qs.values_list('dandiset_id', flat=True).distinct())
 
 
 def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Dandiset]:
@@ -187,8 +165,6 @@ def _apply_date_filter(queryset, operator: str, ts: datetime, annotated: set[str
 def apply_search_filters(
     queryset: QuerySet[Dandiset],
     parsed: ParsedSearch,
-    *,
-    user: User | AnonymousUser,
 ) -> QuerySet[Dandiset]:
     """Apply structured operator filters onto a Dandiset queryset.
 
@@ -199,7 +175,6 @@ def apply_search_filters(
         return queryset
 
     summary_clauses: list[tuple[str, str]] = []
-    file_type_values: list[str] = []
     annotated: set[str] = set()
 
     for op in parsed.operators:
@@ -212,15 +187,10 @@ def apply_search_filters(
             queryset = _apply_date_filter(queryset, key, _parse_date(key, value), annotated)
         elif key in _SUMMARY_PATH_OPS:
             summary_clauses.append((key, value))
-        elif key in _ASSET_OPS:
-            file_type_values.append(value)
         elif key in _OWNER_OPS:
             queryset = _apply_owner_filter(queryset, value)
 
     if summary_clauses:
         queryset = _apply_summary_filters(queryset, summary_clauses)
-
-    if file_type_values:
-        queryset = _apply_file_type_filters(queryset, file_type_values, user)
 
     return queryset
