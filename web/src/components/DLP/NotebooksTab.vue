@@ -32,132 +32,148 @@
           >instructions for running the Docker images</a>.
         </p>
 
-        <div class="notebook-grid">
-          <template
-            v-for="(group, groupIndex) in groupedNotebooks"
-            :key="group.key"
-          >
-            <v-divider
-              v-if="groupIndex > 0"
-              class="my-2"
-            />
+        <template
+          v-for="(group, groupIndex) in groupedNotebooks"
+          :key="group.key"
+        >
+          <v-divider
+            v-if="groupIndex > 0"
+            class="my-4"
+          />
 
-            <h3
-              v-if="group.segments.length"
-              class="text-h6 d-flex align-center flex-wrap ga-1"
+          <h3
+            v-if="group.segments.length"
+            class="text-h6 d-flex align-center flex-wrap ga-1 mb-2"
+          >
+            <v-icon
+              color="primary"
+              size="20"
+              class="mr-1"
+            >
+              mdi-folder-outline
+            </v-icon>
+            <template
+              v-for="(segment, i) in group.segments"
+              :key="i"
             >
               <v-icon
-                color="primary"
-                size="20"
-                class="mr-1"
+                v-if="i > 0"
+                size="16"
+                class="text-medium-emphasis"
               >
-                mdi-folder-outline
+                mdi-chevron-right
               </v-icon>
-              <template
-                v-for="(segment, i) in group.segments"
-                :key="i"
-              >
-                <v-icon
-                  v-if="i > 0"
-                  size="16"
-                  class="text-medium-emphasis"
-                >
-                  mdi-chevron-right
-                </v-icon>
-                <span class="text-no-wrap">{{ segment }}</span>
-              </template>
-            </h3>
+              <span class="text-no-wrap">{{ segment }}</span>
+            </template>
+          </h3>
 
-            <ul class="notebook-list">
-              <li
-                v-for="notebook in group.notebooks"
-                :key="notebook.path"
+          <!-- Every row uses the same column widths, so the controls line up
+               down the list and across folder groups. Below the sm breakpoint
+               the columns stack. -->
+          <ul class="d-flex flex-column ga-2 ga-sm-0">
+            <v-row
+              v-for="notebook in group.notebooks"
+              :key="notebook.path"
+              tag="li"
+              align="center"
+              dense
+            >
+              <v-col
+                cols="12"
+                sm="5"
+                lg="4"
+                class="d-flex text-subtitle-1 font-weight-medium"
               >
                 <span
-                  class="notebook-name text-subtitle-1 font-weight-medium"
-                  :title="notebook.path"
+                  class="text-medium-emphasis mr-2 flex-shrink-0"
+                  aria-hidden="true"
+                >&bull;</span>
+                <span :title="notebook.path">{{ notebookTitle(notebook.path) }}</span>
+              </v-col>
+
+              <v-col
+                cols="12"
+                sm="7"
+                lg="8"
+                class="d-flex align-center flex-wrap ga-2"
+              >
+                <a
+                  v-if="notebook.colab_url"
+                  :href="notebook.colab_url"
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="Open in Colab"
                 >
-                  {{ notebookTitle(notebook.path) }}
-                </span>
+                  <img
+                    src="https://colab.research.google.com/assets/colab-badge.svg"
+                    alt="Open In Colab"
+                  >
+                </a>
+                <v-btn
+                  :href="notebook.github_url"
+                  target="_blank"
+                  rel="noopener"
+                  variant="text"
+                  size="small"
+                  aria-label="View notebook source on GitHub"
+                >
+                  <v-icon>mdi-github</v-icon>
+                  <v-tooltip
+                    activator="parent"
+                    location="top"
+                  >
+                    View source on GitHub
+                  </v-tooltip>
+                </v-btn>
+                <v-btn
+                  v-if="notebook.docker_command"
+                  variant="text"
+                  size="small"
+                  prepend-icon="mdi-docker"
+                  :append-icon="expanded === notebook.path ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                  @click="toggleDocker(notebook.path)"
+                >
+                  Docker
+                  <v-tooltip
+                    activator="parent"
+                    location="top"
+                  >
+                    Run locally with Docker
+                  </v-tooltip>
+                </v-btn>
+              </v-col>
 
-                <div class="notebook-actions">
-                  <a
-                    v-if="notebook.colab_url"
-                    :href="notebook.colab_url"
-                    target="_blank"
-                    rel="noopener"
-                    aria-label="Open in Colab"
-                  >
-                    <img
-                      src="https://colab.research.google.com/assets/colab-badge.svg"
-                      alt="Open In Colab"
+              <v-expand-transition>
+                <v-col
+                  v-show="expanded === notebook.path"
+                  cols="12"
+                >
+                  <!-- pl-4 lines the command up with the notebook names, past their bullets. -->
+                  <div class="d-flex align-center ga-2 mt-1 mb-2 pl-4">
+                    <span class="flex-1-1-0 text-mono text-body-2 text-pre-wrap text-break">{{ notebook.docker_command }}</span>
+                    <v-btn
+                      icon
+                      size="small"
+                      variant="text"
+                      class="flex-shrink-0"
+                      @click="copyDockerCommand(notebook)"
                     >
-                  </a>
-                  <v-btn
-                    :href="notebook.github_url"
-                    target="_blank"
-                    rel="noopener"
-                    variant="text"
-                    size="small"
-                    aria-label="View notebook source on GitHub"
-                  >
-                    <v-icon>mdi-github</v-icon>
-                    <v-tooltip
-                      activator="parent"
-                      location="top"
-                    >
-                      View source on GitHub
-                    </v-tooltip>
-                  </v-btn>
-                  <v-btn
-                    v-if="notebook.docker_command"
-                    variant="text"
-                    size="small"
-                    prepend-icon="mdi-docker"
-                    :append-icon="expanded === notebook.path ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                    @click="toggleDocker(notebook.path)"
-                  >
-                    Docker
-                    <v-tooltip
-                      activator="parent"
-                      location="top"
-                    >
-                      Run locally with Docker
-                    </v-tooltip>
-                  </v-btn>
-                </div>
-
-                <v-expand-transition>
-                  <div
-                    v-show="expanded === notebook.path"
-                    class="notebook-docker"
-                  >
-                    <div class="d-flex align-center ga-2 mt-1 mb-2">
-                      <span class="docker-command">{{ notebook.docker_command }}</span>
-                      <v-btn
-                        icon
-                        size="small"
-                        variant="text"
-                        class="copy-btn"
-                        @click="copyDockerCommand(notebook)"
+                      <v-icon size="small">
+                        {{ copied === notebook.path ? 'mdi-check' : 'mdi-content-copy' }}
+                      </v-icon>
+                      <v-tooltip
+                        activator="parent"
+                        location="top"
                       >
-                        <v-icon size="small">
-                          {{ copied === notebook.path ? 'mdi-check' : 'mdi-content-copy' }}
-                        </v-icon>
-                        <v-tooltip
-                          activator="parent"
-                          location="top"
-                        >
-                          Copy the Docker run command to the clipboard
-                        </v-tooltip>
-                      </v-btn>
-                    </div>
+                        Copy the Docker run command to the clipboard
+                      </v-tooltip>
+                    </v-btn>
                   </div>
-                </v-expand-transition>
-              </li>
-            </ul>
-          </template>
-        </div>
+                </v-col>
+              </v-expand-transition>
+            </v-row>
+          </ul>
+        </template>
       </v-card-text>
     </v-card>
   </div>
@@ -272,78 +288,3 @@ function notebookFilename(path: string): string {
   return path.split('/').pop() ?? path;
 }
 </script>
-
-<style scoped>
-/* One two-column grid for the whole card, so every row's controls start at
-   the same x no matter how long the notebook names are, and that alignment
-   holds across folder groups. The lists and their items are
-   `display: contents` so each notebook's name and controls become items of
-   the shared grid. */
-.notebook-grid {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  align-items: center;
-  column-gap: 24px;
-  row-gap: 8px;
-}
-
-.notebook-grid > hr,
-.notebook-grid > h3 {
-  grid-column: 1 / -1;
-}
-
-.notebook-list {
-  display: contents;
-  list-style: none;
-}
-
-.notebook-list > li {
-  display: contents;
-}
-
-.notebook-name::before {
-  content: '\2022';
-  margin-right: 8px;
-  color: rgba(0, 0, 0, 0.5);
-}
-
-.notebook-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.notebook-docker {
-  grid-column: 1 / -1;
-  /* Line the command up with the notebook names, past their bullets. */
-  padding-left: 16px;
-}
-
-/* Too narrow for two columns: let each row stack instead of forcing the
-   name column to overflow the card. */
-@media (max-width: 700px) {
-  .notebook-grid {
-    grid-template-columns: 1fr;
-    row-gap: 4px;
-  }
-
-  .notebook-actions {
-    margin-bottom: 8px;
-  }
-}
-
-.copy-btn {
-  flex-shrink: 0;
-}
-
-.docker-command {
-  flex: 1;
-  min-width: 0;
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-</style>
