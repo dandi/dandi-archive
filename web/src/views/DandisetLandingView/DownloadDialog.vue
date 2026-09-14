@@ -186,7 +186,7 @@
   </v-menu>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 import { filesize } from 'filesize';
 import { useDandisetStore } from '@/stores/dandiset';
 import { useInstanceStore } from '@/stores/instance';
