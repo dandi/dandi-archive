@@ -1,3 +1,15 @@
+# v1.0.6 (Mon Sep 14 2026)
+
+#### 🐛 Bug Fix
+
+- Restrict asset path deletion to ancestors of deleted asset [#2919](https://github.com/dandi/dandi-archive/pull/2919) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v1.0.5 (Mon Sep 14 2026)
 
 #### 🐛 Bug Fix
