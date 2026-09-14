@@ -261,6 +261,7 @@ def bulk_remove_assets_from_version(*, user: User, version: Version, asset_ids: 
             status=Version.Status.PENDING, modified=timezone.now()
         )
 
-        audit.bulk_remove_assets(dandiset=version.dandiset, user=user, assets=assets)
+        for asset in assets:
+            audit.remove_asset(dandiset=version.dandiset, user=user, asset=asset)
 
     return len(assets)

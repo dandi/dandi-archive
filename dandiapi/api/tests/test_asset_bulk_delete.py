@@ -69,11 +69,10 @@ def test_asset_rest_bulk_delete(api_client, version_with_assets):
 
     # One audit record is written per removed asset
     records = AuditRecord.objects.filter(
-        dandiset_id=version.dandiset.id, record_type='bulk_remove_assets'
+        dandiset_id=version.dandiset.id, record_type='remove_asset'
     )
-    assert records.count() == 1
-    assert {e['asset_id'] for e in records[0].details['entries']} == {
-        str(a.asset_id) for a in assets
+    assert {record.details['asset_id'] for record in records} == {
+        str(asset.asset_id) for asset in assets
     }
 
 
@@ -114,7 +113,7 @@ def test_asset_rest_bulk_delete_duplicate_ids(api_client, version_with_assets):
     )
     assert resp.status_code == 204
     assert version.assets.count() == 2
-    assert AuditRecord.objects.filter(record_type='bulk_remove_assets').count() == 1
+    assert AuditRecord.objects.filter(record_type='remove_asset').count() == 1
 
 
 @pytest.mark.django_db
@@ -213,7 +212,7 @@ def test_asset_rest_bulk_delete_failure_rolls_back(api_client, version_with_asse
 
     # Fail on the last step of the removal, so that everything before it must be rolled back
     mocker.patch(
-        'dandiapi.api.services.asset.audit.bulk_remove_assets',
+        'dandiapi.api.services.asset.audit.remove_asset',
         side_effect=RuntimeError('something went wrong'),
     )
 
