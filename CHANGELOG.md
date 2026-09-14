@@ -1,3 +1,15 @@
+# v1.0.5 (Mon Sep 14 2026)
+
+#### 🐛 Bug Fix
+
+- Fix embargo funding and end date parameters on Dandiset creation [#2918](https://github.com/dandi/dandi-archive/pull/2918) ([@bendichter](https://github.com/bendichter))
+
+#### Authors: 1
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+
+---
+
 # v1.0.4 (Wed Sep 09 2026)
 
 #### 🐛 Bug Fix
