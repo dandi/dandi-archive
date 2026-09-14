@@ -186,34 +186,6 @@ def remove_asset(
     )
 
 
-def bulk_remove_assets(
-    *,
-    dandiset: Dandiset,
-    user: User | None,
-    assets: list[Asset],
-    admin: bool = False,
-    description: str = '',
-) -> AuditRecord:
-    """Record the removal of many assets at once."""
-    details = {
-        'entries': [
-            {
-                'path': asset.path,
-                'asset_id': str(asset.asset_id),
-            }
-            for asset in assets
-        ]
-    }
-    return _make_audit_record(
-        dandiset=dandiset,
-        user=user,
-        record_type='bulk_remove_assets',
-        details=details,
-        admin=admin,
-        description=description,
-    )
-
-
 def create_zarr(
     *,
     dandiset: Dandiset,
