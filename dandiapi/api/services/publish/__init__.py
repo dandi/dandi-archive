@@ -195,16 +195,16 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
 
         validate(new_version.metadata, schema_key='PublishedDandiset', json_validation=True)
 
-        # Write updated manifest files and create DOI after
-        # published version has been committed to DB.
-        transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
-
         def _create_doi(version_id: int):
             version = Version.objects.get(id=version_id)
             version.doi = doi.create_doi(version)
             version.save()
 
-        transaction.on_commit(lambda: _create_doi(new_version.id))
+        # Call _create_doi before writing manifest files, so that the new DOI is included in the
+        # manifests. If DOI creation fails, proceed to writing manifests anyway, to maintain
+        # existing behavior.
+        transaction.on_commit(lambda: _create_doi(new_version.id), robust=True)
+        transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
 
         user = User.objects.get(id=user_id)
         audit.publish_dandiset(
