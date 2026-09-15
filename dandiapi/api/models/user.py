@@ -16,3 +16,7 @@ class UserMetadata(TimeStampedModel):
     status = models.CharField(choices=Status.choices, default=Status.INCOMPLETE, max_length=10)
     questionnaire_form = models.JSONField(blank=True, null=True)
     rejection_reason = models.TextField(blank=True, default='', max_length=1000)
+    institutional_email = models.EmailField(blank=True, default='')
+    is_email_verified = models.BooleanField(default=False)
+    verification_token = models.UUIDField(default=None, null=True, blank=True)
+    verification_token_created = models.DateTimeField(null=True, blank=True)
