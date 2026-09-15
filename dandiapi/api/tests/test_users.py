@@ -300,6 +300,12 @@ def test_user_edu_auto_approve(api_client: APIClient, email: str, expected_statu
     assert user.metadata.status == expected_status
 
 
+def _post_questionnaire(api_client: APIClient, **data: str):
+    # The questionnaire is an HTML form, so post form data rather than the JSON the
+    # test client sends by default.
+    return api_client.post(reverse('user-questionnaire'), data=data, format='multipart')
+
+
 @pytest.mark.django_db
 def test_institutional_email_questionnaire(api_client: APIClient, mailoutbox: list[EmailMessage]):
     """Test that providing a .edu institutional email sends a verification email."""
@@ -309,21 +315,103 @@ def test_institutional_email_questionnaire(api_client: APIClient, mailoutbox: li
     )
     api_client.force_authenticate(user=user)
 
-    resp = api_client.post(
-        reverse('user-questionnaire'),
-        data={'institutional_email': 'user@university.edu'},
-    )
+    resp = _post_questionnaire(api_client, institutional_email='user@university.edu')
     assert resp.status_code == 302
 
     user.metadata.refresh_from_db()
     assert user.metadata.institutional_email == 'user@university.edu'
     assert user.metadata.verification_token is not None
+    assert user.metadata.verification_token_created is not None
     assert user.metadata.status == UserMetadata.Status.PENDING
 
-    # A verification email should have been sent
+    # A verification email should have been sent to the institutional address, and the
+    # admins should still be notified about the pending user.
+    subjects = [m.subject for m in mailoutbox]
     verification_emails = [m for m in mailoutbox if 'Verify your institutional email' in m.subject]
     assert len(verification_emails) == 1
     assert verification_emails[0].to == ['user@university.edu']
+    assert any('Review new user' in subject for subject in subjects)
+    assert not any('New user registered' in subject for subject in subjects)
+
+
+@pytest.mark.django_db
+def test_institutional_email_case_insensitive(
+    api_client: APIClient, mailoutbox: list[EmailMessage]
+):
+    """Test that suffix matching ignores the case of the institutional email."""
+    user = UserFactory.create(
+        email='personal@gmail.com',
+        metadata__status=UserMetadata.Status.INCOMPLETE,
+    )
+    api_client.force_authenticate(user=user)
+
+    resp = _post_questionnaire(api_client, institutional_email='User@University.EDU')
+    assert resp.status_code == 302
+
+    user.metadata.refresh_from_db()
+    assert user.metadata.verification_token is not None
+    assert any('Verify your institutional email' in m.subject for m in mailoutbox)
+
+
+@pytest.mark.django_db
+def test_institutional_email_not_qualifying(api_client: APIClient, mailoutbox: list[EmailMessage]):
+    """Test that a non-qualifying institutional email falls back to manual approval."""
+    user = UserFactory.create(
+        email='personal@gmail.com',
+        metadata__status=UserMetadata.Status.INCOMPLETE,
+    )
+    api_client.force_authenticate(user=user)
+
+    resp = _post_questionnaire(api_client, institutional_email='user@example.com')
+    assert resp.status_code == 302
+
+    user.metadata.refresh_from_db()
+    assert user.metadata.institutional_email == 'user@example.com'
+    assert user.metadata.verification_token is None
+    assert user.metadata.status == UserMetadata.Status.PENDING
+
+    subjects = [m.subject for m in mailoutbox]
+    assert not any('Verify your institutional email' in subject for subject in subjects)
+    assert any('New user registered' in subject for subject in subjects)
+    assert any('Review new user' in subject for subject in subjects)
+
+
+@pytest.mark.django_db
+def test_institutional_email_github_auto_approved(
+    api_client: APIClient, mailoutbox: list[EmailMessage]
+):
+    """Test that users already auto-approved by their GitHub email skip verification."""
+    user = UserFactory.create(
+        email='user@university.edu',
+        metadata__status=UserMetadata.Status.INCOMPLETE,
+    )
+    api_client.force_authenticate(user=user)
+
+    resp = _post_questionnaire(api_client, institutional_email='other@college.edu')
+    assert resp.status_code == 302
+
+    user.metadata.refresh_from_db()
+    assert user.metadata.status == UserMetadata.Status.APPROVED
+    assert user.metadata.verification_token is None
+    assert not any('Verify your institutional email' in m.subject for m in mailoutbox)
+
+
+@pytest.mark.django_db
+def test_institutional_email_invalid(api_client: APIClient, mailoutbox: list[EmailMessage]):
+    """Test that a malformed institutional email is rejected."""
+    user = UserFactory.create(
+        email='personal@gmail.com',
+        metadata__status=UserMetadata.Status.INCOMPLETE,
+    )
+    api_client.force_authenticate(user=user)
+
+    resp = _post_questionnaire(api_client, institutional_email='not an email .edu')
+    assert resp.status_code == 400
+
+    user.metadata.refresh_from_db()
+    assert user.metadata.institutional_email == ''
+    assert user.metadata.status == UserMetadata.Status.INCOMPLETE
+    assert len(mailoutbox) == 0
 
 
 @pytest.mark.django_db
@@ -346,6 +434,28 @@ def test_verify_email_valid_token(client: Client):
     assert user.metadata.is_email_verified is True
     assert user.metadata.status == UserMetadata.Status.APPROVED
     assert user.metadata.verification_token is None  # token should be invalidated
+
+
+@pytest.mark.django_db
+def test_verify_email_rejected_user_not_approved(client: Client, mailoutbox: list[EmailMessage]):
+    """Test that verifying an email does not approve a user an admin has rejected."""
+    token = uuid.uuid4()
+    user = UserFactory.create(
+        email='personal@gmail.com',
+        metadata__status=UserMetadata.Status.REJECTED,
+        metadata__institutional_email='user@university.edu',
+        metadata__verification_token=token,
+        metadata__verification_token_created=datetime.datetime.now(tz=datetime.UTC),
+    )
+
+    resp = client.get(reverse('verify-email'), {'token': str(token)})
+    assert resp.status_code == 302
+
+    user.metadata.refresh_from_db()
+    assert user.metadata.is_email_verified is True
+    assert user.metadata.status == UserMetadata.Status.REJECTED
+    assert user.metadata.verification_token is None
+    assert len(mailoutbox) == 0
 
 
 @pytest.mark.django_db

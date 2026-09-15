@@ -6,8 +6,15 @@ from typing import TYPE_CHECKING
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db import transaction
-from django.http.response import Http404, HttpResponseBase, HttpResponseRedirect
+from django.http.response import (
+    Http404,
+    HttpResponseBadRequest,
+    HttpResponseBase,
+    HttpResponseRedirect,
+)
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
@@ -67,7 +74,7 @@ COLLECT_USER_NAME_QUESTIONS = QUESTIONS[:2]
 # Email suffixes that qualify for auto-approval
 AUTO_APPROVE_EMAIL_SUFFIXES = [
     '.edu',
-    '.gov',
+    '@nih.gov',
     '@alleninstitute.org',
     '@janelia.hhmi.org',
     '@ccf.org',
@@ -79,7 +86,8 @@ AUTO_APPROVE_EMAIL_SUFFIXES = [
 
 def _has_auto_approve_email(email: str) -> bool:
     """Check if an email address matches any auto-approve suffix."""
-    return any(email.endswith(suffix) for suffix in AUTO_APPROVE_EMAIL_SUFFIXES)
+    email = email.strip().lower()
+    return bool(email) and any(email.endswith(suffix) for suffix in AUTO_APPROVE_EMAIL_SUFFIXES)
 
 
 @require_http_methods(['GET'])
@@ -129,17 +137,16 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
             for question in QUESTIONS
         }
 
-        # Process institutional email if provided
-        institutional_email = req_body.get('institutional_email')
-        needs_verification = False
-
+        # Store the institutional email if one was provided. Whether it triggers a
+        # verification email is decided in _process_new_registration below.
+        institutional_email = req_body.get('institutional_email', '').strip()
         if institutional_email:
+            try:
+                validate_email(institutional_email)
+            except ValidationError:
+                return HttpResponseBadRequest('Invalid institutional email address')
             user_metadata.institutional_email = institutional_email
-
-            # Generate verification token
-            user_metadata.verification_token = uuid.uuid4()
             user_metadata.is_email_verified = False
-            needs_verification = True
 
         user_metadata.save()
 
@@ -159,9 +166,7 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
             not questionnaire_already_filled_out
             and user_metadata.status == UserMetadata.Status.INCOMPLETE
         ):
-            _process_new_registration(
-                request.user, user_metadata, needs_verification=needs_verification
-            )
+            _process_new_registration(request.user, user_metadata)
 
         # pass on OAuth query string params to auth endpoint
         return HttpResponseRedirect(
@@ -185,37 +190,35 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
     )
 
 
-def _process_new_registration(
-    user: User, user_metadata: UserMetadata, *, needs_verification: bool
-) -> None:
+def _process_new_registration(user: User, user_metadata: UserMetadata) -> None:
     """Handle status assignment and email sending for new user registrations."""
-    github_email_auto_approve = _has_auto_approve_email(user.email)
-
-    # Check if user provided an institutional email that should be verified
-    needs_institutional_verification = bool(
-        user_metadata.institutional_email
-    ) and _has_auto_approve_email(user_metadata.institutional_email)
-
     # Auto-approve users with eligible GitHub emails, otherwise set to pending
     user_metadata.status = (
-        UserMetadata.Status.APPROVED if github_email_auto_approve else UserMetadata.Status.PENDING
+        UserMetadata.Status.APPROVED
+        if _has_auto_approve_email(user.email)
+        else UserMetadata.Status.PENDING
     )
     user_metadata.save(update_fields=['status'])
 
-    # Send appropriate emails
-    for socialaccount in user.socialaccount_set.all():
-        # Send verification email if institutional email was provided
-        if (
-            needs_verification
-            and needs_institutional_verification
-            and not github_email_auto_approve
-        ):
-            send_verification_email(user, socialaccount)
+    # Pending users who provided a qualifying institutional email can approve
+    # themselves by verifying it, so issue them a verification token.
+    send_verification = (
+        user_metadata.status == UserMetadata.Status.PENDING
+        and _has_auto_approve_email(user_metadata.institutional_email)
+    )
+    if send_verification:
+        user_metadata.verification_token = uuid.uuid4()
+        user_metadata.save(update_fields=['verification_token'])
 
-        # Send approved email if they have been auto-approved
+    for socialaccount in user.socialaccount_set.all():
         if user_metadata.status == UserMetadata.Status.APPROVED:
             send_approved_user_message(user, socialaccount)
-        # otherwise, send "awaiting approval" email for regular cases
-        elif not needs_institutional_verification:
+            continue
+
+        if send_verification:
+            send_verification_email(user, socialaccount)
+        else:
             send_registered_notice_email(user, socialaccount)
-            send_new_user_message_email(user, socialaccount)
+        # Always notify the admins about a pending user, so that someone whose
+        # verification link expires unused still shows up in the approval queue.
+        send_new_user_message_email(user, socialaccount)

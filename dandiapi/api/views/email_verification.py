@@ -48,19 +48,25 @@ def verify_email_view(request: HttpRequest) -> HttpResponseBase:
     if token_age.total_seconds() > TOKEN_EXPIRATION_SECONDS:
         return HttpResponseBadRequest('Verification token has expired')
 
-    # Mark email as verified, approve user, and invalidate the token
-    user_metadata.is_email_verified = True
-    user_metadata.status = UserMetadata.Status.APPROVED
-    user_metadata.verification_token = None
-    user_metadata.save(update_fields=['is_email_verified', 'status', 'verification_token'])
-
-    # Send approval email
+    # Mark the email as verified and invalidate the token. Only users still awaiting
+    # approval are approved here; a user an admin has since rejected stays rejected.
     user = user_metadata.user
-    socialaccount = user.socialaccount_set.first()
-    if socialaccount:
-        send_approved_user_message(user, socialaccount)
+    approve = user_metadata.status == UserMetadata.Status.PENDING
+    user_metadata.is_email_verified = True
+    user_metadata.verification_token = None
+    if approve:
+        user_metadata.status = UserMetadata.Status.APPROVED
+    user_metadata.save(update_fields=['is_email_verified', 'verification_token', 'status'])
 
-    logger.info('User %s email verified and approved', user.username)
+    if approve:
+        socialaccount = user.socialaccount_set.first()
+        if socialaccount:
+            send_approved_user_message(user, socialaccount)
+        logger.info('User %s email verified and approved', user.username)
+    else:
+        logger.info(
+            'User %s email verified; status left as %s', user.username, user_metadata.status
+        )
 
     # Redirect to web app
     return redirect(reverse('authorize'))
