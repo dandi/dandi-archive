@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.db import transaction
 from django_filters import rest_framework as filters
-from drf_yasg.utils import no_body, swagger_auto_schema
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
@@ -23,6 +23,7 @@ from dandiapi.api.tasks import delete_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
+    PublishVersionSerializer,
     VersionDetailSerializer,
     VersionMetadataSerializer,
     VersionSerializer,
@@ -135,7 +136,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        request_body=no_body,
+        request_body=PublishVersionSerializer,
         manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
         responses={200: VersionSerializer},
     )
@@ -148,7 +149,12 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 'Only draft versions can be published',
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
-        publish_dandiset(user=request.user, dandiset=self.get_object().dandiset)
+        serializer = PublishVersionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        release_notes: str | None = serializer.validated_data.get('release_notes')
+        publish_dandiset(
+            user=request.user, dandiset=self.get_object().dandiset, release_notes=release_notes
+        )
         return Response(None, status=status.HTTP_202_ACCEPTED)
 
     @swagger_auto_schema(

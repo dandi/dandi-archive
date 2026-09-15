@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from secrets import randbelow
+
 from .base import *
 
-SECRET_KEY = 'insecure-secret'  # noqa: S105
+SECRET_KEY = 'insecure-secret'
 
 # Use a fast, insecure hasher to speed up tests
 PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
@@ -14,11 +16,10 @@ STORAGES['default'] = {
         'endpoint_url': f'{_minio_url.scheme}://{_minio_url.hostname}:{_minio_url.port}',
         'access_key': _minio_url.username,
         'secret_key': _minio_url.password,
-        'bucket_name': 'test-django-storage',
+        'bucket_name': f'test-django-storage-{randbelow(1_000_000):06d}',
         'querystring_expire': int(timedelta(hours=6).total_seconds()),
     },
 }
-DANDI_DANDISETS_BUCKET_NAME = 'test-django-storage'
 
 # Testing will set EMAIL_BACKEND to use the memory backend
 

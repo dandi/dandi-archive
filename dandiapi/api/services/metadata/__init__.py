@@ -26,7 +26,11 @@ logger = get_task_logger(__name__)
 
 
 def _encode_pydantic_error(error) -> dict[str, str]:
-    return {'field': error['loc'][0], 'message': error['msg']}
+    # `loc` may be an empty tuple, e.g. for an error raised by a top-level
+    # `@model_validator`, which attaches the error to the model root. Mirror how
+    # `_encode_jsonschema_error` tolerates an empty path so we don't IndexError.
+    loc = error['loc']
+    return {'field': str(loc[0]) if loc else '', 'message': error['msg']}
 
 
 def _encode_jsonschema_error(error: jsonschema.exceptions.ValidationError) -> dict[str, str]:

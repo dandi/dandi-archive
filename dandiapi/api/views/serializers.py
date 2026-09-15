@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+import re
 from typing import TYPE_CHECKING, Any
 
 from dandischema.consts import DANDI_SCHEMA_VERSION
@@ -43,7 +44,26 @@ class UserDetailSerializer(serializers.Serializer):
     status = serializers.CharField()
 
 
+class DandisetIdentifierField(serializers.Field[int, str | int, str, Any]):
+    default_error_messages = {'invalid': 'A valid Dandiset identifier is required.'}
+
+    def to_internal_value(self, data: Any) -> int:
+        if not isinstance(data, str | int):
+            self.fail('invalid')
+        if isinstance(data, str) and not re.fullmatch(Dandiset.IDENTIFIER_REGEX, data):
+            self.fail('invalid')
+        # Always coerce; since bool is a subtype of int
+        data = int(data)
+        if not 0 <= data <= 999_999:
+            self.fail('invalid')
+        return data
+
+    def to_representation(self, value: int) -> str:
+        return f'{value:06}'
+
+
 class DandisetSerializer(serializers.ModelSerializer):
+    identifier = DandisetIdentifierField()
     contact_person = serializers.SerializerMethodField(method_name='get_contact_person')
     star_count = serializers.SerializerMethodField()
     is_starred = serializers.SerializerMethodField()
@@ -149,6 +169,10 @@ class VersionMetadataSerializer(serializers.ModelSerializer):
         return super().validate(data)
 
 
+class PublishVersionSerializer(serializers.Serializer):
+    release_notes = serializers.CharField(required=False, allow_blank=True, max_length=5000)
+
+
 class VersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Version
@@ -162,11 +186,21 @@ class VersionSerializer(serializers.ModelSerializer):
             'created',
             'modified',
             'dandiset',
+            'release_notes',
         ]
         read_only_fields = ['created']
 
     dandiset = DandisetSerializer()
     # name = serializers.SlugRelatedField(read_only=True, slug_field='name')
+
+    # Source release notes from the published metadata (the canonical, schema-defined
+    # `releaseNotes` field) rather than the mutable `release_notes` column, which is only
+    # used internally to carry the value into a publish. This ensures the draft version,
+    # which has no `releaseNotes` in its metadata, reports no release notes.
+    release_notes = serializers.SerializerMethodField()
+
+    def get_release_notes(self, obj: Version) -> str:
+        return obj.metadata.get('releaseNotes', '')
 
     def __init__(self, *args, child_context=False, **kwargs):
         if child_context:
@@ -280,7 +314,24 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
     )
     search = serializers.CharField(
         required=False,
-        help_text='Search terms to filter the results.',
+        help_text=(
+            'Free-text search across dandiset metadata, plus Gmail-style '
+            'key:value operators that filter on structured fields. Operators '
+            'and free text combine with AND. Multi-word operator values must '
+            'be quoted (e.g. technique:"spike sorting"). Wrapping a token in '
+            'double quotes opts out of operator parsing for that token. '
+            'Available operators: '
+            'created_before, created_after, modified_before, modified_after, '
+            'published_before, published_after (all take YYYY-MM-DD); '
+            'species, approach, technique (case-insensitive '
+            'substring against the corresponding assetsSummary array of '
+            'the dandiset version); '
+            'file_type (nwb, image, text, video — or any MIME prefix); '
+            'owner (case-insensitive match against GitHub username, email, '
+            'first name, last name, or "first last"). '
+            'Invalid syntax returns HTTP 400 with the offending token; '
+            'unknown operators get a "Did you mean?" suggestion.'
+        ),
     )
 
 

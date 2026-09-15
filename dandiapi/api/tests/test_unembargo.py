@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 import dandischema
 from django.core.files.storage import default_storage
+from django.utils import timezone
 import pytest
 
 from dandiapi.api.manifests import all_manifest_filepaths
@@ -269,9 +270,16 @@ def test_unembargo_dandiset(
     for manifest_path in all_manifest_filepaths(draft_version):
         assert default_storage.get_tags(manifest_path) == {}
 
+    old_embargoed_end_date = dandiset.embargo_end_date
+    assert old_embargoed_end_date is not None
+
     dandiset.refresh_from_db()
     draft_version.refresh_from_db()
+
     assert dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN
+    assert dandiset.embargo_end_date is not None
+    assert dandiset.embargo_end_date != old_embargoed_end_date
+    assert dandiset.embargo_end_date == timezone.now().date()
     assert (
         draft_version.metadata['access'][0]['status']
         == dandischema.models.AccessType.OpenAccess.value

@@ -73,6 +73,7 @@ AUTO_APPROVE_EMAIL_SUFFIXES = [
     '@ccf.org',
     '.ac.uk',
     '.mcgill.ca',
+    '@epfl.ch',
 ]
 
 

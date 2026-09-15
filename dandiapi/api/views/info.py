@@ -48,6 +48,7 @@ class ApiInfoSerializer(serializers.Serializer):
         self.fields.update(
             {
                 'cli-minimal-version': serializers.CharField(),
+                'cli-requires-python': serializers.CharField(),
                 'cli-bad-versions': serializers.ListField(child=serializers.CharField()),
             }
         )
@@ -84,7 +85,8 @@ def info_view(request):
             'schema_url': get_schema_url(),
             'allowed_schema_versions': ALLOWED_INPUT_SCHEMAS,
             'version': importlib.metadata.version('dandiapi'),
-            'cli-minimal-version': '0.60.0',
+            'cli-minimal-version': '0.74.0',
+            'cli-requires-python': '>=3.10',
             'cli-bad-versions': [],
             'services': {
                 'api': {'url': api_url},

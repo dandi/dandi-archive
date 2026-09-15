@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('api', '0030_alter_asset_path'),
+        ('api', '0032_version_release_notes'),
     ]
 
     operations = [

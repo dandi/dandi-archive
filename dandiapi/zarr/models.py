@@ -24,6 +24,28 @@ def zarr_s3_path(zarr_id: str, zarr_path: str = ''):
     return f'{settings.DANDI_ZARR_PREFIX_NAME}/{zarr_id}/{zarr_path}'
 
 
+def validate_zarr_path(path: str) -> str:
+    """
+    Reject zarr paths that could traverse outside the zarr archive's S3 prefix.
+
+    User-supplied paths are interpolated into an S3 key of the form
+    ``{DANDI_ZARR_PREFIX_NAME}/{zarr_id}/{path}``. django-storages' ``clean_name``
+    runs ``posixpath.normpath`` -- which collapses ``..`` -- *before* its
+    ``safe_join`` guard, and the storage ``location`` is empty, so ``safe_join``
+    only blocks escaping the (non-representable) bucket root. A ``..`` segment
+    therefore resolves to an arbitrary key elsewhere in the bucket, permitting
+    reads, overwrites, and deletes of unrelated objects. Reject any such segment.
+
+    Backslashes are normalized to forward slashes before the check because
+    ``clean_name`` performs the same replacement *after* normpath, which would
+    otherwise let a segment containing backslashes survive normpath and then
+    re-form a traversal sequence in the final key.
+    """
+    if any(segment == '..' for segment in path.replace('\\', '/').split('/')):
+        raise ValidationError('Zarr path cannot contain ".." components.')
+    return path
+
+
 # The status of the zarr ingestion (checksums, size, file count)
 class ZarrArchiveStatus(models.TextChoices):
     PENDING = 'Pending'

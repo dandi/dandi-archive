@@ -4,6 +4,7 @@ import axios from 'axios';
 import RefParser from '@apidevtools/json-schema-ref-parser';
 
 import { dandiRest, user } from '@/rest';
+import { useInstanceStore } from '@/stores/instance';
 import type { User, Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
 import { fixSchema } from '@/utils/schema';
@@ -110,8 +111,13 @@ export const useDandisetStore = defineStore('dandiset', {
       }
     },
     async fetchSchema() {
-      const { schema_url: schemaUrl } = await dandiRest.info();
-      const res = await axios.get(schemaUrl);
+      const instanceStore = useInstanceStore();
+      await instanceStore.load();
+      if (instanceStore.info === null) {
+        throw new Error('Could not retrieve server info!');
+      }
+
+      const res = await axios.get(instanceStore.info.schema_url);
 
       if (res.status !== 200) {
         throw new Error('Could not retrieve Dandiset Schema!');

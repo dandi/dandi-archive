@@ -68,8 +68,14 @@
         </div>
         <div class="copy-block mb-4">
           <div class="copy-block-content">
-            <pre v-if="isCodeFormat" class="citation-text-code">{{ currentCitation }}</pre>
-            <span v-else class="citation-text">{{ currentCitation }}</span>
+            <pre
+              v-if="isCodeFormat"
+              class="citation-text-code"
+            >{{ currentCitation }}</pre>
+            <span
+              v-else
+              class="citation-text"
+            >{{ currentCitation }}</span>
             <v-btn
               icon
               size="small"
@@ -224,7 +230,6 @@
             </v-chip>
           </p>
         </div>
-
       </v-card-text>
     </v-card>
   </div>
@@ -282,7 +287,7 @@ const cffObject = computed(() => {
     return null;
   }
 
-  return dandisetToCFF(props.meta, typeof doi.value === 'string' ? doi.value : undefined);
+  return dandisetToCFF(props.meta, typeof doi.value === 'string' ? doi.value : undefined, isDraft.value, currentDandiset.value?.modified);
 });
 
 // Generate citations in different formats

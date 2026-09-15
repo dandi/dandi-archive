@@ -110,8 +110,8 @@
                   >
                     mdi-folder
                   </v-icon>
-                  ..
                 </template>
+                <v-list-item-title>..</v-list-item-title>
               </v-list-item>
 
               <v-list-item
@@ -132,8 +132,10 @@
                       mdi-file
                     </template>
                   </v-icon>
-                  {{ item.name }}
                 </template>
+                <v-list-item-title :title="item.name">
+                  {{ item.name }}
+                </v-list-item-title>
 
                 <template #append>
                   <v-list-item-action>
@@ -397,7 +399,7 @@ function assetMetadataURI(asset_id: string) {
 }
 
 function fileSize(item: AssetPath) {
-  return filesize(item.aggregate_size, { round: 1, base: 10, standard: 'iec' });
+  return filesize(item.aggregate_size, { round: 1, base: 10, standard: 'si' });
 }
 
 function showDelete(item: AssetPath) {

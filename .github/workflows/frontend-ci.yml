@@ -11,21 +11,21 @@ jobs:
     defaults:
         run:
           working-directory: web
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # fetch history for all branches and tags
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20.x
+          node-version: 24.x
 
       - name: Install Vue app
         run: npm ci
 
       - name: Lint Vue app
-        run: npm run lint --no-fix
+        run: npm run lint
 
       - name: Type-check Vue app
         run: npm run type-check
@@ -35,7 +35,7 @@ jobs:
 
   test-e2e:
     name: E2E tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:latest
@@ -73,6 +73,10 @@ jobs:
       # API server env vars
       DJANGO_SETTINGS_MODULE: dandiapi.settings.development
       DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+      # Close DB connections per-request so the threaded `runserver` doesn't
+      # accumulate connections under parallel Playwright load and exhaust
+      # Postgres's max_connections ("sorry, too many clients already").
+      DJANGO_CONN_MAX_AGE: "0"
       DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
       DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage-testing
       DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
@@ -87,16 +91,16 @@ jobs:
       VITE_APP_OAUTH_API_ROOT: http://localhost:8000/oauth/
       VITE_APP_OAUTH_CLIENT_ID: Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0 # fetch history for all branches and tags
 
-    - uses: actions/setup-node@v6
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
-        node-version: 20
+        node-version: 24
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
 
     - name: Install web app
       run: npm ci
@@ -133,7 +137,7 @@ jobs:
           # run the tests
           cd e2e && npx playwright test
 
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       if: always()
       with:
         name: playwright-report

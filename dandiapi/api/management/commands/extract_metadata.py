@@ -1,12 +1,11 @@
 from __future__ import annotations
 
+import importlib.util
 import logging
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
 
-from dandi.dandiapi import RemoteReadableAsset
-from dandi.metadata.nwb import nwb2asset
-from dandi.misctypes import Digest, DigestType
 from dandischema.models import get_schema_version
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -21,6 +20,15 @@ if TYPE_CHECKING:
     from django.db.models import QuerySet
 
 logger = logging.getLogger(__name__)
+
+# The CLI only exists as an optional requirement, so ensure it's been specified correctly.
+if importlib.util.find_spec('dandi') is None:
+    click.echo('Module "dandi" not found. Please run:\n\tuv sync --extra cli')
+    sys.exit(1)
+else:
+    from dandi.dandiapi import RemoteReadableAsset
+    from dandi.metadata.nwb import nwb2asset
+    from dandi.misctypes import Digest, DigestType
 
 
 @click.group()

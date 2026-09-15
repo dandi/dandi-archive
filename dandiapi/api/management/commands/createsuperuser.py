@@ -3,9 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.db.models.signals import post_init, post_save
-from resonant_settings.allauth_support.management.commands import createsuperuser
 
 from dandiapi.api.models.user import UserMetadata
+
+from resonant_settings.allauth_support.management.commands import createsuperuser
 
 if TYPE_CHECKING:
     from resonant_settings.allauth_support.createsuperuser import EmailAsUsernameProxyUser
