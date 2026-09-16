@@ -268,7 +268,7 @@ import { useDisplay, useTheme } from 'vuetify';
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
 import AnatomyCard from '@/components/DLP/AnatomyCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
-import { open } from '@/components/Meditor/state';
+import { open, setTab } from '@/components/Meditor/state';
 
 import type { ComputedRef, PropType } from 'vue';
 import type { AssociatedProjects, DandisetMetadata, RelatedResource, Protocol } from '@/types';
@@ -367,6 +367,7 @@ const contactPeople = computed(
 );
 
 function openMeditor() {
+  setTab('contributor');
   open.value = true;
 }
 

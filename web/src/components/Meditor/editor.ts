@@ -12,6 +12,7 @@ import {
   filterModelWithSchema,
   writeSubModelToMaster,
   populateEmptyArrays,
+  renderField,
 } from './utils';
 import { MeditorTransactionTracker } from './transactions';
 
@@ -38,6 +39,8 @@ class EditorInterface {
 
   transactionTracker: MeditorTransactionTracker
 
+  fieldsToRender: string[];
+
   constructor(schema: JSONSchema7, model: DandiModel) {
     this.model = cloneDeep(model);
     this.schema = cloneDeep(schema);
@@ -50,6 +53,8 @@ class EditorInterface {
 
     this.basicModel = ref(filterModelWithSchema(this.model, this.basicSchema));
     this.complexModel = reactive(filterModelWithSchema(this.model, this.complexSchema));
+    this.fieldsToRender = Object.keys(this.complexSchema.properties as any).filter(
+      (p) => renderField((this.complexSchema as any).properties[p]));
 
     this.modelValid = computed(() => this.basicModelValid.value && this.complexModelValid.value);
     this.complexModelValidation = reactive(Object.keys(this.complexModel).reduce(

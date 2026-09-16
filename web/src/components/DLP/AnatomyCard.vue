@@ -106,7 +106,7 @@ import type { PropType } from 'vue';
 import type { Anatomy, SubjectMatterOfTheDataset } from '@/types/schema';
 
 import { useDandisetStore } from '@/stores/dandiset';
-import { open } from '@/components/Meditor/state';
+import { open, setTab } from '@/components/Meditor/state';
 
 const store = useDandisetStore();
 const readonly = computed(() => !store.userCanModifyDandiset);
@@ -188,10 +188,7 @@ function ontologyLink(identifier?: string): string | undefined {
 }
 
 function openMeditor() {
-  // TODO: Scope out how reliably the meditor can be opened
-  // to a specific tab. Currently tabs are determined by the
-  // DANDI schame and keyed by index, not tab name.
-  // Can we always determine "anatomy info is edited on tab XYZ?"
+  setTab('about');
   open.value = true;
 }
 </script>
