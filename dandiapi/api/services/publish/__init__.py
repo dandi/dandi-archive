@@ -58,11 +58,12 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  #
     if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
         raise NotAllowedError('Operation only allowed on OPEN dandisets', 400)
 
-    if dandiset.zarr_archives.exists():
-        raise NotAllowedError('Cannot publish dandisets which contain zarrs', 400)
-
     with transaction.atomic():
         draft_version: Version = dandiset.versions.select_for_update().get(version='draft')
+
+        if draft_version.assets.filter(zarr__isnull=False).exists():
+            raise NotAllowedError('Cannot publish dandisets which contain zarrs', 400)
+
         if not draft_version.publishable:
             match draft_version.status:
                 case Version.Status.PUBLISHED:
