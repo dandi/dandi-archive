@@ -1,3 +1,19 @@
+# v1.0.7 (Thu Sep 17 2026)
+
+#### 🐛 Bug Fix
+
+- Fix zarr publishing validation [#2924](https://github.com/dandi/dandi-archive/pull/2924) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add in-browser zip download for small dandisets [#2855](https://github.com/dandi/dandi-archive/pull/2855) ([@bendichter](https://github.com/bendichter) [@naglepuff](https://github.com/naglepuff))
+- Add an Example Notebooks tab to the dandiset landing page [#2897](https://github.com/dandi/dandi-archive/pull/2897) ([@bendichter](https://github.com/bendichter) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v1.0.6 (Mon Sep 14 2026)
 
 #### 🐛 Bug Fix
