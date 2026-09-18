@@ -41,11 +41,7 @@ from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, U
             '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/',
             True,
         ),
-        (
-            'delete',
-            '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/',
-            True,
-        ),
+        ('delete', '/api/dandisets/{dandiset.identifier}/versions/draft/assets/', True),
         (
             'get',
             '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/download/',

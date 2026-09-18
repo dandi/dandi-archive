@@ -461,7 +461,7 @@ async function deleteAsset() {
   }
 
   // Delete the asset on the server.
-  await dandiRest.deleteAsset(props.identifier, props.version, asset.asset_id);
+  await dandiRest.deleteAssets(props.identifier, props.version, [asset.asset_id]);
 
   // Recompute the items to display in the browser.
   getItems();

@@ -246,7 +246,9 @@ def test_audit_remove_asset(api_client, asset_blob_factory, draft_asset_factory)
     asset_id = asset.asset_id
     api_client.force_authenticate(user=user)
     resp = api_client.delete(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/{asset_id}/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/',
+        {'asset_ids': [str(asset_id)]},
+        format='json',
     )
     assert resp.status_code == 204
 

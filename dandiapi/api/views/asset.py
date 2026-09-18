@@ -23,7 +23,6 @@ from dandiapi.api.services.asset import (
     add_asset_to_version,
     bulk_remove_assets_from_version,
     change_asset,
-    remove_asset_from_version,
 )
 from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
@@ -231,6 +230,31 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = AssetFilter
 
+    @classmethod
+    def as_view(cls, actions=None, **initkwargs):
+        """
+        Route DELETE on the asset collection to `bulk_destroy`.
+
+        This can't instead be a DELETE action on VersionViewSet with a url_path of `assets`,
+        as that would define a second URL pattern for a path this viewset already serves.
+        Django resolves on path alone, so whichever pattern came first would shadow the other,
+        resulting in a 405 on either the GET/POST actions on this viewset, or the DELETE action on
+        VersionViewSet.
+
+        This impedance is caused by our over-subscription to viewsets. If we ever decide to drop
+        viewsets and use simple functional views, this would not be an issue, as we could simply
+        have one master 'version assets' view, that would dispatch each method to its proper
+        function.
+        """
+        # If actions['get'] == 'list', then as_view is being called to request the collection level
+        # routes (not detail routes). We want to add the bulk_destroy method to the collection level
+        # routes, so that the bulk asset delete endpoint can function properly (it can't be a detail
+        # route, as otherwise we'd need to provide an asset_id in the request path).
+        if actions is not None and actions.get('get') == 'list':
+            actions = {**actions, 'delete': 'bulk_destroy'}
+
+        return super().as_view(actions, **initkwargs)
+
     def raise_if_unauthorized(self):
         version = get_object_or_404(
             Version.objects.select_related('dandiset'),
@@ -388,44 +412,19 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
     @require_dandiset_owner_or_403('versions__dandiset__pk')
     @swagger_auto_schema(
-        manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
-        operation_summary='Remove an asset from a version.',
-        operation_description='Assets are never deleted, only disassociated from a version.\
-                               Only draft versions can be modified.',
-    )
-    def destroy(self, request, versions__dandiset__pk, versions__version, **kwargs):
-        version = get_object_or_404(
-            Version.objects.select_related('dandiset'),
-            dandiset__pk=versions__dandiset__pk,
-            version=versions__version,
-        )
-        if version.dandiset.unembargo_in_progress:
-            raise DandisetUnembargoInProgressError
-
-        # Lock asset for delete
-        with transaction.atomic():
-            locked_asset = get_object_or_404(
-                version.assets.select_for_update(), id=self.get_object().id
-            )
-            remove_asset_from_version(user=request.user, asset=locked_asset, version=version)
-
-        return Response(None, status=status.HTTP_204_NO_CONTENT)
-
-    @swagger_auto_schema(
-        method='POST',
         request_body=AssetBulkDeleteRequestSerializer,
         responses={
             204: 'If the assets were successfully removed',
             404: 'If any of the given assets do not belong to this version',
         },
         manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
-        operation_summary='Remove multiple assets from a version.',
+        operation_summary='Remove assets from a version.',
         operation_description='Assets are never deleted, only disassociated from a version.\
+                               Any number of assets may be removed in a single request, and\
+                               either all of them are removed, or none are.\
                                Only draft versions can be modified.',
     )
-    @require_dandiset_owner_or_403('versions__dandiset__pk')
-    @action(detail=False, methods=['POST'], url_path='bulk-delete', filter_backends=[])
-    def bulk_delete(self, request, versions__dandiset__pk, versions__version, **kwargs):
+    def bulk_destroy(self, request, versions__dandiset__pk, versions__version, **kwargs):
         version = get_object_or_404(
             Version.objects.select_related('dandiset'),
             dandiset__pk=versions__dandiset__pk,
