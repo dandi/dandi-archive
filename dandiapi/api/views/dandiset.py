@@ -24,7 +24,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
-from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.models import Dandiset, Upload, Version
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import DandisetStar
 from dandiapi.api.services import audit
@@ -61,17 +61,17 @@ from dandiapi.api.views.serializers import (
     DandisetSearchQueryParameterSerializer,
     DandisetSearchResultListSerializer,
     DandisetUploadSerializer,
+    DandisetZarrUploadSerializer,
     PaginationQuerySerializer,
     UserSerializer,
     VersionMetadataSerializer,
 )
 from dandiapi.search.models import AssetSearch
+from dandiapi.zarr.models import ZarrUpload
 
 if TYPE_CHECKING:
     from rest_framework.request import Request
     from rest_framework.views import APIView
-
-    from dandiapi.api.models.upload import Upload
 
 
 class DandisetOrderingFilter(filters.OrderingFilter):
@@ -175,6 +175,26 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
         )
 
         return queryset.filter(id__in=matching_dandiset_ids)
+
+
+def _serialize_uploads(rows: list[dict]) -> list[dict]:
+    """Serialize a combined list of Upload and ZarrUpload."""
+    upload_ids = [row['upload_id'] for row in rows]
+
+    # Upload ID is a UUID, so filtering each model by the entire
+    # list will only return that model's respective entries.
+    serialized_zarr_uploads = DandisetZarrUploadSerializer(
+        ZarrUpload.objects.select_related('zarr').filter(upload_id__in=upload_ids), many=True
+    ).data
+    serialized_blob_uploads = DandisetUploadSerializer(
+        Upload.objects.filter(upload_id__in=upload_ids), many=True
+    ).data
+
+    # Order by created
+    uploads = [*serialized_zarr_uploads, *serialized_blob_uploads]
+    uploads.sort(key=lambda x: x['created'])
+
+    return uploads
 
 
 class DandisetViewSet(ReadOnlyModelViewSet):
@@ -614,6 +634,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         manual_parameters=[DANDISET_PK_PARAM],
         query_serializer=PaginationQuerySerializer,
         request_body=no_body,
+        responses={200: DandisetUploadSerializer(many=True)},
         operation_summary='List active/incomplete uploads in this dandiset.',
     )
     @action(methods=['GET'], detail=True)
@@ -623,16 +644,19 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # Special case where a "safe" method is access restricted, due to the nature of uploads
         self.require_owner_perm(dandiset)
 
-        uploads: QuerySet[Upload] = dandiset.uploads.all()
+        # Get combined list of Upload and ZarrUpload, ordered by creation time.
+        blob_uploads = Upload.objects.filter(dandiset=dandiset).values('upload_id', 'created')
+        zarr_uploads = ZarrUpload.objects.filter(zarr__dandiset=dandiset).values(
+            'upload_id', 'created'
+        )
+        unioned_uploads = blob_uploads.union(zarr_uploads, all=True).order_by('created')
 
         # Paginate and return
-        page = self.paginate_queryset(uploads)
+        page = self.paginate_queryset(unioned_uploads)
         if page is not None:
-            serializer = DandisetUploadSerializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            return self.get_paginated_response(_serialize_uploads(page))
 
-        serializer = DandisetUploadSerializer(uploads, many=True)
-        return Response(serializer.data)
+        return Response(_serialize_uploads(list(unioned_uploads)))
 
     @swagger_auto_schema(
         manual_parameters=[DANDISET_PK_PARAM],
@@ -644,7 +668,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         dandiset: Dandiset = self.get_object()
         self.require_owner_perm(dandiset)
 
-        dandiset.uploads.all().delete()
+        Upload.objects.filter(dandiset=dandiset).delete()
+        ZarrUpload.objects.filter(zarr__dandiset=dandiset).delete()
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
