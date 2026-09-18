@@ -101,7 +101,8 @@
               <!-- Extra item to navigate up the tree -->
               <v-list-item
                 v-if="location !== rootDirectory"
-                @click="navigateToParent"
+                :to="locationRoute(parentLocation)"
+                :active="false"
               >
                 <template #prepend>
                   <v-icon
@@ -118,6 +119,7 @@
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
+                class="item-row"
                 @click="openItem(item)"
               >
                 <template #prepend>
@@ -134,7 +136,28 @@
                   </v-icon>
                 </template>
                 <v-list-item-title :title="item.name">
-                  {{ item.name }}
+                  <!--
+                    Render the item as a real link so that the browser treats it as one:
+                    right click offers "Open link in new tab", and ctrl/cmd/middle click
+                    work as they do anywhere else. The stretched ::after (see below) makes
+                    the whole row, not just the text, part of the link.
+                  -->
+                  <a
+                    v-if="item.asset"
+                    class="item-link"
+                    :href="inlineURI(item.asset.asset_id)"
+                    @click.stop
+                  >
+                    {{ item.name }}
+                  </a>
+                  <router-link
+                    v-else
+                    class="item-link"
+                    :to="locationRoute(item.path)"
+                    @click.stop
+                  >
+                    {{ item.name }}
+                  </router-link>
                 </v-list-item-title>
 
                 <template #append>
@@ -363,11 +386,20 @@ const isOwner = computed(() => !!(
   user.value && owners.value?.includes(user.value?.username)
 ));
 const itemsNotFound = computed(() => items.value && !items.value.length);
+const parentLocation = computed(() => location.value.split('/').slice(0, -1).join('/'));
 
 
 
 function locationSlice(index: number) {
   return `${splitLocation.value.slice(0, index + 1).join('/')}/`;
+}
+
+// The route for a directory, so that directory rows can be rendered as links.
+function locationRoute(newLocation: string): RouteLocationRaw {
+  return {
+    name: 'fileBrowser',
+    query: { location: newLocation, page: '1' },
+  } as RouteLocationRaw;
 }
 
 function openItem(item: AssetPath) {
@@ -380,10 +412,6 @@ function openItem(item: AssetPath) {
     // If it's a directory, move into it.
     location.value = path;
   }
-}
-
-function navigateToParent() {
-  location.value = location.value.split('/').slice(0, -1).join('/');
 }
 
 function downloadURI(asset_id: string) {
@@ -514,3 +542,35 @@ onMounted(() => {
   }
 });
 </script>
+
+<style scoped>
+.item-row {
+  position: relative;
+}
+
+.item-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.item-link:hover {
+  text-decoration: underline;
+}
+
+/*
+  Stretch the link over the whole row, so right/middle/modifier clicking anywhere
+  on it (not just on the file name) targets the link.
+*/
+.item-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Keep the per-item action buttons clickable on top of the stretched link. */
+.item-row :deep(.v-list-item__append) {
+  position: relative;
+  z-index: 2;
+}
+</style>
