@@ -115,12 +115,19 @@
                 <v-list-item-title>..</v-list-item-title>
               </v-list-item>
 
+              <!--
+                Render each row as a real link so that
+                the browser treats it as one: right click offers "Open link in new tab", and
+                ctrl/cmd/middle click work as they do anywhere else. Buttons in the append
+                slot stop the click and prevent its default so the row link isn't followed.
+              -->
               <v-list-item
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
-                class="item-row"
-                @click="openItem(item)"
+                :href="item.asset ? inlineURI(item.asset.asset_id) : undefined"
+                :to="item.asset ? undefined : locationRoute(item.path)"
+                :active="false"
               >
                 <template #prepend>
                   <v-icon
@@ -136,28 +143,7 @@
                   </v-icon>
                 </template>
                 <v-list-item-title :title="item.name">
-                  <!--
-                    Render the item as a real link so that the browser treats it as one:
-                    right click offers "Open link in new tab", and ctrl/cmd/middle click
-                    work as they do anywhere else. The stretched ::after (see below) makes
-                    the whole row, not just the text, part of the link.
-                  -->
-                  <a
-                    v-if="item.asset"
-                    class="item-link"
-                    :href="inlineURI(item.asset.asset_id)"
-                    @click.stop
-                  >
-                    {{ item.name }}
-                  </a>
-                  <router-link
-                    v-else
-                    class="item-link"
-                    :to="locationRoute(item.path)"
-                    @click.stop
-                  >
-                    {{ item.name }}
-                  </router-link>
+                  {{ item.name }}
                 </v-list-item-title>
 
                 <template #append>
@@ -166,7 +152,7 @@
                       v-if="showDelete(item)"
                       icon
                       variant="text"
-                      @click.stop="setItemToDelete(item)"
+                      @click.stop.prevent="setItemToDelete(item)"
                     >
                       <v-icon color="error">
                         mdi-delete
@@ -240,8 +226,8 @@
                           color="primary"
                           size="x-small"
                           :disabled="!item.services || !item.services.length"
-
                           v-bind="openWithProps"
+                          @click.stop.prevent
                         >
                           Open With <v-icon size="small">
                             mdi-menu-down
@@ -402,18 +388,6 @@ function locationRoute(newLocation: string): RouteLocationRaw {
   } as RouteLocationRaw;
 }
 
-function openItem(item: AssetPath) {
-  const { asset, path } = item;
-
-  if (asset) {
-    // If the item is an asset, open it in the browser.
-    window.open(inlineURI(asset.asset_id), "_self");
-  } else {
-    // If it's a directory, move into it.
-    location.value = path;
-  }
-}
-
 function downloadURI(asset_id: string) {
   return dandiRest.assetDownloadURI(props.identifier, props.version, asset_id);
 }
@@ -542,35 +516,3 @@ onMounted(() => {
   }
 });
 </script>
-
-<style scoped>
-.item-row {
-  position: relative;
-}
-
-.item-link {
-  color: inherit;
-  text-decoration: none;
-}
-
-.item-link:hover {
-  text-decoration: underline;
-}
-
-/*
-  Stretch the link over the whole row, so right/middle/modifier clicking anywhere
-  on it (not just on the file name) targets the link.
-*/
-.item-link::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
-
-/* Keep the per-item action buttons clickable on top of the stretched link. */
-.item-row :deep(.v-list-item__append) {
-  position: relative;
-  z-index: 2;
-}
-</style>
