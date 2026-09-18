@@ -109,7 +109,8 @@
               <!-- Extra item to navigate up the tree -->
               <v-list-item
                 v-if="location !== rootDirectory"
-                @click="navigateToParent"
+                :to="locationRoute(parentLocation)"
+                :active="false"
               >
                 <template #prepend>
                   <v-icon
@@ -122,11 +123,18 @@
                 <v-list-item-title>..</v-list-item-title>
               </v-list-item>
 
+              <!--
+                Render each row as a real link so that
+                the browser treats it as one: right click offers "Open link in new tab", and
+                ctrl/cmd/middle click work as they do anywhere else. Buttons in the append
+                slot stop the click and prevent its default so the row link isn't followed.
+              -->
               <v-list-item
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
-                @click="openItem(item)"
+                v-bind="rowLink(item)"
+                :active="false"
               >
                 <template #prepend>
                   <v-icon
@@ -151,7 +159,7 @@
                       v-if="showDelete(item)"
                       icon
                       variant="text"
-                      @click.stop="setItemToDelete(item)"
+                      @click.stop.prevent="setItemToDelete(item)"
                     >
                       <v-icon color="error">
                         mdi-delete
@@ -166,7 +174,7 @@
                           icon
                           variant="text"
                           v-bind="tableProps"
-                          @click.stop="viewAsTable(item)"
+                          @click.stop.prevent="viewAsTable(item)"
                         >
                           <v-icon color="primary">
                             mdi-table
@@ -244,8 +252,8 @@
                           color="primary"
                           size="x-small"
                           :disabled="!item.services || !item.services.length"
-
                           v-bind="openWithProps"
+                          @click.stop.prevent
                         >
                           Open With <v-icon size="small">
                             mdi-menu-down
@@ -405,6 +413,7 @@ const isOwner = computed(() => !!(
   user.value && owners.value?.includes(user.value?.username)
 ));
 const itemsNotFound = computed(() => items.value && !items.value.length);
+const parentLocation = computed(() => location.value.split('/').slice(0, -1).join('/'));
 
 
 
@@ -412,36 +421,43 @@ function locationSlice(index: number) {
   return `${splitLocation.value.slice(0, index + 1).join('/')}/`;
 }
 
-function openItem(item: AssetPath) {
-  const { asset, path } = item;
-
-  if (asset) {
-    if (isTabularFile(path)) {
-      // Tabular files are rendered in a table viewer instead of being opened raw.
-      viewAsTable(item);
-      return;
-    }
-    // If the item is an asset, open it in the browser.
-    window.open(inlineURI(asset.asset_id), "_self");
-  } else {
-    // If it's a directory, move into it.
-    location.value = path;
-  }
+// The route for a directory, so that directory rows can be rendered as links.
+function locationRoute(newLocation: string): RouteLocationRaw {
+  return {
+    name: 'fileBrowser',
+    query: { location: newLocation, page: '1' },
+  } as RouteLocationRaw;
 }
 
-// Record the open table in the URL, so that the link can be shared and comes
-// back with the viewer already open. The route watcher does the opening.
-function viewAsTable(item: AssetPath) {
-  router.replace({
-    ...route,
+// The open table is recorded in the URL, so that the link can be shared and
+// comes back with the viewer already open. The route watcher does the opening.
+function tableRoute(item: AssetPath): RouteLocationRaw {
+  return {
+    name: 'fileBrowser',
     query: { ...route.query, [TABLE_QUERY_PARAM]: item.path },
-  } as RouteLocationRaw);
+  } as RouteLocationRaw;
+}
+
+// Every row is a real link: directories and tabular assets are in-app routes,
+// while other assets point straight at the asset itself.
+function rowLink(item: AssetPath) {
+  if (!item.asset) {
+    return { to: locationRoute(item.path) };
+  }
+  if (isTabularFile(item.path)) {
+    return { to: tableRoute(item) };
+  }
+  return { href: inlineURI(item.asset.asset_id) };
+}
+
+function viewAsTable(item: AssetPath) {
+  router.push(tableRoute(item));
 }
 
 function closeTableViewer() {
   const query = { ...route.query };
   delete query[TABLE_QUERY_PARAM];
-  router.replace({ ...route, query } as RouteLocationRaw);
+  router.replace({ name: 'fileBrowser', query } as RouteLocationRaw);
 }
 
 // Open (or close) the viewer to match the current URL.
@@ -459,10 +475,6 @@ function syncTableViewerWithRoute() {
   } else {
     tableViewerOpen.value = false;
   }
-}
-
-function navigateToParent() {
-  location.value = location.value.split('/').slice(0, -1).join('/');
 }
 
 function downloadURI(asset_id: string) {
