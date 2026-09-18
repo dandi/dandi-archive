@@ -1,3 +1,29 @@
+# v1.0.8 (Fri Sep 18 2026)
+
+:tada: This release contains work from new contributors! :tada:
+
+Thanks for all your work!
+
+:heart: Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+:heart: GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### 🐛 Bug Fix
+
+- Make file browser rows real links [#2926](https://github.com/dandi/dandi-archive/pull/2926) ([@claude](https://github.com/claude) [@mvandenburgh](https://github.com/mvandenburgh) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Fix publish-time race between DOI minting and manifest writing [#2912](https://github.com/dandi/dandi-archive/pull/2912) ([@yarikoptic](https://github.com/yarikoptic) [@claude](https://github.com/claude) [@jjnesbitt](https://github.com/jjnesbitt) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### Authors: 6
+
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v1.0.7 (Thu Sep 17 2026)
 
 #### 🐛 Bug Fix
