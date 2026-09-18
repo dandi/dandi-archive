@@ -209,19 +209,6 @@ def add_asset_to_version(
     return asset
 
 
-def remove_asset_from_version(*, user, asset: Asset, version: Version) -> Version:
-    if not is_dandiset_owner(version.dandiset, user):
-        raise DandisetOwnerRequiredError
-    if version.version != 'draft':
-        raise DraftDandisetNotModifiableError
-
-    with transaction.atomic():
-        _remove_asset_from_version(asset=asset, version=version)
-        audit.remove_asset(dandiset=version.dandiset, user=user, asset=asset)
-
-    return version
-
-
 def bulk_remove_assets_from_version(*, user: User, version: Version, asset_ids: list[UUID]) -> int:
     """
     Remove many assets from a version, returning the number removed.

@@ -303,10 +303,14 @@ const dandiRest = {
   assetMetadataURI(identifier: string, version: string, uuid: string) {
     return `${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}`;
   },
-  async deleteAsset(identifier: string, version: string, uuid: string): Promise<AxiosResponse> {
-    return client.delete(
-      `${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/`
-    );
+  async deleteAssets(
+    identifier: string,
+    version: string,
+    assetIds: string[]
+  ): Promise<AxiosResponse> {
+    return client.delete(`${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets/`, {
+      data: { asset_ids: assetIds },
+    });
   },
   async starDandiset(identifier: string): Promise<void> {
     await client.post(`dandisets/${identifier}/star/`);

@@ -1561,56 +1561,6 @@ def test_asset_rest_update_to_existing(api_client, asset_factory):
 
 
 @pytest.mark.django_db
-def test_asset_rest_delete(api_client, asset):
-    user = UserFactory.create()
-    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
-    draft_version.assets.add(asset)
-
-    # Add paths
-    add_asset_paths(asset, draft_version)
-
-    # Make request
-    api_client.force_authenticate(user=user)
-    response = api_client.delete(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/'
-        f'versions/{draft_version.version}/assets/{asset.asset_id}/'
-    )
-    assert response.status_code == 204
-
-    assert asset not in draft_version.assets.all()
-    assert asset in Asset.objects.all()
-
-    # Check paths
-    assert not AssetPath.objects.filter(path=asset.path, version=draft_version).exists()
-
-    # The version modified date should be updated
-    start_time = draft_version.modified
-    draft_version.refresh_from_db()
-    end_time = draft_version.modified
-    assert start_time < end_time
-
-    # Deleting an Asset should trigger a revalidation
-    assert draft_version.status == Version.Status.PENDING
-
-
-@pytest.mark.django_db
-def test_asset_rest_delete_unembargo_in_progress(api_client, asset):
-    user = UserFactory.create()
-    draft_version = DraftVersionFactory.create(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING, dandiset__owners=[user]
-    )
-    draft_version.assets.add(asset)
-
-    # Make request
-    api_client.force_authenticate(user=user)
-    response = api_client.delete(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/'
-        f'versions/{draft_version.version}/assets/{asset.asset_id}/'
-    )
-    assert response.status_code == 400
-
-
-@pytest.mark.django_db
 def test_asset_rest_delete_zarr(
     api_client,
     draft_asset_factory,
@@ -1634,7 +1584,9 @@ def test_asset_rest_delete_zarr(
     api_client.force_authenticate(user=user)
     resp = api_client.delete(
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
-        f'versions/{draft_version.version}/assets/{asset.asset_id}/'
+        f'versions/{draft_version.version}/assets/',
+        {'asset_ids': [str(asset.asset_id)]},
+        format='json',
     )
     assert resp.status_code == 204
 
@@ -1683,39 +1635,11 @@ def test_asset_rest_delete_zarr_modified(
     # Delete the asset
     resp = api_client.delete(
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
-        f'versions/{draft_version.version}/assets/{asset.asset_id}/'
+        f'versions/{draft_version.version}/assets/',
+        {'asset_ids': [str(asset.asset_id)]},
+        format='json',
     )
     assert resp.status_code == 204
-
-
-@pytest.mark.django_db
-def test_asset_rest_delete_not_an_owner(api_client, version, asset):
-    user = UserFactory.create()
-    api_client.force_authenticate(user=user)
-    version.assets.add(asset)
-
-    response = api_client.delete(
-        f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/{asset.asset_id}/'
-    )
-    assert response.status_code == 403
-
-    assert asset in Asset.objects.all()
-
-
-@pytest.mark.django_db
-def test_asset_rest_delete_published_version(api_client, asset):
-    user = UserFactory.create()
-    published_version = PublishedVersionFactory.create(dandiset__owners=[user])
-    api_client.force_authenticate(user=user)
-    published_version.assets.add(asset)
-
-    response = api_client.delete(
-        f'/api/dandisets/{published_version.dandiset.identifier}/'
-        f'versions/{published_version.version}/assets/{asset.asset_id}/'
-    )
-    assert response.status_code == 405
-    assert response.data == 'Only draft versions can be modified.'
 
 
 @pytest.mark.django_db

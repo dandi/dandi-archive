@@ -21,11 +21,8 @@ if TYPE_CHECKING:
     from dandiapi.api.models.asset import Asset
 
 
-def bulk_delete_url(version: Version) -> str:
-    return (
-        f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/bulk-delete/'
-    )
+def assets_url(version: Version) -> str:
+    return f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/'
 
 
 @pytest.fixture
@@ -47,8 +44,8 @@ def test_asset_rest_bulk_delete(api_client, version_with_assets):
     api_client.force_authenticate(user=user)
 
     start_time = version.modified
-    resp = api_client.post(
-        bulk_delete_url(version),
+    resp = api_client.delete(
+        assets_url(version),
         {'asset_ids': [str(asset.asset_id) for asset in assets]},
         format='json',
     )
@@ -82,8 +79,8 @@ def test_asset_rest_bulk_delete_partial(api_client, version_with_assets):
     user, version, assets = version_with_assets
     api_client.force_authenticate(user=user)
 
-    resp = api_client.post(
-        bulk_delete_url(version),
+    resp = api_client.delete(
+        assets_url(version),
         {'asset_ids': [str(assets[0].asset_id), str(assets[1].asset_id)]},
         format='json',
     )
@@ -108,8 +105,8 @@ def test_asset_rest_bulk_delete_duplicate_ids(api_client, version_with_assets):
     api_client.force_authenticate(user=user)
 
     asset_id = str(assets[0].asset_id)
-    resp = api_client.post(
-        bulk_delete_url(version), {'asset_ids': [asset_id, asset_id]}, format='json'
+    resp = api_client.delete(
+        assets_url(version), {'asset_ids': [asset_id, asset_id]}, format='json'
     )
     assert resp.status_code == 204
     assert version.assets.count() == 2
@@ -122,8 +119,8 @@ def test_asset_rest_bulk_delete_nonexistent_asset(api_client, version_with_asset
     api_client.force_authenticate(user=user)
 
     missing_id = uuid4()
-    resp = api_client.post(
-        bulk_delete_url(version),
+    resp = api_client.delete(
+        assets_url(version),
         {'asset_ids': [str(assets[0].asset_id), str(missing_id)]},
         format='json',
     )
@@ -146,8 +143,8 @@ def test_asset_rest_bulk_delete_asset_of_other_version(
     other_asset = draft_asset_factory()
     other_version.assets.add(other_asset)
 
-    resp = api_client.post(
-        bulk_delete_url(version), {'asset_ids': [str(other_asset.asset_id)]}, format='json'
+    resp = api_client.delete(
+        assets_url(version), {'asset_ids': [str(other_asset.asset_id)]}, format='json'
     )
     assert resp.status_code == 404
     assert other_asset in other_version.assets.all()
@@ -155,11 +152,13 @@ def test_asset_rest_bulk_delete_asset_of_other_version(
 
 @pytest.mark.django_db
 def test_asset_rest_bulk_delete_empty(api_client, version_with_assets):
-    user, version, _ = version_with_assets
+    user, version, assets = version_with_assets
     api_client.force_authenticate(user=user)
 
-    resp = api_client.post(bulk_delete_url(version), {'asset_ids': []}, format='json')
+    resp = api_client.delete(assets_url(version), {'asset_ids': []}, format='json')
     assert resp.status_code == 400
+
+    assert version.assets.count() == len(assets)
 
 
 @pytest.mark.django_db
@@ -167,8 +166,8 @@ def test_asset_rest_bulk_delete_not_an_owner(api_client, version_with_assets):
     _, version, assets = version_with_assets
     api_client.force_authenticate(user=UserFactory.create())
 
-    resp = api_client.post(
-        bulk_delete_url(version), {'asset_ids': [str(assets[0].asset_id)]}, format='json'
+    resp = api_client.delete(
+        assets_url(version), {'asset_ids': [str(assets[0].asset_id)]}, format='json'
     )
     assert resp.status_code == 403
     assert version.assets.count() == 3
@@ -182,8 +181,8 @@ def test_asset_rest_bulk_delete_published_version(api_client, asset):
     published_version.assets.add(asset)
     api_client.force_authenticate(user=user)
 
-    resp = api_client.post(
-        bulk_delete_url(published_version), {'asset_ids': [str(asset.asset_id)]}, format='json'
+    resp = api_client.delete(
+        assets_url(published_version), {'asset_ids': [str(asset.asset_id)]}, format='json'
     )
     assert resp.status_code == 405
 
@@ -198,8 +197,8 @@ def test_asset_rest_bulk_delete_unembargo_in_progress(api_client, draft_asset_fa
     version.assets.add(asset)
     api_client.force_authenticate(user=user)
 
-    resp = api_client.post(
-        bulk_delete_url(version), {'asset_ids': [str(asset.asset_id)]}, format='json'
+    resp = api_client.delete(
+        assets_url(version), {'asset_ids': [str(asset.asset_id)]}, format='json'
     )
     assert resp.status_code == 400
 
@@ -217,8 +216,8 @@ def test_asset_rest_bulk_delete_failure_rolls_back(api_client, version_with_asse
     )
 
     with pytest.raises(RuntimeError, match='something went wrong'):
-        api_client.post(
-            bulk_delete_url(version),
+        api_client.delete(
+            assets_url(version),
             {'asset_ids': [str(asset.asset_id) for asset in assets]},
             format='json',
         )

@@ -44,7 +44,7 @@ EMPTY_PAGINATION = {
         ('get', '/api/dandisets/{dandiset.identifier}/versions/draft/assets/paths/'),
         ('get', '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/'),
         ('put', '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/'),
-        ('delete', '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/'),
+        ('delete', '/api/dandisets/{dandiset.identifier}/versions/draft/assets/'),
         ('get', '/api/assets/{asset.asset_id}/'),
         ('get', '/api/assets/{asset.asset_id}/download/'),
         ('get', '/api/assets/{asset.asset_id}/info/'),
