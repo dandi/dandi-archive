@@ -151,6 +151,8 @@ const operatorHelp = [
   { example: 'technique:"spike sorting"', description: 'Has assets using a measurement technique' },
   { example: 'file_type:nwb', description: 'Has assets of a file type (nwb, image, text, video)' },
   { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, GitHub username, or email)' },
+  { example: 'subjects_min:10', description: 'Has at least this many subjects' },
+  { example: 'subjects_max:100', description: 'Has at most this many subjects' },
 ];
 
 // The set of operators we suggest, derived from the help table so the two

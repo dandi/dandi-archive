@@ -328,7 +328,9 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
             'the dandiset version); '
             'file_type (nwb, image, text, video — or any MIME prefix); '
             'owner (case-insensitive match against GitHub username, email, '
-            'first name, last name, or "first last"). '
+            'first name, last name, or "first last"); '
+            'subjects_min, subjects_max (inclusive bounds on the number of '
+            'subjects in the assetsSummary). '
             'Invalid syntax returns HTTP 400 with the offending token; '
             'unknown operators get a "Did you mean?" suggestion.'
         ),

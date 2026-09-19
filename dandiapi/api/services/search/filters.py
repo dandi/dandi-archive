@@ -43,6 +43,8 @@ _DATE_OPS = frozenset(
 )
 _ASSET_OPS = frozenset({'file_type'})
 _OWNER_OPS = frozenset({'owner'})
+# Inclusive bounds on `assetsSummary.numberOfSubjects`, as jsonpath comparators.
+_SUBJECT_COUNT_OPS = {'subjects_min': '>=', 'subjects_max': '<='}
 
 
 def _annotate_latest_version_modified(queryset):
@@ -97,6 +99,8 @@ def _apply_summary_filters(
 
     Clauses are AND'd on a single Version row.
     """
+    if not clauses:
+        return queryset
     version_qs = Version.objects.all()
     for operator, value in clauses:
         where, params = _jsonpath_name_match(_SUMMARY_PATH_OPS[operator], value)
@@ -106,10 +110,44 @@ def _apply_summary_filters(
     return queryset.filter(id__in=version_qs.values_list('dandiset_id', flat=True).distinct())
 
 
+def _parse_count(operator: str, value: str) -> int:
+    if not value.isascii() or not value.isdigit():
+        raise SearchSyntaxError(
+            f'Invalid number for "{operator}": {value!r}. Use a whole number (e.g. {operator}:10).'
+        )
+    return int(value)
+
+
+def _apply_subject_count_filters(
+    queryset: QuerySet[Dandiset], clauses: list[tuple[str, int]]
+) -> QuerySet[Dandiset]:
+    """Restrict dandisets to those with a version whose subject count meets every bound.
+
+    Bounds are AND'd on a single Version row. A version with no
+    `numberOfSubjects` matches no bound.
+    """
+    if not clauses:
+        return queryset
+    version_qs = Version.objects.all()
+    for operator, count in clauses:
+        # The comparator comes from an allowlist; the count is passed as a
+        # jsonpath variable. Postgres caps jsonpath numbers well above any
+        # subject count, but the cast keeps an absurd value a clean no-match.
+        where = (
+            "jsonb_path_exists(metadata, '$.assetsSummary.numberOfSubjects "
+            f"? (@ {_SUBJECT_COUNT_OPS[operator]} $n)', "
+            "jsonb_build_object('n', %s::numeric))"
+        )
+        version_qs = version_qs.extra(where=[where], params=[count])  # noqa: S610
+    return queryset.filter(id__in=version_qs.values_list('dandiset_id', flat=True).distinct())
+
+
 def _apply_file_type_filters(
     queryset: QuerySet[Dandiset], values: list[str], user: User | AnonymousUser
 ) -> QuerySet[Dandiset]:
     """Restrict dandisets to those with an asset matching every file_type value."""
+    if not values:
+        return queryset
     asset_qs = AssetSearch.objects.visible_to(user)
     for value in values:
         mime_prefix = _FILE_TYPE_ALIASES.get(value.lower(), value)
@@ -200,6 +238,7 @@ def apply_search_filters(
 
     summary_clauses: list[tuple[str, str]] = []
     file_type_values: list[str] = []
+    subject_count_clauses: list[tuple[str, int]] = []
     annotated: set[str] = set()
 
     for op in parsed.operators:
@@ -216,11 +255,9 @@ def apply_search_filters(
             file_type_values.append(value)
         elif key in _OWNER_OPS:
             queryset = _apply_owner_filter(queryset, value)
+        elif key in _SUBJECT_COUNT_OPS:
+            subject_count_clauses.append((key, _parse_count(key, value)))
 
-    if summary_clauses:
-        queryset = _apply_summary_filters(queryset, summary_clauses)
-
-    if file_type_values:
-        queryset = _apply_file_type_filters(queryset, file_type_values, user)
-
-    return queryset
+    queryset = _apply_summary_filters(queryset, summary_clauses)
+    queryset = _apply_file_type_filters(queryset, file_type_values, user)
+    return _apply_subject_count_filters(queryset, subject_count_clauses)

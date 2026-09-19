@@ -2038,6 +2038,45 @@ def test_advanced_search_repeated_same_key_operator_combines_with_and(api_client
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
+def test_advanced_search_subject_count_bounds_are_inclusive(api_client):
+    small = _seed_dandiset_with_summary(assets_summary={'numberOfSubjects': 3})
+    medium = _seed_dandiset_with_summary(assets_summary={'numberOfSubjects': 10})
+    large = _seed_dandiset_with_summary(assets_summary={'numberOfSubjects': 250})
+    # No subject count at all: matches neither bound.
+    _seed_dandiset_with_summary(assets_summary={})
+
+    assert _search_ids(api_client, 'subjects_min:10') == {medium.identifier, large.identifier}
+    assert _search_ids(api_client, 'subjects_max:10') == {small.identifier, medium.identifier}
+    assert _search_ids(api_client, 'subjects_min:4 subjects_max:100') == {medium.identifier}
+    assert _search_ids(api_client, 'subjects_min:1000') == set()
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_subject_count_combines_with_species(api_client):
+    mice = _seed_dandiset_with_summary(
+        assets_summary={'numberOfSubjects': 40, 'species': [{'name': 'House mouse'}]}
+    )
+    _seed_dandiset_with_summary(
+        assets_summary={'numberOfSubjects': 40, 'species': [{'name': 'Norway rat'}]}
+    )
+    _seed_dandiset_with_summary(
+        assets_summary={'numberOfSubjects': 2, 'species': [{'name': 'House mouse'}]}
+    )
+    assert _search_ids(api_client, 'species:mouse subjects_min:10') == {mice.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+@pytest.mark.parametrize('value', ['ten', '-1', '1.5', '1e3'])
+def test_advanced_search_subject_count_rejects_non_integers(api_client, value):
+    response = api_client.get('/api/dandisets/', {'search': f'subjects_min:{value}'})
+    assert response.status_code == 400
+    assert 'subjects_min' in response.json()['search']
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
 def test_advanced_search_empty_operator_value_returns_400(api_client):
     response = api_client.get(
         '/api/dandisets/',

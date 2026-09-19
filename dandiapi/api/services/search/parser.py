@@ -31,6 +31,8 @@ OPERATOR_KEYS: frozenset[str] = frozenset(
         'technique',
         'file_type',
         'owner',
+        'subjects_min',
+        'subjects_max',
     }
 )
 
