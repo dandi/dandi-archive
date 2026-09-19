@@ -12,8 +12,9 @@ from django.db.models.functions import Concat
 
 from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
+from dandiapi.api.services.search.anatomy import CURIE_SQL_TEMPLATE, normalize_curie
 from dandiapi.api.services.search.parser import SearchSyntaxError
-from dandiapi.search.models import AssetSearch
+from dandiapi.search.models import AssetSearch, OntologyTerm
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AnonymousUser
@@ -43,6 +44,7 @@ _DATE_OPS = frozenset(
 )
 _ASSET_OPS = frozenset({'file_type'})
 _OWNER_OPS = frozenset({'owner'})
+_ANATOMY_OPS = frozenset({'anatomy', 'anatomy_exact'})
 
 
 def _annotate_latest_version_modified(queryset):
@@ -97,6 +99,8 @@ def _apply_summary_filters(
 
     Clauses are AND'd on a single Version row.
     """
+    if not clauses:
+        return queryset
     version_qs = Version.objects.all()
     for operator, value in clauses:
         where, params = _jsonpath_name_match(_SUMMARY_PATH_OPS[operator], value)
@@ -110,11 +114,97 @@ def _apply_file_type_filters(
     queryset: QuerySet[Dandiset], values: list[str], user: User | AnonymousUser
 ) -> QuerySet[Dandiset]:
     """Restrict dandisets to those with an asset matching every file_type value."""
+    if not values:
+        return queryset
     asset_qs = AssetSearch.objects.visible_to(user)
     for value in values:
         mime_prefix = _FILE_TYPE_ALIASES.get(value.lower(), value)
         asset_qs = asset_qs.filter(asset_metadata__encodingFormat__istartswith=mime_prefix)
     return queryset.filter(id__in=asset_qs.values_list('dandiset_id', flat=True).distinct())
+
+
+# Matches a Version whose `about` holds an Anatomy entry that is (a) one of the
+# given CURIEs, (b) a descendant of one of the given terms in the ontology
+# closure, or (c) named like the given regex while carrying no identifier the
+# ontology tables know. An entry with a known identifier is judged by that
+# identifier alone, so a "hypothalamus" term is not found under "thalamus".
+# `metadata` is left unqualified for the same reason as in
+# `_jsonpath_name_match`. The interpolated piece is a trusted constant; every
+# user-derived value is bound via params.
+_ANATOMY_CURIE_SQL = CURIE_SQL_TEMPLATE.format(expr="a->>'identifier'")
+_ANATOMY_WHERE = f"""
+EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(
+        CASE WHEN jsonb_typeof(metadata->'about') = 'array'
+             THEN metadata->'about' ELSE '[]'::jsonb END
+    ) AS a
+    WHERE a->>'schemaKey' = 'Anatomy'
+      AND (
+        {_ANATOMY_CURIE_SQL} = ANY(%s::text[])
+        OR {_ANATOMY_CURIE_SQL} IN (
+            SELECT t.curie
+            FROM search_ontologyterm t
+            JOIN search_ontologyclosure c ON c.descendant_id = t.id
+            WHERE c.ancestor_id = ANY(%s::bigint[])
+        )
+        OR (
+            a->>'name' ~* %s
+            AND NOT EXISTS (
+                SELECT 1 FROM search_ontologyterm known
+                WHERE known.curie = {_ANATOMY_CURIE_SQL}
+            )
+        )
+      )
+)
+"""  # noqa: S608
+
+
+def _name_regex(value: str, *, whole: bool) -> str:
+    """Build a Postgres regex matching `value` as the whole name, or as whole words in it."""
+    if whole:
+        return f'^{re.escape(value)}$'
+    return f'(^|[^[:alnum:]]){re.escape(value)}($|[^[:alnum:]])'
+
+
+def _anatomy_params(value: str, *, expand: bool) -> list:
+    """Resolve an anatomy operator value into the params of `_ANATOMY_WHERE`.
+
+    An identifier (CURIE, underscore form, or IRI) is matched as that term. Any
+    other value is looked up as a label or synonym, exactly first and then by
+    substring, and is also matched against the recorded `name` so that entries
+    with no usable identifier, or an install with empty ontology tables, still work.
+    """
+    curie = normalize_curie(value)
+    if curie is not None:
+        terms = OntologyTerm.objects.filter(curie=curie)
+        curies = [curie]
+        name_pattern = None
+    else:
+        terms = OntologyTerm.objects.filter(names__contains=[value.lower()])
+        if not terms.exists():
+            terms = OntologyTerm.objects.filter(label__icontains=value)
+        curies = []
+        # Without expansion the recorded name has to be the whole value, or
+        # "hippocampus" would still pick up "CA1 field of hippocampus".
+        name_pattern = _name_regex(value, whole=not expand)
+
+    if expand:
+        return [curies, list(terms.values_list('id', flat=True)), name_pattern]
+    return [[*curies, *terms.values_list('curie', flat=True)], [], name_pattern]
+
+
+def _apply_anatomy_filters(
+    queryset: QuerySet[Dandiset], clauses: list[tuple[str, str]]
+) -> QuerySet[Dandiset]:
+    """Restrict dandisets to those with a version whose `about` anatomy matches every clause."""
+    if not clauses:
+        return queryset
+    version_qs = Version.objects.all()
+    for operator, value in clauses:
+        params = _anatomy_params(value, expand=operator == 'anatomy')
+        version_qs = version_qs.extra(where=[_ANATOMY_WHERE], params=params)  # noqa: S610
+    return queryset.filter(id__in=version_qs.values_list('dandiset_id', flat=True).distinct())
 
 
 def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Dandiset]:
@@ -200,6 +290,7 @@ def apply_search_filters(
 
     summary_clauses: list[tuple[str, str]] = []
     file_type_values: list[str] = []
+    anatomy_clauses: list[tuple[str, str]] = []
     annotated: set[str] = set()
 
     for op in parsed.operators:
@@ -216,11 +307,9 @@ def apply_search_filters(
             file_type_values.append(value)
         elif key in _OWNER_OPS:
             queryset = _apply_owner_filter(queryset, value)
+        elif key in _ANATOMY_OPS:
+            anatomy_clauses.append((key, value))
 
-    if summary_clauses:
-        queryset = _apply_summary_filters(queryset, summary_clauses)
-
-    if file_type_values:
-        queryset = _apply_file_type_filters(queryset, file_type_values, user)
-
-    return queryset
+    queryset = _apply_summary_filters(queryset, summary_clauses)
+    queryset = _apply_file_type_filters(queryset, file_type_values, user)
+    return _apply_anatomy_filters(queryset, anatomy_clauses)

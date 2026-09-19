@@ -25,6 +25,24 @@ pytestmark = pytest.mark.ai_generated
             [],
             [Operator('species', 'mouse'), Operator('created_after', '2024-01-01')],
         ),
+        # Anatomy values carry their own colons and slashes
+        ('anatomy:UBERON:0002421', [], [Operator('anatomy', 'UBERON:0002421')]),
+        (
+            'anatomy:http://purl.obolibrary.org/obo/UBERON_0002421',
+            [],
+            [Operator('anatomy', 'http://purl.obolibrary.org/obo/UBERON_0002421')],
+        ),
+        (
+            'anatomy_exact:"CA1 field" species:mouse',
+            [],
+            [Operator('anatomy_exact', 'CA1 field'), Operator('species', 'mouse')],
+        ),
+        # A pasted URL is free text, as is an uppercase CURIE
+        (
+            'https://purl.brain-bican.org/ontology/mbao/MBA_1089 UBERON:0002421',
+            ['https://purl.brain-bican.org/ontology/mbao/MBA_1089', 'UBERON:0002421'],
+            [],
+        ),
         # Mixed
         (
             'place cells species:mouse created_after:2024-01-01 ca1',
@@ -55,6 +73,10 @@ pytestmark = pytest.mark.ai_generated
         'whitespace-only',
         'free-text-only',
         'operators-only',
+        'anatomy-curie-value',
+        'anatomy-url-value',
+        'anatomy-exact-quoted-value',
+        'bare-url-and-uppercase-curie-are-free-text',
         'mixed-operators-and-free-text',
         'quoted-phrase-free-text',
         'quoted-operator-value',
@@ -97,4 +119,16 @@ def test_parse_search(query, expected_free_text, expected_operators):
 )
 def test_parse_search_raises_on_invalid_query(query, expected_message_fragment):
     with pytest.raises(SearchSyntaxError, match=expected_message_fragment):
+        parse_search(query)
+
+
+@pytest.mark.parametrize(
+    ('query', 'suggestion'),
+    [
+        ('uberon:0002421', 'anatomy:UBERON:0002421'),
+        ('mba:1089', 'anatomy:MBA:1089'),
+    ],
+)
+def test_bare_lowercase_curie_suggests_the_anatomy_operator(query, suggestion):
+    with pytest.raises(SearchSyntaxError, match=suggestion):
         parse_search(query)
