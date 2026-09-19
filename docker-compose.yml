@@ -15,7 +15,7 @@ services:
       - postgres:/var/lib/postgresql
 
   rabbitmq:
-    image: rabbitmq:management-alpine
+    image: rabbitmq:4.3-management-alpine
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       start_period: 30s
@@ -26,7 +26,7 @@ services:
       - rabbitmq:/var/lib/rabbitmq
 
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     # When run with a TTY, minio prints credentials on startup
     tty: true
     command: ["server", "/data", "--console-address", ":9001"]
