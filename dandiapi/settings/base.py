@@ -56,7 +56,6 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.staticfiles',
     'django_extensions',
-    'django_filters',
     'drf_yasg',
     'guardian',
     'oauth2_provider',
@@ -148,7 +147,6 @@ REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
     'dandiapi.api.middleware.LoggingTokenAuthentication',
 ]
 REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] += ['dandiapi.api.permissions.IsApprovedOrReadOnly']
-REST_FRAMEWORK['DEFAULT_PAGINATION_CLASS'] = 'dandiapi.api.views.pagination.DandiPagination'
 REST_FRAMEWORK['EXCEPTION_HANDLER'] = 'dandiapi.drf_utils.rewrap_django_core_exceptions'
 
 # Throttling configuration
@@ -170,8 +168,6 @@ CACHES = {
         'LOCATION': 'dandi_cache_table',
     }
 }
-
-REST_FRAMEWORK_EXTENSIONS = {'DEFAULT_PARENT_LOOKUP_KWARG_NAME_PREFIX': ''}
 
 # Clearing out the stock `SWAGGER_SETTINGS` variable causes a Django login
 # button to appear in Swagger, along with a spurious "authorize" button that

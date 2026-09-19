@@ -506,7 +506,57 @@ class AssetDetailSerializer(AssetSerializer):
         fields = [*AssetSerializer.Meta.fields, 'metadata']
 
 
+class OrderingField(serializers.ListField):
+    """
+    A query parameter listing the fields to order a result set by.
+
+    The value is a comma separated list of field names, each optionally prefixed with `-`
+    to reverse that field's ordering, e.g. `path,-created`.
+    """
+
+    def __init__(self, *, fields: list[str], **kwargs):
+        self.ordering_fields = fields
+        super().__init__(
+            child=serializers.ChoiceField(
+                choices=[f'{prefix}{field}' for field in fields for prefix in ('', '-')]
+            ),
+            required=False,
+            default=list,
+            help_text=(
+                'A comma separated list of fields to order by. Prefix a field with `-` to '
+                f'reverse its ordering. Available fields: {", ".join(fields)}.'
+            ),
+            **kwargs,
+        )
+
+    def to_internal_value(self, data: Any) -> list[str]:
+        # A query parameter may be repeated, and each occurrence may itself be a comma
+        # separated list, so flatten both forms into a single list of field names.
+        if isinstance(data, str):
+            data = [data]
+        if isinstance(data, list):
+            data = [field for value in data for field in str(value).split(',') if field]
+        return super().to_internal_value(data)
+
+    def run_child_validation(self, data: list) -> list:
+        # Report a flat list of messages, rather than the per-index mapping a list field
+        # normally produces, since to a client this is a single query parameter.
+        try:
+            return super().run_child_validation(data)
+        except ValidationError as exc:
+            raise ValidationError(
+                [message for messages in exc.detail.values() for message in messages]
+            ) from exc
+
+
+class VersionListQuerySerializer(serializers.Serializer):
+    created = serializers.DateTimeField(required=False)
+    order = OrderingField(fields=['created'])
+
+
 class AssetListSerializer(serializers.Serializer):
+    path = serializers.CharField(required=False, allow_blank=True)
+    order = OrderingField(fields=['created', 'modified', 'path'])
     glob = serializers.CharField(required=False)
     metadata = serializers.BooleanField(required=False, default=False)
     zarr = serializers.BooleanField(required=False, default=False)
@@ -526,11 +576,6 @@ class AssetBulkDeleteRequestSerializer(serializers.Serializer):
 
 class AssetPathsQueryParameterSerializer(serializers.Serializer):
     path_prefix = serializers.CharField(default='')
-
-
-class PaginationQuerySerializer(serializers.Serializer):
-    page = serializers.IntegerField(default=1)
-    page_size = serializers.IntegerField(default=100)
 
 
 class AssetFileSerializer(AssetSerializer):

@@ -7,18 +7,24 @@ from django.views.generic import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
-from rest_framework_extensions.routers import ExtendedSimpleRouter
 
+from dandiapi.api.models import Asset, Dandiset, Version
 from dandiapi.api.views import (
-    AssetViewSet,
-    DandisetViewSet,
     DashboardView,
-    NestedAssetViewSet,
-    VersionViewSet,
     asset_audit_events,
+    asset_download_view,
+    asset_info_view,
+    asset_view,
     auth_token_view,
     authorize_view,
     blob_read_view,
+    dandiset_detail_view,
+    dandiset_list_view,
+    dandiset_search_view,
+    dandiset_star_view,
+    dandiset_unembargo_view,
+    dandiset_uploads_view,
+    dandiset_users_view,
     info_view,
     mailchimp_csv_view,
     robots_txt_view,
@@ -34,36 +40,129 @@ from dandiapi.api.views import (
     users_list_view,
     users_me_view,
     users_search_view,
+    version_asset_download_view,
+    version_asset_info_view,
+    version_asset_paths_view,
+    version_asset_validation_view,
+    version_asset_view,
+    version_assets_view,
+    version_detail_view,
+    version_info_view,
+    version_list_view,
+    version_publish_view,
     webdav,
 )
 from dandiapi.search.views import search_genotypes, search_species
-from dandiapi.zarr.views import ZarrViewSet
+from dandiapi.zarr.models import ZarrArchive
+from dandiapi.zarr.views import zarr_files_view, zarr_finalize_view, zarr_list_view, zarr_view
 
-router = ExtendedSimpleRouter()
-(
-    router.register(r'dandisets', DandisetViewSet, basename='dandiset')
-    .register(
-        r'versions',
-        VersionViewSet,
-        basename='dandiset-version',
-        parents_query_lookups=[f'dandiset__{DandisetViewSet.lookup_field}'],
-    )
-    .register(
-        r'assets',
-        NestedAssetViewSet,
-        basename='dandiset-version-asset',
-        parents_query_lookups=[
-            f'versions__dandiset__{DandisetViewSet.lookup_field}',
-            f'versions__{VersionViewSet.lookup_field}',
-        ],
-    )
-)
-router.register('assets', AssetViewSet, basename='asset')
-router.register('zarr', ZarrViewSet, basename='zarr')
+# URL path fragments for the resource identifiers that appear in API paths. Assets and
+# versions are addressable both on their own and underneath the version they belong to, and
+# the nested forms name their path variables after the query lookups that reach them, since
+# that is how they appear in the published API documentation.
+DANDISET_PK = rf'(?P<dandiset__pk>{Dandiset.IDENTIFIER_REGEX})'
+VERSION = rf'(?P<version>{Version.VERSION_REGEX})'
+VERSIONS_DANDISET_PK = rf'(?P<versions__dandiset__pk>{Dandiset.IDENTIFIER_REGEX})'
+VERSIONS_VERSION = rf'(?P<versions__version>{Version.VERSION_REGEX})'
+ASSET_ID = rf'(?P<asset_id>{Asset.UUID_REGEX})'
+ZARR_ID = rf'(?P<zarr_id>{ZarrArchive.UUID_REGEX})'
+
+dandiset_urlpatterns = [
+    path('dandisets/', dandiset_list_view, name='dandiset-list'),
+    path('dandisets/search/', dandiset_search_view, name='dandiset-search'),
+    re_path(rf'^dandisets/{DANDISET_PK}/$', dandiset_detail_view, name='dandiset-detail'),
+    re_path(rf'^dandisets/{DANDISET_PK}/star/$', dandiset_star_view, name='dandiset-star'),
+    re_path(
+        rf'^dandisets/{DANDISET_PK}/unembargo/$',
+        dandiset_unembargo_view,
+        name='dandiset-unembargo',
+    ),
+    re_path(rf'^dandisets/{DANDISET_PK}/uploads/$', dandiset_uploads_view, name='dandiset-uploads'),
+    re_path(rf'^dandisets/{DANDISET_PK}/users/$', dandiset_users_view, name='dandiset-users'),
+]
+
+version_urlpatterns = [
+    re_path(
+        rf'^dandisets/{DANDISET_PK}/versions/$',
+        version_list_view,
+        name='dandiset-version-list',
+    ),
+    re_path(
+        rf'^dandisets/{DANDISET_PK}/versions/{VERSION}/$',
+        version_detail_view,
+        name='dandiset-version-detail',
+    ),
+    re_path(
+        rf'^dandisets/{DANDISET_PK}/versions/{VERSION}/info/$',
+        version_info_view,
+        name='dandiset-version-info',
+    ),
+    re_path(
+        rf'^dandisets/{DANDISET_PK}/versions/{VERSION}/publish/$',
+        version_publish_view,
+        name='dandiset-version-publish',
+    ),
+]
+
+asset_urlpatterns = [
+    re_path(rf'^assets/{ASSET_ID}/$', asset_view, name='asset-detail'),
+    re_path(rf'^assets/{ASSET_ID}/download/$', asset_download_view, name='asset-download'),
+    re_path(rf'^assets/{ASSET_ID}/info/$', asset_info_view, name='asset-info'),
+    re_path(
+        rf'^dandisets/{VERSIONS_DANDISET_PK}/versions/{VERSIONS_VERSION}/assets/$',
+        version_assets_view,
+        name='dandiset-version-asset-list',
+    ),
+    re_path(
+        rf'^dandisets/{VERSIONS_DANDISET_PK}/versions/{VERSIONS_VERSION}/assets/paths/$',
+        version_asset_paths_view,
+        name='dandiset-version-asset-paths',
+    ),
+    re_path(
+        rf'^dandisets/{VERSIONS_DANDISET_PK}/versions/{VERSIONS_VERSION}/assets/{ASSET_ID}/$',
+        version_asset_view,
+        name='dandiset-version-asset-detail',
+    ),
+    re_path(
+        rf'^dandisets/{VERSIONS_DANDISET_PK}/versions/{VERSIONS_VERSION}'
+        rf'/assets/{ASSET_ID}/download/$',
+        version_asset_download_view,
+        name='dandiset-version-asset-download',
+    ),
+    re_path(
+        rf'^dandisets/{VERSIONS_DANDISET_PK}/versions/{VERSIONS_VERSION}'
+        rf'/assets/{ASSET_ID}/info/$',
+        version_asset_info_view,
+        name='dandiset-version-asset-info',
+    ),
+    re_path(
+        rf'^dandisets/{VERSIONS_DANDISET_PK}/versions/{VERSIONS_VERSION}'
+        rf'/assets/{ASSET_ID}/validation/$',
+        version_asset_validation_view,
+        name='dandiset-version-asset-validation',
+    ),
+]
+
+zarr_urlpatterns = [
+    path('zarr/', zarr_list_view, name='zarr-list'),
+    re_path(rf'^zarr/{ZARR_ID}/$', zarr_view, name='zarr-detail'),
+    re_path(rf'^zarr/{ZARR_ID}/files/$', zarr_files_view, name='zarr-files'),
+    re_path(rf'^zarr/{ZARR_ID}/finalize/$', zarr_finalize_view, name='zarr-finalize'),
+]
 
 # All core API endpoints
 api_urlpatterns = [
-    path('api/', include(router.urls)),
+    path(
+        'api/',
+        include(
+            [
+                *dandiset_urlpatterns,
+                *version_urlpatterns,
+                *asset_urlpatterns,
+                *zarr_urlpatterns,
+            ]
+        ),
+    ),
     path('api/auth/token/', auth_token_view, name='auth-token'),
     path('api/stats/', stats_view),
     path('api/info/', info_view),

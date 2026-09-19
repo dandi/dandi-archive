@@ -7,9 +7,9 @@ import typing
 from django.contrib.auth.models import AnonymousUser, User
 from django.db import transaction
 from django.db.models import Q, QuerySet
-from django.utils.decorators import method_decorator
 from guardian.decorators import permission_required
 from guardian.shortcuts import assign_perm, get_objects_for_user, get_users_with_perms
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 
 from dandiapi.api.models.dandiset import Dandiset, DandisetUserObjectPermission
 
@@ -107,12 +107,34 @@ def get_visible_dandisets(user: AbstractBaseUser | AnonymousUser) -> QuerySet[Da
 
 def require_dandiset_owner_or_403(pk_path: str):
     """
-    Decorate viewset methods to only allow access to dandiset owners.
+    Decorate a view to only allow access to dandiset owners.
 
-    The `pk_path` argument is the Dandiset ID URL path variable that DRF passes into the request.
+    The `pk_path` argument is the name of the Dandiset ID URL path variable, which Django
+    passes into the view as a keyword argument.
     """
-    return method_decorator(
-        permission_required(
-            perm='owner', lookup_variables=(Dandiset, 'pk', pk_path), return_403=True
-        )
+    return permission_required(
+        perm='owner', lookup_variables=(Dandiset, 'pk', pk_path), return_403=True
     )
+
+
+def require_dandiset_owner(dandiset: Dandiset, user: AbstractBaseUser | AnonymousUser):
+    """
+    Raise unless the given user is an owner of the given dandiset.
+
+    Anonymous users are told to authenticate, everyone else is denied.
+    """
+    if not user.is_authenticated:
+        raise NotAuthenticated
+    if not is_dandiset_owner(dandiset, user):
+        raise PermissionDenied
+
+
+def require_dandiset_read_access(dandiset: Dandiset, user: AbstractBaseUser | AnonymousUser):
+    """
+    Raise unless the given user is permitted to read the given dandiset.
+
+    Open dandisets are readable by anyone, embargoed dandisets only by their owners.
+    """
+    if dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN:
+        return
+    require_dandiset_owner(dandiset, user)

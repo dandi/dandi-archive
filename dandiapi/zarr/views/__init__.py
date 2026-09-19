@@ -4,20 +4,21 @@ import logging
 from typing import TYPE_CHECKING
 
 from django.db import IntegrityError, transaction
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
+from drf_yasg import openapi
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
-from rest_framework.decorators import action
+from rest_framework.decorators import api_view
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.utils.urls import replace_query_param
-from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services import audit
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
+from dandiapi.api.views.common import PAGINATION_PARAMS
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import DandisetIdentifierField
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, validate_zarr_path
@@ -26,8 +27,19 @@ from dandiapi.zarr.tasks import ingest_zarr_archive
 if TYPE_CHECKING:
     from django.contrib.auth.models import AnonymousUser, User
     from django.db.models.query import QuerySet
+    from rest_framework.request import Request
 
 logger = logging.getLogger(__name__)
+
+ZARR_ID_PARAM = openapi.Parameter(
+    'zarr_id',
+    openapi.IN_PATH,
+    'Zarr Archive Identifier',
+    type=openapi.TYPE_STRING,
+    format=openapi.FORMAT_UUID,
+    required=True,
+    pattern=ZarrArchive.UUID_REGEX,
+)
 
 
 class ZarrFileCreationSerializer(serializers.Serializer):
@@ -123,257 +135,295 @@ class ZarrListQuerySerializer(serializers.Serializer):
     name = serializers.CharField(required=False)
 
 
-class ZarrViewSet(ReadOnlyModelViewSet):
-    serializer_class = ZarrArchiveSerializer
-    pagination_class = DandiPagination
-
-    queryset = ZarrArchive.objects.select_related('dandiset').order_by('created').all()
-    lookup_field = 'zarr_id'
-    lookup_value_regex = ZarrArchive.UUID_REGEX
-
-    def get_queryset(self) -> QuerySet:
-        qs = super().get_queryset()
-
-        # Filter zarrs to those that are contained by dandisets visible to the user
-        return qs.filter(dandiset__in=get_visible_dandisets(self.request.user))
-
-    @swagger_auto_schema(
-        query_serializer=ZarrListQuerySerializer,
-        responses={200: ZarrListSerializer(many=True)},
-        operation_summary='List zarr archives.',
+def _get_visible_zarrs(request: Request) -> QuerySet[ZarrArchive]:
+    """Return the zarr archives contained by dandisets visible to the requesting user."""
+    return (
+        ZarrArchive.objects.select_related('dandiset')
+        .filter(dandiset__in=get_visible_dandisets(request.user))
+        .order_by('created')
     )
-    def list(self, request, *args, **kwargs):
-        query_serializer = ZarrListQuerySerializer(data=self.request.query_params)
-        query_serializer.is_valid(raise_exception=True)
-        data = query_serializer.validated_data
-        queryset: QuerySet[ZarrArchive] = self.get_queryset()
 
-        # Add filters from query parameters
-        if 'dandiset' in data:
-            queryset = queryset.filter(dandiset=data['dandiset'])
-        if 'name' in data:
-            queryset = queryset.filter(name=data['name'])
 
-        # Final response
-        queryset = self.paginate_queryset(queryset)
-        serializer = ZarrListSerializer(queryset, many=True)
-        return self.get_paginated_response(serializer.data)
+def _list_zarrs(request: Request) -> Response:
+    """List zarr archives."""
+    query_serializer = ZarrListQuerySerializer(data=request.query_params)
+    query_serializer.is_valid(raise_exception=True)
+    data = query_serializer.validated_data
+    queryset = _get_visible_zarrs(request)
 
-    @swagger_auto_schema(
-        request_body=ZarrArchiveSerializer,
-        responses={200: ZarrArchiveSerializer},
-        operation_summary='Create a new zarr archive.',
-        operation_description='',
-    )
-    def create(self, request):
-        """Create a new zarr archive."""
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    # Add filters from query parameters
+    if 'dandiset' in data:
+        queryset = queryset.filter(dandiset=data['dandiset'])
+    if 'name' in data:
+        queryset = queryset.filter(name=data['name'])
 
-        with transaction.atomic():
-            try:
-                zarr_archive: ZarrArchive = serializer.save()
-            except IntegrityError as e:
-                raise ValidationError('Zarr already exists') from e
+    # Final response
+    paginator = DandiPagination()
+    page = paginator.paginate_queryset(queryset, request=request)
+    serializer = ZarrListSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
-            audit.create_zarr(
-                dandiset=serializer.validated_data['dandiset'],
-                user=request.user,
-                zarr_archive=zarr_archive,
-            )
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+def _create_zarr(request: Request) -> Response:
+    """Create a new zarr archive."""
+    serializer = ZarrArchiveSerializer(data=request.data, context={'request': request})
+    serializer.is_valid(raise_exception=True)
 
-    @swagger_auto_schema(
-        method='POST',
-        request_body=no_body,
-        responses={
-            # Note: Having proper None results in no documentation in /swagger
-            204: 'None - expected normal return without any content',
-            400: ZarrArchive.INGEST_ERROR_MSG,
-        },
-        operation_summary='Finalize a zarr archive, dispatching async checksum computation.',
-        operation_description='',
-    )
-    @action(methods=['POST'], url_path='finalize', detail=True)
-    def finalize(self, request, zarr_id):
-        """Finalize a zarr archive."""
-        queryset = self.get_queryset().select_for_update(of=['self'])
-        with transaction.atomic():
-            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
-                # The user does not have ownership permission
-                raise PermissionDenied
+    with transaction.atomic():
+        try:
+            zarr_archive: ZarrArchive = serializer.save()
+        except IntegrityError as e:
+            raise ValidationError('Zarr already exists') from e
 
-            # Don't ingest if already ingested/ingesting
-            if zarr_archive.status != ZarrArchiveStatus.PENDING:
-                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
-
-            zarr_archive.status = ZarrArchiveStatus.UPLOADED
-            zarr_archive.save()
-
-            audit.finalize_zarr(
-                dandiset=zarr_archive.dandiset, user=request.user, zarr_archive=zarr_archive
-            )
-
-        # Dispatch task
-        ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id)
-        return Response(None, status=status.HTTP_204_NO_CONTENT)
-
-    @swagger_auto_schema(
-        method='GET',
-        responses={
-            200: 'Listing of s3 objects',
-            302: 'Redirect to an object in S3',
-        },
-        query_serializer=ZarrExploreInputSerializer,
-    )
-    @action(methods=['HEAD', 'GET'], detail=True)
-    def files(self, request, zarr_id: str):
-        """List files in a zarr archive."""
-        zarr_archive = get_object_or_404(ZarrArchive, zarr_id=zarr_id)
-        serializer = ZarrExploreInputSerializer(data=request.query_params)
-        serializer.is_valid(raise_exception=True)
-
-        # The root path for this zarr in s3
-        # This will contain a trailing slash, due to the empty string argument
-        base_path = zarr_archive.s3_path('')
-
-        # Retrieve and join query params
-        limit = serializer.validated_data['limit']
-        download = serializer.validated_data['download']
-
-        raw_prefix = serializer.validated_data['prefix'].lstrip('/')
-        full_prefix = (base_path + raw_prefix).rstrip('/')
-
-        raw_after = serializer.validated_data['after'].lstrip('/')
-        after = (base_path + raw_after).rstrip('/') if raw_after else ''
-
-        # Note: S3 will 404 if the file does not exist.
-        if request.method == 'HEAD':
-            return HttpResponseRedirect(zarr_archive.storage.url(full_prefix, http_method='HEAD'))
-        if download:
-            return HttpResponseRedirect(zarr_archive.storage.url(zarr_archive.s3_path(raw_prefix)))
-
-        # Retrieve file listing
-        listing = zarr_archive.storage.s3_client.list_objects_v2(
-            Bucket=zarr_archive.storage.bucket_name,
-            Prefix=full_prefix,
-            StartAfter=after,
-            MaxKeys=limit,
+        audit.create_zarr(
+            dandiset=serializer.validated_data['dandiset'],
+            user=request.user,
+            zarr_archive=zarr_archive,
         )
 
-        # Map/filter listing
-        results = [
-            {
-                'Key': obj['Key'].removeprefix(base_path),
-                'LastModified': obj['LastModified'],
-                'ETag': obj['ETag'].strip('"'),
-                'Size': obj['Size'],
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    method='GET',
+    query_serializer=ZarrListQuerySerializer,
+    manual_parameters=PAGINATION_PARAMS,
+    responses={200: ZarrListSerializer(many=True)},
+    operation_summary='List zarr archives.',
+)
+@swagger_auto_schema(
+    method='POST',
+    request_body=ZarrArchiveSerializer,
+    responses={200: ZarrArchiveSerializer},
+    operation_summary='Create a new zarr archive.',
+    operation_description='',
+)
+@api_view(['GET', 'HEAD', 'POST'])
+def zarr_list_view(request: Request) -> Response:
+    if request.method == 'POST':
+        return _create_zarr(request)
+    return _list_zarrs(request)
+
+
+@swagger_auto_schema(
+    method='GET',
+    manual_parameters=[ZARR_ID_PARAM],
+    responses={200: ZarrArchiveSerializer},
+    operation_summary='Get a zarr archive.',
+)
+@api_view(['GET', 'HEAD'])
+def zarr_view(request: Request, zarr_id: str) -> Response:
+    zarr_archive = get_object_or_404(_get_visible_zarrs(request), zarr_id=zarr_id)
+    serializer = ZarrArchiveSerializer(instance=zarr_archive, context={'request': request})
+    return Response(serializer.data)
+
+
+@swagger_auto_schema(
+    method='POST',
+    operation_id='zarr_finalize',
+    manual_parameters=[ZARR_ID_PARAM],
+    request_body=no_body,
+    responses={
+        # Note: Having proper None results in no documentation in /swagger
+        204: 'None - expected normal return without any content',
+        400: ZarrArchive.INGEST_ERROR_MSG,
+    },
+    operation_summary='Finalize a zarr archive, dispatching async checksum computation.',
+    operation_description='',
+)
+@api_view(['POST'])
+def zarr_finalize_view(request: Request, zarr_id: str) -> Response:
+    """Finalize a zarr archive."""
+    queryset = _get_visible_zarrs(request).select_for_update(of=['self'])
+    with transaction.atomic():
+        zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+        if not is_dandiset_owner(zarr_archive.dandiset, request.user):
+            # The user does not have ownership permission
+            raise PermissionDenied
+
+        # Don't ingest if already ingested/ingesting
+        if zarr_archive.status != ZarrArchiveStatus.PENDING:
+            return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+
+        zarr_archive.status = ZarrArchiveStatus.UPLOADED
+        zarr_archive.save()
+
+        audit.finalize_zarr(
+            dandiset=zarr_archive.dandiset, user=request.user, zarr_archive=zarr_archive
+        )
+
+    # Dispatch task
+    ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id)
+    return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+
+def _list_zarr_files(request: Request, zarr_id: str) -> HttpResponse:
+    """List files in a zarr archive."""
+    zarr_archive = get_object_or_404(ZarrArchive, zarr_id=zarr_id)
+    serializer = ZarrExploreInputSerializer(data=request.query_params)
+    serializer.is_valid(raise_exception=True)
+
+    # The root path for this zarr in s3
+    # This will contain a trailing slash, due to the empty string argument
+    base_path = zarr_archive.s3_path('')
+
+    # Retrieve and join query params
+    limit = serializer.validated_data['limit']
+    download = serializer.validated_data['download']
+
+    raw_prefix = serializer.validated_data['prefix'].lstrip('/')
+    full_prefix = (base_path + raw_prefix).rstrip('/')
+
+    raw_after = serializer.validated_data['after'].lstrip('/')
+    after = (base_path + raw_after).rstrip('/') if raw_after else ''
+
+    # Note: S3 will 404 if the file does not exist.
+    if request.method == 'HEAD':
+        return HttpResponseRedirect(zarr_archive.storage.url(full_prefix, http_method='HEAD'))
+    if download:
+        return HttpResponseRedirect(zarr_archive.storage.url(zarr_archive.s3_path(raw_prefix)))
+
+    # Retrieve file listing
+    listing = zarr_archive.storage.s3_client.list_objects_v2(
+        Bucket=zarr_archive.storage.bucket_name,
+        Prefix=full_prefix,
+        StartAfter=after,
+        MaxKeys=limit,
+    )
+
+    # Map/filter listing
+    results = [
+        {
+            'Key': obj['Key'].removeprefix(base_path),
+            'LastModified': obj['LastModified'],
+            'ETag': obj['ETag'].strip('"'),
+            'Size': obj['Size'],
+        }
+        for obj in listing.get('Contents', [])
+    ]
+
+    # Create next listing if necessary
+    next_link = None
+    if listing['IsTruncated']:
+        url = request.build_absolute_uri()
+        next_link = replace_query_param(url, 'after', results[-1]['Key'])
+
+    # Construct serializer and return
+    return Response(
+        ZarrExploreOutputSerializer(
+            instance={
+                'next': next_link,
+                'results': results,
             }
-            for obj in listing.get('Contents', [])
+        ).data
+    )
+
+
+def _create_zarr_files(request: Request, zarr_id: str) -> Response:
+    """Start an upload of files to a zarr archive."""
+    queryset = _get_visible_zarrs(request).select_for_update(of=['self'])
+    with transaction.atomic():
+        zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+        if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
+            return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+
+        # Deny if the user doesn't have ownership permission
+        if not is_dandiset_owner(zarr_archive.dandiset, request.user):
+            raise PermissionDenied
+
+        serializer = ZarrFileCreationSerializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+        paths = serializer.validated_data
+
+        # Generate presigned urls
+        logger.info('Beginning upload to zarr archive %s', zarr_archive.zarr_id)
+        urls = [
+            zarr_archive.storage.generate_presigned_put_object_url(
+                zarr_archive.s3_path(o['path']),
+                content_md5=o['base64md5'],
+                tags={'embargoed': 'true'} if zarr_archive.embargoed else None,
+            )
+            for o in paths
         ]
 
-        # Create next listing if necessary
-        next_link = None
-        if listing['IsTruncated']:
-            url = self.request.build_absolute_uri()
-            next_link = replace_query_param(url, 'after', results[-1]['Key'])
+        # Set status back to pending, since with these URLs the zarr could have been changed
+        zarr_archive.mark_pending()
+        zarr_archive.save()
 
-        # Construct serializer and return
-        return Response(
-            ZarrExploreOutputSerializer(
-                instance={
-                    'next': next_link,
-                    'results': results,
-                }
-            ).data
+        audit.upload_zarr_chunks(
+            dandiset=zarr_archive.dandiset,
+            user=request.user,
+            zarr_archive=zarr_archive,
+            paths=[p['path'] for p in paths],
         )
 
-    @swagger_auto_schema(
-        request_body=ZarrFileCreationSerializer(),
-        responses={
-            200: ZarrFileCreationSerializer,
-            400: ZarrArchive.INGEST_ERROR_MSG,
-        },
-        operation_summary='Request to upload files to a zarr archive.',
-        operation_description='',
-    )
-    @files.mapping.post
-    def create_files(self, request, zarr_id):
-        """Start an upload of files to a zarr archive."""
-        queryset = self.get_queryset().select_for_update(of=['self'])
-        with transaction.atomic():
-            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
-                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+    # Return presigned urls
+    logger.info('Presigned %d URLs to upload to zarr archive %s', len(urls), zarr_archive.zarr_id)
+    return Response(urls, status=status.HTTP_200_OK)
 
-            # Deny if the user doesn't have ownership permission
-            if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
-                raise PermissionDenied
 
-            serializer = ZarrFileCreationSerializer(data=request.data, many=True)
-            serializer.is_valid(raise_exception=True)
-            paths = serializer.validated_data
+def _delete_zarr_files(request: Request, zarr_id: str) -> Response:
+    """Delete files from a zarr archive."""
+    queryset = _get_visible_zarrs(request).select_for_update()
+    with transaction.atomic():
+        zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+        if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
+            return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
-            # Generate presigned urls
-            logger.info('Beginning upload to zarr archive %s', zarr_archive.zarr_id)
-            urls = [
-                zarr_archive.storage.generate_presigned_put_object_url(
-                    zarr_archive.s3_path(o['path']),
-                    content_md5=o['base64md5'],
-                    tags={'embargoed': 'true'} if zarr_archive.embargoed else None,
-                )
-                for o in paths
-            ]
+        if not is_dandiset_owner(zarr_archive.dandiset, request.user):
+            # The user does not have ownership permission
+            raise PermissionDenied
+        serializer = ZarrDeleteFileRequestSerializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+        paths = [file['path'] for file in serializer.validated_data]
+        zarr_archive.delete_files(paths)
 
-            # Set status back to pending, since with these URLs the zarr could have been changed
-            zarr_archive.mark_pending()
-            zarr_archive.save()
-
-            audit.upload_zarr_chunks(
-                dandiset=zarr_archive.dandiset,
-                user=request.user,
-                zarr_archive=zarr_archive,
-                paths=[p['path'] for p in paths],
-            )
-
-        # Return presigned urls
-        logger.info(
-            'Presigned %d URLs to upload to zarr archive %s', len(urls), zarr_archive.zarr_id
+        audit.delete_zarr_chunks(
+            dandiset=zarr_archive.dandiset,
+            user=request.user,
+            zarr_archive=zarr_archive,
+            paths=paths,
         )
-        return Response(urls, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        request_body=ZarrDeleteFileRequestSerializer(many=True),
-        responses={
-            200: ZarrArchiveSerializer(many=True),
-            400: ZarrArchive.INGEST_ERROR_MSG,
-        },
-        operation_summary='Delete files from a zarr archive.',
-    )
-    @files.mapping.delete
-    def delete_files(self, request, zarr_id):
-        """Delete files from a zarr archive."""
-        queryset = self.get_queryset().select_for_update()
-        with transaction.atomic():
-            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
-                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+    return Response(None, status=status.HTTP_204_NO_CONTENT)
 
-            if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
-                # The user does not have ownership permission
-                raise PermissionDenied
-            serializer = ZarrDeleteFileRequestSerializer(data=request.data, many=True)
-            serializer.is_valid(raise_exception=True)
-            paths = [file['path'] for file in serializer.validated_data]
-            zarr_archive.delete_files(paths)
 
-            audit.delete_zarr_chunks(
-                dandiset=zarr_archive.dandiset,
-                user=request.user,
-                zarr_archive=zarr_archive,
-                paths=paths,
-            )
-
-        return Response(None, status=status.HTTP_204_NO_CONTENT)
+@swagger_auto_schema(
+    method='GET',
+    operation_id='zarr_files_read',
+    manual_parameters=[ZARR_ID_PARAM],
+    responses={
+        200: 'Listing of s3 objects',
+        302: 'Redirect to an object in S3',
+    },
+    query_serializer=ZarrExploreInputSerializer,
+    operation_summary='List files in a zarr archive.',
+)
+@swagger_auto_schema(
+    method='POST',
+    manual_parameters=[ZARR_ID_PARAM],
+    request_body=ZarrFileCreationSerializer(),
+    responses={
+        200: ZarrFileCreationSerializer,
+        400: ZarrArchive.INGEST_ERROR_MSG,
+    },
+    operation_summary='Request to upload files to a zarr archive.',
+    operation_description='',
+)
+@swagger_auto_schema(
+    method='DELETE',
+    manual_parameters=[ZARR_ID_PARAM],
+    request_body=ZarrDeleteFileRequestSerializer(many=True),
+    responses={
+        200: ZarrArchiveSerializer(many=True),
+        400: ZarrArchive.INGEST_ERROR_MSG,
+    },
+    operation_summary='Delete files from a zarr archive.',
+)
+@api_view(['GET', 'HEAD', 'POST', 'DELETE'])
+def zarr_files_view(request: Request, zarr_id: str) -> HttpResponse:
+    if request.method == 'POST':
+        return _create_zarr_files(request, zarr_id)
+    if request.method == 'DELETE':
+        return _delete_zarr_files(request, zarr_id)
+    return _list_zarr_files(request, zarr_id)

@@ -903,7 +903,6 @@ dependencies = [
     { name = "django-cors-headers" },
     { name = "django-environ" },
     { name = "django-extensions" },
-    { name = "django-filter" },
     { name = "django-guardian" },
     { name = "django-oauth-toolkit" },
     { name = "django-resonant-settings", extra = ["allauth", "celery"] },
@@ -912,7 +911,6 @@ dependencies = [
     { name = "django-storages", extra = ["s3"] },
     { name = "django-stubs-ext" },
     { name = "djangorestframework" },
-    { name = "drf-extensions" },
     { name = "drf-yasg" },
     { name = "gunicorn" },
     { name = "jsonschema" },
@@ -987,7 +985,6 @@ requires-dist = [
     { name = "django-debug-toolbar", marker = "extra == 'development'", specifier = "==6.3.0" },
     { name = "django-environ", specifier = "==0.13.0" },
     { name = "django-extensions", specifier = "==4.1" },
-    { name = "django-filter", specifier = "==25.2" },
     { name = "django-guardian", specifier = "==3.3.1" },
     { name = "django-oauth-toolkit", specifier = "==3.2.0" },
     { name = "django-resonant-settings", extras = ["allauth", "celery"], specifier = "==0.50.4" },
@@ -996,7 +993,6 @@ requires-dist = [
     { name = "django-storages", extras = ["s3"], specifier = "==1.14.6" },
     { name = "django-stubs-ext", specifier = "==6.1.0" },
     { name = "djangorestframework", specifier = "==3.17.1" },
-    { name = "drf-extensions", specifier = "==0.8.0" },
     { name = "drf-yasg", specifier = "==1.21.15" },
     { name = "gunicorn", specifier = "==25.3.0" },
     { name = "ipython", marker = "extra == 'development'", specifier = "==9.13.0" },
@@ -1223,18 +1219,6 @@ wheels = [
 ]
 
 [[package]]
-name = "django-filter"
-version = "25.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/2c/e4/465d2699cd388c0005fb8d6ae6709f239917c6d8790ac35719676fffdcf3/django_filter-25.2.tar.gz", hash = "sha256:760e984a931f4468d096f5541787efb8998c61217b73006163bf2f9523fe8f23", size = 143818, upload-time = "2025-10-05T09:51:31.521Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c1/40/6a02495c5658beb1f31eb09952d8aa12ef3c2a66342331ce3a35f7132439/django_filter-25.2-py3-none-any.whl", hash = "sha256:9c0f8609057309bba611062fe1b720b4a873652541192d232dd28970383633e3", size = 94145, upload-time = "2025-10-05T09:51:29.728Z" },
-]
-
-[[package]]
 name = "django-guardian"
 version = "3.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1434,20 +1418,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/25/71/80cc718ff6d7abfbabacb1f57aaa42e9c1552bfdd01e64ddd704e4a03638/donfig-0.8.1.post1.tar.gz", hash = "sha256:3bef3413a4c1c601b585e8d297256d0c1470ea012afa6e8461dc28bfb7c23f52", size = 19506, upload-time = "2024-05-23T14:14:31.513Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0c/d5/c5db1ea3394c6e1732fb3286b3bd878b59507a8f77d32a2cebda7d7b7cd4/donfig-0.8.1.post1-py3-none-any.whl", hash = "sha256:2a3175ce74a06109ff9307d90a230f81215cbac9a751f4d1c6194644b8204f9d", size = 21592, upload-time = "2024-05-23T14:13:55.283Z" },
-]
-
-[[package]]
-name = "drf-extensions"
-version = "0.8.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-    { name = "djangorestframework" },
-    { name = "packaging" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/77/5a/57e3cc6f2bb4e1e84ad85eed0a12ddf22d5217b6b87c39e611d10e677a63/drf_extensions-0.8.0.tar.gz", hash = "sha256:c3f27bca74a2def53e8454a5c7b327595195df51e121743120b2f51ef5a52aaa", size = 173718, upload-time = "2025-04-10T07:50:05.139Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/aa/c1/b9721c9239b465c0ceac32b33e732c08f6ea0afd8156700e417416a47733/drf_extensions-0.8.0-py2.py3-none-any.whl", hash = "sha256:ab7bd854c9061c27ab55233b66d758001e5c2d81aaa9d117cbbe1c9ea49c77ab", size = 21589, upload-time = "2025-04-10T07:50:02.573Z" },
 ]
 
 [[package]]
