@@ -43,8 +43,14 @@ _DATE_OPS = frozenset(
 )
 _ASSET_OPS = frozenset({'file_type'})
 _OWNER_OPS = frozenset({'owner'})
-# Inclusive bounds on `assetsSummary.numberOfSubjects`, as jsonpath comparators.
-_SUBJECT_COUNT_OPS = {'subjects_min': '>=', 'subjects_max': '<='}
+# Operators over a numeric field of `assetsSummary`. Paths MUST be trusted
+# constants: they're interpolated into the SQL.
+_COUNT_PATH_OPS = {'num_subjects': '$.assetsSummary.numberOfSubjects'}
+# User-facing comparator -> jsonpath comparator. A bare value means "at least".
+_COUNT_COMPARATORS = {'>': '>', '>=': '>=', '<': '<', '<=': '<=', '=': '=='}
+# `>=` is listed before `>` so the longer comparator wins. `\s*` allows the
+# quoted form (`num_subjects:">= 10"`).
+_COUNT_VALUE_RE = re.compile(r'^(?P<op>>=|<=|>|<|=)?\s*(?P<n>[0-9]+)$')
 
 
 def _annotate_latest_version_modified(queryset):
@@ -110,32 +116,33 @@ def _apply_summary_filters(
     return queryset.filter(id__in=version_qs.values_list('dandiset_id', flat=True).distinct())
 
 
-def _parse_count(operator: str, value: str) -> int:
-    if not value.isascii() or not value.isdigit():
+def _parse_count(operator: str, value: str) -> tuple[str, int]:
+    """Split a count value such as `>=10` into a jsonpath comparator and an integer."""
+    match = _COUNT_VALUE_RE.match(value)
+    if match is None:
         raise SearchSyntaxError(
-            f'Invalid number for "{operator}": {value!r}. Use a whole number (e.g. {operator}:10).'
+            f'Invalid value for "{operator}": {value!r}. Use a whole number, optionally '
+            f'after >, >=, <, <= or = (e.g. {operator}:>10). A bare number means "at least".'
         )
-    return int(value)
+    return _COUNT_COMPARATORS[match.group('op') or '>='], int(match.group('n'))
 
 
-def _apply_subject_count_filters(
-    queryset: QuerySet[Dandiset], clauses: list[tuple[str, int]]
+def _apply_count_filters(
+    queryset: QuerySet[Dandiset], clauses: list[tuple[str, str, int]]
 ) -> QuerySet[Dandiset]:
-    """Restrict dandisets to those with a version whose subject count meets every bound.
+    """Restrict dandisets to those with a version whose counts satisfy every clause.
 
-    Bounds are AND'd on a single Version row. A version with no
-    `numberOfSubjects` matches no bound.
+    Clauses are AND'd on a single Version row, so `num_subjects:>5
+    num_subjects:<20` is a range. A version without the field matches nothing.
     """
     if not clauses:
         return queryset
     version_qs = Version.objects.all()
-    for operator, count in clauses:
-        # The comparator comes from an allowlist; the count is passed as a
-        # jsonpath variable. Postgres caps jsonpath numbers well above any
-        # subject count, but the cast keeps an absurd value a clean no-match.
+    for operator, comparator, count in clauses:
+        # The path and comparator come from allowlists; the count is passed as
+        # a jsonpath variable.
         where = (
-            "jsonb_path_exists(metadata, '$.assetsSummary.numberOfSubjects "
-            f"? (@ {_SUBJECT_COUNT_OPS[operator]} $n)', "
+            f"jsonb_path_exists(metadata, '{_COUNT_PATH_OPS[operator]} ? (@ {comparator} $n)', "
             "jsonb_build_object('n', %s::numeric))"
         )
         version_qs = version_qs.extra(where=[where], params=[count])  # noqa: S610
@@ -238,7 +245,7 @@ def apply_search_filters(
 
     summary_clauses: list[tuple[str, str]] = []
     file_type_values: list[str] = []
-    subject_count_clauses: list[tuple[str, int]] = []
+    count_clauses: list[tuple[str, str, int]] = []
     annotated: set[str] = set()
 
     for op in parsed.operators:
@@ -255,9 +262,9 @@ def apply_search_filters(
             file_type_values.append(value)
         elif key in _OWNER_OPS:
             queryset = _apply_owner_filter(queryset, value)
-        elif key in _SUBJECT_COUNT_OPS:
-            subject_count_clauses.append((key, _parse_count(key, value)))
+        elif key in _COUNT_PATH_OPS:
+            count_clauses.append((key, *_parse_count(key, value)))
 
     queryset = _apply_summary_filters(queryset, summary_clauses)
     queryset = _apply_file_type_filters(queryset, file_type_values, user)
-    return _apply_subject_count_filters(queryset, subject_count_clauses)
+    return _apply_count_filters(queryset, count_clauses)
