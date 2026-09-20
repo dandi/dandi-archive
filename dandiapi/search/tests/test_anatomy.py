@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
+from django.core.management import call_command
 import pytest
 
 from dandiapi.api.services.search.anatomy import normalize_curie
@@ -210,6 +212,25 @@ def test_replace_ontology_tables_is_idempotent(ontology_tables):
     term = OntologyTerm.objects.get(curie=HIPPOCAMPAL_FORMATION)
     assert term.names == ['hippocampal formation', 'hippocampus']
     assert term.ontology == 'UBERON'
+
+
+@pytest.mark.django_db
+def test_load_anatomy_ontologies_command_reads_files_and_replaces_tables(tmp_path):
+    OntologyTerm.objects.create(
+        curie='UBERON:1', ontology='UBERON', iri='x', label='stale', names=['stale']
+    )
+    uberon = tmp_path / 'uberon.json'
+    uberon.write_text(json.dumps(UBERON_DOCUMENT))
+    mba = tmp_path / 'mba.json'
+    mba.write_text(json.dumps(MBA_DOCUMENT))
+
+    call_command('load_anatomy_ontologies', '--source', str(uberon), '--source', str(mba))
+
+    assert not OntologyTerm.objects.filter(label='stale').exists()
+    assert OntologyTerm.objects.count() == len(_fixture_graph().terms)
+    assert OntologyClosure.objects.filter(
+        ancestor__curie=HIPPOCAMPAL_FORMATION, descendant__curie=MBA_CA1
+    ).exists()
 
 
 @pytest.fixture
