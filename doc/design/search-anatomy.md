@@ -43,8 +43,9 @@ Like every other operator, these combine with AND:
 
 ## Expansion
 
-`anatomy:` matches the named term, every term inside it, and the equivalent
-regions of the other atlases with their own sub-regions. "Inside" means
+`anatomy:` matches the named term and every term inside it. For a UBERON term
+that includes the corresponding regions of the species atlases and their
+sub-regions. "Inside" means
 reachable through `is_a` or `part_of`. Both are needed: in UBERON the
 hippocampal formation has no `is_a` descendants and more than a hundred
 `part_of` descendants.
@@ -60,17 +61,17 @@ their own links to UBERON (`MBA_1089 is_a UBERON_0002421`), and UBERON's xrefs
 fill in where they do not. Those links make every atlas region a descendant of
 its UBERON counterpart, so a UBERON search reaches atlas-labeled data.
 
-The reverse direction is limited to one-to-one pairings. `MBA:1089` and
-`UBERON:0002421` are paired one-to-one, so a search on either finds data labeled
-with the other. Where several atlas regions map to the same UBERON term, the
-UBERON term is broader than each of them, and treating it as their equivalent
-would let a search on a small region return data from a larger one.
+There is no link in the other direction. An atlas term describes the brain of
+one species, so a search on `MBA:1089` returns data labeled with that mouse
+atlas region or its sub-regions and nothing else. It does not return data
+labeled with `UBERON:0002421`, which could come from any species. A user who
+wants mouse hippocampus data regardless of how it was labeled should search
+`anatomy:UBERON:0002421 species:mouse`.
 
-The atlases do not always agree with UBERON about what contains what. The mouse
-atlas places the lateral septal complex inside the striatum and UBERON does not,
-so `anatomy:striatum` returns Dandisets labeled with the lateral septal complex.
-We accept the union of the hierarchies. `anatomy_exact:` is available when that
-is too broad.
+Results follow the ontologies, including where a reader might not expect it.
+UBERON places the lateral septal complex inside the striatum, so
+`anatomy:striatum` returns Dandisets labeled with the lateral septal complex.
+`anatomy_exact:` is available when the expansion is too broad.
 
 ## Matching by Name
 
@@ -90,7 +91,7 @@ Two tables in the `search` app hold the ontology graph. `OntologyTerm` has the
 canonical CURIE, IRI, label, and the lowercased label and synonyms.
 `OntologyClosure` has one row per (ancestor, descendant) pair, including each
 term paired with itself. With the five ontologies above this is about 24,000
-terms and 1.3 million closure rows.
+terms and 900,000 closure rows.
 
 `manage.py load_anatomy_ontologies` downloads the obographs JSON releases,
 computes the closure, and replaces both tables in one transaction. It takes

@@ -82,8 +82,7 @@ UBERON_DOCUMENT = {
     ]
 }
 
-# A cut-down mouse atlas. Two atlas regions both claim the UBERON cerebral
-# cortex, so neither may be treated as its equivalent.
+# A cut-down mouse atlas.
 MBA_DOCUMENT = {
     'graphs': [
         {
@@ -168,22 +167,16 @@ def test_closure_follows_part_of_downward_only():
     assert BRAIN not in descendants[CORTEX]
 
 
-def test_closure_bridges_atlases_in_both_directions_when_one_to_one():
+def test_closure_reaches_atlases_from_uberon_but_not_the_reverse():
     descendants = _descendants(_fixture_graph())
     # UBERON -> atlas, via the UBERON xref and via the atlas is_a edge.
     assert {MBA_HPF, MBA_CA1} <= descendants[HIPPOCAMPAL_FORMATION]
     assert MBA_CA1 in descendants[CA1]
-    # Atlas -> UBERON, and onward to the UBERON parts.
-    assert {HIPPOCAMPAL_FORMATION, AMMONS_HORN, CA1} <= descendants[MBA_HPF]
-    assert descendants[MBA_CA1] == {MBA_CA1, CA1}
-
-
-def test_closure_does_not_climb_through_a_shared_mapping():
-    descendants = _descendants(_fixture_graph())
     assert {MBA_CORTEX_A, MBA_CORTEX_B} <= descendants[CORTEX]
-    assert CORTEX not in descendants[MBA_CORTEX_A]
-    assert CORTEX not in descendants[MBA_CORTEX_B]
-    assert descendants[MBA_CORTEX_B] == {MBA_CORTEX_B}
+    # An atlas term is specific to one species, so it never reaches UBERON.
+    assert descendants[MBA_HPF] == {MBA_HPF, MBA_CA1}
+    assert descendants[MBA_CA1] == {MBA_CA1}
+    assert descendants[MBA_CORTEX_A] == {MBA_CORTEX_A, MBA_CORTEX_B}
 
 
 @pytest.fixture
@@ -244,14 +237,22 @@ def _ids(dandisets: dict[str, Dandiset], *keys: str) -> set[str]:
         'anatomy:uberon:0002421',
         'anatomy:UBERON_0002421',
         'anatomy:http://purl.obolibrary.org/obo/UBERON_0002421',
-        'anatomy:MBA:1089',
-        'anatomy:https://purl.brain-bican.org/ontology/mbao/MBA_1089',
     ],
 )
 def test_anatomy_identifier_expands_to_parts_and_other_atlases(
     api_client, anatomy_dandisets, query
 ):
     assert _search_ids(api_client, query) == _ids(anatomy_dandisets, 'hpf', 'ca1', 'mba_ca1')
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'query',
+    ['anatomy:MBA:1089', 'anatomy:https://purl.brain-bican.org/ontology/mbao/MBA_1089'],
+)
+def test_anatomy_atlas_identifier_stays_inside_its_atlas(api_client, anatomy_dandisets, query):
+    # MBA regions describe the mouse brain, so UBERON-labeled data is not returned.
+    assert _search_ids(api_client, query) == _ids(anatomy_dandisets, 'mba_ca1')
 
 
 @pytest.mark.django_db
@@ -285,7 +286,10 @@ def test_anatomy_exact_does_not_expand(api_client, anatomy_dandisets):
 def test_anatomy_search_on_a_small_region_does_not_return_larger_ones(
     api_client, anatomy_dandisets
 ):
-    assert _search_ids(api_client, 'anatomy:MBA:382') == _ids(anatomy_dandisets, 'ca1', 'mba_ca1')
+    assert _search_ids(api_client, 'anatomy:MBA:382') == _ids(anatomy_dandisets, 'mba_ca1')
+    assert _search_ids(api_client, 'anatomy:UBERON:0003881') == _ids(
+        anatomy_dandisets, 'ca1', 'mba_ca1'
+    )
     assert _search_ids(api_client, 'anatomy:UBERON:0000955') == _ids(
         anatomy_dandisets, 'brain', 'hpf', 'ca1', 'mba_ca1', 'cortex'
     )

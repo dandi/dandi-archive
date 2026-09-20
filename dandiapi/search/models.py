@@ -78,8 +78,9 @@ class OntologyClosure(models.Model):
     """
     One row per (ancestor, descendant) pair, including each term paired with itself.
 
-    "Descendant" covers subclasses, parts, and the equivalent regions of other
-    atlases, so a search on a region is one join away from everything inside it.
+    "Descendant" covers subclasses and parts, and for a UBERON term the
+    corresponding regions of the species atlases, so a search on a region is
+    one join away from everything inside it.
     See `dandiapi.search.ontology` for how the rows are computed.
     """
 

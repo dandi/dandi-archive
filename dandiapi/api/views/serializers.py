@@ -331,8 +331,9 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
             'first name, last name, or "first last"); '
             'anatomy (a region name, a CURIE such as UBERON:0002421 or '
             'MBA:1089, or a term URL; matches Anatomy entries in the '
-            "dandiset's `about` field, including the region's parts and the "
-            'equivalent regions of the Allen mouse and human atlases); '
+            "dandiset's `about` field, including the region's parts and, for "
+            'a UBERON term, the corresponding regions of the Allen mouse and '
+            'human atlases); '
             'anatomy_exact (same values, without that expansion). '
             'Invalid syntax returns HTTP 400 with the offending token; '
             'unknown operators get a "Did you mean?" suggestion.'

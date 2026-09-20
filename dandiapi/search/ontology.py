@@ -8,11 +8,10 @@ edges run from a region to the things found inside it:
    hang each atlas region under its UBERON counterpart.
 2. UBERON xrefs to an atlas term, as a fallback for atlas terms whose own
    ontology asserts no UBERON parent.
-3. The reverse edge, atlas term to UBERON term, only where the pairing is
-   one-to-one within that atlas. A search on ``MBA:1089`` then also finds data
-   labeled with the UBERON hippocampal formation. When several atlas terms
-   share one UBERON term the reverse edge is left out, because it would let a
-   search on a small atlas region climb to a larger UBERON one.
+
+There is no edge from an atlas term to a UBERON term. UBERON is cross-species,
+so a UBERON search reaches every atlas, but an atlas term is specific to one
+species and a search on ``MBA:1089`` stays inside the mouse atlas.
 
 Edges to anything that is not an anatomy term (taxa, cell types) are dropped.
 """
@@ -124,36 +123,15 @@ def _contains_edges(graph: OntologyGraph) -> dict[str, set[str]]:
     """Return the directed region -> contents adjacency described in the module docstring."""
     known = graph.terms.keys()
     children: dict[str, set[str]] = defaultdict(set)
-    # (UBERON term, atlas term) pairs, whichever side asserted them.
-    bridges: set[tuple[str, str]] = set()
-
-    for child, parent in graph.containment:
+    for child, parent in (*graph.containment, *((atlas, ref) for ref, atlas in graph.xrefs)):
         if child not in known or parent not in known:
             continue
-        children[parent].add(child)
-        if parent.startswith(f'{_REFERENCE_ONTOLOGY}:') and not child.startswith(
+        # Nothing species-specific may contain a cross-species UBERON term.
+        if child.startswith(f'{_REFERENCE_ONTOLOGY}:') and not parent.startswith(
             f'{_REFERENCE_ONTOLOGY}:'
         ):
-            bridges.add((parent, child))
-
-    for reference, atlas in graph.xrefs:
-        if reference in known and atlas in known:
-            children[reference].add(atlas)
-            bridges.add((reference, atlas))
-
-    # Reverse edges where the pairing is one-to-one within the atlas.
-    atlas_terms_of: dict[tuple[str, str], set[str]] = defaultdict(set)
-    reference_terms_of: dict[str, set[str]] = defaultdict(set)
-    for reference, atlas in bridges:
-        atlas_terms_of[(reference, atlas.split(':', 1)[0])].add(atlas)
-        reference_terms_of[atlas].add(reference)
-    for reference, atlas in bridges:
-        if (
-            len(atlas_terms_of[(reference, atlas.split(':', 1)[0])]) == 1
-            and len(reference_terms_of[atlas]) == 1
-        ):
-            children[atlas].add(reference)
-
+            continue
+        children[parent].add(child)
     return children
 
 
