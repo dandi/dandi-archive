@@ -26,7 +26,9 @@ services:
       - rabbitmq:/var/lib/rabbitmq
 
   minio:
-    image: minio/minio:latest
+    # `minio/minio` on Docker Hub no longer serves pulls. Quay's `latest` is this same
+    # release, so pin it explicitly, as dandi-cli's test fixture does.
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     # When run with a TTY, minio prints credentials on startup
     tty: true
     command: ["server", "/data", "--console-address", ":9001"]
