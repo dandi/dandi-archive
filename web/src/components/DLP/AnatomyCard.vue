@@ -106,7 +106,7 @@ import type { PropType } from 'vue';
 import type { Anatomy, SubjectMatterOfTheDataset } from '@/types/schema';
 
 import { useDandisetStore } from '@/stores/dandiset';
-import { open, setTab } from '@/components/Meditor/state';
+import { open, setTab, queueNewItem } from '@/components/Meditor/state';
 
 const store = useDandisetStore();
 const readonly = computed(() => !store.userCanModifyDandiset);
@@ -188,6 +188,7 @@ function ontologyLink(identifier?: string): string | undefined {
 }
 
 function openMeditor() {
+  queueNewItem('about', { schemaKey: 'Anatomy' });
   setTab('about');
   open.value = true;
 }

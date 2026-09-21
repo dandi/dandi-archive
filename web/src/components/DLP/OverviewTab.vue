@@ -71,7 +71,7 @@
           <v-banner-actions v-if="!readonly">
             <v-btn
               variant="outlined"
-              @click="openMeditor"
+              @click="openMeditorForNewFundingSource"
             >
               <v-icon>mdi-plus</v-icon>
               Add funding information
@@ -268,7 +268,7 @@ import { useDisplay, useTheme } from 'vuetify';
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
 import AnatomyCard from '@/components/DLP/AnatomyCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
-import { open, setTab } from '@/components/Meditor/state';
+import { open, queueNewItem, setTab } from '@/components/Meditor/state';
 
 import type { ComputedRef, PropType } from 'vue';
 import type { AssociatedProjects, DandisetMetadata, RelatedResource, Protocol } from '@/types';
@@ -366,7 +366,8 @@ const contactPeople = computed(
     .map((contributor) => contributor.name)),
 );
 
-function openMeditor() {
+function openMeditorForNewFundingSource() {
+  queueNewItem('contributor', { schemaKey: 'Organization', roleName: ['dcite:Funder'] });
   setTab('contributor');
   open.value = true;
 }

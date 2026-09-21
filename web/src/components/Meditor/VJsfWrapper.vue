@@ -136,7 +136,7 @@ import { useTheme } from 'vuetify';
 import type { JSONSchema7 } from 'json-schema';
 
 import type { DandiModel } from './types';
-import { editorInterface } from './state';
+import { editorInterface, pendingNewItem } from './state';
 import { VJSFVuetifyDefaultProps } from './utils';
 
 const props = defineProps({
@@ -180,6 +180,19 @@ watch(currentModel, (val) => {
     currentItem.value = val[index.value];
   }
 });
+
+// If opened via a specific metadata card on the DLP, there may be a new
+// item queued up.
+function tryConsumePendingItem() {
+  if (!pendingNewItem.value || pendingNewItem.value?.propKey !== props.propKey) {
+    return;
+  }
+  currentItem.value = pendingNewItem.value.item;
+  pendingNewItem.value = null;
+  createNewItem();
+}
+watch(pendingNewItem, tryConsumePendingItem);
+tryConsumePendingItem();
 
 // whether the current form has been edited and requires saving
 const isModified = computed(() => !isEqual(
