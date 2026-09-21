@@ -170,7 +170,8 @@
 
                   <!--
                     Opening a tabular asset raw only makes the browser download
-                    it, so those get the table viewer here instead.
+                    it, so those open in the table viewer instead, here and on
+                    the row itself.
                   -->
                   <v-list-item-action v-if="item.asset">
                     <v-tooltip location="top">
@@ -184,12 +185,11 @@
                           @click.stop
                         >
                           <v-icon color="primary">
-                            {{ isTabularFile(item.path) ? 'mdi-table' : 'mdi-open-in-app' }}
+                            mdi-open-in-app
                           </v-icon>
                         </v-btn>
                       </template>
-                      <span v-if="isTabularFile(item.path)">View as table (you can also click on the item itself)</span>
-                      <span v-else>Open asset in browser (you can also click on the item itself)</span>
+                      <span>Open asset in browser (you can also click on the item itself)</span>
                     </v-tooltip>
                   </v-list-item-action>
 
