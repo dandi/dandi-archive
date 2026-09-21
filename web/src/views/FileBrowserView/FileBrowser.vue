@@ -194,6 +194,7 @@
                           variant="text"
                           :href="inlineURI(item.asset.asset_id)"
                           v-bind="openInBtnProps"
+                          @click.stop
                         >
                           <v-icon color="primary">
                             mdi-open-in-app
@@ -213,6 +214,7 @@
                           variant="text"
                           :href="downloadURI(item.asset.asset_id)"
                           v-bind="downloadProps"
+                          @click.stop
                         >
                           <v-icon color="primary">
                             mdi-download
