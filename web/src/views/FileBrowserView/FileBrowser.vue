@@ -168,40 +168,27 @@
                     </v-btn>
                   </v-list-item-action>
 
-                  <v-list-item-action v-if="item.asset && isTabularFile(item.path)">
-                    <v-tooltip location="top">
-                      <template #activator="{ props: tableProps }">
-                        <v-btn
-                          icon
-                          variant="text"
-                          v-bind="tableProps"
-                          @click.stop.prevent="viewAsTable(item)"
-                        >
-                          <v-icon color="primary">
-                            mdi-table
-                          </v-icon>
-                        </v-btn>
-                      </template>
-                      <span>View as table (you can also click on the item itself)</span>
-                    </v-tooltip>
-                  </v-list-item-action>
-
+                  <!--
+                    Opening a tabular asset raw only makes the browser download
+                    it, so those get the table viewer here instead.
+                  -->
                   <v-list-item-action v-if="item.asset">
                     <v-tooltip location="top">
                       <template #activator="{ props: openInBtnProps }">
                         <v-btn
                           icon
                           variant="text"
-                          :href="inlineURI(item.asset.asset_id)"
+                          :href="rowHref(item)"
+                          :to="rowRoute(item)"
                           v-bind="openInBtnProps"
                           @click.stop
                         >
                           <v-icon color="primary">
-                            mdi-open-in-app
+                            {{ isTabularFile(item.path) ? 'mdi-table' : 'mdi-open-in-app' }}
                           </v-icon>
                         </v-btn>
                       </template>
-                      <span v-if="isTabularFile(item.path)">Open asset in browser</span>
+                      <span v-if="isTabularFile(item.path)">View as table (you can also click on the item itself)</span>
                       <span v-else>Open asset in browser (you can also click on the item itself)</span>
                     </v-tooltip>
                   </v-list-item-action>
@@ -432,8 +419,10 @@ function locationRoute(newLocation: string): RouteLocationRaw {
   } as RouteLocationRaw;
 }
 
-// The route for the current listing with the table viewer open on an asset, so
-// that tabular rows are links too.
+// The route for the current listing with the table viewer open on an asset:
+// tabular rows are links too, and the open table is recorded in the URL, so the
+// link can be shared and comes back with the viewer already open. The route
+// watcher does the opening.
 function tableRoute(item: AssetPath): RouteLocationRaw {
   return {
     name: 'fileBrowser',
@@ -454,15 +443,6 @@ function rowRoute(item: AssetPath): RouteLocationRaw | undefined {
     return locationRoute(item.path);
   }
   return isTabularFile(item.path) ? tableRoute(item) : undefined;
-}
-
-// Record the open table in the URL, so that the link can be shared and comes
-// back with the viewer already open. The route watcher does the opening.
-function viewAsTable(item: AssetPath) {
-  router.replace({
-    ...route,
-    query: { ...route.query, [TABLE_QUERY_PARAM]: item.path },
-  } as RouteLocationRaw);
 }
 
 function closeTableViewer() {
