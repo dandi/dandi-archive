@@ -4,7 +4,6 @@ import datetime
 import hashlib
 
 from allauth.socialaccount.models import SocialAccount
-from dandischema.conf import get_instance_config
 from dandischema.consts import DANDI_SCHEMA_VERSION
 from dandischema.models import AccessType
 from django.contrib.auth.models import User
@@ -12,6 +11,7 @@ from django.utils import timezone
 import factory
 import faker
 
+from dandiapi.api.doi import format_doi
 from dandiapi.api.models import (
     Asset,
     AssetBlob,
@@ -174,13 +174,7 @@ class DraftVersionFactory(BaseVersionFactory):
 
 
 class PublishedVersionFactory(BaseVersionFactory):
-    doi = factory.LazyAttribute(
-        lambda self: (
-            f'{get_instance_config().doi_prefix}/'
-            f'{get_instance_config().instance_name}.'
-            f'{self.dandiset.identifier}/{self.version}'
-        )
-    )
+    doi = factory.LazyAttribute(lambda self: format_doi(self.dandiset.identifier, self.version))
     status = Version.Status.PUBLISHED
 
 

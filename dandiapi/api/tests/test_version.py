@@ -130,7 +130,7 @@ def test_published_version_metadata_computed():
         ),
         'doi': (
             f'{settings.DANDI_DOI_API_PREFIX}/'
-            f'{_SCHEMA_CONFIG.instance_name}.'
+            f'{_SCHEMA_CONFIG.instance_name.lower()}.'
             f'{published_version.dandiset.identifier}/{published_version.version}'
         ),
         'url': (

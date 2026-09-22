@@ -25,19 +25,109 @@ def doi_configured() -> bool:
     return all(setting is not None for setting, _ in DANDI_DOI_SETTINGS)
 
 
+def format_doi(dandiset_id: str, version: str) -> str:
+    instance_name: str = get_instance_config().instance_name
+    return f'{settings.DANDI_DOI_API_PREFIX}/{instance_name.lower()}.{dandiset_id}/{version}'
+
+
+def _doi_url(doi: str) -> str:
+    return settings.DANDI_DOI_API_URL.rstrip('/') + '/' + doi
+
+
+def _auth() -> requests.auth.HTTPBasicAuth:
+    return requests.auth.HTTPBasicAuth(settings.DANDI_DOI_API_USER, settings.DANDI_DOI_API_PASSWORD)
+
+
+def _log_http_error(message: str, e: requests.exceptions.HTTPError) -> None:
+    logger.exception(message)
+    if e.response is not None:
+        logger.exception(e.response.text)
+
+
 def _generate_doi_data(version: Version):
     from dandischema.datacite import to_datacite
 
     publish = settings.DANDI_DOI_PUBLISH
-    # Use the DANDI test datacite instance as a placeholder if PREFIX isn't set
-    prefix = settings.DANDI_DOI_API_PREFIX
-    instance_name: str = get_instance_config().instance_name
-    dandiset_id = version.dandiset.identifier
-    version_id = version.version
-    doi = f'{prefix}/{instance_name.lower()}.{dandiset_id}/{version_id}'
+    doi = format_doi(version.dandiset.identifier, version.version)
     metadata = version.metadata
     metadata['doi'] = doi
     return (doi, to_datacite(metadata, publish=publish))
+
+
+def get_doi_state(doi: str) -> str | None:
+    """Return the DataCite state of a DOI (draft, registered or findable), or None if absent."""
+    if not doi_configured():
+        return None
+    try:
+        r = requests.get(
+            _doi_url(doi), headers={'Accept': 'application/vnd.api+json'}, auth=_auth(), timeout=30
+        )
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        if e.response is not None and e.response.status_code == requests.codes.not_found:
+            return None
+        _log_http_error(f'Failed to fetch data for DOI {doi}', e)
+        raise
+    return r.json()['data']['attributes']['state']
+
+
+def reserve_doi(doi: str) -> None:
+    """Create a Draft DOI carrying only its identifier, so that the string is claimed."""
+    if not doi_configured():
+        logger.debug('Skipping DOI reservation for %s since not configured', doi)
+        return
+    r = requests.post(
+        settings.DANDI_DOI_API_URL,
+        json={'data': {'type': 'dois', 'attributes': {'doi': doi}}},
+        auth=_auth(),
+        timeout=30,
+    )
+    # DataCite reports an already-existing DOI as a 422. A Draft left over from an earlier
+    # aborted publish is safe to reuse; any other state means the identifier is already real.
+    if r.status_code == requests.codes.unprocessable_entity and get_doi_state(doi) == 'draft':
+        logger.info('Reusing existing draft DOI %s', doi)
+        return
+    try:
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        _log_http_error(f'Failed to reserve DOI {doi}', e)
+        raise
+
+
+def promote_doi(version: Version) -> None:
+    """
+    Send a version's full metadata to its reserved DOI.
+
+    When DANDI_DOI_PUBLISH is set this promotes the DOI to Findable, which is idempotent on an
+    already-Findable DOI; otherwise the DOI stays a Draft with its metadata filled in.
+    """
+    from dandischema.datacite import to_datacite
+
+    if not doi_configured():
+        logger.debug('Skipping DOI promotion for %s since not configured', version.doi)
+        return
+    request_body = to_datacite(version.metadata, publish=settings.DANDI_DOI_PUBLISH)
+    try:
+        requests.put(
+            _doi_url(version.doi), json=request_body, auth=_auth(), timeout=30
+        ).raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        _log_http_error(f'Failed to promote DOI {version.doi}', e)
+        logger.exception(request_body)
+        raise
+
+
+def hide_doi(doi: str, *, url: str) -> None:
+    """Demote a Findable DOI to Registered, pointing it at `url` as its tombstone."""
+    if not doi_configured():
+        logger.debug('Skipping DOI hiding for %s since not configured', doi)
+        return
+    request_body = {'data': {'type': 'dois', 'attributes': {'event': 'hide', 'url': url}}}
+    try:
+        requests.put(_doi_url(doi), json=request_body, auth=_auth(), timeout=30).raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        _log_http_error(f'Failed to hide DOI {doi}', e)
+        raise
 
 
 def create_doi(version: Version) -> str:
@@ -64,25 +154,19 @@ def create_doi(version: Version) -> str:
 
 
 def delete_doi(doi: str) -> None:
-    # If DOI isn't configured, skip the API call
-    if doi_configured():
-        doi_url = settings.DANDI_DOI_API_URL.rstrip('/') + '/' + doi
-        with requests.Session() as s:
-            s.auth = (settings.DANDI_DOI_API_USER, settings.DANDI_DOI_API_PASSWORD)
-            try:
-                r = s.get(doi_url, headers={'Accept': 'application/vnd.api+json'})
-                r.raise_for_status()
-            except requests.exceptions.HTTPError as e:
-                if e.response and e.response.status_code == requests.codes.not_found:
-                    logger.warning('Tried to get data for nonexistent DOI %s', doi)
-                    return
-                logger.exception('Failed to fetch data for DOI %s', doi)
-                raise
-            if r.json()['data']['attributes']['state'] == 'draft':
-                try:
-                    s.delete(doi_url).raise_for_status()
-                except requests.exceptions.HTTPError:
-                    logger.exception('Failed to delete DOI %s', doi)
-                    raise
-    else:
+    """Delete a DOI if it is still a Draft, which is the only state DataCite allows deleting."""
+    if not doi_configured():
         logger.debug('Skipping DOI deletion for %s since not configured', doi)
+        return
+    state = get_doi_state(doi)
+    if state is None:
+        logger.warning('Tried to delete nonexistent DOI %s', doi)
+        return
+    if state != 'draft':
+        logger.warning('Not deleting DOI %s since it is %s, not draft', doi, state)
+        return
+    try:
+        requests.delete(_doi_url(doi), auth=_auth(), timeout=30).raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        _log_http_error(f'Failed to delete DOI {doi}', e)
+        raise
