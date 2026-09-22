@@ -209,7 +209,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         responses={
             # Note: Having proper None results in no documentation in /swagger
             204: 'None - expected normal return without any content',
-            400: ZarrArchive.INGEST_ERROR_MSG,
+            400: f'{ZarrArchive.INGEST_ERROR_MSG}, or {ZarrArchive.ACTIVE_UPLOADS_ERROR_MSG}',
         },
         operation_summary='Finalize a zarr archive, dispatching async checksum computation.',
         operation_description='',
@@ -227,6 +227,12 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             # Don't ingest if already ingested/ingesting
             if zarr_archive.status != ZarrArchiveStatus.PENDING:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+
+            # Don't ingest while uploads are still outstanding.
+            if zarr_archive.uploads.exists():
+                return Response(
+                    ZarrArchive.ACTIVE_UPLOADS_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST
+                )
 
             zarr_archive.status = ZarrArchiveStatus.UPLOADED
             zarr_archive.save()
