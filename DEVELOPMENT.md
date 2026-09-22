@@ -111,6 +111,28 @@ Useful sub-commands include:
 To automatically reformat all code to comply with
 some (but not all) of the style checks, run `uv run tox -e format`.
 
+### Testing against a local DataCite API (lupo)
+By default the tests never talk to DataCite: the DOI code only makes HTTP calls when all four `DJANGO_DANDI_DOI_API_*` settings are set, and the default environment sets only the prefix.
+To exercise that path for real, CI runs the suite against a local [lupo](https://github.com/datacite/lupo), DataCite's REST API server, and the same setup works locally.
+It uses lupo's own dummy credentials and prefix; no DataCite account is involved.
+
+1. Run `dev/lupo-setup.sh` to start the stack (`dev/docker-compose.lupo.yml`) and seed it.
+   Note: The first run pulls about 5 GB of images.
+1. Point the archive at it and run the tests:
+   ```bash
+   export DJANGO_DANDI_DOI_API_URL=http://localhost:8065/dois
+   export DJANGO_DANDI_DOI_API_USER=DATACITE.TESTUSER
+   export DJANGO_DANDI_DOI_API_PASSWORD=test_mds_password
+   export DJANGO_DANDI_DOI_API_PREFIX=10.14454
+   uv run tox -e test
+   ```
+   `DJANGO_DANDI_DOI_API_PREFIX` must be `10.14454`, the one prefix lupo's seeded client may mint under.
+1. To see what the tests minted, list the drafts (with `-g` so curl leaves the brackets alone):
+   `curl -g -u DATACITE.TESTUSER:test_mds_password 'http://localhost:8065/dois?state=draft&page[size]=20'`
+1. When finished, run `docker compose -f dev/docker-compose.lupo.yml down -v`.
+
+The lupo stack is separate from the archive's own services (a different compose project with its own volumes) and only exposes port 8065.
+
 ### E2E Tests
 
 See the [e2e README](e2e/README.md).
