@@ -148,14 +148,29 @@ def zarr_upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> 
     After all data has been uploaded using the URLs provided by initialize, this endpoint must
     be called to create the object in the object store. A presigned URL that performs the
     completion is returned, as the completion might take several minutes for large files.
+
+    This marks the zarr archive as pending, since once the upload complete URL is returned and used,
+    the zarr archive in S3 is tainted with new files that haven't been checksummed.
     """
     request_serializer = UploadCompletionRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
     parts: list[TransferredPart] = request_serializer.save()
 
-    upload: ZarrUpload = get_object_or_404(ZarrUpload, upload_id=upload_id)
+    upload: ZarrUpload = get_object_or_404(
+        ZarrUpload.objects.select_related('zarr__dandiset'), upload_id=upload_id
+    )
     if upload.embargoed and not is_dandiset_owner(upload.zarr.dandiset, request.user):
         raise Http404 from None
+
+    # Once the complete multipart pre-signed URL is handed out, the file can exist in S3,
+    # invalidating the existing checksum. Mark this zarr as pending to reflect that.
+    with transaction.atomic():
+        zarr = ZarrArchive.objects.select_for_update(of=['self']).get(pk=upload.zarr_id)
+        if zarr.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
+            raise ValidationError(ZarrArchive.INGEST_ERROR_MSG)
+
+        zarr.mark_pending()
+        zarr.save()
 
     return complete_multipart_upload(upload, parts)
 
@@ -171,12 +186,10 @@ def zarr_upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> 
 @parser_classes([JSONParser])
 @permission_classes([IsApproved])
 def zarr_upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
-    """
-    Verify that a zarr chunk upload completed successfully.
-
-    This marks the zarr archive as pending, since a new file has been added to it.
-    """
-    upload: ZarrUpload = get_object_or_404(ZarrUpload, upload_id=upload_id)
+    """Verify that a zarr chunk upload completed successfully."""
+    upload: ZarrUpload = get_object_or_404(
+        ZarrUpload.objects.select_related('zarr__dandiset'), upload_id=upload_id
+    )
     zarr = upload.zarr
     if upload.embargoed and not is_dandiset_owner(zarr.dandiset, request.user):
         raise Http404 from None
@@ -188,9 +201,11 @@ def zarr_upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> 
     chunk_key = upload.chunk_key
 
     with transaction.atomic():
+        zarr = ZarrArchive.objects.select_for_update(of=['self']).get(pk=zarr.pk)
         upload.delete()
 
-        # Zarr must be marked pending since a new file is now added
+        # Mark zarr as pending again to ensure that some obscure race condition can't
+        # result in this uploaded chunk being omitted from the checksum.
         zarr.mark_pending()
         zarr.save()
 
