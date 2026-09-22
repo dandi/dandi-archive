@@ -131,6 +131,15 @@ It uses lupo's own dummy credentials and prefix; no DataCite account is involved
    `curl -g -u DATACITE.TESTUSER:test_mds_password 'http://localhost:8065/dois?state=draft&page[size]=20'`
 1. When finished, run `docker compose -f dev/docker-compose.lupo.yml down -v`.
 
+To reset lupo's database, either wipe and rebuild (`down -v` as above, then `dev/lupo-setup.sh` again), or delete just the DOIs the tests minted, keeping the seed:
+```bash
+docker compose -f dev/docker-compose.lupo.yml exec web bundle exec rails runner 'Doi.where(aasm_state: "draft").find_each(&:destroy)'
+```
+This also works for findable DOIs: the REST API refuses to delete them (405), but the model has no such guard, so the same line with `"findable"` removes them.
+That is a local-only escape hatch; real DataCite offers nothing like it.
+
+Ignore the `OpenSSL::PKey::PKeyError: Neither PUB key nor PRIV key` line that lupo prints on every authenticated request and `rails runner` call: it tries to sign a JWT for the acting user, has no signing key in this configuration, and logs the failure without acting on it.
+
 The lupo stack is separate from the archive's own services (a different compose project with its own volumes) and only exposes port 8065.
 
 ### E2E Tests
