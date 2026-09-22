@@ -154,19 +154,17 @@ Any solutions not listed here have no known limitations, though this is likely b
 
 ## Cost Summary
 
-All sizes below use binary (IEC) prefixes: 1 TiB = 1,024 GiB, 1 PiB = 1,024 TiB. Note that AWS advertises its prices "per GB", but actually bills per GiB ($2^{30}$ bytes).
-
-| Solution | Cost (TiB/year) |
+| Solution | Cost (TB/year) |
 | :-: | :-: |
-| Deep Glacier | $12.17 |
-| Deep Glacier + 1 Full Restoration per Year | $14.61 |
-| NESE | $4.53 |
-| Granite (Internal)[^1] | $17.17 |
-| Granite (External) | $27.25 |
-| OSN | $14.14 |
-| ORCD | $15.98 |
+| Deep Glacier | $11.06 |
+| Deep Glacier + 1 Full Restoration per Year | $13.28 |
+| NESE | $4.12 |
+| Granite (Internal)[^1] | $15.62 |
+| Granite (External) | $24.78 |
+| OSN | $12.85 |
+| ORCD | $14.53 |
 
-[^1]: Access to internal Granite pricing would require a 'liason' at Illinois. Granite prices are quoted per (decimal) TB ($15.62/TB/year internal, $24.78/TB/year external) and have been converted using 1 TiB = 1.0995 TB.
+[^1]: Access to internal Granite pricing would require a 'liason' at Illinois.
 
 
 
@@ -176,16 +174,18 @@ All sizes below use binary (IEC) prefixes: 1 TiB = 1,024 GiB, 1 PiB = 1,024 TiB.
 
 AWS pricing is very piece-meal depending on what specific actions we need.
 
-The basic storage has the advertised price of $0.00099/GB/month, where AWS's "GB" is in fact a GiB. Rescaling gives:
+Although AWS advertises its prices "per GB", it actually bills in binary units (1 "GB" = 1 GiB = $2^{30}$ bytes). Since 1 TB = $10^{12}$ bytes $\approx$ 931.32 GiB, the AWS prices must be converted accordingly to be expressed in terms of (decimal) TB.
+
+The basic storage has the advertised price of $0.00099/GB/month (i.e., per GiB). Rescaling gives:
 
 $$
-\frac{$0.00099}{\rm{GiB} \cdot \rm{month}} = \frac{$0.00099}{1 \ \rm{GiB} \ 1 \ \rm{month}} \cdot \frac{1,024 \ \rm{GiB}}{1 \ \rm{TiB}} \cdot \frac{12 \ \rm{month}}{1 \ \rm{year}} = $12.17/\rm{TiB}/\rm{year}
+\frac{$0.00099}{\rm{GiB} \cdot \rm{month}} = \frac{$0.00099}{1 \ \rm{GiB} \ 1 \ \rm{month}} \cdot \frac{931.32 \ \rm{GiB}}{1 \ \rm{TB}} \cdot \frac{12 \ \rm{month}}{1 \ \rm{year}} = $11.06/\rm{TB}/\rm{year}
 $$
 
-The cost of full restoration is estimated to be about $2,500/PiB, though this is largely guesswork. Amortizing this at a rate of once per year gives:
+The cost of full restoration is estimated to be about $2,500/PB in AWS units (i.e., per PiB, where 1 PiB $\approx$ 1,125.9 TB), though this is largely guesswork. Amortizing this at a rate of once per year gives:
 
 $$
-\frac{$2,500}{\rm{PiB} \cdot \rm{year}} = \frac{$2,500}{\rm{PiB} \cdot \rm{year}} \cdot \frac{1 \ \rm{PiB}}{1,024 \ \rm{TiB}} = $2.44/\rm{TiB}/\rm{year}
+\frac{$2,500}{\rm{PiB} \cdot \rm{year}} = \frac{$2,500}{\rm{PiB} \cdot \rm{year}} \cdot \frac{1 \ \rm{PiB}}{1,125.9 \ \rm{TB}} = $2.22/\rm{TB}/\rm{year}
 $$
 
 
@@ -195,22 +195,22 @@ The pricing for NESE is based on the number of tapes desired for redundancy, wit
 
 It also consists of the initial tape purchase ($75) as well as required maintenance ($31.82/year).
 
-A tape can hold 20 TB (decimal, i.e., $20 \times 10^{12}$ bytes $\approx$ 18.19 TiB) and we are assuming 'perfect fit', though this would be a practical constraint that might be hard to achieve. Expect 10-20% error for fitting assets perfectly.
+A tape can hold 20 TB and we are assuming 'perfect fit', though this would be a practical constraint that might be hard to achieve. Expect 10-20% error for fitting assets perfectly.
 
 Amortizing over an 8-year lifespan of a tape:
 
 $$
-\left( \frac{$75}{8 \ \rm{year}} + \frac{$31.82}{\rm{year}} \right) \frac{1}{18.19 \ \rm{TiB} \cdot \rm{tape}} \cdot 2 \ \rm{tape} = $4.53/\rm{TiB}/\rm{year}
+\left( \frac{$75}{8 \ \rm{year}} + \frac{$31.82}{\rm{year}} \right) \frac{1}{20 \ \rm{TB} \cdot \rm{tape}} \cdot 2 \ \rm{tape} = $4.12/\rm{TB}/\rm{year}
 $$
 
 
 
 ### OSN
 
-OSN offers 1.4 PB (decimal, $\approx$ 1.2434 PiB) for $90,000, renewing on a five-year hardware warranty. Amortizing gives:
+OSN offers 1.4 PB for $90,000, renewing on a five-year hardware warranty. Amortizing gives:
 
 $$
-\frac{$90,000}{1.4 \ \rm{PB} \cdot 5 \ \rm{year}} = \frac{$90,000}{1.4 \ \rm{PB} \cdot 5 \ \rm{year}} \cdot \frac{1 \ \rm{PB}}{0.8882 \ \rm{PiB}} \cdot \frac{1 \ \rm{PiB}}{1,024 \ \rm{TiB}} = $14.14/\rm{TiB}/\rm{year}
+\frac{$90,000}{1.4 \ \rm{PB} \cdot 5 \ \rm{year}} = \frac{$90,000}{1.4 \ \rm{PB} \cdot 5 \ \rm{year}} \cdot \frac{1 \ \rm{PB}}{1,000 \ \rm{TB}} = $12.85/\rm{TB}/\rm{year}
 $$
 
 
@@ -219,25 +219,25 @@ $$
 ORCD has quoted $90,000 for 1.1 PiB (usable; with RAID-Z3 reserved space), renewing on a five-year hardware warranty. Amortizing gives:
 
 $$
-\frac{$90,000}{1.1 \ \rm{PiB} \cdot 5 \ \rm{year}} = \frac{$90,000}{1.1 \ \rm{PiB} \cdot 5 \ \rm{year}} \cdot \frac{1 \ \rm{PiB}}{1,024 \ \rm{TiB}} = $15.98/\rm{TiB}/\rm{year}
+\frac{$90,000}{1.1 \ \rm{PiB} \cdot 5 \ \rm{year}} = \frac{$90,000}{1.1 \ \rm{PiB} \cdot 5 \ \rm{year}}\cdot \frac{1 \ \rm{PiB}}{1.1259 \ \rm{PB}} \cdot \frac{1 \ \rm{PB}}{1,000 \ \rm{TB}} = $14.53/\rm{TB}/\rm{year}
 $$
 
 
 
 ### Future Costs Over Time
 
-The DANDI Archive is expecting a ramp-up in data volume of around 1 PiB of new data over each of the next five years, culminating in a total nearing 6 PiB.
+The DANDI Archive is expecting a ramp-up in data volume of around 1 PB of new data over each of the next five years, culminating in a total nearing 6PB.
 
-The following table shows the initial, final, intermediate, and cumulative costs for all backup options (computed from the unrounded per-TiB rates above and rounded to the nearest dollar).
+The following table shows the initial, final, intermediate, and cumulative costs for all backup options.
 
-| Design | Year 0<br>(1 PiB) | Year 1<br>(2.5 PiB)[^2] | Year 2<br>(3.5 PiB) | Year 3<br>(4.5 PiB) | Year 4<br>(5.5 PiB) | Year 5<br>(6.5 PiB) | Cumulative Total<br>Over All Years|
+| Design | Year 0<br>(1 PB) | Year 1<br>(2.5 PB)[^2] | Year 2<br>(3.5 PB) | Year 3<br>(4.5 PB) | Year 4<br>(5.5 PB) | Year 5<br>(6.5 PB) | Cumulative Total<br>Over All Years|
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| NESE | $4,638 / year | $11,595 / year | $16,234 / year | $20,872 / year | $25,510 / year | $30,148 / year | $108,997 |
-| Deep<br>Glacier | $12,457 / year | $31,143 / year | $43,600 / year | $56,057 / year | $68,514 / year | $80,971 / year | $292,742 |
-| Deep Glacier<br>+<br>Full Restore | $14,957 / year | $37,393 / year | $52,350 / year | $67,307 / year | $82,264 / year | $97,221 / year | max: $351,492 |
-| Granite (Internal) | $17,587 / year | $43,966 / year | $61,553 / year | $79,140 / year | $96,726 / year | $114,313 / year | $413,285 |
-| Granite (External) | $27,900 / year | $69,749 / year | $97,649 / year | $125,549 / year | $153,449 / year | $181,349 / year | $655,645 |
-| OSN | $14,476 / year | $36,190 / year | $50,665 / year | $65,141 / year | $79,617 / year | $94,093 / year | $340,182 |
-| ORCD | $16,364 / year | $40,909 / year | $57,273 / year | $73,636 / year | $90,000 / year | $106,364 / year | $384,546 |
+| NESE  | $4,121 / year | $10,302.5 / year | $14,423.5 / year | $18,544.5 / year | $22,665.5 / year | $26,786.5 / year | $96,843.5 |
+| Deep<br>Glacier| $11,064 / year | $27,660 / year | $38,724 / year | $49,789 / year | $60,853 / year | $71,917 / year | $260,007 |
+| Deep Glacier<br>+<br>Full Restore | $13,285 / year | $33,211 / year | $46,496 / year | $59,781 / year | $73,065 / year | $86,350 / year  | max: $312,188 |
+| Granite (Internal) | $15,620 / year |	$39,050 / year | $54,670 / year | $70,290 / year | $85,910 / year | $101,530 / year | $367,070 |
+| Granite (External) | $24,780 / year |	$61,950 / year | $86,730 / year | $111,510 / year | $136,290 / year | $161,070 / year | $582,330 |
+| OSN | $12,850/ year |	$32,125 / year | $44975 / year | $57,825 / year | $70,675 / year | $83,525 / year | $301,975 |
+| ORCD | $14,530 / year |	$36,325 / year | $50,855 / year | $65385 / year | $79,915 / year | $94,445 / year | $341,455 |
 
-[^2]: LINC is expected to make a one-time contribution of 0.5 PiB.
+[^2]: LINC is expected to make a one-time contribution of 0.5 PB.
