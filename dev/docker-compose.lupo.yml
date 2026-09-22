@@ -13,7 +13,7 @@ name: lupo
 
 services:
   web:
-    image: ghcr.io/datacite/lupo:main
+    image: ghcr.io/datacite/lupo:5.78.4
     environment:
       # Rails `test`, not the image's default `development`: both carry the
       # same dummy credentials, but development disables lupo's rescue_from,
