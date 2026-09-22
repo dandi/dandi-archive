@@ -6,8 +6,9 @@ from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
+import requests
 
-from dandiapi.api.doi import delete_doi
+from dandiapi.api.doi import delete_doi, get_doi_state, hide_doi, promote_doi
 from dandiapi.api.mail import send_dandiset_unembargo_failed_message
 from dandiapi.api.manifests import (
     write_assets_jsonld,
@@ -81,9 +82,49 @@ def validate_version_metadata_task(version_id: int) -> None:
     validate_version_metadata(version=version)
 
 
+def _is_terminal_datacite_error(e: requests.RequestException) -> bool:
+    """Whether a DataCite failure is one that retrying will not fix, e.g. rejected metadata."""
+    response = e.response
+    return (
+        response is not None
+        and requests.codes.bad_request <= response.status_code < requests.codes.server_error
+        and response.status_code != requests.codes.too_many_requests
+    )
+
+
+def _retry_after(e: requests.RequestException, retries: int) -> int:
+    response = e.response
+    retry_after = response.headers.get('Retry-After', '') if response is not None else ''
+    if retry_after.isdigit():
+        return int(retry_after)
+    return min(60 * 2**retries, 3600)
+
+
+@shared_task(bind=True, max_retries=8, soft_time_limit=120)
+def promote_version_doi_task(self, version_id: int) -> None:
+    """Send a published version's metadata to its reserved DOI, promoting it to Findable."""
+    version: Version = Version.objects.get(id=version_id)
+    try:
+        promote_doi(version)
+    except requests.RequestException as e:
+        if not _is_terminal_datacite_error(e) and self.request.retries < self.max_retries:
+            raise self.retry(exc=e, countdown=_retry_after(e, self.request.retries)) from e
+        logger.exception(
+            'Giving up on promoting DOI %s for version %s:%s',
+            version.doi,
+            version.dandiset.identifier,
+            version.version,
+        )
+        raise
+
+
 @shared_task
-def delete_doi_task(doi: str) -> None:
-    delete_doi(doi)
+def retire_version_doi_task(doi: str, landing_url: str) -> None:
+    """Hide or delete the DOI of a deleted version, depending on its DataCite state."""
+    if get_doi_state(doi) == 'findable':
+        hide_doi(doi, url=landing_url)
+    else:
+        delete_doi(doi)
 
 
 @shared_task

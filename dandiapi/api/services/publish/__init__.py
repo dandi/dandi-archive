@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import copy
 import datetime
+import logging
 from typing import TYPE_CHECKING
 
-from dandischema.conf import get_instance_config
 from dandischema.metadata import aggregate_assets_summary, validate
 from django.contrib.auth.models import User
 from django.db import transaction
 from more_itertools import ichunked
+import requests
 
 from dandiapi.api import doi
 from dandiapi.api.asset_paths import add_version_asset_paths
@@ -24,10 +25,12 @@ from dandiapi.api.services.publish.exceptions import (
     DandisetNotLockedError,
     DandisetValidationPendingError,
 )
-from dandiapi.api.tasks import write_manifest_files
+from dandiapi.api.tasks import promote_version_doi_task, write_manifest_files
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
+
+logger = logging.getLogger(__name__)
 
 
 def publish_asset(*, asset: Asset) -> None:
@@ -88,7 +91,9 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  #
         draft_version.save()
 
 
-def _build_publishable_version_from_draft(draft_version: Version) -> Version:
+def _build_publishable_version_from_draft(
+    draft_version: Version, *, version: str | None = None, doi: str | None = None
+) -> Version:
     # Make a deep copy of the dict to avoid mutating the draft version's metadata.
     publishable_version_metadata = copy.deepcopy(draft_version.metadata)
 
@@ -111,8 +116,15 @@ def _build_publishable_version_from_draft(draft_version: Version) -> Version:
         metadata=publishable_version_metadata,
         release_notes=draft_version.release_notes,
         status=Version.Status.VALID,
-        version=Version.next_published_version(draft_version.dandiset),
+        version=version or Version.next_published_version(draft_version.dandiset),
+        doi=doi,
     )
+
+
+def _release_draft_lock(dandiset_id: int) -> None:
+    Version.objects.filter(
+        dandiset_id=dandiset_id, version='draft', status=Version.Status.PUBLISHING
+    ).update(status=Version.Status.VALID)
 
 
 def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
@@ -121,19 +133,56 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
 
     Calling `_lock_dandiset_for_publishing()` is a precondition for calling this function.
     """
+    draft_version: Version = Version.objects.get(dandiset_id=dandiset_id, version='draft')
+    if draft_version.status != Version.Status.PUBLISHING:
+        raise DandisetNotLockedError(
+            'Dandiset must be in PUBLISHING state. Call `_lock_dandiset_for_publishing()` '
+            'before this function.'
+        )
+
+    # The draft is locked in PUBLISHING, so no other publish of this dandiset can run and the
+    # version string chosen here stays free until the transaction below commits it.
+    version_str = Version.next_published_version(draft_version.dandiset)
+    new_doi = doi.format_doi(draft_version.dandiset.identifier, version_str)
+
+    # Reserve the DOI as a Draft before anything irreversible happens. If DataCite cannot be
+    # reached, the publish is aborted with nothing to clean up.
+    reserved = doi.doi_configured()
+    if reserved:
+        try:
+            doi.reserve_doi(new_doi)
+        except requests.RequestException:
+            _release_draft_lock(dandiset_id)
+            raise
+
+    try:
+        _commit_published_version(
+            dandiset_id, user_id, version=version_str, doi=new_doi, promote=reserved
+        )
+    except Exception:
+        # A Draft DOI is invisible and deletable, so a stray one from a failed publish is
+        # harmless even if this cleanup fails too.
+        if reserved:
+            try:
+                doi.delete_doi(new_doi)
+            except requests.RequestException:
+                logger.exception('Failed to clean up reserved DOI %s', new_doi)
+        _release_draft_lock(dandiset_id)
+        raise
+
+
+def _commit_published_version(
+    dandiset_id: int, user_id: int, *, version: str, doi: str, promote: bool
+) -> None:
     with transaction.atomic():
         old_version: Version = Version.objects.select_for_update().get(
             dandiset_id=dandiset_id,
             version='draft',
         )
 
-        if old_version.status != Version.Status.PUBLISHING:
-            raise DandisetNotLockedError(
-                'Dandiset must be in PUBLISHING state. Call `_lock_dandiset_for_publishing()` '
-                'before this function.'
-            )
-
-        new_version: Version = _build_publishable_version_from_draft(old_version)
+        new_version: Version = _build_publishable_version_from_draft(
+            old_version, version=version, doi=doi
+        )
         new_version.save()
 
         # Bulk create the join table rows to optimize linking assets to new_version
@@ -188,24 +237,13 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         old_version.status = Version.Status.PUBLISHED
         old_version.save()
 
-        # Inject a dummy DOI so the metadata is valid
-        schema_config = get_instance_config()
-        new_version.metadata['doi'] = (
-            f'{schema_config.doi_prefix}/{schema_config.instance_name.lower()}.123456/0.123456.1234'
-        )
-
         validate(new_version.metadata, schema_key='PublishedDandiset', json_validation=True)
 
-        def _create_doi(version_id: int):
-            version = Version.objects.get(id=version_id)
-            version.doi = doi.create_doi(version)
-            version.save()
-
-        # Call _create_doi before writing manifest files, so that the new DOI is included in the
-        # manifests. If DOI creation fails, proceed to writing manifests anyway, to maintain
-        # existing behavior.
-        transaction.on_commit(lambda: _create_doi(new_version.id), robust=True)
-        transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
+        # The DOI is already in the version's metadata, so the manifests do not need to wait on
+        # DataCite; promotion to Findable happens independently.
+        write_manifest_files.delay_on_commit(new_version.id)
+        if promote:
+            promote_version_doi_task.delay_on_commit(new_version.id)
 
         user = User.objects.get(id=user_id)
         audit.publish_dandiset(

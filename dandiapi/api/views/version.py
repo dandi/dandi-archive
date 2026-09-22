@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.conf import settings
 from django.db import transaction
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
@@ -19,7 +20,7 @@ from dandiapi.api.services.permissions.dandiset import (
     require_dandiset_owner_or_403,
 )
 from dandiapi.api.services.publish import publish_dandiset
-from dandiapi.api.tasks import delete_doi_task
+from dandiapi.api.tasks import retire_version_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
@@ -179,7 +180,8 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 status=status.HTTP_403_FORBIDDEN,
             )
         doi = version.doi
+        landing_url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{version.dandiset.identifier}'
         version.delete()
         if doi is not None:
-            delete_doi_task.delay(doi)
+            retire_version_doi_task.delay(doi, landing_url)
         return Response(None, status=status.HTTP_204_NO_CONTENT)

@@ -509,32 +509,3 @@ def test_publish_task_writes_doi_into_manifest(
     assert manifest['doi'] == published_version.doi
     assert published_version.doi in manifest['citation']
     assert manifest == published_version.metadata
-
-
-@pytest.mark.django_db
-def test_publish_task_writes_manifest_without_doi_when_minting_fails(
-    publishing_dandiset, django_capture_on_commit_callbacks, mocker
-):
-    """A DataCite failure must not block publishing or writing the manifest.
-
-    ``_create_doi`` is registered with ``on_commit(..., robust=True)``, so an
-    exception there is swallowed (and logged) rather than propagating -- the
-    publish is already committed by that point, and ``write_manifest_files``
-    is still enqueued right after.
-    """
-    draft_version, user = publishing_dandiset
-    mocker.patch('dandiapi.api.doi.create_doi', side_effect=RuntimeError('DataCite is down'))
-
-    with django_capture_on_commit_callbacks(execute=True):
-        tasks.publish_dandiset_task(draft_version.dandiset.id, user.id)
-
-    published_version: Version = draft_version.dandiset.versions.exclude(version='draft').get()
-    assert not published_version.doi
-
-    with default_storage.open(_dandiset_jsonld_path(published_version)) as f:
-        manifest = json.loads(f.read())
-
-    assert not manifest.get('doi')
-
-    draft_version.refresh_from_db()
-    assert draft_version.status == Version.Status.PUBLISHED

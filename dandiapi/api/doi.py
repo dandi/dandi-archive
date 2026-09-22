@@ -44,16 +44,6 @@ def _log_http_error(message: str, e: requests.exceptions.HTTPError) -> None:
         logger.exception(e.response.text)
 
 
-def _generate_doi_data(version: Version):
-    from dandischema.datacite import to_datacite
-
-    publish = settings.DANDI_DOI_PUBLISH
-    doi = format_doi(version.dandiset.identifier, version.version)
-    metadata = version.metadata
-    metadata['doi'] = doi
-    return (doi, to_datacite(metadata, publish=publish))
-
-
 def get_doi_state(doi: str) -> str | None:
     """Return the DataCite state of a DOI (draft, registered or findable), or None if absent."""
     if not doi_configured():
@@ -128,29 +118,6 @@ def hide_doi(doi: str, *, url: str) -> None:
     except requests.exceptions.HTTPError as e:
         _log_http_error(f'Failed to hide DOI {doi}', e)
         raise
-
-
-def create_doi(version: Version) -> str:
-    doi, request_body = _generate_doi_data(version)
-    # If DOI isn't configured, skip the API call
-    if doi_configured():
-        try:
-            requests.post(
-                settings.DANDI_DOI_API_URL,
-                json=request_body,
-                auth=requests.auth.HTTPBasicAuth(
-                    settings.DANDI_DOI_API_USER,
-                    settings.DANDI_DOI_API_PASSWORD,
-                ),
-                timeout=30,
-            ).raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            logger.exception('Failed to create DOI %s', doi)
-            logger.exception(request_body)
-            if e.response:
-                logger.exception(e.response.text)
-            raise
-    return doi
 
 
 def delete_doi(doi: str) -> None:
