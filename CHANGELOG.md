@@ -1,3 +1,113 @@
+# v1.0.8 (Fri Sep 18 2026)
+
+:tada: This release contains work from new contributors! :tada:
+
+Thanks for all your work!
+
+:heart: Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+:heart: GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### 🐛 Bug Fix
+
+- Make file browser rows real links [#2926](https://github.com/dandi/dandi-archive/pull/2926) ([@claude](https://github.com/claude) [@mvandenburgh](https://github.com/mvandenburgh) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Fix publish-time race between DOI minting and manifest writing [#2912](https://github.com/dandi/dandi-archive/pull/2912) ([@yarikoptic](https://github.com/yarikoptic) [@claude](https://github.com/claude) [@jjnesbitt](https://github.com/jjnesbitt) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### Authors: 6
+
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v1.0.7 (Thu Sep 17 2026)
+
+#### 🐛 Bug Fix
+
+- Fix zarr publishing validation [#2924](https://github.com/dandi/dandi-archive/pull/2924) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add in-browser zip download for small dandisets [#2855](https://github.com/dandi/dandi-archive/pull/2855) ([@bendichter](https://github.com/bendichter) [@naglepuff](https://github.com/naglepuff))
+- Add an Example Notebooks tab to the dandiset landing page [#2897](https://github.com/dandi/dandi-archive/pull/2897) ([@bendichter](https://github.com/bendichter) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.6 (Mon Sep 14 2026)
+
+#### 🐛 Bug Fix
+
+- Restrict asset path deletion to ancestors of deleted asset [#2919](https://github.com/dandi/dandi-archive/pull/2919) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v1.0.5 (Mon Sep 14 2026)
+
+#### 🐛 Bug Fix
+
+- Fix embargo funding and end date parameters on Dandiset creation [#2918](https://github.com/dandi/dandi-archive/pull/2918) ([@bendichter](https://github.com/bendichter))
+
+#### Authors: 1
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+
+---
+
+# v1.0.4 (Wed Sep 09 2026)
+
+#### 🐛 Bug Fix
+
+- Remove user-facing dandihub references following service sunset [#2905](https://github.com/dandi/dandi-archive/pull/2905) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
+# v1.0.3 (Tue Sep 08 2026)
+
+:tada: This release contains work from new contributors! :tada:
+
+Thanks for all your work!
+
+:heart: Claude ([@claude](https://github.com/claude))
+
+:heart: Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🐛 Bug Fix
+
+- Lock file maintenance [#2916](https://github.com/dandi/dandi-archive/pull/2916) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Merge pull request #2856 from dandi/anatomy-info-card [#2856](https://github.com/dandi/dandi-archive/pull/2856) ([@bendichter](https://github.com/bendichter))
+- e2e: reduce flakiness of playwright tests [#2893](https://github.com/dandi/dandi-archive/pull/2893) ([@naglepuff](https://github.com/naglepuff))
+- Use 'spike sorting' instead of 'patch clamp' in technique search example [#2909](https://github.com/dandi/dandi-archive/pull/2909) ([@claude](https://github.com/claude) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🔩 Dependency Updates
+
+- Update dev dependencies [#2910](https://github.com/dandi/dandi-archive/pull/2910) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update astral-sh/setup-uv action to v10 [#2911](https://github.com/dandi/dandi-archive/pull/2911) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 5
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+
+---
+
 # v1.0.2 (Mon Aug 31 2026)
 
 #### 🐛 Bug Fix
