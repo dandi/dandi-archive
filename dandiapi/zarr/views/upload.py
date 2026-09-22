@@ -106,17 +106,20 @@ def zarr_upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBa
     if zarr_archive.upload_type != ZarrUploadType.MULTIPART:
         raise ValidationError('This zarr archive does not support multipart upload.')
 
-    if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
-        raise ValidationError(ZarrArchive.INGEST_ERROR_MSG)
-
-    upload, initialization = ZarrUpload.initialize_multipart_upload(
-        etag,
-        content_size,
-        zarr=zarr_archive,
-        chunk_key=data['chunk_key'],
-        content_type=data['content_type'],
-    )
     with transaction.atomic():
+        # Check the status with a row lock, so that this upload can't be created in the window
+        # between finalize finding no active uploads and it marking the zarr as uploaded.
+        zarr_archive = ZarrArchive.objects.select_for_update(of=['self']).get(pk=zarr_archive.pk)
+        if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
+            raise ValidationError(ZarrArchive.INGEST_ERROR_MSG)
+
+        upload, initialization = ZarrUpload.initialize_multipart_upload(
+            etag,
+            content_size,
+            zarr=zarr_archive,
+            chunk_key=data['chunk_key'],
+            content_type=data['content_type'],
+        )
         upload.save()
         audit.upload_zarr_chunks(
             dandiset=dandiset,
