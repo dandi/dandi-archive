@@ -153,15 +153,62 @@ def test_zarr_multipart_upload_complete(api_client):
 
 
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize('chunk_key', ['.zattrs', '0/0/0'])
-def test_zarr_multipart_upload_validate(api_client, chunk_key):
-    """Validating a zarr upload returns the zarr ID and chunk key."""
+def test_zarr_multipart_upload_complete_marks_pending(api_client):
+    """Completing an upload must mark the zarr pending, as the chunk is written to the zarr."""
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
     zarr = ZarrArchiveFactory.create(
         upload_type=ZarrUploadType.MULTIPART,
         status=ZarrArchiveStatus.COMPLETE,
         checksum=EMPTY_CHECKSUM,
+        file_count=10,
+        size=1000,
+    )
+    zarr_upload = ZarrUploadFactory.create(zarr=zarr)
+
+    resp = api_client.post(
+        f'/api/zarr/uploads/{zarr_upload.upload_id}/complete/',
+        {'parts': [{'part_number': 1, 'size': 100, 'etag': 'test-etag'}]},
+    )
+    assert resp.status_code == 200
+
+    # The stale checksum and stats must be cleared, even if the client never validates
+    zarr.refresh_from_db()
+    assert zarr.status == ZarrArchiveStatus.PENDING
+    assert zarr.checksum is None
+    assert zarr.file_count == 0
+    assert zarr.size == 0
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize('status', [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING])
+def test_zarr_multipart_upload_complete_ingesting(api_client, status):
+    """Completing an upload to a zarr that's being ingested must be rejected."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr = ZarrArchiveFactory.create(upload_type=ZarrUploadType.MULTIPART, status=status)
+    zarr_upload = ZarrUploadFactory.create(zarr=zarr)
+
+    resp = api_client.post(
+        f'/api/zarr/uploads/{zarr_upload.upload_id}/complete/',
+        {'parts': [{'part_number': 1, 'size': 100, 'etag': 'test-etag'}]},
+    )
+    assert resp.status_code == 400
+
+    zarr.refresh_from_db()
+    assert zarr.status == status
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize('chunk_key', ['.zattrs', '0/0/0'])
+def test_zarr_multipart_upload_validate(api_client, chunk_key):
+    """Validating a zarr upload returns the zarr ID and chunk key."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+
+    # The upload's completion has already marked the zarr pending
+    zarr = ZarrArchiveFactory.create(
+        upload_type=ZarrUploadType.MULTIPART, status=ZarrArchiveStatus.PENDING
     )
     zarr_upload = ZarrUploadFactory.create(zarr=zarr, chunk_key=chunk_key)
 
@@ -171,10 +218,36 @@ def test_zarr_multipart_upload_validate(api_client, chunk_key):
 
     assert not ZarrUpload.objects.exists()
 
-    # Check that zarr is now in a `PENDING` state
+    # Check that zarr is still in a `PENDING` state
     zarr.refresh_from_db()
     assert zarr.status == ZarrArchiveStatus.PENDING
     assert zarr.checksum is None
+
+
+@pytest.mark.django_db(transaction=True)
+def test_zarr_multipart_upload_validate_reasserts_pending(api_client):
+    """Validating an upload to a zarr that's left the pending state must mark it pending again."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr = ZarrArchiveFactory.create(
+        upload_type=ZarrUploadType.MULTIPART,
+        status=ZarrArchiveStatus.COMPLETE,
+        checksum=EMPTY_CHECKSUM,
+        file_count=10,
+        size=1000,
+    )
+    zarr_upload = ZarrUploadFactory.create(zarr=zarr)
+
+    resp = api_client.post(f'/api/zarr/uploads/{zarr_upload.upload_id}/validate/')
+    assert resp.status_code == 200
+
+    # The checksum can't be trusted to account for this chunk, so it must be recomputed
+    assert not ZarrUpload.objects.exists()
+    zarr.refresh_from_db()
+    assert zarr.status == ZarrArchiveStatus.PENDING
+    assert zarr.checksum is None
+    assert zarr.file_count == 0
+    assert zarr.size == 0
 
 
 @pytest.mark.django_db(transaction=True)
