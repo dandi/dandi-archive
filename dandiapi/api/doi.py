@@ -57,7 +57,7 @@ def create_doi(version: Version) -> str:
         except requests.exceptions.HTTPError as e:
             logger.exception('Failed to create DOI %s', doi)
             logger.exception(request_body)
-            if e.response:
+            if e.response is not None:
                 logger.exception(e.response.text)
             raise
     return doi
@@ -73,7 +73,7 @@ def delete_doi(doi: str) -> None:
                 r = s.get(doi_url, headers={'Accept': 'application/vnd.api+json'})
                 r.raise_for_status()
             except requests.exceptions.HTTPError as e:
-                if e.response and e.response.status_code == requests.codes.not_found:
+                if e.response is not None and e.response.status_code == requests.codes.not_found:
                     logger.warning('Tried to get data for nonexistent DOI %s', doi)
                     return
                 logger.exception('Failed to fetch data for DOI %s', doi)
