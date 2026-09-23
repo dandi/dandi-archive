@@ -32,6 +32,7 @@ from dandiapi.api.tasks import (
     validate_version_metadata_task,
     write_manifest_files,
 )
+from dandiapi.search.ontology import ONTOLOGY_SOURCES, load_graph, replace_ontology_tables
 from dandiapi.zarr.models import ZarrArchiveStatus
 
 if TYPE_CHECKING:
@@ -141,6 +142,13 @@ def refresh_materialized_view_search() -> None:
         cursor.execute('COMMIT;')
 
 
+@shared_task(soft_time_limit=timedelta(minutes=15).total_seconds())
+def refresh_anatomy_ontologies() -> None:
+    """Reload the ontology tables behind the anatomy search operators from their releases."""
+    terms, closure_rows = replace_ontology_tables(load_graph(ONTOLOGY_SOURCES))
+    logger.info('Loaded %s anatomy terms and %s closure rows', terms, closure_rows)
+
+
 @shared_task(soft_time_limit=60)
 def garbage_collection() -> None:
     garbage_collect()
@@ -179,6 +187,11 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
 
     # Refresh the materialized view used by asset search every 10 mins.
     sender.add_periodic_task(timedelta(minutes=10), refresh_materialized_view_search.s())
+
+    # Pick up new ontology releases on the first of each month
+    sender.add_periodic_task(
+        crontab(day_of_month='1', hour=3, minute=0), refresh_anatomy_ontologies.s()
+    )
 
     # Refresh the application stats every 6 hours
     sender.add_periodic_task(timedelta(hours=6), compute_application_stats.s())

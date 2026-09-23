@@ -151,6 +151,8 @@ const operatorHelp = [
   { example: 'technique:"spike sorting"', description: 'Has assets using a measurement technique' },
   { example: 'file_type:nwb', description: 'Has assets of a file type (nwb, image, text, video)' },
   { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, GitHub username, or email)' },
+  { example: 'anatomy:hippocampus', description: 'About a brain region or any of its parts (name, UBERON:0002421, MBA:1089, or URL)' },
+  { example: 'anatomy_exact:hippocampus', description: 'About exactly that region, without its parts' },
 ];
 
 // The set of operators we suggest, derived from the help table so the two

@@ -18,6 +18,8 @@ from dataclasses import dataclass, field
 from difflib import get_close_matches
 import re
 
+from dandiapi.api.services.search.anatomy import ANATOMY_ONTOLOGIES
+
 OPERATOR_KEYS: frozenset[str] = frozenset(
     {
         'created_before',
@@ -31,8 +33,14 @@ OPERATOR_KEYS: frozenset[str] = frozenset(
         'technique',
         'file_type',
         'owner',
+        'anatomy',
+        'anatomy_exact',
     }
 )
+
+# URL schemes look like operator keys to the tokenizer. A pasted URL is far
+# more likely to be something to search for than a mistyped operator.
+_URL_SCHEMES: frozenset[str] = frozenset({'http', 'https'})
 
 # A token in the input is one of:
 #   key:"quoted value"       — operator with quoted value
@@ -82,9 +90,14 @@ def _check_balanced_quotes(query: str) -> None:
         )
 
 
-def _validate_operator_key(key: str) -> None:
+def _validate_operator_key(key: str, value: str) -> None:
     if key in OPERATOR_KEYS:
         return
+    if key.upper() in ANATOMY_ONTOLOGIES:
+        # A bare lowercase CURIE such as `uberon:0002421`.
+        raise SearchSyntaxError(
+            f'Unknown search operator "{key}". Did you mean "anatomy:{key.upper()}:{value}"?'
+        )
     suggestions = get_close_matches(key, OPERATOR_KEYS, n=1, cutoff=0.6)
     hint = f' Did you mean "{suggestions[0]}"?' if suggestions else ''
     raise SearchSyntaxError(
@@ -106,15 +119,16 @@ def parse_search(query: str) -> ParsedSearch:
 
     for match in _TOKEN_RE.finditer(query):
         if (key := match.group('op_key')) is not None:
-            _validate_operator_key(key)
+            _validate_operator_key(key, match.group('op_qval'))
             parsed.operators.append(Operator(key, match.group('op_qval')))
         elif (free := match.group('free_quoted')) is not None:
             parsed.free_text.append(free)
         else:
             bare = match.group('bare')
-            if op_match := _BARE_OP_RE.match(bare):
+            op_match = _BARE_OP_RE.match(bare)
+            if op_match and op_match.group(1) not in _URL_SCHEMES:
                 key = op_match.group(1)
-                _validate_operator_key(key)
+                _validate_operator_key(key, op_match.group(2))
                 parsed.operators.append(Operator(key, op_match.group(2)))
             else:
                 parsed.free_text.append(bare)
