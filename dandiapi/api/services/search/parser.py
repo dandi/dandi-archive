@@ -29,7 +29,7 @@ OPERATOR_KEYS: frozenset[str] = frozenset(
         'species',
         'approach',
         'technique',
-        'file_type',
+        'standard',
         'owner',
     }
 )
@@ -85,6 +85,14 @@ def _check_balanced_quotes(query: str) -> None:
 def _validate_operator_key(key: str) -> None:
     if key in OPERATOR_KEYS:
         return
+    if key == 'file_type':
+        # Removed operator; there is no close-enough key for the generic
+        # suggestion below to fire, so point at the replacements explicitly.
+        raise SearchSyntaxError(
+            'The "file_type" operator has been removed. Use standard: to match '
+            'a data standard (e.g. standard:nwb), or the file type filter in '
+            'the search sidebar.'
+        )
     suggestions = get_close_matches(key, OPERATOR_KEYS, n=1, cutoff=0.6)
     hint = f' Did you mean "{suggestions[0]}"?' if suggestions else ''
     raise SearchSyntaxError(
