@@ -1,9 +1,13 @@
 name: CI for frontend
 on:
   pull_request:
+    paths-ignore:
+      - "doc/**"
   push:
     branches:
       - master
+    paths-ignore:
+      - "doc/**"
 permissions:
   contents: read
 jobs:
