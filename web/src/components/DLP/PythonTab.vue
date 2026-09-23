@@ -72,6 +72,21 @@
             </v-tooltip>
           </v-btn>
         </div>
+
+        <p
+          v-if="!loading && neurosiftUrl"
+          class="text-body-1 mt-4"
+        >
+          Neurosift generates a longer script for this file that shows how to
+          read each of its objects, with their shapes and descriptions:
+          <a
+            :href="neurosiftUrl"
+            target="_blank"
+            rel="noopener"
+          >Python usage for this file in Neurosift</a>.
+          To get the same for another file, open it in Neurosift from the file
+          browser and choose the Python Usage tab.
+        </p>
       </v-card-text>
     </v-card>
   </div>
@@ -83,7 +98,7 @@ import type { PropType } from 'vue';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
-import type { DandisetMetadata } from '@/types';
+import type { Asset, DandisetMetadata } from '@/types';
 import { pythonSnippet } from '@/utils/pythonSnippet';
 
 defineProps({
@@ -101,17 +116,18 @@ const store = useDandisetStore();
 const currentDandiset = computed(() => store.dandiset);
 
 const loading = ref(true);
-const nwbPath = ref<string | null>(null);
+const nwbAsset = ref<Asset | null>(null);
+const nwbPath = computed(() => nwbAsset.value?.path ?? null);
 const anyPath = ref<string | null>(null);
 const copied = ref(false);
 
-async function firstAssetPath(identifier: string, version: string, glob?: string) {
+async function firstAsset(identifier: string, version: string, glob?: string) {
   const params: Record<string, string | number> = { page_size: 1 };
   if (glob) {
     params.glob = glob;
   }
   const page = await dandiRest.assets(identifier, version, { params });
-  return page?.results[0]?.path ?? null;
+  return page?.results[0] ?? null;
 }
 
 watch(
@@ -121,17 +137,17 @@ watch(
       return;
     }
     loading.value = true;
-    let nwb: string | null = null;
+    let nwb: Asset | null = null;
     let any: string | null = null;
     try {
-      nwb = await firstAssetPath(identifier, version, '*.nwb');
-      any = nwb ?? await firstAssetPath(identifier, version);
+      nwb = await firstAsset(identifier, version, '*.nwb');
+      any = nwb?.path ?? (await firstAsset(identifier, version))?.path ?? null;
     } catch (err) {
       console.error('Failed to fetch an example asset:', err);
     }
     if (currentDandiset.value?.dandiset.identifier === identifier
       && currentDandiset.value?.version === version) {
-      nwbPath.value = nwb;
+      nwbAsset.value = nwb;
       anyPath.value = any;
       loading.value = false;
     }
@@ -152,6 +168,22 @@ const code = computed(() => {
     nwbPath: nwbPath.value,
     anyPath: anyPath.value,
   });
+});
+
+// Neurosift's NWB page opens directly on its generated usage script with ?tab=python-usage.
+const neurosiftUrl = computed(() => {
+  const dandiset = currentDandiset.value;
+  if (!dandiset || !nwbAsset.value) {
+    return null;
+  }
+  const { identifier } = dandiset.dandiset;
+  const params = new URLSearchParams({
+    url: dandiRest.assetDownloadURI(identifier, dandiset.version, nwbAsset.value.asset_id),
+    dandisetId: identifier,
+    dandisetVersion: dandiset.version,
+    tab: 'python-usage',
+  });
+  return `https://neurosift.app/nwb?${params}`;
 });
 
 async function copyCode() {
