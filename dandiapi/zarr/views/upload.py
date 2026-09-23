@@ -106,27 +106,36 @@ def zarr_upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBa
     if zarr_archive.upload_type != ZarrUploadType.MULTIPART:
         raise ValidationError('This zarr archive does not support multipart upload.')
 
-    with transaction.atomic():
-        # Check the status with a row lock, so that this upload can't be created in the window
-        # between finalize finding no active uploads and it marking the zarr as uploaded.
-        zarr_archive = ZarrArchive.objects.select_for_update(of=['self']).get(pk=zarr_archive.pk)
-        if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
-            raise ValidationError(ZarrArchive.INGEST_ERROR_MSG)
+    upload, initialization = ZarrUpload.initialize_multipart_upload(
+        etag,
+        content_size,
+        zarr=zarr_archive,
+        chunk_key=data['chunk_key'],
+        content_type=data['content_type'],
+    )
 
-        upload, initialization = ZarrUpload.initialize_multipart_upload(
-            etag,
-            content_size,
-            zarr=zarr_archive,
-            chunk_key=data['chunk_key'],
-            content_type=data['content_type'],
-        )
-        upload.save()
-        audit.upload_zarr_chunks(
-            dandiset=dandiset,
-            user=request.user,
-            zarr_archive=zarr_archive,
-            paths=[upload.chunk_key],
-        )
+    try:
+        with transaction.atomic():
+            # Check the status with a row lock, so that this upload can't be created in the window
+            # between finalize finding no active uploads and it marking the zarr as uploaded.
+            zarr_archive = ZarrArchive.objects.select_for_update(of=['self']).get(
+                pk=zarr_archive.pk
+            )
+            if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
+                raise ValidationError(ZarrArchive.INGEST_ERROR_MSG)  # noqa: TRY301
+
+            upload.save()
+            audit.upload_zarr_chunks(
+                dandiset=dandiset,
+                user=request.user,
+                zarr_archive=zarr_archive,
+                paths=[upload.chunk_key],
+            )
+    except ValidationError:
+        # Abort the upload outside of the transaction, so that the zarr row doesn't remain locked
+        # during this network call
+        upload.abort()
+        raise
 
     logger.info(
         'Zarr upload initialized for chunk %s of zarr %s', upload.chunk_key, zarr_archive.zarr_id
