@@ -115,22 +115,7 @@ This backup solution serves a different purpose than the trailing delete mechani
 
 ### Cost
 
-**Below are the additional costs introduced by this backup feature** for a 1 PB primary bucket (assuming both the primary bucket and backup bucket are in us-east-2). All of this information was gathered from the "Storage & requests", "Data transfer", and "Replication" tabs on [https://aws.amazon.com/s3/pricing/](https://aws.amazon.com/s3/pricing/).
-
-**Storage Costs** (backup bucket in us-east-2):
-
-- Glacier Deep Archive storage: ~$0.00099/GB/month
-  - 1 PB = 1,024 TB × $0.99/TB = **$1,014/month**
-
-**Data Transfer Costs**:
-
-- Same-region data transfer between S3 buckets is free
-
-**Retrieval Costs** (only incurred when disaster recovery is needed):
-
-- Glacier Deep Archive retrieval:
-  - $0.02/GB (standard, 12-hour retrieval)
-  - $0.025/GB (bulk retrieval, can take up to 48 hours)
+See the [cost details in the original, archived backup doc](../archive/s3-backup.md#cost-details) for the full derivation of Glacier Deep Archive storage (~$11.88/TB/year) and restoration costs.
 
 #### Future Costs
 
