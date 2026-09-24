@@ -8,6 +8,7 @@ from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import AuditRecord, Dandiset
 from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
 from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
+from dandiapi.zarr.models import ZarrUploadType
 from dandiapi.zarr.tasks import ingest_zarr_archive
 from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 
@@ -330,6 +331,37 @@ def test_audit_upload_zarr_chunks(api_client, zarr_archive_factory):
     verify_model_properties(rec, user)
     assert rec.details['zarr_id'] == zarr_archive.zarr_id
     assert rec.details['paths'] == paths
+    assert rec.details['upload_type'] == ZarrUploadType.SINGLEPART
+
+
+@pytest.mark.django_db
+def test_audit_upload_zarr_chunks_multipart(api_client, zarr_archive_factory):
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    zarr_archive = zarr_archive_factory(
+        dandiset=draft_version.dandiset, upload_type=ZarrUploadType.MULTIPART
+    )
+
+    # Request a multipart chunk upload.
+    chunk_key = 'a.txt'
+    api_client.force_authenticate(user=user)
+    resp = api_client.post(
+        '/api/zarr/uploads/initialize/',
+        {
+            'contentSize': 100,
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
+            'zarr_id': str(zarr_archive.zarr_id),
+            'chunk_key': chunk_key,
+        },
+    )
+    assert resp.status_code == 200
+
+    # Verify the upload_zarr_chunks audit record.
+    rec = get_latest_audit_record(dandiset=draft_version.dandiset, record_type='upload_zarr_chunks')
+    verify_model_properties(rec, user)
+    assert rec.details['zarr_id'] == zarr_archive.zarr_id
+    assert rec.details['paths'] == [chunk_key]
+    assert rec.details['upload_type'] == ZarrUploadType.MULTIPART
 
 
 @pytest.mark.django_db

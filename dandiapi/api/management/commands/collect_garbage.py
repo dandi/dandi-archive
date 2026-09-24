@@ -18,8 +18,10 @@ def echo_report():
     )
     asset_blobs_size_in_gb = asset_blobs_size_in_bytes / (1024**3)
 
-    garbage_collectable_uploads = garbage_collection.upload.get_queryset()
-    uploads_count = garbage_collectable_uploads.count()
+    uploads_count = sum(
+        garbage_collection.upload.get_queryset(model).count()
+        for model in garbage_collection.upload.UPLOAD_MODELS
+    )
 
     click.echo(f'Assets: {assets_count}')
     click.echo(
