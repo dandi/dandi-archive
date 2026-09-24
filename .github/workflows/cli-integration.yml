@@ -64,6 +64,22 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
 
+      # MinIO made quay.io/minio/minio require a login on 2026-09-24, and
+      # dandi-cli's compose file still pulls it.  Layer the image our own
+      # docker-compose.yml uses over it until dandi-cli carries
+      # https://github.com/dandi/dandi-cli/pull/1927 (in `master` and in a
+      # release); the override is a no-op after that.
+      - name: Override MinIO image in dandi-cli's compose file
+        run: |
+          cat > "$RUNNER_TEMP/minio-override.yml" <<'EOF'
+          services:
+            minio:
+              image: bitnamilegacy/minio:latest
+              command: !reset []
+              tty: !reset false
+          EOF
+          echo "COMPOSE_FILE=docker-compose.yml:$RUNNER_TEMP/minio-override.yml" >> "$GITHUB_ENV"
+
       - name: Run dandi-api tests in dandi-cli
         if: matrix.dandi-version == 'release'
         run: >
