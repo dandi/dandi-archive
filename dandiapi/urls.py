@@ -39,6 +39,7 @@ from dandiapi.api.views import (
 from dandiapi.search.views import search_genotypes, search_species
 from dandiapi.zarr.views import (
     ZarrViewSet,
+    zarr_upload_abort_view,
     zarr_upload_complete_view,
     zarr_upload_initialize_view,
     zarr_upload_validate_view,
@@ -102,6 +103,11 @@ api_urlpatterns = [
         rf'^api/zarr/uploads/{UPLOAD_ID_URLPATTERN}/validate/$',
         zarr_upload_validate_view,
         name='zarr-upload-validate',
+    ),
+    re_path(
+        rf'^api/zarr/uploads/{UPLOAD_ID_URLPATTERN}/abort/$',
+        zarr_upload_abort_view,
+        name='zarr-upload-abort',
     ),
     path('api/users/me/', users_me_view),
     path('api/users/search/', users_search_view),

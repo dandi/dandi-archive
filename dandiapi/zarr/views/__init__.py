@@ -23,6 +23,7 @@ from dandiapi.api.views.serializers import DandisetIdentifierField
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadType, validate_zarr_path
 from dandiapi.zarr.tasks import ingest_zarr_archive
 from dandiapi.zarr.views.upload import (
+    zarr_upload_abort_view,
     zarr_upload_complete_view,
     zarr_upload_initialize_view,
     zarr_upload_validate_view,
@@ -36,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     'ZarrViewSet',
+    'zarr_upload_abort_view',
     'zarr_upload_complete_view',
     'zarr_upload_initialize_view',
     'zarr_upload_validate_view',

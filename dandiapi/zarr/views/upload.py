@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from django.db import transaction
 from django.http.response import Http404, HttpResponseBase
 from django.shortcuts import get_object_or_404
-from drf_yasg.utils import swagger_auto_schema
+from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.exceptions import ValidationError
@@ -106,6 +106,8 @@ def zarr_upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBa
     if zarr_archive.upload_type != ZarrUploadType.MULTIPART:
         raise ValidationError('This zarr archive does not support multipart upload.')
 
+    # Create the multipart upload in S3 outside of the transaction, so that the zarr row doesn't
+    # remain locked during this network call
     upload, initialization = ZarrUpload.initialize_multipart_upload(
         etag,
         content_size,
@@ -185,6 +187,47 @@ def zarr_upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> 
         zarr.save()
 
     return complete_multipart_upload(upload, parts)
+
+
+@swagger_auto_schema(
+    method='POST',
+    request_body=no_body,
+    responses={
+        204: 'None - expected normal return without any content',
+    },
+)
+@api_view(['POST'])
+@parser_classes([JSONParser])
+@permission_classes([IsApproved])
+def zarr_upload_abort_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
+    """
+    Abort a multipart upload of a zarr chunk.
+
+    This discards any parts that have been uploaded and releases the upload's claim on the zarr,
+    so that the zarr can be finalized without waiting for the upload to be garbage collected.
+    """
+    upload: ZarrUpload = get_object_or_404(
+        ZarrUpload.objects.select_related('zarr__dandiset'), upload_id=upload_id
+    )
+    zarr = upload.zarr
+    if not is_dandiset_owner(zarr.dandiset, request.user):
+        raise NotAllowedError
+
+    # Abort before deleting the record. This discards the upload's parts but leaves the object
+    # alone, since another upload to the same chunk key may own it. It's a no-op for an upload
+    # that already completed, and is safe to retry, so a failure here leaves the record in place
+    # to be aborted again rather than orphaning a multipart upload that nothing tracks.
+    upload.abort()
+    upload.delete()
+
+    # The zarr is deliberately left alone. If this upload's completion URL was ever handed out,
+    # the complete view already marked the zarr pending, and finalize is refused while any
+    # upload exists, so the zarr cannot have been checksummed since. If it wasn't, the upload
+    # never had the chance to change the zarr's contents, and invalidating a good checksum here
+    # would force a needless re-ingest.
+    logger.info('Zarr upload %s aborted for zarr %s', upload_id, zarr.zarr_id)
+
+    return Response(None, status=status.HTTP_204_NO_CONTENT)
 
 
 @swagger_auto_schema(

@@ -200,6 +200,91 @@ def test_zarr_multipart_upload_complete_ingesting(api_client, status):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_zarr_multipart_upload_abort(api_client):
+    """Aborting an initialized upload discards it without disturbing the zarr."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr = ZarrArchiveFactory.create(
+        dandiset__owners=[user],
+        upload_type=ZarrUploadType.MULTIPART,
+        status=ZarrArchiveStatus.COMPLETE,
+        checksum=EMPTY_CHECKSUM,
+        file_count=10,
+        size=1000,
+    )
+    zarr_upload = ZarrUploadFactory.create(zarr=zarr)
+
+    resp = api_client.post(f'/api/zarr/uploads/{zarr_upload.upload_id}/abort/')
+    assert resp.status_code == 204
+    assert not ZarrUpload.objects.exists()
+
+    # This upload never had a completion URL, so it can't have changed the zarr's contents.
+    # Marking it pending would force a needless re-ingest.
+    zarr.refresh_from_db()
+    assert zarr.status == ZarrArchiveStatus.COMPLETE
+    assert zarr.checksum == EMPTY_CHECKSUM
+    assert zarr.file_count == 10
+
+
+@pytest.mark.django_db(transaction=True)
+def test_zarr_multipart_upload_abort_unblocks_finalize(api_client):
+    """Aborting is the client's escape hatch from an upload that's blocking finalize."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr = ZarrArchiveFactory.create(dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART)
+    zarr_upload = ZarrUploadFactory.create(zarr=zarr)
+
+    # The abandoned upload holds finalize hostage until GC, which is 7 days out
+    assert api_client.post(f'/api/zarr/{zarr.zarr_id}/finalize/').status_code == 400
+
+    assert api_client.post(f'/api/zarr/uploads/{zarr_upload.upload_id}/abort/').status_code == 204
+    assert api_client.post(f'/api/zarr/{zarr.zarr_id}/finalize/').status_code == 204
+
+
+@pytest.mark.django_db(transaction=True)
+def test_zarr_multipart_upload_abort_not_an_owner(api_client):
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_upload = ZarrUploadFactory.create()
+
+    resp = api_client.post(f'/api/zarr/uploads/{zarr_upload.upload_id}/abort/')
+    assert resp.status_code == 403
+    assert ZarrUpload.objects.filter(upload_id=zarr_upload.upload_id).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_zarr_multipart_upload_abort_discards_the_multipart_upload(api_client):
+    """The abort must reach the object store, not just delete the record."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr = ZarrArchiveFactory.create(dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART)
+
+    initialization = api_client.post('/api/zarr/uploads/initialize/', initialize_body(zarr)).data
+    transferred = []
+    for part_number, part in enumerate(initialization['parts'], start=1):
+        transfer = requests.put(part['upload_url'], data=b'X' * part['size'], timeout=5)
+        transferred.append(
+            {
+                'part_number': part_number,
+                'size': part['size'],
+                'etag': transfer.headers['etag'],
+            }
+        )
+
+    upload_id = initialization['upload_id']
+    assert api_client.post(f'/api/zarr/uploads/{upload_id}/abort/').status_code == 204
+
+    # The multipart upload is gone from the object store, so it can no longer be completed
+    assert (
+        api_client.post(
+            f'/api/zarr/uploads/{upload_id}/complete/', {'parts': transferred}
+        ).status_code
+        == 404
+    )
+    assert not zarr.storage.exists(zarr.s3_path('0/chunk'))
+
+
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize('chunk_key', ['.zattrs', '0/0/0'])
 def test_zarr_multipart_upload_validate(api_client, chunk_key):
     """Validating a zarr upload returns the zarr ID and chunk key."""
