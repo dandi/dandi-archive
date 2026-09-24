@@ -136,6 +136,7 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
                     '@ccf.org',
                     '.ac.uk',
                     '.mcgill.ca',
+                    '@epfl.ch',
                 ]
             )
 

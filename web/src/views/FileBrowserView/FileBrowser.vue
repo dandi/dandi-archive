@@ -101,7 +101,8 @@
               <!-- Extra item to navigate up the tree -->
               <v-list-item
                 v-if="location !== rootDirectory"
-                @click="navigateToParent"
+                :to="locationRoute(parentLocation)"
+                :active="false"
               >
                 <template #prepend>
                   <v-icon
@@ -114,11 +115,19 @@
                 <v-list-item-title>..</v-list-item-title>
               </v-list-item>
 
+              <!--
+                Render each row as a real link so that
+                the browser treats it as one: right click offers "Open link in new tab", and
+                ctrl/cmd/middle click work as they do anywhere else. Buttons in the append
+                slot stop the click and prevent its default so the row link isn't followed.
+              -->
               <v-list-item
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
-                @click="openItem(item)"
+                :href="item.asset ? inlineURI(item.asset.asset_id) : undefined"
+                :to="item.asset ? undefined : locationRoute(item.path)"
+                :active="false"
               >
                 <template #prepend>
                   <v-icon
@@ -143,7 +152,7 @@
                       v-if="showDelete(item)"
                       icon
                       variant="text"
-                      @click.stop="setItemToDelete(item)"
+                      @click.stop.prevent="setItemToDelete(item)"
                     >
                       <v-icon color="error">
                         mdi-delete
@@ -217,8 +226,8 @@
                           color="primary"
                           size="x-small"
                           :disabled="!item.services || !item.services.length"
-
                           v-bind="openWithProps"
+                          @click.stop.prevent
                         >
                           Open With <v-icon size="small">
                             mdi-menu-down
@@ -363,6 +372,7 @@ const isOwner = computed(() => !!(
   user.value && owners.value?.includes(user.value?.username)
 ));
 const itemsNotFound = computed(() => items.value && !items.value.length);
+const parentLocation = computed(() => location.value.split('/').slice(0, -1).join('/'));
 
 
 
@@ -370,20 +380,12 @@ function locationSlice(index: number) {
   return `${splitLocation.value.slice(0, index + 1).join('/')}/`;
 }
 
-function openItem(item: AssetPath) {
-  const { asset, path } = item;
-
-  if (asset) {
-    // If the item is an asset, open it in the browser.
-    window.open(inlineURI(asset.asset_id), "_self");
-  } else {
-    // If it's a directory, move into it.
-    location.value = path;
-  }
-}
-
-function navigateToParent() {
-  location.value = location.value.split('/').slice(0, -1).join('/');
+// The route for a directory, so that directory rows can be rendered as links.
+function locationRoute(newLocation: string): RouteLocationRaw {
+  return {
+    name: 'fileBrowser',
+    query: { location: newLocation, page: '1' },
+  } as RouteLocationRaw;
 }
 
 function downloadURI(asset_id: string) {

@@ -29,7 +29,9 @@ OPERATOR_KEYS: frozenset[str] = frozenset(
         'species',
         'approach',
         'technique',
-        'file_type',
+        'standard',
+        'variable',
+        'owner',
     }
 )
 
@@ -60,9 +62,17 @@ class SearchSyntaxError(ValueError):
 
 
 @dataclass
+class Operator:
+    """One parsed `key:value` operator."""
+
+    key: str
+    value: str
+
+
+@dataclass
 class ParsedSearch:
     free_text: list[str] = field(default_factory=list)
-    operators: list[tuple[str, str]] = field(default_factory=list)
+    operators: list[Operator] = field(default_factory=list)
 
 
 def _check_balanced_quotes(query: str) -> None:
@@ -76,6 +86,14 @@ def _check_balanced_quotes(query: str) -> None:
 def _validate_operator_key(key: str) -> None:
     if key in OPERATOR_KEYS:
         return
+    if key == 'file_type':
+        # Removed operator; there is no close-enough key for the generic
+        # suggestion below to fire, so point at the replacements explicitly.
+        raise SearchSyntaxError(
+            'The "file_type" operator has been removed. Use standard: to match '
+            'a data standard (e.g. standard:nwb), or the file type filter in '
+            'the search sidebar.'
+        )
     suggestions = get_close_matches(key, OPERATOR_KEYS, n=1, cutoff=0.6)
     hint = f' Did you mean "{suggestions[0]}"?' if suggestions else ''
     raise SearchSyntaxError(
@@ -98,7 +116,7 @@ def parse_search(query: str) -> ParsedSearch:
     for match in _TOKEN_RE.finditer(query):
         if (key := match.group('op_key')) is not None:
             _validate_operator_key(key)
-            parsed.operators.append((key, match.group('op_qval')))
+            parsed.operators.append(Operator(key, match.group('op_qval')))
         elif (free := match.group('free_quoted')) is not None:
             parsed.free_text.append(free)
         else:
@@ -106,7 +124,7 @@ def parse_search(query: str) -> ParsedSearch:
             if op_match := _BARE_OP_RE.match(bare):
                 key = op_match.group(1)
                 _validate_operator_key(key)
-                parsed.operators.append((key, op_match.group(2)))
+                parsed.operators.append(Operator(key, op_match.group(2)))
             else:
                 parsed.free_text.append(bare)
     return parsed
