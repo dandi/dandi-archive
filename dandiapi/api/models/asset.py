@@ -27,6 +27,10 @@ class EmbargoedAssetWithinOpenDandisetError(Exception):
     """Raised when an embargoed asset exists in an open dandiset."""
 
 
+class EmbargoedAssetWithoutEndDateError(Exception):
+    """Raised when an embargoed asset exists without an embargo end date."""
+
+
 ASSET_CHARS_REGEX = r'[A-z0-9(),&\s#+~_=-]'
 ASSET_PATH_REGEX = rf'^({ASSET_CHARS_REGEX}?\/?\.?{ASSET_CHARS_REGEX})+$'
 ASSET_COMPUTED_FIELDS = [
@@ -281,13 +285,12 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'min_embargo_end_date'
         ]
 
-        # The only way embargo_end_date can be None here is if asset isn't associated with any
-        # versions (most likely due to being updated). Even so, sometimes these assets are accessed
-        # directly, so we need to handle that case.
-        # TODO: Update once https://github.com/dandi/dandi-archive/issues/2733 is addressed
-        if embargo_end_date is not None:
-            access['embargoedUntil'] = embargo_end_date.isoformat()
+        # The only way embargo_end_date can be None here is if asset has been orphaned. Access to
+        # these assets is prohibited, so if this occurs, it's an error.
+        if embargo_end_date is None:
+            raise EmbargoedAssetWithoutEndDateError
 
+        access['embargoedUntil'] = embargo_end_date.isoformat()
         return access
 
     @property
