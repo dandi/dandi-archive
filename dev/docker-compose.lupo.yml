@@ -1,0 +1,100 @@
+# A local lupo (the DataCite REST API, https://github.com/datacite/lupo) for the
+# test suite to mint DOIs against, so the DataCite code path runs for real
+# without a DataCite account.
+#
+# Derived from lupo's own docker-compose.yml, minus the source-tree bind mounts
+# (the image carries the code) and minus host ports for the backing services.
+# Bring it up with dev/lupo-setup.sh, which also runs the one-time rake steps.
+#
+# Everything here is lupo's development-environment default; nothing is a
+# secret. The seeded client is DATACITE.TESTUSER / test_mds_password with the
+# single prefix 10.14454.
+name: lupo
+
+services:
+  web:
+    image: ghcr.io/datacite/lupo:5.78.4
+    environment:
+      # Rails `test`, not the image's default `development`: both carry the
+      # same dummy credentials, but development disables lupo's rescue_from,
+      # so an unknown DOI answers 500 there instead of the 404 the archive
+      # (and real DataCite) expects.
+      PASSENGER_APP_ENV: test
+      RAILS_ENV: test
+      # lupo reads feature flags over HTTP from a Volpino service that is not
+      # here. Flipper's Rails engine would otherwise preload all flags on every
+      # request and turn the 404 into a 500; lupo's own development.rb sets
+      # the same switch in Ruby.
+      FLIPPER_MEMOIZE: "false"
+      ELASTIC_PASSWORD: AnUnsecurePassword123
+      PASSENGER_MAX_POOL_SIZE: 12
+      PASSENGER_MIN_INSTANCES: 5
+      AWS_ENDPOINT_URL_S3: http://localstack:4566
+      AWS_ACCESS_KEY_ID_S3: s3accesskeyid
+      AWS_SECRET_ACCESS_KEY_S3: s3accesskeypass
+      # lupo registers every DOI with a Handle server after commit, defaulting
+      # to DataCite's real test server. Point it at a dead host so a local
+      # instance never calls out; the failure is logged and the DOI stays.
+      HANDLE_URL: http://handle.invalid
+      HANDLE_PRIMARY_URL: http://handle.invalid
+    ports:
+      - "8065:80"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      mysql:
+        condition: service_started
+      memcached:
+        condition: service_started
+    healthcheck:
+      # Any HTTP answer will do: /heartbeat returns 500 until the database
+      # exists, and dev/lupo-setup.sh creates it after this check passes.
+      test: curl -s -o /dev/null http://localhost/heartbeat
+      interval: 5s
+      timeout: 2s
+      retries: 60
+
+  memcached:
+    image: memcached:1.6.22
+
+  mysql:
+    image: mysql:8.4.7
+    command: --max_allowed_packet=50000000
+    environment:
+      MYSQL_DATABASE: datacite
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+
+  elasticsearch:
+    image: opensearchproject/opensearch:2
+    environment:
+      discovery.type: single-node
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: AnUnsecurePassword123
+      DISABLE_SECURITY_PLUGIN: true
+      http.cors.enabled: true
+      bootstrap.memory_lock: true
+      http.cors.allow-origin: "*"
+      compatibility.override_main_response_version: true
+      logger.org.opensearch.discovery: "ERROR"
+      # A nearly full host disk otherwise flips the indices read-only.
+      cluster.routing.allocation.disk.threshold_enabled: "false"
+    healthcheck:
+      test: curl -f http://localhost:9200
+      interval: 5s
+      timeout: 2s
+      retries: 60
+
+  localstack:
+    image: localstack/localstack:2.3.2
+    environment:
+      SERVICES: s3
+      AWS_ACCESS_KEY_ID: s3accesskeyid
+      AWS_SECRET_ACCESS_KEY: s3accesskeypass
+      LOCALSTACK_HOST: localstack
+    healthcheck:
+      test: curl -f http://localhost:4566/_localstack/health
+      interval: 5s
+      timeout: 5s
+      retries: 10
