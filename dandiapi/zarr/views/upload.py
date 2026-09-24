@@ -106,6 +106,8 @@ def zarr_upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBa
     if zarr_archive.upload_type != ZarrUploadType.MULTIPART:
         raise ValidationError('This zarr archive does not support multipart upload.')
 
+    # Create the multipart upload in S3 outside of the transaction, so that the zarr row doesn't
+    # remain locked during this network call
     upload, initialization = ZarrUpload.initialize_multipart_upload(
         etag,
         content_size,

@@ -246,6 +246,40 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
+        method='DELETE',
+        request_body=no_body,
+        responses={
+            204: 'None - expected normal return without any content',
+        },
+        operation_summary='Abort all multipart uploads to a zarr archive.',
+        operation_description='',
+    )
+    @action(methods=['DELETE'], url_path='uploads', detail=True)
+    def delete_uploads(self, request, zarr_id):
+        """
+        Abort all multipart uploads to a zarr archive.
+
+        This discards any parts that have been uploaded and releases the uploads' claim on the
+        zarr, so that the zarr can be finalized without waiting for them to be garbage collected.
+        """
+        zarr_archive: ZarrArchive = get_object_or_404(self.get_queryset(), zarr_id=zarr_id)
+        if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
+            raise PermissionDenied
+
+        # The zarr row is deliberately not locked, so that it doesn't remain locked during the
+        # network calls below. An upload initialized concurrently with this request may survive
+        # it, which is no different than one initialized just after.
+        uploads = list(zarr_archive.uploads.all())
+        for upload in uploads:
+            # Abort before deleting the record, so that if it fails the DB record still exists.
+            upload.abort()
+            upload.delete()
+
+        logger.info('Aborted %d uploads for zarr %s', len(uploads), zarr_archive.zarr_id)
+
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
         method='GET',
         responses={
             200: 'Listing of s3 objects',
