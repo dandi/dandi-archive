@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures.ts";
 import { clientUrl } from "../utils.ts";
 
 const devDandisetId = "000003";

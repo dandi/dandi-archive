@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures.ts";
 import { clientUrl, dismissCookieBanner } from "../utils.ts";
 
 // The operator autocomplete dropdown is a pure-frontend feature: the operator

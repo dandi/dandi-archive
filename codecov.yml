@@ -1,0 +1,39 @@
+# Coverage is uploaded separately for the backend (pytest, backend-ci.yml) and
+# the frontend (Playwright E2E tests against an instrumented build,
+# frontend-ci.yml). Backend CI is skipped for web-only changes, so flags are
+# carried forward: a commit without a fresh upload for a flag reuses that
+# flag's coverage from its parent commit instead of reporting it as missing.
+flag_management:
+  default_rules:
+    carryforward: true
+  individual_flags:
+    - name: backend
+      paths:
+        - dandiapi/
+    - name: frontend
+      paths:
+        - web/src/
+
+coverage:
+  status:
+    # Report coverage changes per component, but do not fail the PR on them.
+    project:
+      default: false
+      backend:
+        flags: [backend]
+        informational: true
+      frontend:
+        flags: [frontend]
+        informational: true
+    patch:
+      default: false
+      backend:
+        flags: [backend]
+        informational: true
+      frontend:
+        flags: [frontend]
+        informational: true
+
+comment:
+  layout: "condensed_header, diff, flags, files"
+  show_carryforward_flags: true

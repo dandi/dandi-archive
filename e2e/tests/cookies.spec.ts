@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures.ts";
 import { clientUrl } from "../utils.ts";
 
 const COOKIE_CONSENT_MESSAGE = 'We use cookies to ensure you get the best experience on DANDI.';

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page } from "../fixtures.ts";
 import { clientUrl, gotoAndLogin } from "../utils.ts";
 
 const noLicenseSelector = async (page: Page) => {

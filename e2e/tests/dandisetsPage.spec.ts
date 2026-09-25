@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures.ts";
 import { registerDandiset, registerNewUser, uniqueId } from "../utils.ts";
 import moment from "moment";
 import { faker } from "@faker-js/faker";

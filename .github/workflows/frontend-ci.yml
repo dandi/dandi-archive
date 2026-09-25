@@ -126,7 +126,8 @@ jobs:
     - name: Run Playwright tests
       run: |
           # start vue dev server
-          npm --prefix web run build 2> /dev/null && npx serve --single web/dist --listen 8085 &
+          # (instrumented for code coverage, collected by e2e/fixtures.ts)
+          VITE_COVERAGE=true npm --prefix web run build 2> /dev/null && npx serve --single web/dist --listen 8085 &
           while ! nc -z localhost 8085; do
             sleep 3
           done
@@ -136,6 +137,21 @@ jobs:
 
           # run the tests
           cd e2e && npx playwright test
+
+    - name: Generate coverage report
+      if: ${{ !cancelled() }}
+      run: npm run coverage-report
+      working-directory: e2e
+
+    - name: Upload coverage to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: e2e/coverage/lcov.info
+        disable_search: true
+        flags: frontend
+        name: frontend-e2e
 
     - uses: actions/upload-artifact@v7
       if: always()

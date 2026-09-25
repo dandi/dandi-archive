@@ -67,7 +67,16 @@ jobs:
           uv run pre-commit run --all-files
       - name: Run Python tests
         run: |
-          uv run tox
+          uv run tox -- --cov --cov-report=xml
+      - name: Upload coverage to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          disable_search: true
+          flags: backend
+          name: backend-pytest
       - name: Verify gunicorn config
         run: |
           uv run gunicorn --config gunicorn.conf.py --check-config dandiapi.wsgi

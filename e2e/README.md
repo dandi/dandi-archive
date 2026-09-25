@@ -41,3 +41,16 @@ npx playwright test -g "add an owner to the dandiset"
 # Run with visible browser
 npx playwright test --headed
 ```
+
+## Code coverage
+
+To measure how much of the web app the tests exercise, serve a build instrumented with Istanbul
+(`VITE_COVERAGE=true npm run build` in `web/`, or run `npm run dev` with `VITE_COVERAGE=true`).
+Coverage is then collected into `e2e/.nyc_output/` during the test run, and can be summarized with:
+
+```bash
+npm run coverage-report  # writes e2e/coverage/lcov.info and e2e/coverage/lcov-report/index.html
+```
+
+Tests must import `test` and `expect` from `fixtures.ts` (not directly from `@playwright/test`)
+for their coverage to be collected.

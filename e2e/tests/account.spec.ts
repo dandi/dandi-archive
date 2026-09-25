@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures.ts";
 import {
   LOGIN_BUTTON_TEXT,
   LOGOUT_BUTTON_TEXT,

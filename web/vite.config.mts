@@ -5,6 +5,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import ViteFonts from 'unplugin-fonts/vite'
 import VueRouter from 'unplugin-vue-router/vite'
+import istanbul from 'vite-plugin-istanbul'
 
 // Utilities
 import { defineConfig } from 'vite'
@@ -61,6 +62,15 @@ export default defineConfig({
       },
     }),
     nodePolyfills(),
+    // Instrument the app for code coverage, e.g. when running the E2E tests in CI.
+    // Only active when the VITE_COVERAGE environment variable is set.
+    istanbul({
+      include: 'src/*',
+      extension: ['.js', '.ts', '.vue'],
+      requireEnv: true,
+      forceBuildInstrument: true,
+      checkProd: false,
+    }),
   ],
   define: { 'process.env': {} },
   resolve: {

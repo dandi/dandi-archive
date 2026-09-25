@@ -254,3 +254,8 @@ filterwarnings = [
 markers = [
   "ai_generated: test was authored (or substantially authored) by an AI assistant; review extra carefully",
 ]
+
+[tool.coverage.run]
+source = ["dandiapi"]
+branch = true
+omit = ["*/tests/*"]

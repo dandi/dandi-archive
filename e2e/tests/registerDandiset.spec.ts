@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures.ts";
 import { gotoAndLogin } from "../utils.ts";
 
 test.describe("dandiset registration page", async () => {
