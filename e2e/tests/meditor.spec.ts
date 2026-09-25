@@ -79,3 +79,13 @@ test.describe("Test meditor validation errors", async () => {
     });
   }
 });
+
+test.describe("Meditor read-only access", () => {
+  test("anonymous user does not see Add Item button on Contributors tab", async ({ page }) => {
+    await page.goto(`${clientUrl}/#/dandiset/000003/draft/`);
+    await page.getByText("Metadata", { exact: true }).click();
+    await page.getByRole("tab", { name: "Dandiset contributors" }).click();
+
+    await expect(page.getByRole("button", { name: "Add Item" })).toHaveCount(0);
+  });
+});
