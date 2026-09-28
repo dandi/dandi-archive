@@ -22,7 +22,10 @@
         </div>
         <div style="height: 10vh;">
           <v-divider class="my-2" />
-          <div class="d-flex align-center justify-space-between mx-2">
+          <div
+            v-if="!readonly"
+            class="d-flex align-center justify-space-between mx-2"
+          >
             <v-btn
               elevation="0"
               color="white"
