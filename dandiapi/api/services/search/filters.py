@@ -46,6 +46,16 @@ def _annotate_latest_published_created(queryset):
     )
 
 
+# Postgres jsonpath quirk: `like_regex` requires its pattern to be a STRING
+# LITERAL inside the jsonpath text, not a `$variable`, so the `vars` argument
+# of `jsonb_path_exists` can't carry the pattern. Instead the jsonpath is
+# assembled at execution time by concatenating `to_jsonb(%s::text)::text`,
+# which renders the bound parameter as a properly quoted JSON string literal.
+# The user value is never inlined into the SQL, and callers `re.escape` it so
+# regex metacharacters match literally.
+_LIKE_REGEX_PATTERN = ' like_regex \' || to_jsonb(%s::text)::text || \' flag "i"'
+
+
 def _jsonpath_match(path: str, value: str) -> tuple[str, list[str]]:
     """Build a parameterized `jsonb_path_exists` predicate on `metadata`.
 
@@ -54,26 +64,25 @@ def _jsonpath_match(path: str, value: str) -> tuple[str, list[str]]:
     """
     # `metadata` is left unqualified because Django may alias the Version
     # table in subqueries.
-    where = (
-        'jsonb_path_exists(metadata, '
-        f"('{path} ? (@ like_regex ' "
-        '|| to_jsonb(%s::text)::text || '
-        '\' flag "i")\')::jsonpath)'
-    )
+    where = f"jsonb_path_exists(metadata, ('{path} ? (@{_LIKE_REGEX_PATTERN})')::jsonpath)"
     return where, [re.escape(value)]
 
 
-def _apply_summary_filters(
-    queryset: QuerySet[Dandiset], clauses: list[tuple[str, str]]
+def _apply_version_filters(
+    queryset: QuerySet[Dandiset], wheres: list[tuple[str, list[str]]]
 ) -> QuerySet[Dandiset]:
-    """Restrict dandisets to those with a version whose assetsSummary matches every clause.
+    """Restrict dandisets to those with a version whose metadata satisfies every predicate.
 
-    Clauses are AND'd on a single Version row.
+    `wheres` is a list of `(where_clause, params)` pairs, one per operator,
+    from `_jsonpath_match`, `_contributor_where`, or `_affiliation_where`.
+    All predicates are AND'd on a single Version row, so a draft and a
+    published version never combine into a spurious match. Filtering by
+    `id__in` over distinct dandiset ids (instead of joining `versions`) keeps
+    each dandiset to one row even when several of its versions match.
     """
     version_qs = Version.objects.all()
-    for operator, value in clauses:
-        where, params = _jsonpath_match(SUMMARY_PATH_OPS[operator], value)
-        # `where` interpolates only an allowlisted jsonpath; the user value
+    for where, params in wheres:
+        # `where` interpolates only allowlisted jsonpath text; the user value
         # is bound via params (and regex-escaped).
         version_qs = version_qs.extra(where=[where], params=params)  # noqa: S610
     return queryset.filter(id__in=version_qs.values_list('dandiset_id', flat=True).distinct())
@@ -107,23 +116,13 @@ def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Da
     return queryset.filter(pk__in=owned_pks)
 
 
-# Postgres jsonpath quirk: `like_regex` requires its pattern to be a STRING
-# LITERAL inside the jsonpath text — not a `$variable`. So we can't use the
-# `vars` arg of `jsonb_path_exists` for the regex pattern; we have to build
-# the jsonpath at SQL execution time by concatenating `to_jsonb(?::text)::text`
-# (a properly-quoted JSON string literal) into the path. The user value is
-# still bound as a parameter — never inlined into the SQL — so the value
-# remains SQL-injection-safe. `re.escape` neutralizes regex metachars.
-_LIKE_REGEX_PATTERN = ' like_regex \' || to_jsonb(%s::text)::text || \' flag "i"'
-
-
 def _contributor_where(value: str, role: str | None) -> tuple[str, list[str]]:
     """Build a `jsonb_path_exists(metadata, ...)` where clause for a contributor[] predicate.
 
     Matches a `contributor[]` element whose `name`, `email`, OR `identifier`
     contains `value` (case-insensitive). If `role` is given, additionally
-    requires that element's `roleName` array to contain a string matching
-    `role` (also case-insensitive substring).
+    requires that element's `roleName` array to contain exactly
+    `dcite:<role>` (case-insensitive).
     """
     val_clause = (
         f'@.name{_LIKE_REGEX_PATTERN}'
@@ -138,7 +137,8 @@ def _contributor_where(value: str, role: str | None) -> tuple[str, list[str]]:
             f"'$.contributor[*] ? (({val_clause})"
             f" && exists(@.roleName[*] ? (@{_LIKE_REGEX_PATTERN})))'"
         )
-        params.append(re.escape(role))
+        # Anchored so `author:` can't also match a future `dcite:CoAuthor`.
+        params.append(f'^dcite:{re.escape(role)}$')
     where = f'jsonb_path_exists(metadata, ({jsonpath_expr})::jsonpath)'
     return where, params
 
@@ -155,31 +155,6 @@ def _affiliation_where(value: str) -> tuple[str, list[str]]:
         f"jsonb_path_exists(metadata, ('$.contributor[*].affiliation[*] ? ({clause})')::jsonpath)"
     )
     return where, [re.escape(value)] * 2
-
-
-def _apply_contributor_filters(
-    queryset: QuerySet[Dandiset], wheres: list[tuple[str, list[str]]]
-) -> QuerySet[Dandiset]:
-    """Filter dandisets by accumulated contributor predicates.
-
-    `wheres` is a list of `(where_clause, params)` pairs (one per operator).
-    The returned queryset is restricted to dandisets that have at least ONE
-    Version whose `metadata` satisfies ALL the predicates simultaneously.
-    Operators thus AND on the same Version (a draft and a published version
-    with disjoint contributor lists never combine into a spurious match).
-
-    Each operator is independent: `author:Doe funder:NIH` matches if SOME
-    contributor element has Doe as Author AND SOME contributor element (the
-    same OR a different one) has NIH as Funder.
-    """
-    matching_versions = Version.objects.all()
-    for where, params in wheres:
-        # Trusted jsonpath template (no user value interpolated); user value
-        # is bound via the jsonb vars param and additionally regex-escaped.
-        matching_versions = matching_versions.extra(  # noqa: S610
-            where=[where], params=params
-        )
-    return queryset.filter(versions__pk__in=matching_versions.values('pk'))
 
 
 _MODIFIED_ALIAS = '_search_latest_version_modified'
@@ -221,7 +196,7 @@ def _apply_date_filter(queryset, operator: str, ts: datetime, annotated: set[str
     raise ValueError(f'unknown date operator: {operator}')  # pragma: no cover
 
 
-def apply_search_filters(  # noqa: C901  (one branch per operator category — splitting the dispatch loop wouldn't make it more readable)
+def apply_search_filters(
     queryset: QuerySet[Dandiset],
     parsed: ParsedSearch,
 ) -> QuerySet[Dandiset]:
@@ -233,15 +208,13 @@ def apply_search_filters(  # noqa: C901  (one branch per operator category — s
     if not parsed.operators:
         return queryset
 
-    summary_clauses: list[tuple[str, str]] = []
     annotated: set[str] = set()
-    # Contributor predicates apply to a single Version's
-    # metadata.contributor[] array, so we accumulate them and AND on the same
-    # Version to avoid cross-version weirdness when a draft and a published
-    # version have disjoint contributor lists. Within that single version
-    # each predicate independently scans `contributor[*]`, so two operators
-    # may match different contributor entries.
-    contributor_wheres: list[tuple[str, list[str]]] = []
+    # Metadata predicates (assetsSummary, contributor, affiliation) are
+    # accumulated and AND'd on the same Version, so a draft and a published
+    # version with different metadata never combine into a spurious match.
+    # Within that version each contributor predicate independently scans
+    # `contributor[*]`, so two operators may match different contributors.
+    version_wheres: list[tuple[str, list[str]]] = []
 
     for op in parsed.operators:
         key = op.key
@@ -252,18 +225,15 @@ def apply_search_filters(  # noqa: C901  (one branch per operator category — s
         if key in DATE_OPS:
             queryset = _apply_date_filter(queryset, key, _parse_date(key, value), annotated)
         elif key in SUMMARY_PATH_OPS:
-            summary_clauses.append((key, value))
+            version_wheres.append(_jsonpath_match(SUMMARY_PATH_OPS[key], value))
         elif key in OWNER_OPS:
             queryset = _apply_owner_filter(queryset, value)
         elif key in CONTRIBUTOR_ROLE_OPS:
-            contributor_wheres.append(_contributor_where(value, CONTRIBUTOR_ROLE_OPS[key]))
+            version_wheres.append(_contributor_where(value, CONTRIBUTOR_ROLE_OPS[key]))
         elif key in AFFILIATION_OPS:
-            contributor_wheres.append(_affiliation_where(value))
+            version_wheres.append(_affiliation_where(value))
 
-    if contributor_wheres:
-        queryset = _apply_contributor_filters(queryset, contributor_wheres)
-
-    if summary_clauses:
-        queryset = _apply_summary_filters(queryset, summary_clauses)
+    if version_wheres:
+        queryset = _apply_version_filters(queryset, version_wheres)
 
     return queryset

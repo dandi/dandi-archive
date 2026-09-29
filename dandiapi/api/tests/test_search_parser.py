@@ -55,6 +55,13 @@ pytestmark = pytest.mark.ai_generated
         # Owner operator
         ('owner:jdoe', [], [Operator('owner', 'jdoe')]),
         ('owner:user@example.com', [], [Operator('owner', 'user@example.com')]),
+        # Known operator keys are case-insensitive
+        ('AUTHOR:Doe', [], [Operator('author', 'Doe')]),
+        # Uppercase prefixes that aren't operators stay free text (citations,
+        # RRIDs), in both bare and quoted-value form
+        ('DANDI:000123', ['DANDI:000123'], []),
+        ('RRID:SCR_016422 mouse', ['RRID:SCR_016422', 'mouse'], []),
+        ('DANDI:"000123"', ['DANDI:000123'], []),
     ],
     ids=[
         'empty',
@@ -71,6 +78,10 @@ pytestmark = pytest.mark.ai_generated
         'quoted-operator-like-token-is-free-text',
         'owner-username',
         'owner-email',
+        'uppercase-operator-key',
+        'uppercase-non-operator-prefix-is-free-text',
+        'rrid-is-free-text',
+        'uppercase-non-operator-quoted-is-free-text',
     ],
 )
 def test_parse_search(query, expected_free_text, expected_operators):

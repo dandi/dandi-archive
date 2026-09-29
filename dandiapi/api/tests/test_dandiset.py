@@ -2308,12 +2308,12 @@ def test_advanced_search_contributor_and_role_operators(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_contributor_role_substring_match(api_client):
-    """Role substring matches the dcite:-prefixed stored value.
+def test_advanced_search_contributor_role_match(api_client):
+    """Role operators match the full dcite:-prefixed stored value.
 
-    `data_curator:` should match the stored value `dcite:DataCurator` via
-    case-insensitive substring on `roleName` — users don't have to type
-    the `dcite:` prefix.
+    `data_curator:` should match the stored value `dcite:DataCurator`, so
+    users don't have to type the `dcite:` prefix. The match is anchored:
+    a role name that only contains `DataCurator` must not match.
     """
     ds = _seed_dandiset_with_contributors(
         contributors=[
@@ -2325,13 +2325,19 @@ def test_advanced_search_contributor_role_substring_match(api_client):
         ],
     )
 
-    # The operator name maps to the substring "DataCurator" (without the
-    # "dcite:" prefix) and matches the stored "dcite:DataCurator" via
-    # case-insensitive regex inside the jsonpath.
+    _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Curator, Carl',
+                'roleName': ['dcite:DataCuratorAssistant'],
+                'schemaKey': 'Person',
+            },
+        ],
+    )
+
     assert _search_ids(api_client, 'data_curator:Curator') == {ds.identifier}
 
 
-@pytest.mark.ai_generated
 @pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_contributor_operators_and_on_same_version(api_client):
@@ -2392,6 +2398,76 @@ def test_advanced_search_contributor_operators_and_on_same_version(api_client):
     assert _search_ids(api_client, 'author:Doe funder:NIH') == {ds_both.identifier}
 
 
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_contributor_and_summary_operators_and_on_same_version(api_client):
+    """Contributor and assetsSummary predicates must hold on the same Version.
+
+    The draft has Doe as Author but no mouse data; the published version has
+    mouse data but no Doe. `author:Doe species:mouse` must not match.
+    """
+    dandiset = DandisetFactory.create()
+    draft = DraftVersionFactory.create(dandiset=dandiset)
+    draft.metadata = {
+        **draft.metadata,
+        'contributor': [
+            {'name': 'Doe, Jane', 'roleName': ['dcite:Author'], 'schemaKey': 'Person'},
+        ],
+    }
+    draft.save()
+    published = PublishedVersionFactory.create(dandiset=dandiset)
+    published.metadata = {
+        **published.metadata,
+        'contributor': [],
+        'assetsSummary': {
+            **published.metadata.get('assetsSummary', {}),
+            'species': [{'name': 'Mus musculus - House mouse'}],
+        },
+    }
+    published.save()
+
+    assert _search_ids(api_client, 'author:Doe') == {dandiset.identifier}
+    assert _search_ids(api_client, 'species:mouse') == {dandiset.identifier}
+    assert _search_ids(api_client, 'author:Doe species:mouse') == set()
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_contributor_match_on_several_versions_lists_dandiset_once(
+    api_client,
+):
+    """A dandiset whose draft and published versions both match appears once.
+
+    Also checks `ordering=-stars`: joining across matching versions would
+    multiply the star count of the dandiset with three matching versions and
+    sort it ahead of the one with more stars.
+    """
+    contributors = [{'name': 'Doe, Jane', 'roleName': ['dcite:Author'], 'schemaKey': 'Person'}]
+    many_versions = _seed_dandiset_with_contributors(contributors=contributors)
+    for _ in range(2):
+        published = PublishedVersionFactory.create(dandiset=many_versions)
+        published.metadata = {**published.metadata, 'contributor': contributors}
+        published.save()
+    many_versions.stars.create(user=UserFactory.create())
+
+    more_stars = _seed_dandiset_with_contributors(contributors=contributors)
+    for _ in range(2):
+        more_stars.stars.create(user=UserFactory.create())
+
+    response = api_client.get(
+        '/api/dandisets/',
+        {'draft': 'true', 'empty': 'true', 'search': 'author:Doe', 'ordering': '-stars'},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data['count'] == 2
+    assert [r['identifier'] for r in data['results']] == [
+        more_stars.identifier,
+        many_versions.identifier,
+    ]
+
+
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_unknown_role_operator_returns_400_with_suggestion(api_client):
     response = api_client.get(
