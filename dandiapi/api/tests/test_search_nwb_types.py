@@ -1,0 +1,53 @@
+from __future__ import annotations
+
+import pytest
+
+from dandiapi.api.services.search.nwb_types import expand_technique, expand_variable
+
+pytestmark = pytest.mark.ai_generated
+
+_PATCH_CLAMP_SUBTYPES = {
+    'PatchClampSeries',
+    'CurrentClampSeries',
+    'CurrentClampStimulusSeries',
+    'IZeroClampSeries',
+    'VoltageClampSeries',
+    'VoltageClampStimulusSeries',
+}
+
+
+@pytest.mark.parametrize(
+    ('value', 'expected'),
+    [
+        ('PatchClampSeries', _PATCH_CLAMP_SUBTYPES),
+        ('patchclampseries', _PATCH_CLAMP_SUBTYPES),
+        ('CurrentClampSeries', {'CurrentClampSeries', 'IZeroClampSeries'}),
+        ('LFP', {'LFP'}),
+        # Not an exact type name: no expansion (the substring match still applies).
+        ('clamp', set()),
+        ('nosuchtype', set()),
+    ],
+)
+def test_expand_variable(value, expected):
+    assert expand_variable(value) == expected
+
+
+def test_expand_variable_includes_deep_descendants():
+    # PatchClampSeries -> TimeSeries -> NWBDataInterface -> ...
+    assert expand_variable('NWBDataInterface') >= _PATCH_CLAMP_SUBTYPES
+
+
+@pytest.mark.parametrize(
+    ('value', 'expected'),
+    [
+        (
+            'patch clamp',
+            {'patch clamp technique', 'current clamp technique', 'voltage clamp technique'},
+        ),
+        ('current clamp', {'current clamp technique'}),
+        ('spike sorting', {'spike sorting technique'}),
+        ('nosuchtechnique', set()),
+    ],
+)
+def test_expand_technique(value, expected):
+    assert expand_technique(value) == expected

@@ -12,6 +12,7 @@ from django.db.models.functions import Concat
 
 from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
+from dandiapi.api.services.search.nwb_types import expand_technique, expand_variable
 from dandiapi.api.services.search.parser import SearchSyntaxError
 
 if TYPE_CHECKING:
@@ -64,11 +65,34 @@ _SUMMARY_PATH_OPS = {
 }
 
 
-def _jsonpath_match(path: str, value: str) -> tuple[str, list[str]]:
+# Operators whose value is also expanded through the NWB type hierarchy: the
+# function returns names to match exactly, in addition to the substring match.
+_HIERARCHY_EXPANSIONS = {
+    'variable': expand_variable,
+    'technique': expand_technique,
+}
+
+
+def _match_regex(operator: str, value: str) -> str:
+    """Build the (case-insensitive) regex a summary operator's value must match.
+
+    The value always matches as a substring. For hierarchy-aware operators it
+    also matches the exact names of related NWB subtypes (or their techniques),
+    e.g. `variable:PatchClampSeries` also matches `CurrentClampSeries`.
+    """
+    regex = re.escape(value)
+    expand = _HIERARCHY_EXPANSIONS.get(operator)
+    if expand is not None and (names := expand(value)):
+        alternatives = '|'.join(re.escape(name) for name in sorted(names))
+        regex = f'{regex}|^({alternatives})$'
+    return regex
+
+
+def _jsonpath_match(path: str, regex: str) -> tuple[str, list[str]]:
     """Build a parameterized `jsonb_path_exists` predicate on `metadata`.
 
-    `path` MUST come from a trusted allowlist; `value` is parameterized and
-    regex-escaped.
+    `path` MUST come from a trusted allowlist; `regex` is parameterized, and any
+    user input in it must already be regex-escaped.
     """
     # `metadata` is left unqualified because Django may alias the Version
     # table in subqueries.
@@ -78,7 +102,7 @@ def _jsonpath_match(path: str, value: str) -> tuple[str, list[str]]:
         '|| to_jsonb(%s::text)::text || '
         '\' flag "i")\')::jsonpath)'
     )
-    return where, [re.escape(value)]
+    return where, [regex]
 
 
 def _apply_summary_filters(
@@ -90,7 +114,7 @@ def _apply_summary_filters(
     """
     version_qs = Version.objects.all()
     for operator, value in clauses:
-        where, params = _jsonpath_match(_SUMMARY_PATH_OPS[operator], value)
+        where, params = _jsonpath_match(_SUMMARY_PATH_OPS[operator], _match_regex(operator, value))
         # `where` interpolates only an allowlisted jsonpath; the user value
         # is bound via params (and regex-escaped).
         version_qs = version_qs.extra(where=[where], params=params)  # noqa: S610
