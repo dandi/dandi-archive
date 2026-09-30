@@ -55,7 +55,7 @@ def throttled_iterator(iterable: Iterable, max_per_second: int = 100) -> Iterabl
 
 
 @shared_task(
-    soft_time_limit=60,
+    soft_time_limit=300,
     autoretry_for=(VersionMetadataConcurrentlyModifiedError,),
     retry_backoff=True,
 )
