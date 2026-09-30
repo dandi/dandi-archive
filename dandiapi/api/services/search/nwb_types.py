@@ -20,17 +20,18 @@ from pathlib import Path
 
 _DATA = json.loads(Path(__file__).with_name('nwb_types.json').read_text())
 
-# Neurodata type -> the type it extends (None for root types).
-_PARENTS: dict[str, str | None] = _DATA['parents']
+# Neurodata type -> the type it extends. Types without a parent aren't listed.
+_PARENTS: dict[str, str] = _DATA['parents']
 # Neurodata type -> the measurement technique dandi-cli assigns to it.
 _TECHNIQUES: dict[str, str] = _DATA['techniques']
 
 _CHILDREN: dict[str, list[str]] = defaultdict(list)
 for _type_name, _parent in _PARENTS.items():
-    if _parent is not None:
-        _CHILDREN[_parent].append(_type_name)
+    _CHILDREN[_parent].append(_type_name)
 
-_TYPES_BY_LOWER_NAME = {type_name.lower(): type_name for type_name in _PARENTS}
+_TYPES_BY_LOWER_NAME = {
+    type_name.lower(): type_name for type_name in (*_PARENTS, *_PARENTS.values())
+}
 
 
 def _with_descendants(type_name: str) -> set[str]:
