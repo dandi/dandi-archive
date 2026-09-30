@@ -33,8 +33,27 @@ def test_expand_variable(value, expected):
 
 
 def test_expand_variable_includes_deep_descendants():
-    # PatchClampSeries -> TimeSeries -> NWBDataInterface -> ...
-    assert expand_variable('NWBDataInterface') >= _PATCH_CLAMP_SUBTYPES
+    # CurrentClampSeries -> PatchClampSeries -> TimeSeries
+    assert expand_variable('TimeSeries') >= _PATCH_CLAMP_SUBTYPES
+
+
+@pytest.mark.parametrize(
+    'value',
+    [
+        'AlignedDynamicTable',
+        'Container',
+        'Data',
+        'DynamicTable',
+        'dynamictable',
+        'NWBContainer',
+        'NWBData',
+        'NWBDataInterface',
+        'VectorData',
+    ],
+)
+def test_expand_variable_skips_generic_base_types(value):
+    # Nearly every dandiset has subtypes of these, so they must not expand.
+    assert expand_variable(value) == set()
 
 
 @pytest.mark.parametrize(

@@ -32,6 +32,22 @@ for _type_name, _parent in _PARENTS.items():
 
 _TYPES_BY_LOWER_NAME = {type_name.lower(): type_name for type_name in _PARENTS}
 
+# Generic base types that nearly every NWB file contains subtypes of. Expanding
+# them would make the filter match almost every dandiset, so a query for one of
+# these only gets the plain substring match.
+_NON_EXPANDING_TYPES = frozenset(
+    {
+        'AlignedDynamicTable',
+        'Container',
+        'Data',
+        'DynamicTable',
+        'NWBContainer',
+        'NWBData',
+        'NWBDataInterface',
+        'VectorData',
+    }
+)
+
 
 def _with_descendants(type_name: str) -> set[str]:
     found = {type_name}
@@ -48,10 +64,10 @@ def expand_variable(value: str) -> set[str]:
     """Return the neurodata types a `variable:` value should also match exactly.
 
     If `value` names a known NWB type (case-insensitively), that's the type and
-    all of its subtypes; otherwise nothing.
+    all of its subtypes; otherwise, or for a generic base type, nothing.
     """
     type_name = _TYPES_BY_LOWER_NAME.get(value.lower())
-    if type_name is None:
+    if type_name is None or type_name in _NON_EXPANDING_TYPES:
         return set()
     return _with_descendants(type_name)
 
