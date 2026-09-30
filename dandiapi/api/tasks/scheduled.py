@@ -178,7 +178,8 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     sender.add_periodic_task(crontab(hour=0, minute=0), send_pending_users_email.s())
 
     # Refresh the materialized view used by asset search every 10 mins.
-    sender.add_periodic_task(timedelta(minutes=10), refresh_materialized_view_search.s())
+    # TODO: temporarily disabled, re-enable by uncommenting
+    # sender.add_periodic_task(timedelta(minutes=10), refresh_materialized_view_search.s())
 
     # Refresh the application stats every 6 hours
     sender.add_periodic_task(timedelta(hours=6), compute_application_stats.s())
