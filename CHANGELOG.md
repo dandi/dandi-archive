@@ -1,3 +1,27 @@
+# v1.0.9 (Wed Sep 30 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Increase aggregate_assets_summary_task soft time limit to 5 minutes [#2947](https://github.com/dandi/dandi-archive/pull/2947) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Hide form control buttons for read-only user [#2941](https://github.com/dandi/dandi-archive/pull/2941) ([@naglepuff](https://github.com/naglepuff))
+- Add a variable: search operator over assetsSummary.variableMeasured [#2885](https://github.com/dandi/dandi-archive/pull/2885) ([@bendichter](https://github.com/bendichter))
+- Add standard: search operator; remove file_type: [#2884](https://github.com/dandi/dandi-archive/pull/2884) ([@bendichter](https://github.com/bendichter))
+- fix: pull MinIO from Quay in the dev stack [#2922](https://github.com/dandi/dandi-archive/pull/2922) (yaroslav.o.halchenko@dartmouth.edu [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### Authors: 5
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko (yaroslav.o.halchenko@dartmouth.edu)
+
+---
+
 # v1.0.8 (Fri Sep 18 2026)
 
 :tada: This release contains work from new contributors! :tada:
