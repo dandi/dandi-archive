@@ -52,8 +52,15 @@ def test_expand_variable_includes_deep_descendants():
     ],
 )
 def test_expand_variable_skips_generic_base_types(value):
-    # Nearly every dandiset has subtypes of these, so they must not expand.
+    # Nearly every dandiset has subtypes of these, so they're left out of the
+    # hierarchy snapshot and must not expand.
     assert expand_variable(value) == set()
+
+
+def test_hierarchy_snapshot_omits_generic_base_types():
+    # e.g. EventWaveform -> NWBDataInterface is not a useful relationship.
+    assert expand_variable('EventWaveform') == {'EventWaveform'}
+    assert expand_variable('Units') == {'Units'}
 
 
 @pytest.mark.parametrize(

@@ -20,13 +20,33 @@ import pynwb
 
 OUTPUT = Path(__file__).parents[1] / 'dandiapi' / 'api' / 'services' / 'search' / 'nwb_types.json'
 
+# Generic base types that nearly every NWB file contains subtypes of. A link like
+# EventWaveform -> NWBDataInterface says nothing useful about the data, and
+# expanding one of these would match almost every dandiset, so they're left out
+# of the hierarchy entirely and their direct subtypes become roots.
+EXCLUDED_TYPES = frozenset(
+    {
+        'AlignedDynamicTable',
+        'Container',
+        'Data',
+        'DynamicTable',
+        'NWBContainer',
+        'NWBData',
+        'NWBDataInterface',
+        'VectorData',
+    }
+)
+
 
 def main():
     catalog = pynwb.get_type_map().namespace_catalog
     parents = {}
     for namespace in catalog.namespaces:
         for type_name in catalog.get_namespace(namespace).get_registered_types():
-            parents[type_name] = catalog.get_spec(namespace, type_name).data_type_inc
+            if type_name in EXCLUDED_TYPES:
+                continue
+            parent = catalog.get_spec(namespace, type_name).data_type_inc
+            parents[type_name] = None if parent in EXCLUDED_TYPES else parent
 
     techniques = {
         type_name: entry['technique']
