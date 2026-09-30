@@ -52,9 +52,27 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import User
 
 
+class TiebreakingOrderingFilter(filters.OrderingFilter):
+    """
+    An OrderingFilter which appends ``id`` to the requested ordering.
+
+    Listings are paginated with LIMIT/OFFSET, which is only consistent across pages if the
+    ordering is total.  ``created`` (and ``modified``) are not unique -- assets created
+    concurrently can share a timestamp -- and PostgreSQL may return tied rows in a different
+    order for each page, so an asset at a page boundary could be listed twice while its tie
+    was never listed at all.
+    """
+
+    def filter(self, qs, value):
+        qs = super().filter(qs, value)
+        if value:
+            qs = qs.order_by(*qs.query.order_by, 'id')
+        return qs
+
+
 class AssetFilter(filters.FilterSet):
     path = filters.CharFilter(lookup_expr='istartswith')
-    order = filters.OrderingFilter(fields=['created', 'modified', 'path'])
+    order = TiebreakingOrderingFilter(fields=['created', 'modified', 'path'])
 
     class Meta:
         model = Asset
@@ -62,7 +80,7 @@ class AssetFilter(filters.FilterSet):
 
 
 class AssetViewSet(DetailSerializerMixin, GenericViewSet):
-    queryset = Asset.objects.all().select_related('zarr').order_by('created')
+    queryset = Asset.objects.all().select_related('zarr').order_by('created', 'id')
 
     serializer_class = AssetSerializer
     serializer_detail_class = AssetDetailSerializer
