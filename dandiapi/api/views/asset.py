@@ -52,27 +52,11 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import User
 
 
-class TiebreakingOrderingFilter(filters.OrderingFilter):
-    """
-    An OrderingFilter which appends ``id`` to the requested ordering.
-
-    Listings are paginated with LIMIT/OFFSET, which is only consistent across pages if the
-    ordering is total.  ``created`` (and ``modified``) are not unique -- assets created
-    concurrently can share a timestamp -- and PostgreSQL may return tied rows in a different
-    order for each page, so an asset at a page boundary could be listed twice while its tie
-    was never listed at all.
-    """
-
-    def filter(self, qs, value):
-        qs = super().filter(qs, value)
-        if value:
-            qs = qs.order_by(*qs.query.order_by, 'id')
-        return qs
-
-
 class AssetFilter(filters.FilterSet):
     path = filters.CharFilter(lookup_expr='istartswith')
-    order = TiebreakingOrderingFilter(fields=['created', 'modified', 'path'])
+    # `fields` are the values `?order=` accepts, not an ordering; see the caveat on ties in
+    # `NestedAssetViewSet.list()`.
+    order = filters.OrderingFilter(fields=['created', 'modified', 'path', 'id'])
 
     class Meta:
         model = Asset
@@ -429,6 +413,18 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
     @swagger_auto_schema(query_serializer=AssetListSerializer, responses={200: AssetSerializer})
     def list(self, request, *args, **kwargs):
+        """
+        List the assets of a version, paginated.
+
+        By default assets are ordered by `created`, with ties broken by an internal `id`, which
+        makes the order total and thus consistent across pages.  `?order=` accepts a
+        comma-separated list of `created`, `modified`, `path` and `id` (each optionally
+        prefixed with `-`) and replaces that default.  Neither `created` nor `modified` is
+        unique, so when ordering by either of them alone, tied assets come back in an
+        arbitrary order that may differ between requests; an asset at a page boundary may
+        then be listed on two pages while the asset it ties with is listed on none.  Add a
+        unique tiebreaker to get a stable listing, e.g. `?order=created,id`.
+        """
         # Manually call this to ensure user is authorized
         self.raise_if_unauthorized()
 

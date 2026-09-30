@@ -39,8 +39,12 @@ def test_asset_pagination(api_client, version, asset_factory):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-@pytest.mark.parametrize('params', [{'order': 'created'}, {}], ids=['order=created', 'default'])
-def test_asset_pagination_ties_on_created(api_client, version, asset_factory, params):
+@pytest.mark.parametrize(
+    ('params', 'tiebreaker'),
+    [({'order': 'created,id'}, 'id'), ({'order': 'created,path'}, 'path'), ({}, 'id')],
+    ids=['order=created,id', 'order=created,path', 'default'],
+)
+def test_asset_pagination_ties_on_created(api_client, version, asset_factory, params, tiebreaker):
     """Assets sharing a `created` timestamp are each listed exactly once across pages."""
     endpoint = f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/'
     assets = [asset_factory() for _ in range(10)]
@@ -62,8 +66,8 @@ def test_asset_pagination_ties_on_created(api_client, version, asset_factory, pa
             break
         page += 1
 
-    expected = [str(a.asset_id) for a in sorted(assets, key=lambda a: a.id)]
+    expected = [str(a.asset_id) for a in sorted(assets, key=lambda a: getattr(a, tiebreaker))]
     # Every asset exactly once: no repeats, no skips at page boundaries
     assert sorted(listed) == sorted(expected)
-    # ... because ties are broken by `id`
+    # ... because ties are broken by the tiebreaker
     assert listed == expected
