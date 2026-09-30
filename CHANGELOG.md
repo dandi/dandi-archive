@@ -1,3 +1,15 @@
+# v1.0.10 (Wed Sep 30 2026)
+
+#### 🐛 Bug Fix
+
+- Disable scheduled materialized view refresh [#2949](https://github.com/dandi/dandi-archive/pull/2949) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v1.0.9 (Wed Sep 30 2026)
 
 :tada: This release contains work from a new contributor! :tada:
