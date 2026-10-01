@@ -52,6 +52,9 @@ def calculate_sha256(blob_id: str | UUID) -> None:
 
 @shared_task(soft_time_limit=180)
 def write_manifest_files(version_id: int) -> None:
+    # TODO: Temporarily disabled. Remove this early return to re-enable manifest writing.
+    return
+
     version: Version = Version.objects.get(id=version_id)
     logger.info('Writing manifests for version %s:%s', version.dandiset.identifier, version.version)
 
