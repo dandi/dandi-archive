@@ -414,16 +414,12 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
     @swagger_auto_schema(query_serializer=AssetListSerializer, responses={200: AssetSerializer})
     def list(self, request, *args, **kwargs):
         """
-        List the assets of a version, paginated.
+        List the assets of a version with pagination.
 
-        By default assets are ordered by `created`, with ties broken by an internal `id`, which
-        makes the order total and thus consistent across pages.  `?order=` accepts a
-        comma-separated list of `created`, `modified`, `path` and `id` (each optionally
-        prefixed with `-`) and replaces that default.  Neither `created` nor `modified` is
-        unique, so when ordering by either of them alone, tied assets come back in an
-        arbitrary order that may differ between requests; an asset at a page boundary may
-        then be listed on two pages while the asset it ties with is listed on none.  Add a
-        unique tiebreaker to get a stable listing, e.g. `?order=created,id`.
+        By default assets are ordered by `created`, with ties broken by `id`.
+        `?order=` accepts a comma-separated list of terms from `created`,
+        `modified`, `path`, and `id` (each optionally prefixed with `-`) and
+        replaces that default.
         """
         # Manually call this to ensure user is authorized
         self.raise_if_unauthorized()
