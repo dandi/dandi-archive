@@ -397,6 +397,7 @@ const updating = ref(false);
 const owners = computed(() => store.owners?.map((u) => u.username) || null);
 const currentDandiset = computed(() => store.dandiset);
 const unembargo_in_progress = computed(() => currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING')
+const embargoed = computed(() => currentDandiset.value?.dandiset.embargo_status === 'EMBARGOED');
 const splitLocation = computed(() => location.value.split('/'));
 const isAdmin = computed(() => user.value?.admin || false);
 const isOwner = computed(() => !!(
@@ -430,10 +431,17 @@ function tableRoute(item: AssetPath): RouteLocationRaw {
   } as RouteLocationRaw;
 }
 
+// Embargoed assets are left out of the viewer for now: they can only be fetched
+// through the authenticated API, which the viewer doesn't do yet, so they open
+// raw as before.
+function viewableAsTable(item: AssetPath): boolean {
+  return !!item.asset && !embargoed.value && isTabularFile(item.path);
+}
+
 // Rows link to the raw asset, except for tabular assets, which open in the
 // table viewer, and directories, which move into the listing.
 function rowHref(item: AssetPath): string | undefined {
-  return item.asset && !isTabularFile(item.path)
+  return item.asset && !viewableAsTable(item)
     ? inlineURI(item.asset.asset_id)
     : undefined;
 }
@@ -442,7 +450,7 @@ function rowRoute(item: AssetPath): RouteLocationRaw | undefined {
   if (!item.asset) {
     return locationRoute(item.path);
   }
-  return isTabularFile(item.path) ? tableRoute(item) : undefined;
+  return viewableAsTable(item) ? tableRoute(item) : undefined;
 }
 
 function closeTableViewer() {
@@ -456,7 +464,7 @@ function syncTableViewerWithRoute() {
   const target = firstQueryValue(route.query[TABLE_QUERY_PARAM]);
   const match = target
     ? items.value?.find(
-      (item) => item.path === target && item.asset && isTabularFile(item.path),
+      (item) => item.path === target && viewableAsTable(item),
     )
     : undefined;
 

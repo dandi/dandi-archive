@@ -75,10 +75,23 @@
           {{ error }}
         </v-alert>
 
-        <pre
-          v-else-if="!loading && showRaw"
-          class="raw-text"
-        >{{ rawText }}</pre>
+        <template v-else-if="!loading && showRaw">
+          <v-alert
+            v-if="rawTruncated"
+            type="info"
+            variant="tonal"
+            density="compact"
+            class="mb-3"
+          >
+            This file is large, so only the beginning of it is shown.
+            Download the file to see its full contents.
+          </v-alert>
+
+          <pre
+            class="raw-text"
+            :class="{ 'raw-text--with-notice': rawTruncated }"
+          >{{ rawText }}</pre>
+        </template>
 
         <template v-else-if="!loading">
           <v-alert
@@ -150,7 +163,7 @@ import { computed, ref, watch } from 'vue';
 import axios from 'axios';
 
 import type { AssetPath } from '@/types';
-import { dandiRest } from '@/rest';
+import { client, dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { Delimiter } from '@/utils/tabular';
 import { isUrl, parseDelimitedText, tabularDelimiter } from '@/utils/tabular';
@@ -158,6 +171,9 @@ import { isUrl, parseDelimitedText, tabularDelimiter } from '@/utils/tabular';
 // Guardrails, so that a pathologically large file can't lock up the browser.
 const MAX_FILE_SIZE = 50e6;
 const MAX_ROWS = 5000;
+// The raw view renders its text as one <pre>, which a big file makes slow, so it
+// is clamped to MAX_ROWS lines or this many characters, whichever comes first.
+const MAX_RAW_CHARS = 1e6;
 
 const props = defineProps<{
   modelValue: boolean,
@@ -180,9 +196,9 @@ const error: Ref<string | null> = ref(null);
 const rows: Ref<string[][]> = ref([]);
 const truncated = ref(false);
 const search = ref('');
-// The file's text as fetched, shown by the raw-text toggle. The row cap below
-// applies to the table only, so this stays the complete contents.
+// The file's text, shown by the raw-text toggle, clamped as described above.
 const rawText = ref('');
+const rawTruncated = ref(false);
 const showRaw = ref(false);
 
 const name = computed(() => props.item?.path.split('/').pop() || '');
@@ -222,6 +238,30 @@ const tableItems = computed(() => dataRows.value.map(
   ),
 ));
 
+// Cut the text at the start of the line that takes it past either limit, so the
+// raw view never holds more than the table does.
+function clampRawText(text: string): { text: string, truncated: boolean } {
+  let end = text.length;
+
+  let lineEnd = -1;
+  for (let line = 0; line < MAX_ROWS; line += 1) {
+    lineEnd = text.indexOf('\n', lineEnd + 1);
+    if (lineEnd === -1) {
+      break;
+    }
+  }
+  if (lineEnd !== -1) {
+    end = lineEnd + 1;
+  }
+
+  if (end > MAX_RAW_CHARS) {
+    const lastBreak = text.lastIndexOf('\n', MAX_RAW_CHARS);
+    end = lastBreak === -1 ? MAX_RAW_CHARS : lastBreak + 1;
+  }
+
+  return { text: text.slice(0, end), truncated: end < text.length };
+}
+
 async function loadFile() {
   const { item } = props;
   if (!item?.asset) {
@@ -240,6 +280,7 @@ async function loadFile() {
   truncated.value = false;
   search.value = '';
   rawText.value = '';
+  rawTruncated.value = false;
   showRaw.value = false;
 
   if (item.aggregate_size > MAX_FILE_SIZE) {
@@ -250,12 +291,17 @@ async function loadFile() {
   }
 
   try {
-    const { data } = await axios.get<string>(fetchUri.value, {
+    // The API needs the auth headers that only the rest.ts client's interceptor
+    // adds; S3 rejects a request that carries them, so it keeps bare axios.
+    const http = fetchUri.value === inlineUri.value ? client : axios;
+    const { data } = await http.get<string>(fetchUri.value, {
       responseType: 'text',
       // Ensure that the response isn't parsed as JSON/XML by axios.
       transformResponse: [(response) => response],
     });
-    rawText.value = data;
+    const raw = clampRawText(data);
+    rawText.value = raw.text;
+    rawTruncated.value = raw.truncated;
     const parsed = parseDelimitedText(data, delimiter);
     truncated.value = parsed.length > MAX_ROWS;
     rows.value = truncated.value ? parsed.slice(0, MAX_ROWS) : parsed;
@@ -301,5 +347,10 @@ watch(() => [props.modelValue, props.item], () => {
   max-height: calc(70vh - 48px);
   overflow: auto;
   white-space: pre;
+}
+
+/* Leave room for the truncation notice above it. */
+.raw-text--with-notice {
+  max-height: calc(70vh - 110px);
 }
 </style>
