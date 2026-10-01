@@ -374,6 +374,32 @@ def test_version_aggregate_assets_summary(draft_asset_factory):
     assert version.metadata['assetsSummary']['schemaKey'] == 'AssetsSummary'
 
 
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_version_aggregate_assets_summary_unchanged_keeps_modified(draft_asset_factory):
+    version = DraftVersionFactory.create(status=Version.Status.VALID)
+    asset = draft_asset_factory(status=Asset.Status.VALID)
+    version.assets.add(asset)
+
+    version_aggregate_assets_summary(version)
+    version.refresh_from_db()
+    modified = version.modified
+    metadata = version.metadata
+
+    # Re-aggregating with nothing changed must not touch the version.
+    version_aggregate_assets_summary(version)
+    version.refresh_from_db()
+    assert version.modified == modified
+    assert version.metadata == metadata
+
+    # ...but a real change still updates both.
+    version.assets.add(draft_asset_factory(status=Asset.Status.VALID))
+    version_aggregate_assets_summary(version)
+    version.refresh_from_db()
+    assert version.metadata['assetsSummary']['numberOfFiles'] == 2
+    assert version.modified > modified
+
+
 @pytest.mark.django_db
 def test_version_publish_draft_version_metadata_updates(draft_asset_factory):
     user = UserFactory.create()
