@@ -147,18 +147,23 @@
           >
             <template
               v-for="header in headers"
+              :key="header.key"
               #[`item.${header.key}`]="{ value }"
             >
-              <a
-                v-if="isUrl(value)"
-                :key="header.key"
-                :href="value"
-                target="_blank"
-                rel="noopener noreferrer"
-              >{{ value }}</a>
-              <template v-else>
-                {{ value }}
-              </template>
+              <span
+                class="cell"
+                :title="cellTitle(value)"
+              >
+                <a
+                  v-if="isUrl(value)"
+                  :href="value"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >{{ value }}</a>
+                <template v-else>
+                  {{ value }}
+                </template>
+              </span>
             </template>
           </v-data-table>
           <v-banner v-else>
@@ -187,6 +192,10 @@ const MAX_ROWS = 5000;
 // The raw view renders its text as one <pre>, which a big file makes slow, so it
 // is clamped to MAX_ROWS lines or this many characters, whichever comes first.
 const MAX_RAW_CHARS = 1e6;
+// Cell values long enough to be worth a hover tooltip, and how much of one to
+// put in it.
+const TITLE_FROM_LENGTH = 40;
+const MAX_TITLE_LENGTH = 500;
 
 const props = defineProps<{
   modelValue: boolean,
@@ -278,6 +287,17 @@ function clampRawText(text: string): { text: string, truncated: boolean } {
   return { text: text.slice(0, end), truncated: end < text.length };
 }
 
+// A cell wider than the column shows its value on hover, capped so that a
+// single enormous cell doesn't produce an enormous tooltip.
+function cellTitle(value: unknown): string | undefined {
+  if (typeof value !== 'string' || value.length <= TITLE_FROM_LENGTH) {
+    return undefined;
+  }
+  return value.length > MAX_TITLE_LENGTH
+    ? `${value.slice(0, MAX_TITLE_LENGTH)}…`
+    : value;
+}
+
 async function loadFile() {
   const { item } = props;
   if (!item?.asset) {
@@ -350,6 +370,22 @@ watch(() => [props.modelValue, props.item], () => {
 
 .table-viewer :deep(td) {
   white-space: nowrap;
+}
+
+/* One huge value (a serialized object, say) would otherwise stretch its column
+   across the dialog and leave every other cell stranded, so cells are capped
+   and ellipsised, with the value on hover. */
+.cell {
+  display: inline-block;
+  max-width: 24em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.table-viewer :deep(th) {
+  max-width: 24em;
 }
 
 /* Vuetify sizes the page-size select for its own two- and three-digit options,
