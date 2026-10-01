@@ -13,6 +13,7 @@ import {
   isArraySchema,
   isBasicEditorSchema,
   isComplexEditorSchema,
+  isJSONSchema,
 } from './types';
 import type { EditorInterface } from './editor';
 
@@ -133,3 +134,18 @@ export const validateDandisetMetadata = (editorInterface: EditorInterface) => {
     editorInterface.complexModelValidation[key] = !invalidFields.has(key);
   }
 };
+
+export function renderField(fieldSchema: JSONSchema7) {
+  const { properties } = fieldSchema;
+
+  if (fieldSchema.readOnly) { return false; }
+  const allSubPropsReadOnly = properties !== undefined && Object.keys(properties).every(
+    (key) => {
+      const subProp = properties[key];
+      return isJSONSchema(subProp) && subProp.readOnly;
+    },
+  );
+
+  if (allSubPropsReadOnly) { return false; }
+  return true;
+}
