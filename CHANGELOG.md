@@ -1,3 +1,15 @@
+# v1.0.12 (Thu Oct 01 2026)
+
+#### 🐛 Bug Fix
+
+- Temporarily disable write_manifest_files task [#2953](https://github.com/dandi/dandi-archive/pull/2953) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v1.0.11 (Thu Oct 01 2026)
 
 #### 🐛 Bug Fix
