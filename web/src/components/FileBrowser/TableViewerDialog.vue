@@ -128,6 +128,7 @@
             :items="tableItems"
             :search="search"
             :items-per-page="25"
+            :items-per-page-options="[10, 25, 50, 100, 1000]"
             density="compact"
             class="table-viewer"
             fixed-header
