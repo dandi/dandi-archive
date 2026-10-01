@@ -167,11 +167,13 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     sender.add_periodic_task(
         timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
         validate_draft_version_metadata.s(),
+        expires=timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
     )
     # Check for any assets that need validation every minute
     sender.add_periodic_task(
         timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
         validate_pending_asset_metadata.s(),
+        expires=timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
     )
 
     # Send daily email to admins containing a list of users awaiting approval
