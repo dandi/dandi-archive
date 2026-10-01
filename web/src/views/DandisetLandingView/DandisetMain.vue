@@ -290,6 +290,7 @@ import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from
 import HowToCiteTab from '@/components/DLP/HowToCiteTab.vue';
 import NotebooksTab from '@/components/DLP/NotebooksTab.vue';
 import OverviewTab from '@/components/DLP/OverviewTab.vue';
+import PythonTab from '@/components/DLP/PythonTab.vue';
 import ShareDialog from './ShareDialog.vue';
 import StarButton from '@/components/StarButton.vue';
 
@@ -370,13 +371,14 @@ const currentTab = ref(0);
 const exampleNotebooks = ref<DandisetNotebooks | null>(null);
 
 const tabs = computed(() => {
-  if (!exampleNotebooks.value) {
-    return baseTabs;
+  const result = [...baseTabs];
+  if (stats.value?.asset_count) {
+    result.push({ name: 'Python', component: PythonTab, icon: 'mdi-language-python' });
   }
-  return [
-    ...baseTabs,
-    { name: 'Notebooks', component: NotebooksTab, icon: 'mdi-notebook-outline' },
-  ];
+  if (exampleNotebooks.value) {
+    result.push({ name: 'Notebooks', component: NotebooksTab, icon: 'mdi-notebook-outline' });
+  }
+  return result;
 });
 
 watch(
