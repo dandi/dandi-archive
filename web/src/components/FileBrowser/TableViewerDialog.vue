@@ -95,6 +95,18 @@
 
         <template v-else-if="!loading">
           <v-alert
+            v-if="malformed"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mb-3"
+          >
+            A quoted field in this file is never closed, so the rows below may
+            not line up with its contents. Switch to the raw text view to see the
+            file as it is.
+          </v-alert>
+
+          <v-alert
             v-if="truncated"
             type="info"
             variant="tonal"
@@ -196,6 +208,9 @@ const loading = ref(false);
 const error: Ref<string | null> = ref(null);
 const rows: Ref<string[][]> = ref([]);
 const truncated = ref(false);
+// Whether the file ends inside a quoted field, which makes the parsed rows
+// unreliable from that point on.
+const malformed = ref(false);
 const search = ref('');
 // The file's text, shown by the raw-text toggle, clamped as described above.
 const rawText = ref('');
@@ -279,6 +294,7 @@ async function loadFile() {
   error.value = null;
   rows.value = [];
   truncated.value = false;
+  malformed.value = false;
   search.value = '';
   rawText.value = '';
   rawTruncated.value = false;
@@ -307,8 +323,9 @@ async function loadFile() {
     rawText.value = raw.text;
     rawTruncated.value = raw.truncated;
     const parsed = parseDelimitedText(text, delimiter);
-    truncated.value = parsed.length > MAX_ROWS;
-    rows.value = truncated.value ? parsed.slice(0, MAX_ROWS) : parsed;
+    malformed.value = parsed.unterminatedQuote;
+    truncated.value = parsed.rows.length > MAX_ROWS;
+    rows.value = truncated.value ? parsed.rows.slice(0, MAX_ROWS) : parsed.rows;
   } catch {
     error.value = 'Failed to load this file. You can still download it.';
   } finally {

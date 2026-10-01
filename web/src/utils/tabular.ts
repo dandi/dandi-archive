@@ -44,13 +44,23 @@ export function isUrl(value: unknown): boolean {
   }
 }
 
+export interface ParsedTable {
+  rows: string[][];
+  /**
+   * Whether the text ended inside a quoted field. The quoting rules make such a
+   * field swallow every delimiter and newline after it, so the rows are very
+   * likely not what the file was meant to say.
+   */
+  unterminatedQuote: boolean;
+}
+
 /**
  * Parse delimited text into a matrix of cells.
  *
  * Supports RFC 4180 style quoting, i.e. fields wrapped in double quotes may
  * contain the delimiter, newlines, and doubled-up quotes as escapes.
  */
-export function parseDelimitedText(text: string, delimiter: Delimiter): string[][] {
+export function parseDelimitedText(text: string, delimiter: Delimiter): ParsedTable {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = '';
@@ -106,5 +116,5 @@ export function parseDelimitedText(text: string, delimiter: Delimiter): string[]
     endRow();
   }
 
-  return rows;
+  return { rows, unterminatedQuote: quoted };
 }
