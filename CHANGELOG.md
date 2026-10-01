@@ -1,3 +1,17 @@
+# v1.0.13 (Thu Oct 01 2026)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger a release [#2955](https://github.com/dandi/dandi-archive/pull/2955) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix type of celery function arg [#2956](https://github.com/dandi/dandi-archive/pull/2956) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add `expires` for beat tasks [#2954](https://github.com/dandi/dandi-archive/pull/2954) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v1.0.12 (Thu Oct 01 2026)
 
 #### 🐛 Bug Fix
