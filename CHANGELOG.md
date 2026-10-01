@@ -1,3 +1,15 @@
+# v1.0.11 (Thu Oct 01 2026)
+
+#### 🐛 Bug Fix
+
+- Avoid presigning URLs when computing asset S3 URLs [#2951](https://github.com/dandi/dandi-archive/pull/2951) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v1.0.10 (Wed Sep 30 2026)
 
 #### 🐛 Bug Fix
