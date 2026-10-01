@@ -352,6 +352,12 @@ watch(() => [props.modelValue, props.item], () => {
   white-space: nowrap;
 }
 
+/* Vuetify sizes the page-size select for its own two- and three-digit options,
+   which clips the 1000 this table offers. */
+.table-viewer :deep(.v-data-table-footer__items-per-page > .v-select) {
+  width: 116px;
+}
+
 /* Scroll the table body rather than the dialog, so that the horizontal
    scrollbar stays pinned to the bottom of the visible rows instead of sitting
    below the last row, out of view. The subtracted space covers the search row
