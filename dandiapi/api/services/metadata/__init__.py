@@ -101,13 +101,9 @@ def version_aggregate_assets_summary(version: Version) -> None:
         .iterator()
     )
 
-    # Recomputing an unchanged summary is not a modification of the version.
-    # Writing it anyway would bump `modified`, which clients (e.g. mirrors)
-    # take to mean the Dandiset changed; and since aggregation is dispatched
-    # once per minute while a draft is PENDING and not deduplicated, a backlog
-    # of such no-op runs can keep bumping `modified` long after any real change.
+    # An unchanged summary is not a modification; do not bump `modified`.
     if assets_summary == version.metadata.get('assetsSummary'):
-        logger.info('assetsSummary for version %s is unchanged; not updating', version.id)
+        logger.debug('assetsSummary for version %s is unchanged; not updating', version.id)
         return
 
     updated_metadata = {**version.metadata, 'assetsSummary': assets_summary}
