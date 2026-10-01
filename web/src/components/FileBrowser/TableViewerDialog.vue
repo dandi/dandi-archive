@@ -236,7 +236,8 @@ const downloadUri = computed(() => (
 ));
 
 // Mirrors the URL choice made for external services: the direct S3 link is
-// fetchable cross-origin, but embargoed assets have to go through the API.
+// fetchable cross-origin, but an embargoed asset's ready-made S3 URL denies
+// access, so it goes through the API, which the fetch below authenticates.
 const embargoed = computed(
   () => store.dandiset?.dandiset.embargo_status === 'EMBARGOED',
 );
@@ -346,8 +347,12 @@ async function loadFile() {
     malformed.value = parsed.unterminatedQuote;
     truncated.value = parsed.rows.length > MAX_ROWS;
     rows.value = truncated.value ? parsed.rows.slice(0, MAX_ROWS) : parsed.rows;
-  } catch {
-    error.value = 'Failed to load this file. You can still download it.';
+  } catch (e) {
+    const status = axios.isAxiosError(e) ? e.response?.status : undefined;
+    error.value = (status === 401 || status === 403)
+      ? 'You do not have permission to view this file.'
+        + ' Embargoed files are visible only to the dandiset\'s owners.'
+      : 'Failed to load this file. You can still download it.';
   } finally {
     loading.value = false;
   }
