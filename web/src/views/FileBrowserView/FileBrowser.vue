@@ -454,6 +454,16 @@ function rowRoute(item: AssetPath): RouteLocationRaw | undefined {
 }
 
 function closeTableViewer() {
+  // Opening the viewer pushes a history entry, so closing it goes back, leaving
+  // the browser's back button on the entry the user came from rather than on the
+  // open viewer. A link straight into the viewer has nothing to go back to, so
+  // that case drops the query parameter instead.
+  const { back } = router.options.history.state;
+  if (typeof back === 'string' && !back.includes(`${TABLE_QUERY_PARAM}=`)) {
+    router.back();
+    return;
+  }
+
   const query = { ...route.query };
   delete query[TABLE_QUERY_PARAM];
   router.replace({ ...route, query } as RouteLocationRaw);

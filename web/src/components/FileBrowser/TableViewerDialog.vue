@@ -300,10 +300,13 @@ async function loadFile() {
       // Ensure that the response isn't parsed as JSON/XML by axios.
       transformResponse: [(response) => response],
     });
-    const raw = clampRawText(data);
+    // A leading byte order mark would otherwise end up inside the first
+    // column's header name.
+    const text = data.replace(/^﻿/, '');
+    const raw = clampRawText(text);
     rawText.value = raw.text;
     rawTruncated.value = raw.truncated;
-    const parsed = parseDelimitedText(data, delimiter);
+    const parsed = parseDelimitedText(text, delimiter);
     truncated.value = parsed.length > MAX_ROWS;
     rows.value = truncated.value ? parsed.slice(0, MAX_ROWS) : parsed;
   } catch {
