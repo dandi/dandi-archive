@@ -225,7 +225,7 @@
                 size="small"
                 style="margin: 5px;"
               >
-                {{ item.name }}
+                {{ item.name || `Unnamed ${item.schemaKey}` }}
               </v-chip>
             </v-card-text>
           </v-card>
@@ -292,6 +292,7 @@ import NotebooksTab from '@/components/DLP/NotebooksTab.vue';
 import OverviewTab from '@/components/DLP/OverviewTab.vue';
 import ShareDialog from './ShareDialog.vue';
 import StarButton from '@/components/StarButton.vue';
+import { draftVersion } from '@/utils/constants';
 
 // max description length before it's truncated and "see more" button is shown
 const MAX_DESCRIPTION_LENGTH = 400;
@@ -361,9 +362,13 @@ const meta = computed(() => currentDandiset.value?.metadata);
 const accessInformation: ComputedRef<AccessInformation|undefined> = computed(
   () => meta.value?.access,
 );
-const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed(
-  () => meta.value?.about,
-);
+const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed(() => {
+  if (store.version === draftVersion) {
+    return meta.value?.about;
+  } else {
+    return meta.value?.about?.filter((item) => (item.name || item.identifier));
+  }
+});
 
 const currentTab = ref(0);
 
