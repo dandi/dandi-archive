@@ -166,7 +166,8 @@
               :key="i"
             >
               <strong>{{ item.status }}</strong>
-              <span v-if="item.embargoedUntil">
+              <!-- Unembargoed dandisets retain embargoedUntil (the unembargo date), so only show it while embargoed -->
+              <span v-if="item.status === 'dandi:EmbargoedAccess' && item.embargoedUntil">
                 (embargoed until <strong>{{ formatDate(item.embargoedUntil) }}</strong>)
               </span>
               <span v-text="accessInformation && i === accessInformation.length - 1 ? '' : ', '" />
