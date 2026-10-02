@@ -1,3 +1,15 @@
+# v1.0.15 (Fri Oct 02 2026)
+
+#### 🐛 Bug Fix
+
+- Increase `write_manifest_files` soft time limit to 360s [#2948](https://github.com/dandi/dandi-archive/pull/2948) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v1.0.14 (Fri Oct 02 2026)
 
 #### 🐛 Bug Fix
