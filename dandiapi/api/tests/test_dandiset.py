@@ -2179,3 +2179,377 @@ def test_advanced_search_owner_does_not_inflate_to_superuser_archive(api_client)
     DraftVersionFactory.create(dandiset=admin_owned)
 
     assert _search_ids(api_client, 'owner:admin-gh') == {admin_owned.identifier}
+
+
+# --- contributor / role operators ----------------------------------------------------------------
+
+
+def _seed_dandiset_with_contributors(*, contributors: list[dict]) -> Dandiset:
+    """Create a draft dandiset with the given contributor list on its version.
+
+    Used by the contributor/role tests below.
+    """
+    dandiset = DandisetFactory.create()
+    version = DraftVersionFactory.create(dandiset=dandiset)
+    version.metadata = {**version.metadata, 'contributor': contributors}
+    version.save()
+    return dandiset
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_contributor_and_role_operators(api_client):
+    """One setup, many assertions for the contributor + role operators.
+
+    Covers the catch-all `contributor:`, several role-specific operators
+    (author/data_curator/funder/contact_person), independent-operator AND
+    semantics across roles, name vs email lookup, case-insensitive substring,
+    role substring (`data_curator:` matches `dcite:DataCurator`), and the
+    "different elements may satisfy different operators" composability that
+    distinguishes Option D from same-element semantics.
+    """
+    # Three dandisets with overlapping names but different role assignments.
+    # Realistic identifiers: ORCID for Persons, ROR URL for Organizations.
+    ds_doe_curator = _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Doe, Jane',
+                'email': 'jane.doe@example.com',
+                'identifier': '0000-0002-2990-9889',
+                'roleName': ['dcite:DataCurator', 'dcite:Author'],
+                'schemaKey': 'Person',
+            },
+            {
+                'name': 'National Institutes of Health',
+                'identifier': 'https://ror.org/01cwqze88',
+                'roleName': ['dcite:Funder'],
+                'schemaKey': 'Organization',
+            },
+        ],
+    )
+    ds_doe_author_only = _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Doe, Jane',
+                'identifier': '0000-0001-2222-3333',
+                'roleName': ['dcite:Author'],
+                'schemaKey': 'Person',
+            },
+        ],
+    )
+    ds_smith_curator = _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Smith, Alice',
+                'roleName': ['dcite:DataCurator'],
+                'schemaKey': 'Person',
+            },
+        ],
+    )
+
+    # `contributor:` (catch-all) — any role
+    assert _search_ids(api_client, 'contributor:Doe') == {
+        ds_doe_curator.identifier,
+        ds_doe_author_only.identifier,
+    }
+    assert _search_ids(api_client, 'contributor:NIH') == set()  # full org name only
+    assert _search_ids(api_client, 'contributor:"National Institutes"') == {
+        ds_doe_curator.identifier
+    }
+    # Email lookup also works via the catch-all.
+    assert _search_ids(api_client, 'contributor:jane.doe@example.com') == {
+        ds_doe_curator.identifier
+    }
+
+    # role-specific: author:Doe matches the two dandisets where Doe has Author role
+    assert _search_ids(api_client, 'author:Doe') == {
+        ds_doe_curator.identifier,
+        ds_doe_author_only.identifier,
+    }
+    # data_curator:Doe matches only the dandiset where Doe is also a curator
+    assert _search_ids(api_client, 'data_curator:Doe') == {ds_doe_curator.identifier}
+    # data_curator:Smith matches the smith dandiset
+    assert _search_ids(api_client, 'data_curator:Smith') == {ds_smith_curator.identifier}
+    # funder:"National Institutes" only the one with NIH funder
+    assert _search_ids(api_client, 'funder:"National Institutes"') == {ds_doe_curator.identifier}
+
+    # Case-insensitive on both name and role
+    assert _search_ids(api_client, 'AUTHOR:doe') == {
+        ds_doe_curator.identifier,
+        ds_doe_author_only.identifier,
+    }
+
+    # Identifier lookup: full ORCID for Person, full ROR URL for Org, AND
+    # bare-id substring forms (`01cwqze88` matches the ROR URL via icontains).
+    assert _search_ids(api_client, 'contributor:0000-0002-2990-9889') == {ds_doe_curator.identifier}
+    assert _search_ids(api_client, 'contributor:"https://ror.org/01cwqze88"') == {
+        ds_doe_curator.identifier
+    }
+    assert _search_ids(api_client, 'contributor:01cwqze88') == {ds_doe_curator.identifier}
+    # Identifier lookup composes with role: a role-specific operator with an
+    # ORCID also requires the matched contributor to hold that role.
+    assert _search_ids(api_client, 'data_curator:0000-0002-2990-9889') == {
+        ds_doe_curator.identifier
+    }
+    # Wrong role for that ORCID → 0 (Doe @ ds_doe_curator IS a curator,
+    # but Doe @ ds_doe_author_only has a different ORCID).
+    assert _search_ids(api_client, 'data_curator:0000-0001-2222-3333') == set()
+
+    # Independent-operator AND across DIFFERENT contributor elements:
+    # `author:Doe funder:"National Institutes"` matches the dandiset where
+    # one contributor element is Doe-as-Author AND a different contributor
+    # element is NIH-as-Funder. (This is the Option D semantic the user
+    # specifically wanted — with same-element semantics the query would
+    # require Doe to himself be a Funder, which is wrong.)
+    assert _search_ids(api_client, 'author:Doe funder:"National Institutes"') == {
+        ds_doe_curator.identifier
+    }
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_contributor_role_match(api_client):
+    """Role operators match the full dcite:-prefixed stored value.
+
+    `data_curator:` should match the stored value `dcite:DataCurator`, so
+    users don't have to type the `dcite:` prefix. The match is anchored:
+    a role name that only contains `DataCurator` must not match.
+    """
+    ds = _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Curator, Connie',
+                'roleName': ['dcite:DataCurator'],  # stored with dcite: prefix
+                'schemaKey': 'Person',
+            },
+        ],
+    )
+
+    _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Curator, Carl',
+                'roleName': ['dcite:DataCuratorAssistant'],
+                'schemaKey': 'Person',
+            },
+        ],
+    )
+
+    assert _search_ids(api_client, 'data_curator:Curator') == {ds.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_contributor_operators_and_on_same_version(api_client):
+    """Contributor predicates AND on the same Version, never across versions.
+
+    A dandiset whose draft has Author=Doe and whose published version has
+    Funder=NIH (with no overlap between the two contributor lists) must
+    NOT match `author:Doe funder:NIH` — no single version satisfies both
+    predicates simultaneously. The control dandiset has both contributors
+    on the same (draft) version and DOES match.
+
+    Guards against the cross-version spurious match that would happen if
+    the implementation chained per-operator subqueries against unrelated
+    Version rows.
+    """
+    # Negative case: contributors split across versions. Let the factories
+    # populate default metadata first, then overwrite `contributor` so the
+    # required schemaVersion / id / etc. stay present.
+    ds_split = DandisetFactory.create()
+    draft = DraftVersionFactory.create(dandiset=ds_split)
+    draft.metadata = {
+        **draft.metadata,
+        'contributor': [
+            {'name': 'Doe, Jane', 'roleName': ['dcite:Author'], 'schemaKey': 'Person'},
+        ],
+    }
+    draft.save()
+    published = PublishedVersionFactory.create(dandiset=ds_split)
+    published.metadata = {
+        **published.metadata,
+        'contributor': [
+            {
+                'name': 'National Institutes of Health (NIH)',
+                'roleName': ['dcite:Funder'],
+                'schemaKey': 'Organization',
+            },
+        ],
+    }
+    published.save()
+
+    # Positive control: both contributors on the same version.
+    ds_both = _seed_dandiset_with_contributors(
+        contributors=[
+            {'name': 'Doe, Jane', 'roleName': ['dcite:Author'], 'schemaKey': 'Person'},
+            {
+                'name': 'National Institutes of Health (NIH)',
+                'roleName': ['dcite:Funder'],
+                'schemaKey': 'Organization',
+            },
+        ],
+    )
+
+    # Each operator on its own picks up `ds_split` (the draft satisfies
+    # `author:Doe`, the published version satisfies `funder:NIH`); composing
+    # them must not — only `ds_both` does.
+    assert _search_ids(api_client, 'author:Doe') == {ds_split.identifier, ds_both.identifier}
+    assert _search_ids(api_client, 'funder:NIH') == {ds_split.identifier, ds_both.identifier}
+    assert _search_ids(api_client, 'author:Doe funder:NIH') == {ds_both.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_contributor_and_summary_operators_and_on_same_version(api_client):
+    """Contributor and assetsSummary predicates must hold on the same Version.
+
+    The draft has Doe as Author but no mouse data; the published version has
+    mouse data but no Doe. `author:Doe species:mouse` must not match.
+    """
+    dandiset = DandisetFactory.create()
+    draft = DraftVersionFactory.create(dandiset=dandiset)
+    draft.metadata = {
+        **draft.metadata,
+        'contributor': [
+            {'name': 'Doe, Jane', 'roleName': ['dcite:Author'], 'schemaKey': 'Person'},
+        ],
+    }
+    draft.save()
+    published = PublishedVersionFactory.create(dandiset=dandiset)
+    published.metadata = {
+        **published.metadata,
+        'contributor': [],
+        'assetsSummary': {
+            **published.metadata.get('assetsSummary', {}),
+            'species': [{'name': 'Mus musculus - House mouse'}],
+        },
+    }
+    published.save()
+
+    assert _search_ids(api_client, 'author:Doe') == {dandiset.identifier}
+    assert _search_ids(api_client, 'species:mouse') == {dandiset.identifier}
+    assert _search_ids(api_client, 'author:Doe species:mouse') == set()
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_contributor_match_on_several_versions_lists_dandiset_once(
+    api_client,
+):
+    """A dandiset whose draft and published versions both match appears once.
+
+    Also checks `ordering=-stars`: joining across matching versions would
+    multiply the star count of the dandiset with three matching versions and
+    sort it ahead of the one with more stars.
+    """
+    contributors = [{'name': 'Doe, Jane', 'roleName': ['dcite:Author'], 'schemaKey': 'Person'}]
+    many_versions = _seed_dandiset_with_contributors(contributors=contributors)
+    for _ in range(2):
+        published = PublishedVersionFactory.create(dandiset=many_versions)
+        published.metadata = {**published.metadata, 'contributor': contributors}
+        published.save()
+    many_versions.stars.create(user=UserFactory.create())
+
+    more_stars = _seed_dandiset_with_contributors(contributors=contributors)
+    for _ in range(2):
+        more_stars.stars.create(user=UserFactory.create())
+
+    response = api_client.get(
+        '/api/dandisets/',
+        {'draft': 'true', 'empty': 'true', 'search': 'author:Doe', 'ordering': '-stars'},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data['count'] == 2
+    assert [r['identifier'] for r in data['results']] == [
+        more_stars.identifier,
+        many_versions.identifier,
+    ]
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_unknown_role_operator_returns_400_with_suggestion(api_client):
+    response = api_client.get(
+        '/api/dandisets/',
+        {'draft': 'true', 'empty': 'true', 'search': 'data_curatr:Doe'},
+    )
+    assert response.status_code == 400
+    assert 'data_curator' in response.json()['search']
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_affiliation_operator(api_client):
+    """`affiliation:` queries the nested Person.affiliation[] field, not roleName.
+
+    Real DANDI data stores affiliations on the Person object itself (e.g.
+    `Doe, Jane` is affiliated with Stanford via `Doe.affiliation[0].name`),
+    not as a `dcite:Affiliation` roleName entry. Match by org name OR by
+    the affiliation's ROR identifier; substring forms work for both.
+    """
+    ds_stanford = _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Doe, Jane',
+                'roleName': ['dcite:Author'],
+                'schemaKey': 'Person',
+                'affiliation': [
+                    {
+                        'name': 'Stanford University',
+                        'identifier': 'https://ror.org/00f54p054',
+                        'schemaKey': 'Affiliation',
+                    },
+                ],
+            },
+            # An Organization contributor (no `affiliation` field of its own —
+            # affiliations live on Persons in the schema). The affiliation
+            # jsonpath must walk past this element without exploding.
+            {
+                'name': 'National Institutes of Health (NIH)',
+                'identifier': 'https://ror.org/01cwqze88',
+                'roleName': ['dcite:Funder'],
+                'schemaKey': 'Organization',
+            },
+        ],
+    )
+    ds_ucl = _seed_dandiset_with_contributors(
+        contributors=[
+            # Same shape but the Organization comes first this time — the
+            # jsonpath shouldn't be order-sensitive.
+            {
+                'name': 'Wellcome Trust',
+                'roleName': ['dcite:Funder'],
+                'schemaKey': 'Organization',
+            },
+            {
+                'name': 'Doe, Jane',
+                'roleName': ['dcite:Author'],
+                'schemaKey': 'Person',
+                'affiliation': [
+                    {
+                        'name': 'University College London',
+                        'schemaKey': 'Affiliation',
+                    },
+                ],
+            },
+        ],
+    )
+
+    # Affiliation by organization name
+    assert _search_ids(api_client, 'affiliation:Stanford') == {ds_stanford.identifier}
+    assert _search_ids(api_client, 'affiliation:"University College London"') == {ds_ucl.identifier}
+    # Affiliation by ROR identifier (full URL or bare ID via substring)
+    assert _search_ids(api_client, 'affiliation:00f54p054') == {ds_stanford.identifier}
+    # The Organization contributors' own identifiers are NOT matched by
+    # `affiliation:` — that operator queries `contributor[].affiliation[]`,
+    # not the contributor's own identifier. (Use `funder:` instead.)
+    assert _search_ids(api_client, 'affiliation:01cwqze88') == set()
+
+    # Composes with role/contributor operators on the same Version (different
+    # contributor elements OK — here `author:Doe` matches the Person and
+    # `affiliation:Stanford` matches via that Person's affiliation, while
+    # the unrelated Organization contributor is harmlessly ignored).
+    assert _search_ids(api_client, 'author:Doe affiliation:Stanford') == {ds_stanford.identifier}
+    # Cross-key with role on the Organization side also works.
+    assert _search_ids(api_client, 'funder:NIH affiliation:Stanford') == {ds_stanford.identifier}
