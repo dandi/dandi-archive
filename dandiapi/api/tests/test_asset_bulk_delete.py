@@ -128,7 +128,7 @@ def test_asset_rest_bulk_delete_nonexistent_asset(api_client, version_with_asset
         format='json',
     )
     assert resp.status_code == 404
-    assert str(missing_id) in resp.data
+    assert resp.data['missing_asset_ids'] == [str(missing_id)]
 
     # Nothing should have been removed
     assert version.assets.count() == 3

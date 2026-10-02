@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-from django.core.exceptions import (
-    PermissionDenied as DjangoPermissionDenied,
-)
-from django.core.exceptions import (
-    ValidationError as DjangoValidationError,
-)
+from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import Http404
 from rest_framework import exceptions as drf_exceptions
 from rest_framework import status
@@ -30,7 +26,10 @@ def rewrap_django_core_exceptions(exc: Exception, ctx: dict) -> Response | None:
             return Response(exc.messages[0], status=status.HTTP_400_BAD_REQUEST)
         exc = drf_exceptions.ValidationError(as_serializer_error(exc))
     elif isinstance(exc, DandiError):
-        return Response(exc.message, status=exc.http_status_code or status.HTTP_400_BAD_REQUEST)
+        return Response(
+            exc.response_data,
+            status=exc.http_status_code or status.HTTP_400_BAD_REQUEST,
+        )
 
     if isinstance(exc, Http404):
         exc = drf_exceptions.NotFound()
