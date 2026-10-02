@@ -54,7 +54,9 @@ if TYPE_CHECKING:
 
 class AssetFilter(filters.FilterSet):
     path = filters.CharFilter(lookup_expr='istartswith')
-    order = filters.OrderingFilter(fields=['created', 'modified', 'path'])
+    # `fields` are the values `?order=` accepts, not an ordering; see the caveat on ties in
+    # `NestedAssetViewSet.list()`.
+    order = filters.OrderingFilter(fields=['created', 'modified', 'path', 'id'])
 
     class Meta:
         model = Asset
@@ -62,7 +64,7 @@ class AssetFilter(filters.FilterSet):
 
 
 class AssetViewSet(DetailSerializerMixin, GenericViewSet):
-    queryset = Asset.objects.all().select_related('zarr').order_by('created')
+    queryset = Asset.objects.all().select_related('zarr').order_by('created', 'id')
 
     serializer_class = AssetSerializer
     serializer_detail_class = AssetDetailSerializer
@@ -411,6 +413,14 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
     @swagger_auto_schema(query_serializer=AssetListSerializer, responses={200: AssetSerializer})
     def list(self, request, *args, **kwargs):
+        """
+        List the assets of a version with pagination.
+
+        By default assets are ordered by `created`, with ties broken by `id`.
+        `?order=` accepts a comma-separated list of terms from `created`,
+        `modified`, `path`, and `id` (each optionally prefixed with `-`) and
+        replaces that default.
+        """
         # Manually call this to ensure user is authorized
         self.raise_if_unauthorized()
 
