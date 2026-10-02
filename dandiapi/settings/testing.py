@@ -21,6 +21,7 @@ STORAGES['default'] = {
     },
 }
 
+<<<<<<< before updating
 # Testing will set EMAIL_BACKEND to use the memory backend
 
 # Run celery tasks synchronously in tests
@@ -33,3 +34,12 @@ DANDI_JUPYTERHUB_URL = 'https://hub.dandiarchive.org/'
 
 DANDI_DEV_EMAIL = 'test-dev@example.com'
 DANDI_ADMIN_EMAIL = 'test-admin@example.com'
+=======
+# Django's test runner will override every mailer here with the memory backend, but a "default"
+# mailer must exist for outgoing email to be captured instead of failing.
+MAILERS: dict[str, dict[str, Any]] = {
+    "default": {
+        "BACKEND": "django.core.mail.backends.locmem.EmailBackend",
+    },
+}
+>>>>>>> after updating
