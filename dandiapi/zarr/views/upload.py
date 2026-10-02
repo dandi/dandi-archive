@@ -1,0 +1,270 @@
+from __future__ import annotations
+
+import logging
+import typing
+from typing import TYPE_CHECKING
+
+from django.db import transaction
+from django.http.response import Http404, HttpResponseBase
+from django.shortcuts import get_object_or_404
+from drf_yasg.utils import no_body, swagger_auto_schema
+from rest_framework import serializers, status
+from rest_framework.decorators import api_view, parser_classes, permission_classes
+from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import JSONParser
+from rest_framework.response import Response
+
+from dandiapi.api.permissions import AuthenticatedRequest, IsApproved
+from dandiapi.api.services import audit
+from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
+from dandiapi.api.services.exceptions import NotAllowedError
+from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
+from dandiapi.api.views.upload import (
+    DigestSerializer,
+    UploadCompletionRequestSerializer,
+    UploadCompletionResponseSerializer,
+    UploadInitializationResponseSerializer,
+    complete_multipart_upload,
+)
+from dandiapi.zarr.models import (
+    ZarrArchive,
+    ZarrArchiveStatus,
+    ZarrUpload,
+    ZarrUploadType,
+    validate_zarr_path,
+)
+
+if TYPE_CHECKING:
+    from collections import OrderedDict
+
+    from s3_file_field._multipart import TransferredPart
+
+logger = logging.getLogger(__name__)
+
+
+class ZarrUploadInitializationRequestSerializer(serializers.Serializer):
+    zarr_id = serializers.UUIDField()
+    chunk_key = serializers.CharField(validators=[validate_zarr_path])
+    contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
+    content_type = serializers.CharField(required=False, default='application/octet-stream')
+    digest = DigestSerializer()
+
+    def get_digest_data(self) -> tuple[str, int]:
+        """Return a tuple of (etag, content_size), raising an exception if invalid."""
+        self.is_valid(raise_exception=True)
+
+        data = typing.cast('OrderedDict', self.validated_data)
+        digest = data['digest']
+        if digest['algorithm'] != 'dandi:dandi-etag':
+            raise ValidationError('Unsupported Digest Type')
+
+        return digest['value'], self.validated_data['contentSize']
+
+
+class ZarrUploadValidationResponseSerializer(serializers.Serializer):
+    zarr_id = serializers.UUIDField()
+    chunk_key = serializers.CharField()
+
+
+@swagger_auto_schema(
+    method='POST',
+    request_body=ZarrUploadInitializationRequestSerializer,
+    responses={
+        200: UploadInitializationResponseSerializer,
+        400: 'The zarr archive does not support multipart upload.',
+    },
+)
+@api_view(['POST'])
+@parser_classes([JSONParser])
+@permission_classes([IsApproved])
+def zarr_upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
+    """
+    Initialize a multipart upload of a zarr chunk.
+
+    A list of parts will be returned, each of which has a presigned upload URL and a size.
+    This URL communicates directly with the object store so the client can upload bytes directly.
+
+    https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html
+    """
+    request_serializer = ZarrUploadInitializationRequestSerializer(data=request.data)
+    request_serializer.is_valid(raise_exception=True)
+
+    etag, content_size = request_serializer.get_digest_data()
+    data: dict = request_serializer.validated_data
+
+    zarr_archive: ZarrArchive = get_object_or_404(ZarrArchive, zarr_id=data['zarr_id'])
+    dandiset = zarr_archive.dandiset
+    if not is_dandiset_owner(dandiset, request.user):
+        raise NotAllowedError
+
+    # Ensure dandiset not in the process of unembargo
+    if dandiset.unembargo_in_progress:
+        raise DandisetUnembargoInProgressError
+
+    # This is the multipart upload flow. A single-part zarr's chunks must be uploaded
+    # through the single-part flow, or its checksum cannot be reconciled.
+    if zarr_archive.upload_type != ZarrUploadType.MULTIPART:
+        raise ValidationError('This zarr archive does not support multipart upload.')
+
+    # Create the multipart upload in S3 outside of the transaction, so that the zarr row doesn't
+    # remain locked during this network call
+    upload, initialization = ZarrUpload.initialize_multipart_upload(
+        etag,
+        content_size,
+        zarr=zarr_archive,
+        chunk_key=data['chunk_key'],
+        content_type=data['content_type'],
+    )
+
+    try:
+        with transaction.atomic():
+            # Check the status with a row lock, so that this upload can't be created in the window
+            # between finalize finding no active uploads and it marking the zarr as uploaded.
+            zarr_archive = ZarrArchive.objects.select_for_update(of=['self']).get(
+                pk=zarr_archive.pk
+            )
+            if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
+                raise ValidationError(ZarrArchive.INGEST_ERROR_MSG)  # noqa: TRY301
+
+            upload.save()
+            audit.upload_zarr_chunks(
+                dandiset=dandiset,
+                user=request.user,
+                zarr_archive=zarr_archive,
+                paths=[upload.chunk_key],
+            )
+    except ValidationError:
+        # Abort the upload outside of the transaction, so that the zarr row doesn't remain locked
+        # during this network call
+        upload.abort()
+        raise
+
+    logger.info(
+        'Zarr upload initialized for chunk %s of zarr %s', upload.chunk_key, zarr_archive.zarr_id
+    )
+
+    response_serializer = UploadInitializationResponseSerializer(initialization)
+    return Response(response_serializer.data)
+
+
+@swagger_auto_schema(
+    method='POST',
+    request_body=UploadCompletionRequestSerializer,
+    responses={200: UploadCompletionResponseSerializer},
+)
+@api_view(['POST'])
+@parser_classes([JSONParser])
+@permission_classes([IsApproved])
+def zarr_upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
+    """
+    Complete a multipart upload of a zarr chunk.
+
+    After all data has been uploaded using the URLs provided by initialize, this endpoint must
+    be called to create the object in the object store. A presigned URL that performs the
+    completion is returned, as the completion might take several minutes for large files.
+
+    This marks the zarr archive as pending, since once the upload complete URL is returned and used,
+    the zarr archive in S3 is tainted with new files that haven't been checksummed.
+    """
+    request_serializer = UploadCompletionRequestSerializer(data=request.data)
+    request_serializer.is_valid(raise_exception=True)
+    parts: list[TransferredPart] = request_serializer.save()
+
+    upload: ZarrUpload = get_object_or_404(
+        ZarrUpload.objects.select_related('zarr__dandiset'), upload_id=upload_id
+    )
+    if upload.embargoed and not is_dandiset_owner(upload.zarr.dandiset, request.user):
+        raise Http404 from None
+
+    # Once the complete multipart pre-signed URL is handed out, the file can exist in S3,
+    # invalidating the existing checksum. Mark this zarr as pending to reflect that.
+    with transaction.atomic():
+        zarr = ZarrArchive.objects.select_for_update(of=['self']).get(pk=upload.zarr_id)
+        if zarr.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
+            raise ValidationError(ZarrArchive.INGEST_ERROR_MSG)
+
+        zarr.mark_pending()
+        zarr.save()
+
+    return complete_multipart_upload(upload, parts)
+
+
+@swagger_auto_schema(
+    method='POST',
+    request_body=no_body,
+    responses={
+        204: 'None - expected normal return without any content',
+    },
+)
+@api_view(['POST'])
+@parser_classes([JSONParser])
+@permission_classes([IsApproved])
+def zarr_upload_abort_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
+    """
+    Abort a multipart upload of a zarr chunk.
+
+    This discards any parts that have been uploaded and releases the upload's claim on the zarr,
+    so that the zarr can be finalized without waiting for the upload to be garbage collected.
+    """
+    upload: ZarrUpload = get_object_or_404(
+        ZarrUpload.objects.select_related('zarr__dandiset'), upload_id=upload_id
+    )
+    zarr = upload.zarr
+    if not is_dandiset_owner(zarr.dandiset, request.user):
+        raise NotAllowedError
+
+    # Abort before deleting the record. This discards the upload's parts but leaves the object
+    # alone, since another upload to the same chunk key may own it. It's a no-op for an upload
+    # that already completed, and is safe to retry, so a failure here leaves the record in place
+    # to be aborted again rather than orphaning a multipart upload that nothing tracks.
+    upload.abort()
+    upload.delete()
+
+    # The zarr is deliberately left alone. If this upload's completion URL was ever handed out,
+    # the complete view already marked the zarr pending, and finalize is refused while any
+    # upload exists, so the zarr cannot have been checksummed since. If it wasn't, the upload
+    # never had the chance to change the zarr's contents, and invalidating a good checksum here
+    # would force a needless re-ingest.
+    logger.info('Zarr upload %s aborted for zarr %s', upload_id, zarr.zarr_id)
+
+    return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+
+@swagger_auto_schema(
+    method='POST',
+    responses={
+        200: ZarrUploadValidationResponseSerializer,
+        400: 'The specified upload has not completed or has failed.',
+    },
+)
+@api_view(['POST'])
+@parser_classes([JSONParser])
+@permission_classes([IsApproved])
+def zarr_upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
+    """Verify that a zarr chunk upload completed successfully."""
+    upload: ZarrUpload = get_object_or_404(
+        ZarrUpload.objects.select_related('zarr__dandiset'), upload_id=upload_id
+    )
+    zarr = upload.zarr
+    if upload.embargoed and not is_dandiset_owner(zarr.dandiset, request.user):
+        raise Http404 from None
+
+    # This raises an exception if unsuccessful
+    upload.validate_successful()
+
+    # Grab this before deleting the upload
+    chunk_key = upload.chunk_key
+
+    with transaction.atomic():
+        zarr = ZarrArchive.objects.select_for_update(of=['self']).get(pk=zarr.pk)
+        upload.delete()
+
+        # Mark zarr as pending again to ensure that some obscure race condition can't
+        # result in this uploaded chunk being omitted from the checksum.
+        zarr.mark_pending()
+        zarr.save()
+
+    response_serializer = ZarrUploadValidationResponseSerializer(
+        {'zarr_id': zarr.zarr_id, 'chunk_key': chunk_key}
+    )
+    return Response(response_serializer.data, status=status.HTTP_200_OK)
