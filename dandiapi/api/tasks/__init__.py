@@ -93,7 +93,7 @@ def publish_dandiset_task(dandiset_id: int, user_id: int):
     _publish_dandiset(dandiset_id=dandiset_id, user_id=user_id)
 
 
-@shared_task(soft_time_limit=1200)
+@shared_task(soft_time_limit=3600)
 def unembargo_dandiset_task(dandiset_id: int, user_id: int):
     from dandiapi.api.services.embargo import unembargo_dandiset
 
