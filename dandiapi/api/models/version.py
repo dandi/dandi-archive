@@ -232,8 +232,13 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             if self.dandiset.embargoed
             else AccessType.OpenAccess.value,
         }
+        # embargoedUntil is derived solely from the dandiset, so drop any stale or
+        # user-supplied value (e.g. a planned date left over from an unembargo that
+        # predates the embargo_end_date field)
         if self.dandiset.embargo_end_date is not None:
             access[0]['embargoedUntil'] = self.dandiset.embargo_end_date.isoformat()
+        else:
+            access[0].pop('embargoedUntil', None)
 
         return access
 

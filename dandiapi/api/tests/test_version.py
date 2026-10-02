@@ -806,6 +806,38 @@ def test_version_populate_access_metadata_embargo_end_date(embargo_status: Dandi
         assert access[0]['embargoedUntil'] == draft_version.dandiset.embargo_end_date.isoformat()
 
 
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'embargo_status', [Dandiset.EmbargoStatus.OPEN, Dandiset.EmbargoStatus.EMBARGOED]
+)
+def test_version_rest_update_access_embargoed_until_ignored(
+    api_client: APIClient, embargo_status: Dandiset.EmbargoStatus
+):
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(
+        dandiset__owners=[user], dandiset__embargo_status=embargo_status
+    )
+    api_client.force_authenticate(user=user)
+
+    # A stale or user-supplied embargoedUntil must not override the dandiset's embargo_end_date,
+    # nor persist on an open dandiset that has none
+    new_metadata = {**draft_version.metadata, 'access': [{'embargoedUntil': '2099-01-01'}]}
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {'metadata': new_metadata, 'name': draft_version.name},
+    )
+    assert resp.status_code == 200
+
+    draft_version.refresh_from_db()
+    access = draft_version.metadata['access'][0]
+    if embargo_status == Dandiset.EmbargoStatus.OPEN:
+        assert draft_version.dandiset.embargo_end_date is None
+        assert 'embargoedUntil' not in access
+    else:
+        assert access['embargoedUntil'] == draft_version.dandiset.embargo_end_date.isoformat()
+
+
 @pytest.mark.django_db
 def test_version_rest_publish(
     api_client: APIClient,
