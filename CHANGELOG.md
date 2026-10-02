@@ -1,3 +1,15 @@
+# v1.0.16 (Fri Oct 02 2026)
+
+#### 🐛 Bug Fix
+
+- Increase unembargo_dandiset_task soft time limit to 1 hour [#2960](https://github.com/dandi/dandi-archive/pull/2960) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v1.0.15 (Fri Oct 02 2026)
 
 #### 🐛 Bug Fix
