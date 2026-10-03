@@ -96,8 +96,9 @@ class DandiS3Storage(S3Storage):
             # Assume only path-style requests are supported, as this is probably MinIO
             return f'{self.endpoint_url}/{self.bucket_name}/{name}'
         # Use the region-less "legacy global endpoint", which is also the host of boto3's
-        # presigned URLs. Asset `contentUrl`s have always had this form, and they are recorded in
-        # published manifests and in mirrors of the archive, so it must not change.
+        # presigned URLs in the standard AWS partition (so `region_name` is intentionally unused).
+        # Asset `contentUrl`s have always had this form, and they are recorded in published
+        # manifests and in mirrors of the archive, so it must not change.
         # This form only works for buckets in Regions launched before 2019-03-20, such as
         # us-east-2. https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html
         return f'https://{self.bucket_name}.s3.amazonaws.com/{name}'

@@ -113,14 +113,19 @@ def test_asset_s3_url(asset_blob):
 
 
 @pytest.mark.ai_generated
-def test_s3_url_unsigned_aws_has_no_region():
+@pytest.mark.parametrize(
+    'name',
+    [
+        'blobs/dd9/f84/dd9f8493-87ff-4191-9738-70ac2824ea81',
+        'zarr/0f6e7cc7-d9b7-4e5d-8f8a-3b3a2b4f2c11/',
+    ],
+    ids=['blob', 'zarr'],
+)
+def test_s3_url_unsigned_aws_has_no_region(name):
     # Unsigned AWS URLs end up in asset `contentUrl`s, which are recorded in published manifests
     # and mirrors of the archive, so their form must not change (in particular, gain a Region).
     storage = DandiS3Storage(bucket_name='dandiarchive', region_name='us-east-2')
-    assert (
-        storage.url('blobs/dd9/f84/dd9f8493-87ff-4191-9738-70ac2824ea81', signed=False)
-        == 'https://dandiarchive.s3.amazonaws.com/blobs/dd9/f84/dd9f8493-87ff-4191-9738-70ac2824ea81'
-    )
+    assert storage.url(name, signed=False) == f'https://dandiarchive.s3.amazonaws.com/{name}'
 
 
 @pytest.mark.django_db
