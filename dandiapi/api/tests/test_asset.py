@@ -25,6 +25,7 @@ from dandiapi.api.tests.factories import (
     PublishedVersionFactory,
     UserFactory,
 )
+from dandiapi.storage import DandiS3Storage
 from dandiapi.zarr.models import ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 from dandiapi.zarr.tests.factories import ZarrArchiveFactory
@@ -109,6 +110,17 @@ def test_asset_s3_url(asset_blob):
     s3_url = asset_blob.s3_url
     assert signed_url.startswith(s3_url)
     assert signed_url.split('?')[0] == s3_url
+
+
+@pytest.mark.ai_generated
+def test_s3_url_unsigned_aws_has_no_region():
+    # Unsigned AWS URLs end up in asset `contentUrl`s, which are recorded in published manifests
+    # and mirrors of the archive, so their form must not change (in particular, gain a Region).
+    storage = DandiS3Storage(bucket_name='dandiarchive', region_name='us-east-2')
+    assert (
+        storage.url('blobs/dd9/f84/dd9f8493-87ff-4191-9738-70ac2824ea81', signed=False)
+        == 'https://dandiarchive.s3.amazonaws.com/blobs/dd9/f84/dd9f8493-87ff-4191-9738-70ac2824ea81'
+    )
 
 
 @pytest.mark.django_db

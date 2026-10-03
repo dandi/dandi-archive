@@ -90,13 +90,17 @@ class DandiS3Storage(S3Storage):
 
     def _url_unsigned(self, name: str) -> str:
         # TODO: Remove this method once https://github.com/jschneier/django-storages/pull/1536
-        #  is released.
+        #  is released, provided that the replacement produces the same URLs.
         name = self._normalize_name(clean_name(name))
         if self.endpoint_url:
             # Assume only path-style requests are supported, as this is probably MinIO
             return f'{self.endpoint_url}/{self.bucket_name}/{name}'
-        # https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html#virtual-hosted-style-access
-        return f'https://{self.bucket_name}.s3.{self.region_name}.amazonaws.com/{name}'
+        # Use the region-less "legacy global endpoint", which is also the host of boto3's
+        # presigned URLs. Asset `contentUrl`s have always had this form, and they are recorded in
+        # published manifests and in mirrors of the archive, so it must not change.
+        # This form only works for buckets in Regions launched before 2019-03-20, such as
+        # us-east-2. https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html
+        return f'https://{self.bucket_name}.s3.amazonaws.com/{name}'
 
     def url(
         self,
