@@ -1,3 +1,20 @@
+# v1.0.17 (Sun Oct 04 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Keep the Region out of unsigned S3 URLs [#2963](https://github.com/dandi/dandi-archive/pull/2963) ([@claude](https://github.com/claude) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### Authors: 2
+
+- Claude ([@claude](https://github.com/claude))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+---
+
 # v1.0.16 (Fri Oct 02 2026)
 
 #### 🐛 Bug Fix
