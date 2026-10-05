@@ -156,7 +156,7 @@
                 :href="versionMetadataURI"
                 target="_blank"
                 rel="noreferrer"
-                aria-label="View saved metadata in the API"
+                aria-label="View metadata in the API"
                 v-bind="props"
               >
                 <v-icon color="primary">
@@ -164,7 +164,7 @@
                 </v-icon>
               </v-btn>
             </template>
-            <span>View saved metadata in the API</span>
+            <span>View metadata in the API</span>
           </v-tooltip>
         </v-card-actions>
       </v-card>
