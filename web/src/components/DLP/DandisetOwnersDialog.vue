@@ -264,9 +264,19 @@ const throttledUpdate = debounce(async () => {
   _searchResults.value = users;
 }, 200);
 
-watch(() => store.owners, () => (
-  store.owners ? Object.assign(newOwners.value, store.owners) : null
-),
+// Re-sync `newOwners` from the store. Use a fresh copy (not Object.assign onto
+// the existing array) so that shrinking lists drop trailing entries and so
+// that duplicate-looking owners from the backend don't accumulate locally.
+watch(() => store.owners, () => {
+  if (store.owners) {
+    const seen = new Set<string>();
+    newOwners.value = (store.owners as User[]).filter((u) => {
+      if (seen.has(u.username)) return false;
+      seen.add(u.username);
+      return true;
+    });
+  }
+},
 { immediate: true });
 
 const isSelected = (user: User) => selectedUsers.value.map(
@@ -321,7 +331,13 @@ function checkBoxHandler(_user: User) {
 }
 
 function addSelected() {
-  newOwners.value = newOwners.value.concat(selectedUsers.value);
+  const existing = new Set(newOwners.value.map((u: User) => u.username));
+  for (const u of selectedUsers.value) {
+    if (!existing.has(u.username)) {
+      newOwners.value.push(u);
+      existing.add(u.username);
+    }
+  }
   selectedUsers.value = [];
 }
 
