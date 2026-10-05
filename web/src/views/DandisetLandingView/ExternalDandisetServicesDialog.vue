@@ -25,6 +25,7 @@
     <v-card>
       <v-list>
         <v-tooltip
+          v-if="neurosiftURL"
           open-on-hover
           location="left"
         >
@@ -106,6 +107,7 @@ import { useDandisetStore } from '@/stores/dandiset';
 import { useInstanceStore } from '@/stores/instance';
 import type { Atlas } from '@/utils/atlas';
 import { atlasDandisetURL, getAtlasForDandiset } from '@/utils/atlas';
+import { neurosiftDandisetUrl } from '@/utils/externalServices';
 
 const store = useDandisetStore();
 const instanceStore = useInstanceStore();
@@ -122,12 +124,10 @@ const neurosiftURL = computed(() => {
     throw new Error('Dandiset metadata is undefined');
   }
 
-  const metadata = currentDandiset.value.metadata;
-  const dandisetId = currentDandiset.value.dandiset.identifier;
-  const dandisetVersion = metadata.version;
-  const stagingParam = instanceStore.isSandbox ? '&staging=1' : '';
-
-  return `https://neurosift.app/dandiset/${dandisetId}?dandisetVersion=${dandisetVersion}${stagingParam}`;
+  return neurosiftDandisetUrl(
+    currentDandiset.value.dandiset.identifier,
+    currentDandiset.value.metadata.version,
+  );
 });
 
 const aiEditorURL = computed(() => {

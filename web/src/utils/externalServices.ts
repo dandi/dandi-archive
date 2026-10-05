@@ -3,6 +3,7 @@ import { computed } from "vue";
 
 import type { AssetFile, AssetPath } from "@/types";
 import { useDandisetStore } from "@/stores/dandiset";
+import { useInstanceStore } from "@/stores/instance";
 
 type ExternalServiceEndpoint = string | ((item: ServiceUrlData) => string | null);
 
@@ -46,8 +47,7 @@ const EXTERNAL_SERVICES: ExternalService[] = [
     name: "Neurosift",
     regex: /\.nii(\.gz)?$/,
     maxsize: Infinity,
-    endpoint:
-      "https://neurosift.app/dandiset/$dandiset_id$?tab=$asset_path$",
+    endpoint: neurosiftAssetTabUrl,
   },
 
   {
@@ -205,4 +205,37 @@ function redirectNeuroglancerUrl(item: ServiceUrlData): string | null {
   };
 
   return baseUrl + encodeURIComponent(JSON.stringify(jsonObject));
+}
+
+/**
+ * URL opening a Dandiset in Neurosift, which uses a different URL for each
+ * archive it supports, so the template comes from the server's /api/info/.
+ * Undefined if Neurosift does not support this instance, or the instance info
+ * has not been loaded yet.
+ */
+export function neurosiftDandisetUrl(dandisetId: string, dandisetVersion: string): string | undefined {
+  const template = useInstanceStore().info?.services.neurosift?.url;
+  if (!template) {
+    return undefined;
+  }
+
+  return template
+    .replaceAll('{dandiset_id}', encodeURIComponent(dandisetId))
+    .replaceAll('{dandiset_version}', encodeURIComponent(dandisetVersion));
+}
+
+/**
+ * Custom function used to generate the endpoint
+ * for the "Neurosift" service on NIfTI assets,
+ * which opens the asset in a tab of the Dandiset view
+ */
+function neurosiftAssetTabUrl(item: ServiceUrlData): string | null {
+  const dandisetUrl = neurosiftDandisetUrl(item.dandisetId, item.dandisetVersion);
+  if (!dandisetUrl) {
+    return null;
+  }
+
+  const url = new URL(dandisetUrl);
+  url.searchParams.set('tab', item.assetPath);
+  return url.toString();
 }

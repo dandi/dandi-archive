@@ -295,6 +295,7 @@ import axios from 'axios';
 
 import { dandiRest, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
+import { useInstanceStore } from '@/stores/instance';
 import type { AssetPath } from '@/types';
 import { getExternalServices } from '@/utils/externalServices';
 import FileBrowserPagination from '@/components/FileBrowser/FileBrowserPagination.vue';
@@ -349,6 +350,7 @@ const props = defineProps({
 const route = useRoute();
 const router = useRouter();
 const store = useDandisetStore();
+const instanceStore = useInstanceStore();
 
 const location = ref(rootDirectory);
 const items: Ref<ExtendedAssetPath[] | null> = ref(null);
@@ -428,6 +430,9 @@ async function getItems() {
 
   // Set num pages
   pages.value = Math.ceil(count / FILES_PER_PAGE);
+
+  // Some service URLs depend on the instance info, and are not recomputed when it arrives
+  await instanceStore.load();
 
   // Inject extra properties
   const extendedItems: ExtendedAssetPath[] = results

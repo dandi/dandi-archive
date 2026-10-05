@@ -3,10 +3,9 @@ import { defineStore } from 'pinia';
 import { dandiRest } from '@/rest';
 import type { Info } from '@/types';
 
-// Values of DJANGO_DANDI_INSTANCE_NAME for the DANDI-operated deployments,
+// Value of DJANGO_DANDI_INSTANCE_NAME for the DANDI production deployment,
 // reported by the server at /api/info/.
 const PRODUCTION_INSTANCE_NAME = 'DANDI';
-const SANDBOX_INSTANCE_NAME = 'DANDI-SANDBOX';
 
 // Shared by all callers of load() so the request is only made once per session.
 let infoRequest: Promise<Info> | undefined;
@@ -22,12 +21,9 @@ export const useInstanceStore = defineStore('instance', {
   getters: {
     instanceName: (state) => state.info?.instance_config.instance_name,
     // Until /api/info/ has been fetched successfully, the instance is not considered
-    // production or sandbox, so features gated on these getters fail closed.
+    // production, so features gated on this getter fail closed.
     isProduction(): boolean {
       return this.instanceName === PRODUCTION_INSTANCE_NAME;
-    },
-    isSandbox(): boolean {
-      return this.instanceName === SANDBOX_INSTANCE_NAME;
     },
   },
   actions: {

@@ -36,6 +36,9 @@ class ApiServicesSerializer(serializers.Serializer):
     api = ApiServiceSerializer()
     webui = ApiServiceSerializer()
     jupyterhub = ApiServiceSerializer()
+    # A URL template with "{dandiset_id}" and "{dandiset_version}" placeholders,
+    # or null if Neurosift does not support this instance.
+    neurosift = ApiServiceSerializer(allow_null=True)
 
 
 class ApiInfoSerializer(serializers.Serializer):
@@ -92,6 +95,11 @@ def info_view(request):
                 'api': {'url': api_url},
                 'webui': {'url': settings.DANDI_WEB_APP_URL},
                 'jupyterhub': {'url': settings.DANDI_JUPYTERHUB_URL},
+                'neurosift': (
+                    {'url': settings.DANDI_NEUROSIFT_DANDISET_URL}
+                    if settings.DANDI_NEUROSIFT_DANDISET_URL
+                    else None
+                ),
             },
         }
     )
