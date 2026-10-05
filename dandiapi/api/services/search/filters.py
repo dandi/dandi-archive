@@ -12,6 +12,13 @@ from django.db.models.functions import Concat
 
 from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
+from dandiapi.api.services.search.operators import (
+    AFFILIATION_OPS,
+    CONTRIBUTOR_ROLE_OPS,
+    DATE_OPS,
+    OWNER_OPS,
+    SUMMARY_PATH_OPS,
+)
 from dandiapi.api.services.search.parser import SearchSyntaxError
 
 if TYPE_CHECKING:
@@ -19,18 +26,6 @@ if TYPE_CHECKING:
 
     from dandiapi.api.models import Dandiset
     from dandiapi.api.services.search.parser import ParsedSearch
-
-_DATE_OPS = frozenset(
-    {
-        'created_before',
-        'created_after',
-        'modified_before',
-        'modified_after',
-        'published_before',
-        'published_after',
-    }
-)
-_OWNER_OPS = frozenset({'owner'})
 
 
 def _annotate_latest_version_modified(queryset):
@@ -51,17 +46,14 @@ def _annotate_latest_published_created(queryset):
     )
 
 
-# Maps each operator to a Postgres jsonpath into the version-level
-# `assetsSummary` aggregation. Paths MUST be trusted constants: they're
-# interpolated into the SQL. `variableMeasured` holds bare strings rather
-# than objects with a `name`, so its path selects the elements themselves.
-_SUMMARY_PATH_OPS = {
-    'species': '$.assetsSummary.species[*].name',
-    'approach': '$.assetsSummary.approach[*].name',
-    'technique': '$.assetsSummary.measurementTechnique[*].name',
-    'standard': '$.assetsSummary.dataStandard[*].name',
-    'variable': '$.assetsSummary.variableMeasured[*]',
-}
+# Postgres jsonpath quirk: `like_regex` requires its pattern to be a STRING
+# LITERAL inside the jsonpath text, not a `$variable`, so the `vars` argument
+# of `jsonb_path_exists` can't carry the pattern. Instead the jsonpath is
+# assembled at execution time by concatenating `to_jsonb(%s::text)::text`,
+# which renders the bound parameter as a properly quoted JSON string literal.
+# The user value is never inlined into the SQL, and callers `re.escape` it so
+# regex metacharacters match literally.
+_LIKE_REGEX_PATTERN = ' like_regex \' || to_jsonb(%s::text)::text || \' flag "i"'
 
 
 def _jsonpath_match(path: str, value: str) -> tuple[str, list[str]]:
@@ -72,26 +64,25 @@ def _jsonpath_match(path: str, value: str) -> tuple[str, list[str]]:
     """
     # `metadata` is left unqualified because Django may alias the Version
     # table in subqueries.
-    where = (
-        'jsonb_path_exists(metadata, '
-        f"('{path} ? (@ like_regex ' "
-        '|| to_jsonb(%s::text)::text || '
-        '\' flag "i")\')::jsonpath)'
-    )
+    where = f"jsonb_path_exists(metadata, ('{path} ? (@{_LIKE_REGEX_PATTERN})')::jsonpath)"
     return where, [re.escape(value)]
 
 
-def _apply_summary_filters(
-    queryset: QuerySet[Dandiset], clauses: list[tuple[str, str]]
+def _apply_version_filters(
+    queryset: QuerySet[Dandiset], wheres: list[tuple[str, list[str]]]
 ) -> QuerySet[Dandiset]:
-    """Restrict dandisets to those with a version whose assetsSummary matches every clause.
+    """Restrict dandisets to those with a version whose metadata satisfies every predicate.
 
-    Clauses are AND'd on a single Version row.
+    `wheres` is a list of `(where_clause, params)` pairs, one per operator,
+    from `_jsonpath_match`, `_contributor_where`, or `_affiliation_where`.
+    All predicates are AND'd on a single Version row, so a draft and a
+    published version never combine into a spurious match. Filtering by
+    `id__in` over distinct dandiset ids (instead of joining `versions`) keeps
+    each dandiset to one row even when several of its versions match.
     """
     version_qs = Version.objects.all()
-    for operator, value in clauses:
-        where, params = _jsonpath_match(_SUMMARY_PATH_OPS[operator], value)
-        # `where` interpolates only an allowlisted jsonpath; the user value
+    for where, params in wheres:
+        # `where` interpolates only allowlisted jsonpath text; the user value
         # is bound via params (and regex-escaped).
         version_qs = version_qs.extra(where=[where], params=params)  # noqa: S610
     return queryset.filter(id__in=version_qs.values_list('dandiset_id', flat=True).distinct())
@@ -123,6 +114,47 @@ def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Da
         user__in=matched_user_pks, permission__codename='owner'
     ).values('content_object')
     return queryset.filter(pk__in=owned_pks)
+
+
+def _contributor_where(value: str, role: str | None) -> tuple[str, list[str]]:
+    """Build a `jsonb_path_exists(metadata, ...)` where clause for a contributor[] predicate.
+
+    Matches a `contributor[]` element whose `name`, `email`, OR `identifier`
+    contains `value` (case-insensitive). If `role` is given, additionally
+    requires that element's `roleName` array to contain exactly
+    `dcite:<role>` (case-insensitive).
+    """
+    val_clause = (
+        f'@.name{_LIKE_REGEX_PATTERN}'
+        f' || @.email{_LIKE_REGEX_PATTERN}'
+        f' || @.identifier{_LIKE_REGEX_PATTERN}'
+    )
+    params = [re.escape(value)] * 3
+    if role is None:
+        jsonpath_expr = f"'$.contributor[*] ? ({val_clause})'"
+    else:
+        jsonpath_expr = (
+            f"'$.contributor[*] ? (({val_clause})"
+            f" && exists(@.roleName[*] ? (@{_LIKE_REGEX_PATTERN})))'"
+        )
+        # Anchored so `author:` can't also match a future `dcite:CoAuthor`.
+        params.append(f'^dcite:{re.escape(role)}$')
+    where = f'jsonb_path_exists(metadata, ({jsonpath_expr})::jsonpath)'
+    return where, params
+
+
+def _affiliation_where(value: str) -> tuple[str, list[str]]:
+    """Build a `jsonb_path_exists(metadata, ...)` where clause for the affiliation predicate.
+
+    Affiliations live at `contributor[].affiliation[]`, each with a `name` and
+    optionally an `identifier` (ROR URL). Matches case-insensitive substring
+    on either.
+    """
+    clause = f'@.name{_LIKE_REGEX_PATTERN} || @.identifier{_LIKE_REGEX_PATTERN}'
+    where = (
+        f"jsonb_path_exists(metadata, ('$.contributor[*].affiliation[*] ? ({clause})')::jsonpath)"
+    )
+    return where, [re.escape(value)] * 2
 
 
 _MODIFIED_ALIAS = '_search_latest_version_modified'
@@ -176,8 +208,13 @@ def apply_search_filters(
     if not parsed.operators:
         return queryset
 
-    summary_clauses: list[tuple[str, str]] = []
     annotated: set[str] = set()
+    # Metadata predicates (assetsSummary, contributor, affiliation) are
+    # accumulated and AND'd on the same Version, so a draft and a published
+    # version with different metadata never combine into a spurious match.
+    # Within that version each contributor predicate independently scans
+    # `contributor[*]`, so two operators may match different contributors.
+    version_wheres: list[tuple[str, list[str]]] = []
 
     for op in parsed.operators:
         key = op.key
@@ -185,14 +222,18 @@ def apply_search_filters(
         if not value:
             raise SearchSyntaxError(f'Operator "{key}" requires a value (e.g. {key}:something).')
 
-        if key in _DATE_OPS:
+        if key in DATE_OPS:
             queryset = _apply_date_filter(queryset, key, _parse_date(key, value), annotated)
-        elif key in _SUMMARY_PATH_OPS:
-            summary_clauses.append((key, value))
-        elif key in _OWNER_OPS:
+        elif key in SUMMARY_PATH_OPS:
+            version_wheres.append(_jsonpath_match(SUMMARY_PATH_OPS[key], value))
+        elif key in OWNER_OPS:
             queryset = _apply_owner_filter(queryset, value)
+        elif key in CONTRIBUTOR_ROLE_OPS:
+            version_wheres.append(_contributor_where(value, CONTRIBUTOR_ROLE_OPS[key]))
+        elif key in AFFILIATION_OPS:
+            version_wheres.append(_affiliation_where(value))
 
-    if summary_clauses:
-        queryset = _apply_summary_filters(queryset, summary_clauses)
+    if version_wheres:
+        queryset = _apply_version_filters(queryset, version_wheres)
 
     return queryset
