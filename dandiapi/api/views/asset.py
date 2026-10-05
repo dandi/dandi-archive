@@ -24,7 +24,7 @@ from dandiapi.api.services.asset import (
     change_asset,
     remove_asset_from_version,
 )
-from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
+from dandiapi.api.services.asset.exceptions import PublishedDandisetNotModifiableError
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.permissions.dandiset import (
     is_dandiset_owner,
@@ -360,7 +360,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             version=versions__version,
         )
         if version.version != 'draft':
-            raise DraftDandisetNotModifiableError
+            raise PublishedDandisetNotModifiableError
         if version.dandiset.unembargo_in_progress:
             raise DandisetUnembargoInProgressError
 
