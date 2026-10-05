@@ -125,6 +125,7 @@ const neurosiftURL = computed(() => {
   }
 
   return neurosiftDandisetUrl(
+    instanceStore.instanceName,
     currentDandiset.value.dandiset.identifier,
     currentDandiset.value.metadata.version,
   );

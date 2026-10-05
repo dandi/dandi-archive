@@ -54,19 +54,3 @@ def test_cli_requires_python_compatible_with_minimal_version(api_client):
 
     # Test for exact match
     assert cli_requires_python == dandischema_requires_python
-
-
-@pytest.mark.django_db
-def test_rest_info_neurosift(api_client, settings):
-    settings.DANDI_NEUROSIFT_DANDISET_URL = (
-        'https://neurosift.app/ember-dandiset/{dandiset_id}?dandisetVersion={dandiset_version}'
-    )
-    assert api_client.get('/api/info/').json()['services']['neurosift'] == {
-        'url': 'https://neurosift.app/ember-dandiset/{dandiset_id}?dandisetVersion={dandiset_version}'
-    }
-
-
-@pytest.mark.django_db
-def test_rest_info_neurosift_disabled(api_client, settings):
-    settings.DANDI_NEUROSIFT_DANDISET_URL = ''
-    assert api_client.get('/api/info/').json()['services']['neurosift'] is None

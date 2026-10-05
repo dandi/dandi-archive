@@ -218,15 +218,6 @@ DANDI_DOI_PUBLISH: bool = env.bool('DJANGO_DANDI_DOI_PUBLISH', default=False)
 
 DANDI_VALIDATION_JOB_INTERVAL: int = env.int('DJANGO_DANDI_VALIDATION_JOB_INTERVAL', default=60)
 
-# Template of the URL that opens a Dandiset of this instance in Neurosift, which uses a different
-# URL for each archive it supports (e.g. "&staging=1" for the DANDI sandbox, "/ember-dandiset/"
-# for EMBER). The web app fills in the "{dandiset_id}" and "{dandiset_version}" placeholders.
-# Set to an empty string to hide Neurosift links on an instance Neurosift does not support.
-DANDI_NEUROSIFT_DANDISET_URL: str = env.str(
-    'DJANGO_DANDI_NEUROSIFT_DANDISET_URL',
-    default='https://neurosift.app/dandiset/{dandiset_id}?dandisetVersion={dandiset_version}',
-)
-
 DANDI_AUTO_APPROVE_USERS = False
 
 DANDI_DEV_EMAIL: str

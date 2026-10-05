@@ -3,7 +3,6 @@ import { computed } from "vue";
 
 import type { AssetFile, AssetPath } from "@/types";
 import { useDandisetStore } from "@/stores/dandiset";
-import { useInstanceStore } from "@/stores/instance";
 
 type ExternalServiceEndpoint = string | ((item: ServiceUrlData) => string | null);
 
@@ -91,6 +90,7 @@ const EXTERNAL_SERVICES: ExternalService[] = [
 ];
 
 interface ServiceUrlData {
+  dandiInstance: string | undefined,
   dandisetId: string,
   dandisetVersion: string,
   assetId: string,
@@ -125,7 +125,10 @@ function serviceURL(endpoint: ExternalServiceEndpoint, data: ServiceUrlData): st
     .replaceAll('$asset_path$', data.assetPath);
 }
 
-export function getExternalServices(path: AssetPath, info: {dandisetId: string, dandisetVersion: string}) {
+export function getExternalServices(
+  path: AssetPath,
+  info: {dandiInstance: string | undefined, dandisetId: string, dandisetVersion: string},
+) {
   if (path.asset === null) {
     return [];
   }
@@ -162,6 +165,7 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
     .filter((service) => servicePredicate(service, path))
     .flatMap((service) => {
       const url = serviceURL(service.endpoint, {
+        dandiInstance: info.dandiInstance,
         dandisetId: info.dandisetId,
         dandisetVersion: info.dandisetVersion,
         assetId,
@@ -207,21 +211,35 @@ function redirectNeuroglancerUrl(item: ServiceUrlData): string | null {
   return baseUrl + encodeURIComponent(JSON.stringify(jsonObject));
 }
 
+// How Neurosift addresses a Dandiset of each DANDI instance it supports, keyed
+// by the instance name reported at /api/info/. EMBER-DANDI-SANDBOX is absent
+// since Neurosift only reads the EMBER-DANDI instance.
+const NEUROSIFT_DANDISET_ROUTES = new Map<string, { route: string, staging?: boolean }>([
+  ['DANDI', { route: 'dandiset' }],
+  ['DANDI-SANDBOX', { route: 'dandiset', staging: true }],
+  ['EMBER-DANDI', { route: 'ember-dandiset' }],
+]);
+
 /**
- * URL opening a Dandiset in Neurosift, which uses a different URL for each
- * archive it supports, so the template comes from the server's /api/info/.
- * Undefined if Neurosift does not support this instance, or the instance info
- * has not been loaded yet.
+ * URL opening a Dandiset in Neurosift, or undefined if Neurosift does not
+ * support the DANDI instance, or the instance is not known yet.
  */
-export function neurosiftDandisetUrl(dandisetId: string, dandisetVersion: string): string | undefined {
-  const template = useInstanceStore().info?.services.neurosift?.url;
-  if (!template) {
+export function neurosiftDandisetUrl(
+  dandiInstance: string | undefined,
+  dandisetId: string,
+  dandisetVersion: string,
+): string | undefined {
+  const neurosift = dandiInstance === undefined ? undefined : NEUROSIFT_DANDISET_ROUTES.get(dandiInstance);
+  if (!neurosift) {
     return undefined;
   }
 
-  return template
-    .replaceAll('{dandiset_id}', encodeURIComponent(dandisetId))
-    .replaceAll('{dandiset_version}', encodeURIComponent(dandisetVersion));
+  const url = new URL(`https://neurosift.app/${neurosift.route}/${dandisetId}`);
+  url.searchParams.set('dandisetVersion', dandisetVersion);
+  if (neurosift.staging) {
+    url.searchParams.set('staging', '1');
+  }
+  return url.toString();
 }
 
 /**
@@ -230,7 +248,7 @@ export function neurosiftDandisetUrl(dandisetId: string, dandisetVersion: string
  * which opens the asset in a tab of the Dandiset view
  */
 function neurosiftAssetTabUrl(item: ServiceUrlData): string | null {
-  const dandisetUrl = neurosiftDandisetUrl(item.dandisetId, item.dandisetVersion);
+  const dandisetUrl = neurosiftDandisetUrl(item.dandiInstance, item.dandisetId, item.dandisetVersion);
   if (!dandisetUrl) {
     return null;
   }

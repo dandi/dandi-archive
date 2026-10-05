@@ -442,6 +442,7 @@ async function getItems() {
       name: path.path.split('/').pop()!,
       // Inject services
       services: getExternalServices(path, {
+        dandiInstance: instanceStore.instanceName,
         dandisetId: props.identifier,
         dandisetVersion: props.version,
       }) || undefined,

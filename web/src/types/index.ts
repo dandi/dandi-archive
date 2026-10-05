@@ -91,14 +91,6 @@ export interface Info {
   schema_version: string;
   'cli-minimal-version': string;
   'cli-requires-python': string;
-  services: {
-    api: { url: string };
-    webui: { url: string };
-    jupyterhub: { url: string };
-    // URL template with {dandiset_id} and {dandiset_version} placeholders,
-    // or null if Neurosift does not support this instance.
-    neurosift: { url: string } | null;
-  };
 }
 
 export interface DandisetStats {
