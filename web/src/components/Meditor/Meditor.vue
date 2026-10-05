@@ -148,6 +148,24 @@
             </template>
             <span>Download Metadata</span>
           </v-tooltip>
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <v-btn
+                icon
+                variant="text"
+                :href="versionMetadataURI"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="View saved metadata in the API"
+                v-bind="props"
+              >
+                <v-icon color="primary">
+                  mdi-information
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>View saved metadata in the API</span>
+          </v-tooltip>
         </v-card-actions>
       </v-card>
       <v-tabs
@@ -286,6 +304,10 @@ const currentDandiset = computed(() => store.dandiset);
 const id = computed(() => currentDandiset.value?.dandiset.identifier);
 const baseApiUrl = import.meta.env.VITE_APP_DANDI_API_ROOT;
 const aiEditorURL = computed(() => `https://medit.dandiarchive.org/?dandiset=${id.value}&instance=${baseApiUrl}`);
+const versionMetadataURI = computed(() => {
+  const version = currentDandiset.value?.version;
+  return id.value && version ? dandiRest.versionMetadataURI(id.value, version) : undefined;
+});
 const schema: ComputedRef<JSONSchema7> = computed(() => store.schema);
 const model = computed(() => currentDandiset.value?.metadata);
 const readonly = computed(() => !store.userCanModifyDandiset);

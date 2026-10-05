@@ -89,3 +89,36 @@ test.describe("Meditor read-only access", () => {
     await expect(page.getByRole("button", { name: "Add Item" })).toHaveCount(0);
   });
 });
+
+test.describe("Meditor metadata API link", () => {
+  test("info button opens the version metadata record in the API", async ({ page }) => {
+    // Use a dandiset that the validation tests above do not save, so the record is stable
+    const dandisetId = "000004";
+    await page.goto(`${clientUrl}/#/dandiset/${dandisetId}/draft/`);
+    await page.getByText("Metadata", { exact: true }).click();
+
+    const infoLink = page.getByRole("link", { name: "View saved metadata in the API" });
+    await expect(infoLink).toBeVisible();
+    await expect(infoLink).toHaveAttribute("target", "_blank");
+    await expect(infoLink).toHaveAttribute(
+      "href",
+      new RegExp(`/api/dandisets/${dandisetId}/versions/draft/$`),
+    );
+    const href = (await infoLink.getAttribute("href"))!;
+
+    const popupPromise = page.waitForEvent("popup");
+    await infoLink.click();
+    const popup = await popupPromise;
+    await expect(popup).toHaveURL(href);
+
+    // The linked record is the same metadata the meditor is showing
+    const response = await popup.request.get(href);
+    expect(response.ok()).toBeTruthy();
+    const metadata = await response.json();
+    expect(metadata.schemaKey).toBe("Dandiset");
+    // The prefix depends on the instance name, so only check the number
+    expect(metadata.identifier).toMatch(new RegExp(`:${dandisetId}$`));
+    expect(metadata.version).toBe("draft");
+    await expect(page.getByLabel("Dandiset title")).toHaveValue(metadata.name);
+  });
+});
