@@ -84,6 +84,15 @@ class Dandiset(TimeStampedModel):
             return False
         return self.stars.filter(user=user).exists()
 
+    def num_active_uploads(self) -> int:
+        from dandiapi.api.models.upload import Upload
+        from dandiapi.zarr.models import ZarrUpload
+
+        return (
+            Upload.objects.filter(dandiset=self).count()
+            + ZarrUpload.objects.filter(zarr__dandiset=self).count()
+        )
+
 
 class DandisetUserObjectPermission(UserObjectPermissionBase):
     content_object = models.ForeignKey(Dandiset, on_delete=models.CASCADE)

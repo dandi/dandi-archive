@@ -29,6 +29,8 @@ if TYPE_CHECKING:
 
     from rest_framework.request import Request
 
+    from dandiapi.api.models.upload import BaseUpload
+
 supported_digests = {'dandi:dandi-etag': 'etag', 'dandi:sha2-256': 'sha256'}
 
 logger = logging.getLogger(__name__)
@@ -42,7 +44,7 @@ class DigestSerializer(serializers.Serializer):
 class UploadInitializationRequestSerializer(serializers.Serializer):
     dandiset = DandisetIdentifierField()
     contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
-    digest = DigestSerializer(required=False)
+    digest = DigestSerializer()
 
     def get_digest_data(self) -> tuple[str, int]:
         """Return a tuple of (etag, content_size), raising an exception if invalid."""
@@ -92,6 +94,25 @@ class UploadCompletionResponseSerializer(serializers.Serializer):
     body = serializers.CharField(trim_whitespace=False)
 
 
+def complete_multipart_upload(upload: BaseUpload, parts: list[TransferredPart]) -> Response:
+    """Complete the multipart upload of the given upload, returning the completion response."""
+    completion = TransferredParts(
+        object_key=upload.blob.name,
+        upload_id=str(upload.multipart_upload_id),
+        parts=parts,
+    )
+
+    completed_upload = DandiS3MultipartManager(upload.blob.storage).complete_upload(completion)
+
+    response_serializer = UploadCompletionResponseSerializer(
+        {
+            'complete_url': completed_upload.complete_url,
+            'body': completed_upload.body,
+        }
+    )
+    return Response(response_serializer.data)
+
+
 @swagger_auto_schema(
     method='POST',
     operation_summary='Fetch an existing asset blob by digest, if it exists.',
@@ -132,7 +153,7 @@ def blob_read_view(request: Request) -> HttpResponseBase:
 @permission_classes([IsApproved])
 def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
     """
-    Initialize a multipart upload.
+    Initialize a multipart upload of an asset blob.
 
     A list of parts will be returned, each of which has a presigned upload URL and a size.
     This URL communicates directly with the object store so the client can upload bytes directly.
@@ -143,24 +164,15 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
     request_serializer.is_valid(raise_exception=True)
 
     etag, content_size = request_serializer.get_digest_data()
+    data: dict = request_serializer.validated_data
 
-    dandiset = get_object_or_404(
-        get_visible_dandisets(request.user),
-        id=request_serializer.validated_data['dandiset'],
-    )
+    dandiset = get_object_or_404(get_visible_dandisets(request.user), id=data['dandiset'])
     if not is_dandiset_owner(dandiset, request.user):
         raise NotAllowedError
 
     # Ensure dandiset not in the process of unembargo
     if dandiset.unembargo_in_progress:
         raise DandisetUnembargoInProgressError
-
-    logger.info(
-        'Starting upload initialization of size %s, ETag %s to dandiset %s',
-        content_size,
-        etag,
-        dandiset,
-    )
 
     existing_asset_blob = AssetBlob.objects.filter(etag=etag).first()
     if existing_asset_blob is not None:
@@ -170,15 +182,18 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
             headers={'Location': str(existing_asset_blob.blob_id)},
         )
 
-    logger.info('Blob with ETag %s does not yet exist', etag)
-
     upload, initialization = Upload.initialize_multipart_upload(etag, content_size, dandiset)
-    logger.info('Upload of ETag %s initialized', etag)
+    logger.info(
+        'AssetBlob upload initialized (size %s, ETag %s, dandiset %s)',
+        content_size,
+        etag,
+        dandiset,
+    )
+
     upload.save()
     logger.info('Upload of ETag %s saved', etag)
 
     response_serializer = UploadInitializationResponseSerializer(initialization)
-    logger.info('Upload of ETag %s serialized', etag)
     return Response(response_serializer.data)
 
 
@@ -192,7 +207,7 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
 @permission_classes([IsApproved])
 def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
     """
-    Complete a multipart upload.
+    Complete a multipart upload of an asset blob.
 
     After all data has been uploaded using the URLs provided by initialize, this endpoint must
     be called to create the object in the object store. A presigned URL that performs the
@@ -206,21 +221,7 @@ def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
     if upload.embargoed and not is_dandiset_owner(upload.dandiset, request.user):
         raise Http404 from None
 
-    completion = TransferredParts(
-        object_key=upload.blob.name,
-        upload_id=str(upload.multipart_upload_id),
-        parts=parts,
-    )
-
-    completed_upload = DandiS3MultipartManager(upload.blob.storage).complete_upload(completion)
-
-    response_serializer = UploadCompletionResponseSerializer(
-        {
-            'complete_url': completed_upload.complete_url,
-            'body': completed_upload.body,
-        }
-    )
-    return Response(response_serializer.data)
+    return complete_multipart_upload(upload, parts)
 
 
 @swagger_auto_schema(
@@ -235,25 +236,16 @@ def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
 @permission_classes([IsApproved])
 def upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
     """
-    Verify that an upload completed successfully and mint a new AssetBlob.
+    Verify that an asset blob upload completed successfully.
 
-    Also starts the asynchronous checksum calculation process.
+    This mints a new AssetBlob and starts the asynchronous checksum calculation process.
     """
     upload = get_object_or_404(Upload, upload_id=upload_id)
     if upload.embargoed and not is_dandiset_owner(upload.dandiset, request.user):
         raise Http404 from None
 
-    # Verify that the upload was successful
-    if not upload.object_key_exists():
-        raise ValidationError('Object does not exist.')
-    if upload.size != upload.actual_size():
-        raise ValidationError(
-            f'Size {upload.size} does not match actual size {upload.actual_size()}.'
-        )
-    if upload.etag != upload.actual_etag():
-        raise ValidationError(
-            f'ETag {upload.etag} does not match actual ETag {upload.actual_etag()}.'
-        )
+    # This raises an exception if unsuccessful
+    upload.validate_successful()
 
     with transaction.atomic():
         # Avoid a race condition where two clients are uploading the same blob at the same time.
