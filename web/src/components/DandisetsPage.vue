@@ -141,6 +141,17 @@
         </v-menu>
       </v-btn>
     </v-toolbar>
+    <!--
+      Immediate feedback that a request is in flight. Searches can take
+      several seconds, and without this the previous results sit on screen
+      with nothing to indicate that anything is happening.
+    -->
+    <v-progress-linear
+      :active="loading"
+      indeterminate
+      color="primary"
+      height="3"
+    />
     <v-alert
       v-if="searchActive && searchError"
       type="error"
@@ -153,12 +164,24 @@
     <div
       v-else-if="searchActive && djangoDandisetRequest"
       class="mx-4 mx-md-8 mt-4 text-h6"
+      role="status"
     >
-      {{ djangoDandisetRequest.count }} {{ djangoDandisetRequest.count === 1 ? 'result' : 'results' }} found
+      <template v-if="loading">
+        Searching&hellip;
+      </template>
+      <template v-else>
+        {{ djangoDandisetRequest.count }} {{ djangoDandisetRequest.count === 1 ? 'result' : 'results' }} found
+      </template>
     </div>
+    <!--
+      Stale results stay mounted (rather than blanking the page) but are dimmed
+      so they don't read as the answer to the query being run.
+    -->
     <DandisetList
       v-if="dandisets && dandisets.length"
       :dandisets="dandisets"
+      :class="{ 'results-stale': loading }"
+      :inert="loading"
     />
     <v-container v-else>
       <v-row
@@ -168,7 +191,7 @@
       >
         <v-col>
           <v-progress-circular
-            v-if="!dandisets"
+            v-if="loading || !dandisets"
             indeterminate
           />
           <slot
@@ -241,23 +264,45 @@ const sortField = computed(() => sortingOptions[sortOption.value].djangoField);
 
 const djangoDandisetRequest: Ref<Paginated<Dandiset> | null> = ref(null);
 const searchError: Ref<string | null> = ref(null);
+const loading = ref(true);
+// Monotonically increasing id for the in-flight request. Only the newest one
+// is allowed to write results, so a slow earlier response can't overwrite a
+// newer one that already came back.
+let latestRequest = 0;
 watchEffect(async () => {
   const ordering = ((sortDir.value === -1) ? '-' : '') + sortField.value;
+  // Read every reactive dependency before the first `await`, or watchEffect
+  // won't track it.
+  const params = {
+    page: page.value,
+    page_size: DANDISETS_PER_PAGE,
+    ordering,
+    user: props.user ? 'me' : null,
+    search: searchActive.value ? route.query.search : null,
+    starred: props.starred ? true : null,
+    draft: props.user ? true : showDrafts.value,
+    empty: props.user ? true : showEmpty.value,
+    embargoed: props.user,
+  };
+  latestRequest += 1;
+  const thisRequest = latestRequest;
+  loading.value = true;
+  // Clear the previous query's error, or its alert keeps rendering and
+  // suppresses the loading state below it for the whole of this request.
+  // `searchError` is only read in the template, so writing it here doesn't
+  // feed back into this effect.
+  searchError.value = null;
   try {
-    const response = await dandiRest.dandisets({
-      page: page.value,
-      page_size: DANDISETS_PER_PAGE,
-      ordering,
-      user: props.user ? 'me' : null,
-      search: searchActive.value ? route.query.search : null,
-      starred: props.starred ? true : null,
-      draft: props.user ? true : showDrafts.value,
-      empty: props.user ? true : showEmpty.value,
-      embargoed: props.user,
-    });
+    const response = await dandiRest.dandisets(params);
+    if (thisRequest !== latestRequest) {
+      return;
+    }
     djangoDandisetRequest.value = response.data;
     searchError.value = null;
   } catch (err) {
+    if (thisRequest !== latestRequest) {
+      return;
+    }
     // The advanced-search backend returns 400 with `{ search: "..." }` when
     // the query syntax is invalid. Surface that inline instead of letting
     // it bubble up to the global "something went wrong" snackbar.
@@ -273,6 +318,10 @@ watchEffect(async () => {
       }
     }
     throw err;
+  } finally {
+    if (thisRequest === latestRequest) {
+      loading.value = false;
+    }
   }
 });
 
@@ -312,6 +361,12 @@ watch(queryParams, (params) => {
 </script>
 
 <style scoped>
+/* Purely visual; `inert` on the list itself is what stops interaction. */
+.results-stale {
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
 .btn-group--sort-options {
   min-width: 84px;
 }
