@@ -81,9 +81,16 @@ test.describe("Test meditor validation errors", async () => {
 });
 
 test.describe("Meditor read-only access", () => {
-  test("anonymous user does not see Add Item button on Contributors tab", async ({ page }) => {
+  test("anonymous user can open the API metadata record but does not see Add Item button", async ({ page }) => {
     await page.goto(`${clientUrl}/#/dandiset/000003/draft/`);
     await page.getByText("Metadata", { exact: true }).click();
+
+    const infoLink = page.getByRole("link", { name: "View metadata in the API" });
+    await expect(infoLink).toHaveAttribute("href", /\/api\/dandisets\/000003\/versions\/draft\/$/);
+    const popupPromise = page.waitForEvent("popup");
+    await infoLink.click();
+    await expect(await popupPromise).toHaveURL(/\/api\/dandisets\/000003\/versions\/draft\/$/);
+
     await page.getByRole("tab", { name: "Dandiset contributors" }).click();
 
     await expect(page.getByRole("button", { name: "Add Item" })).toHaveCount(0);
