@@ -40,6 +40,12 @@
         </v-card>
       </v-dialog>
 
+      <TableViewer
+        :items="items"
+        :identifier="identifier"
+        :version="version"
+      />
+
       <v-row>
         <v-col :cols="12">
           <v-card>
@@ -125,8 +131,8 @@
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
-                :href="item.asset ? inlineURI(item.asset.asset_id) : undefined"
-                :to="item.asset ? undefined : locationRoute(item.path)"
+                :href="item.asset && !tableViewerRoute(item, route) ? inlineURI(item.asset.asset_id) : undefined"
+                :to="tableViewerRoute(item, route) || (item.asset ? undefined : locationRoute(item.path))"
                 :active="false"
               >
                 <template #prepend>
@@ -166,8 +172,10 @@
                         <v-btn
                           icon
                           variant="text"
-                          :href="inlineURI(item.asset.asset_id)"
+                          :href="tableViewerRoute(item, route) ? undefined : inlineURI(item.asset.asset_id)"
+                          :to="tableViewerRoute(item, route)"
                           v-bind="openInBtnProps"
+                          @click.stop
                         >
                           <v-icon color="primary">
                             mdi-open-in-app
@@ -186,6 +194,7 @@
                           variant="text"
                           :href="downloadURI(item.asset.asset_id)"
                           v-bind="downloadProps"
+                          @click.stop
                         >
                           <v-icon color="primary">
                             mdi-download
@@ -299,6 +308,8 @@ import type { AssetPath } from '@/types';
 import { getExternalServices } from '@/utils/externalServices';
 import FileBrowserPagination from '@/components/FileBrowser/FileBrowserPagination.vue';
 import FileUploadInstructions from '@/components/FileBrowser/FileUploadInstructions.vue';
+import TableViewer from '@/components/FileBrowser/TableViewer.vue';
+import { tableViewerRoute } from '@/components/FileBrowser/tableViewer';
 
 const rootDirectory = '';
 const FILES_PER_PAGE = 15;
