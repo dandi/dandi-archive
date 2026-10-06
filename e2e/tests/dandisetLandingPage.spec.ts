@@ -54,6 +54,18 @@ test.describe("dandiset landing page", async () => {
     await expect(page.getByText("Error: Dandiset does not exist")).toHaveCount(1);
   });
 
+  test("raw metadata link points to the metadata record in the API", async ({ page }) => {
+    await page.goto(`${clientUrl}/#/dandiset/000003/draft/`);
+
+    const rawMetadataLink = page.getByRole("link", { name: "Raw metadata" });
+    await expect(rawMetadataLink).toHaveAttribute("href", /\/api\/dandisets\/000003\/versions\/draft\/$/);
+
+    const href = await rawMetadataLink.getAttribute("href");
+    const response = await page.request.get(href!);
+    expect(response.ok()).toBeTruthy();
+    expect((await response.json()).identifier).toContain("000003");
+  });
+
   test.describe("how to cite tab", () => {
     // Run these tests serially so we can create a single user + dandiset for the entire
     // set, instead of creating a fresh user + dandiset per-test. This reduces load on the

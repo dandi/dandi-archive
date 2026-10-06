@@ -291,6 +291,9 @@ const dandiRest = {
     const { data } = await client.get('stats/');
     return data;
   },
+  versionMetadataURI(identifier: string, version: string) {
+    return `${dandiApiRoot}dandisets/${identifier}/versions/${version}/`;
+  },
   assetManifestURI(identifier: string, version: string) {
     return `${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets/`;
   },
