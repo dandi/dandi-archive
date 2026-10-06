@@ -43,6 +43,57 @@ def test_streaming_file_upload(embargo_status):
         assert tags == {}
 
 
+def test_streaming_file_upload_multipart(mocker):
+    path = 'foo/multipart.txt'
+    put_object = mocker.spy(default_storage.s3_client, 'put_object')
+    # Enough to need three parts, the last of which is smaller than the others
+    chunk = b'0123456789abcdef' * 1024
+    chunk_count = 1100
+
+    with _streaming_file_upload(path, embargoed=False) as stream:
+        for _ in range(chunk_count):
+            stream.write(chunk)
+
+    put_object.assert_not_called()
+    assert default_storage.size(path) == len(chunk) * chunk_count
+    assert default_storage.e_tag(path).endswith('-3')
+    with default_storage.open(path) as f:
+        assert f.read() == chunk * chunk_count
+
+
+def test_streaming_file_upload_empty():
+    path = 'foo/empty.txt'
+    default_storage.save(path, ContentFile(b'stale'))
+
+    with _streaming_file_upload(path, embargoed=False):
+        pass
+
+    assert default_storage.size(path) == 0
+
+
+@pytest.mark.parametrize('size', [100, 9 * 1024 * 1024], ids=['single-part', 'multipart'])
+def test_streaming_file_upload_error(size):
+    path = 'foo/error.txt'
+    default_storage.save(path, ContentFile(b'original'))
+
+    def failing_upload():
+        with _streaming_file_upload(path, embargoed=True) as stream:
+            stream.write(b'a' * size)
+            raise RuntimeError('oops')
+
+    with pytest.raises(RuntimeError, match='oops'):
+        failing_upload()
+
+    # The existing object must be untouched, and nothing may be left behind
+    with default_storage.open(path) as f:
+        assert f.read() == b'original'
+    assert default_storage.get_tags(path) == {}
+    uploads = default_storage.s3_client.list_multipart_uploads(
+        Bucket=default_storage.bucket_name, Prefix=path
+    )
+    assert uploads.get('Uploads', []) == []
+
+
 @pytest.mark.django_db
 def test_write_dandiset_jsonld(version: Version):
     write_dandiset_jsonld(version)

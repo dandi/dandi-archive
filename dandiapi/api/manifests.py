@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-import tempfile
 from typing import IO, TYPE_CHECKING, Any
 from urllib.parse import urlparse, urlunparse
 
 from django.conf import settings
-from django.core.files.base import File
 from django.core.files.storage import default_storage
 from rest_framework.renderers import JSONRenderer
 import yaml
@@ -73,11 +71,8 @@ def all_manifest_filepaths(version: Version) -> list[str]:
 
 @contextmanager
 def _streaming_file_upload(path: str, *, embargoed: bool) -> Generator[IO[bytes]]:
-    with tempfile.NamedTemporaryFile(mode='r+b') as outfile:
+    with default_storage.streaming_upload(path) as outfile:
         yield outfile
-        outfile.seek(0)
-
-        default_storage.save(path, File(outfile))
 
     if embargoed:
         default_storage.put_tags(path, {'embargoed': 'true'})

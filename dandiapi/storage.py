@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 import hashlib
 import io
 import json
@@ -12,10 +13,11 @@ from storages.backends.s3 import S3Storage
 from storages.utils import clean_name
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Buffer, Generator, Mapping
 
     from mypy_boto3_s3.client import S3Client
     from mypy_boto3_s3.service_resource import S3ServiceResource
+    from mypy_boto3_s3.type_defs import CompletedPartTypeDef
 
 
 class _WritableSha256(io.RawIOBase):
@@ -35,6 +37,79 @@ class _WritableSha256(io.RawIOBase):
         return True
 
 
+class _MultipartUploadWriter(io.RawIOBase):
+    """
+    File-like object that uploads everything written to it as a single S3 object.
+
+    Content is uploaded one part at a time as it is written, so at most one part is ever held in
+    memory and nothing is written to local disk. The object is not created (or replaced) until
+    `complete` is called.
+    """
+
+    # Every part but the last must be at least 5 MB, and there may be at most 10,000 parts,
+    # so this allows objects of up to ~80 GB.
+    part_size = 8 * 1024 * 1024
+
+    def __init__(self, *, s3_client: S3Client, bucket: str, key: str, params: dict[str, Any]):
+        self._s3_client = s3_client
+        self._bucket = bucket
+        self._key = key
+        self._params = params
+        self._buffer = bytearray()
+        self._upload_id: str | None = None
+        self._parts: list[CompletedPartTypeDef] = []
+
+    def writable(self) -> bool:
+        return True
+
+    def write(self, data: Buffer) -> int:
+        size_before = len(self._buffer)
+        self._buffer += data
+        written = len(self._buffer) - size_before
+        if len(self._buffer) >= self.part_size:
+            self._upload_part()
+        return written
+
+    def _upload_part(self) -> None:
+        if self._upload_id is None:
+            self._upload_id = self._s3_client.create_multipart_upload(
+                Bucket=self._bucket, Key=self._key, **self._params
+            )['UploadId']
+        part_number = len(self._parts) + 1
+        response = self._s3_client.upload_part(
+            Bucket=self._bucket,
+            Key=self._key,
+            UploadId=self._upload_id,
+            PartNumber=part_number,
+            Body=bytes(self._buffer),
+        )
+        self._parts.append({'ETag': response['ETag'], 'PartNumber': part_number})
+        self._buffer.clear()
+
+    def complete(self) -> None:
+        if self._upload_id is None:
+            # Everything fit in a single part (or nothing was written at all, which a multipart
+            # upload cannot represent), so a plain PUT is sufficient.
+            self._s3_client.put_object(
+                Bucket=self._bucket, Key=self._key, Body=bytes(self._buffer), **self._params
+            )
+            return
+        if self._buffer:
+            self._upload_part()
+        self._s3_client.complete_multipart_upload(
+            Bucket=self._bucket,
+            Key=self._key,
+            UploadId=self._upload_id,
+            MultipartUpload={'Parts': self._parts},
+        )
+
+    def abort(self) -> None:
+        if self._upload_id is not None:
+            self._s3_client.abort_multipart_upload(
+                Bucket=self._bucket, Key=self._key, UploadId=self._upload_id
+            )
+
+
 class DandiS3Storage(S3Storage):
     """
     An enhanced S3Storage.
@@ -46,6 +121,7 @@ class DandiS3Storage(S3Storage):
     * Provides an API to get the ETag of an object
     * Provides an API to tag objects
     * Provides an API to efficiently calculate the SHA256 checksums of an object
+    * Provides an API to upload an object of unknown size from a stream
     """
 
     # S3Storage provides this, but doesn't properly annotate it
@@ -180,6 +256,28 @@ class DandiS3Storage(S3Storage):
     def delete_tags(self, name: str) -> None:
         name = self._normalize_name(clean_name(name))
         self.s3_client.delete_object_tagging(Bucket=self.bucket_name, Key=name)
+
+    @contextmanager
+    def streaming_upload(self, name: str) -> Generator[_MultipartUploadWriter]:
+        """
+        Upload an object by writing to a stream, without buffering it all in memory or on disk.
+
+        The object is only created (or replaced) once the block exits successfully. If the block
+        raises, the upload is aborted and any existing object is left untouched.
+        """
+        name = self._normalize_name(clean_name(name))
+        writer = _MultipartUploadWriter(
+            s3_client=self.s3_client,
+            bucket=self.bucket_name,
+            key=name,
+            params=self._get_write_parameters(name),
+        )
+        try:
+            yield writer
+        except BaseException:
+            writer.abort()
+            raise
+        writer.complete()
 
     def sha256_checksum(self, name: str) -> str:
         """Efficiently compute the SHA256 checksum of an object."""
