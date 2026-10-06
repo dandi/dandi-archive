@@ -1,3 +1,7 @@
+<<<<<<< before updating
+=======
+# shellcheck shell=bash
+>>>>>>> after updating
 # Export environment variables from the .env file in the first argument.
 # If no argument is given, default to "dev/.env.docker-compose-native".
 # This file must be sourced, not run.
@@ -21,6 +25,10 @@ fi
 # Using "set -a" allows .env files with spaces or comments to work seamlessly
 # https://stackoverflow.com/a/45971167
 set -a
+<<<<<<< before updating
+=======
+# shellcheck source=.env.docker-compose-native
+>>>>>>> after updating
 . "$_dotenv_file"
 set +a
 

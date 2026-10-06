@@ -15,7 +15,7 @@ services:
       - postgres:/var/lib/postgresql
 
   rabbitmq:
-    image: rabbitmq:management-alpine
+    image: rabbitmq:4.3-management-alpine
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       start_period: 30s
@@ -26,8 +26,15 @@ services:
       - rabbitmq:/var/lib/rabbitmq
 
   minio:
+<<<<<<< before updating
     # quay.io/minio/minio requires a login since 2026-09-24
     image: bitnamilegacy/minio:latest
+=======
+    image: quay.io/minio/minio:latest
+    # When run with a TTY, minio prints credentials on startup
+    tty: true
+    command: ["server", "/data", "--console-address", ":9001"]
+>>>>>>> after updating
     environment:
       MINIO_ROOT_USER: minioAccessKey
       MINIO_ROOT_PASSWORD: minioSecretKey
