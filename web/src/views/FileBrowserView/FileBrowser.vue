@@ -40,12 +40,10 @@
         </v-card>
       </v-dialog>
 
-      <TableViewerDialog
-        :model-value="tableViewerOpen"
-        :item="itemToView"
+      <TableViewer
+        :items="items"
         :identifier="identifier"
         :version="version"
-        @update:model-value="$event ? undefined : closeTableViewer()"
       />
 
       <v-row>
@@ -133,8 +131,8 @@
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
-                :href="rowHref(item)"
-                :to="rowRoute(item)"
+                :href="item.asset && !tableViewerRoute(item, route) ? inlineURI(item.asset.asset_id) : undefined"
+                :to="tableViewerRoute(item, route) || (item.asset ? undefined : locationRoute(item.path))"
                 :active="false"
               >
                 <template #prepend>
@@ -168,19 +166,14 @@
                     </v-btn>
                   </v-list-item-action>
 
-                  <!--
-                    Opening a tabular asset raw only makes the browser download
-                    it, so those open in the table viewer instead, here and on
-                    the row itself.
-                  -->
                   <v-list-item-action v-if="item.asset">
                     <v-tooltip location="top">
                       <template #activator="{ props: openInBtnProps }">
                         <v-btn
                           icon
                           variant="text"
-                          :href="rowHref(item)"
-                          :to="rowRoute(item)"
+                          :href="tableViewerRoute(item, route) ? undefined : inlineURI(item.asset.asset_id)"
+                          :to="tableViewerRoute(item, route)"
                           v-bind="openInBtnProps"
                           @click.stop
                         >
@@ -315,20 +308,11 @@ import type { AssetPath } from '@/types';
 import { getExternalServices } from '@/utils/externalServices';
 import FileBrowserPagination from '@/components/FileBrowser/FileBrowserPagination.vue';
 import FileUploadInstructions from '@/components/FileBrowser/FileUploadInstructions.vue';
-import TableViewerDialog from '@/components/FileBrowser/TableViewerDialog.vue';
-import { isTabularFile } from '@/utils/tabular';
+import TableViewer from '@/components/FileBrowser/TableViewer.vue';
+import { tableViewerRoute } from '@/components/FileBrowser/tableViewer';
 
 const rootDirectory = '';
 const FILES_PER_PAGE = 15;
-// Query parameter holding the path of the asset open in the table viewer.
-const TABLE_QUERY_PARAM = 'table';
-
-function firstQueryValue(value: unknown): string | undefined {
-  if (Array.isArray(value)) {
-    return value[0] ?? undefined;
-  }
-  return typeof value === 'string' ? value : undefined;
-}
 
 // AssetService is slightly different from Service
 interface AssetService {
@@ -385,10 +369,6 @@ const itemToDelete: Ref<AssetPath | null> = ref(null);
 
 const deletePopupOpen = ref(false);
 
-// The tabular asset currently displayed in the table viewer
-const itemToView: Ref<AssetPath | null> = ref(null);
-const tableViewerOpen = ref(false);
-
 const page = ref(1);
 const pages = ref(0);
 const updating = ref(false);
@@ -417,69 +397,6 @@ function locationRoute(newLocation: string): RouteLocationRaw {
     name: 'fileBrowser',
     query: { location: newLocation, page: '1' },
   } as RouteLocationRaw;
-}
-
-// The route for the current listing with the table viewer open on an asset:
-// tabular rows are links too, and the open table is recorded in the URL, so the
-// link can be shared and comes back with the viewer already open. The route
-// watcher does the opening.
-function tableRoute(item: AssetPath): RouteLocationRaw {
-  return {
-    name: 'fileBrowser',
-    query: { ...route.query, [TABLE_QUERY_PARAM]: item.path },
-  } as RouteLocationRaw;
-}
-
-function viewableAsTable(item: AssetPath): boolean {
-  return !!item.asset && isTabularFile(item.path);
-}
-
-// Rows link to the raw asset, except for tabular assets, which open in the
-// table viewer, and directories, which move into the listing.
-function rowHref(item: AssetPath): string | undefined {
-  return item.asset && !viewableAsTable(item)
-    ? inlineURI(item.asset.asset_id)
-    : undefined;
-}
-
-function rowRoute(item: AssetPath): RouteLocationRaw | undefined {
-  if (!item.asset) {
-    return locationRoute(item.path);
-  }
-  return viewableAsTable(item) ? tableRoute(item) : undefined;
-}
-
-function closeTableViewer() {
-  // Opening the viewer pushes a history entry, so closing it goes back, leaving
-  // the browser's back button on the entry the user came from rather than on the
-  // open viewer. A link straight into the viewer has nothing to go back to, so
-  // that case drops the query parameter instead.
-  const { back } = router.options.history.state;
-  if (typeof back === 'string' && !back.includes(`${TABLE_QUERY_PARAM}=`)) {
-    router.back();
-    return;
-  }
-
-  const query = { ...route.query };
-  delete query[TABLE_QUERY_PARAM];
-  router.replace({ ...route, query } as RouteLocationRaw);
-}
-
-// Open (or close) the viewer to match the current URL.
-function syncTableViewerWithRoute() {
-  const target = firstQueryValue(route.query[TABLE_QUERY_PARAM]);
-  const match = target
-    ? items.value?.find(
-      (item) => item.path === target && viewableAsTable(item),
-    )
-    : undefined;
-
-  if (match) {
-    itemToView.value = match;
-    tableViewerOpen.value = true;
-  } else {
-    tableViewerOpen.value = false;
-  }
 }
 
 function downloadURI(asset_id: string) {
@@ -514,7 +431,6 @@ async function getItems() {
     if (axios.isAxiosError(e) && e.response?.status === 404) {
       items.value = [];
       updating.value = false;
-      syncTableViewerWithRoute();
       return;
     }
     throw e;
@@ -541,9 +457,6 @@ async function getItems() {
   // Assign values
   items.value = extendedItems;
   updating.value = false;
-
-  // The viewer can only be opened once the item it refers to has been loaded.
-  syncTableViewerWithRoute();
 }
 
 function setItemToDelete(item: AssetPath) {
@@ -584,22 +497,16 @@ watch(location, () => {
   } as RouteLocationRaw);
 });
 
-// The listing last requested, so that query changes which don't affect it
-// (opening or closing the table viewer) don't trigger a refetch.
-let fetchedListing: string | null = null;
-
 // go to the directory specified in the URL if it changes
 watch(() => route.query, (newRouteQuery) => {
-  location.value = firstQueryValue(newRouteQuery.location) || rootDirectory;
+  location.value = (
+    Array.isArray(newRouteQuery.location)
+      ? newRouteQuery.location[0]
+      : newRouteQuery.location
+  ) || rootDirectory;
 
-  const listing = `${location.value}?page=${Number(newRouteQuery.page) || page.value}`;
-  if (listing !== fetchedListing) {
-    fetchedListing = listing;
-    // Retrieve with new location
-    getItems();
-  } else {
-    syncTableViewerWithRoute();
-  }
+  // Retrieve with new location
+  getItems();
 }, { immediate: true });
 
 function changePage(newPage: number) {
