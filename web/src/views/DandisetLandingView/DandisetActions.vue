@@ -67,9 +67,28 @@
       class="px-4"
       density="compact"
     >
+      <!-- Raw metadata -->
+      <v-list-item
+        v-if="rawMetadataLocation"
+        id="view-raw-metadata"
+        class="justify-space-between border border-b-0 rounded-t"
+        :href="rawMetadataLocation"
+      >
+        <template #prepend>
+          <v-icon
+            color="primary"
+            start
+          >
+            mdi-code-json
+          </v-icon>
+          <v-list-item-title>Raw metadata</v-list-item-title>
+        </template>
+      </v-list-item>
+
       <!-- Manifest -->
       <v-list-item
-        class="justify-space-between border rounded"
+        class="justify-space-between border"
+        :class="rawMetadataLocation ? 'rounded-b' : 'rounded'"
         :href="manifestLocation"
       >
         <template #prepend>
@@ -133,6 +152,18 @@ const fileBrowserLink: ComputedRef<RouteLocationRaw|undefined> = computed(() => 
       location: '',
     },
   };
+});
+
+// The API link is opened by the browser without the user's credentials, so it would only
+// lead to an authentication error for a dandiset that isn't open.
+const rawMetadataLocation = computed(() => {
+  if (!currentDandiset.value || currentDandiset.value.dandiset.embargo_status !== 'OPEN') {
+    return undefined;
+  }
+  return dandiRest.versionMetadataURI(
+    currentDandiset.value.dandiset.identifier,
+    currentDandiset.value.version,
+  );
 });
 
 const manifestLocation = computed(
