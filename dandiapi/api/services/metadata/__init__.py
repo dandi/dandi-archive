@@ -101,6 +101,11 @@ def version_aggregate_assets_summary(version: Version) -> None:
         .iterator()
     )
 
+    # An unchanged summary is not a modification; do not bump `modified`.
+    if assets_summary == version.metadata.get('assetsSummary'):
+        logger.debug('assetsSummary for version %s is unchanged; not updating', version.id)
+        return
+
     updated_metadata = {**version.metadata, 'assetsSummary': assets_summary}
 
     updated_count = Version.objects.filter(id=version.id, metadata=version.metadata).update(
