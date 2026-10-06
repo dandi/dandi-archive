@@ -129,7 +129,9 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     Status = AssetStatus
 
     class Meta:
-        ordering = ['created']
+        # `id` breaks ties between assets created at the same instant, so that paginated
+        # listings (LIMIT/OFFSET) neither repeat nor skip assets at page boundaries.
+        ordering = ['created', 'id']
         indexes = [
             # Other statuses are likely too common to index, but pending assets are continually
             # polled and being moved through the pipeline.
