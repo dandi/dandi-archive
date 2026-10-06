@@ -1,3 +1,30 @@
+# v1.0.18 (Tue Oct 06 2026)
+
+:tada: This release contains work from new contributors! :tada:
+
+Thanks for all your work!
+
+:heart: GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+:heart: Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🐛 Bug Fix
+
+- Use correct environment variable to configure Sentry [#2967](https://github.com/dandi/dandi-archive/pull/2967) ([@waxlamp](https://github.com/waxlamp))
+- Run local MinIO from `bitnamilegacy/minio`; Quay now requires a login [#2940](https://github.com/dandi/dandi-archive/pull/2940) ([@claude](https://github.com/claude) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Stable default order for asset listings; allow `?order=...,id` [#2945](https://github.com/dandi/dandi-archive/pull/2945) ([@claude](https://github.com/claude) [@yarikoptic](https://github.com/yarikoptic) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Account for AWS GiB billing in S3 backup cost estimates [#2935](https://github.com/dandi/dandi-archive/pull/2935) ([@claude](https://github.com/claude) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### Authors: 5
+
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v1.0.17 (Sun Oct 04 2026)
 
 :tada: This release contains work from a new contributor! :tada:
