@@ -531,7 +531,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     )
     # TODO: move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
-    def users(self, request, dandiset__pk):  # noqa: C901
+    def users(self, request, dandiset__pk):
         dandiset: Dandiset = self.get_object()
         if request.method == 'PUT':
             if dandiset.unembargo_in_progress:
@@ -548,29 +548,36 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             if not serializer.validated_data:
                 raise ValidationError('Cannot remove all draft owners')
 
-            # Get all owners that have the provided username in one of the two possible locations
+            # Resolve each requested username to at most one User. SocialAccount.extra_data['login']
+            # is the canonical identifier we expose to clients, so it wins over Django
+            # User.username (which is the user's email). Order_by makes the choice
+            # deterministic if multiple SocialAccount rows share a login (e.g. someone
+            # reused a freed GitHub username) -- pick the user with the most recent activity.
             usernames = [owner['username'] for owner in serializer.validated_data]
-            user_owners = list(User.objects.filter(username__in=usernames))
-            socialaccount_owners = list(
-                SocialAccount.objects.select_related('user').filter(extra_data__login__in=usernames)
-            )
+            social_by_login: dict[str, User] = {
+                acc.extra_data['login']: acc.user
+                for acc in SocialAccount.objects.select_related('user')
+                .filter(extra_data__login__in=usernames)
+                .order_by('-user__last_login', '-user__date_joined')
+            }
+            fallback_by_username: dict[str, User] = {
+                u.username: u for u in User.objects.filter(username__in=usernames)
+            }
 
-            # Check that all owners were found
-            if len(user_owners) + len(socialaccount_owners) < len(usernames):
-                username_set = {
-                    *(user.username for user in user_owners),
-                    *(owner.extra_data['login'] for owner in socialaccount_owners),
-                }
+            resolved: dict[str, User] = {}
+            for username in usernames:
+                user = social_by_login.get(username) or fallback_by_username.get(username)
+                if user is None:
+                    raise ValidationError(f'User {username} not found')
+                resolved[username] = user
 
-                # Raise exception on first username in list that's not found
-                for username in usernames:
-                    if username not in username_set:
-                        raise ValidationError(f'User {username} not found')
+            # Deduplicate by User.pk in case two distinct input usernames happen to resolve
+            # to the same Django user (e.g. one matched a SocialAccount, another matched
+            # the user's email-as-username fallback).
+            owners = list({u.pk: u for u in resolved.values()}.values())
 
-            # All owners found
             with transaction.atomic():
                 dandiset_locked = Dandiset.objects.select_for_update().get(pk=dandiset__pk)
-                owners = user_owners + [acc.user for acc in socialaccount_owners]
                 removed_owners, added_owners = replace_dandiset_owners(dandiset_locked, owners)
                 dandiset_locked.save()
 
@@ -586,8 +593,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         owners = []
         for owner_user in get_dandiset_owners(dandiset):
-            try:
-                owner_account = SocialAccount.objects.get(user=owner_user)
+            # A user can in principle have more than one SocialAccount; use the first
+            # rather than .get() so we don't raise MultipleObjectsReturned here.
+            owner_account = SocialAccount.objects.filter(user=owner_user).first()
+            if owner_account is not None:
                 owner_dict = {'username': owner_account.extra_data['login']}
                 owner_dict['name'] = owner_account.extra_data.get('name', None)
                 owner_dict['email'] = (
@@ -597,8 +606,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                     else None
                 )
                 owners.append(owner_dict)
-            except SocialAccount.DoesNotExist:
-                # Just in case some users aren't using social accounts, have a fallback
+            else:
+                # Fallback for users without a social account
                 owners.append(
                     {
                         'username': owner_user.username,
