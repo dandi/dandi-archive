@@ -79,7 +79,7 @@
             color="primary"
             start
           >
-            mdi-code-json
+            mdi-information
           </v-icon>
           <v-list-item-title>Raw metadata</v-list-item-title>
         </template>
