@@ -33,6 +33,14 @@ jobs:
           --health-start-interval 2s
         ports:
           - 5672:5672
+      redis:
+        image: redis:8-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-start-period 30s
+          --health-start-interval 2s
+        ports:
+          - 6379:6379
       minio:
         # This image does not require any command arguments (which GitHub Actions don't support)
         image: bitnamilegacy/minio:latest
@@ -49,6 +57,7 @@ jobs:
     env:
       DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
       DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
+      DJANGO_CACHE_URL: redis://localhost:6379
       DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage-testing
       DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
       DJANGO_DANDI_API_URL: http://localhost:8000

@@ -152,11 +152,9 @@ REST_FRAMEWORK['DEFAULT_PAGINATION_CLASS'] = 'dandiapi.api.views.pagination.Dand
 REST_FRAMEWORK['EXCEPTION_HANDLER'] = 'dandiapi.drf_utils.rewrap_django_core_exceptions'
 
 # Throttling configuration
-# TODO: Uncomment once throttling is re-enabled
-# REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
-#     'rest_framework.throttling.AnonRateThrottle',
-# ]
-
+REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
+    'dandiapi.api.throttling.DandiAnonRateThrottle',
+]
 # By default, set request rate limit to a very high number, effectively disabling it.
 # This is done to preserve the rate limiting behavior between dev and prod,
 # without actually impeding developer experience.
@@ -164,12 +162,18 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'anon': f'{sys.maxsize}/minute',
 }
 
+# Throttling records the recent request history of every unauthenticated client, so this cache
+# must be backed by a dedicated cache server (e.g. Redis). Using the database for this makes
+# every incoming request a database write, which has previously caused performance problems.
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'dandi_cache_table',
-    }
+    'default': env.cache_url('DJANGO_CACHE_URL'),
 }
+# Bound how long an unresponsive cache server can delay request handling. The throttle classes
+# fail open, so timing out means a request isn't rate limited, rather than that it fails.
+CACHES['default'].setdefault('OPTIONS', {}).update(
+    socket_connect_timeout=2,
+    socket_timeout=2,
+)
 
 REST_FRAMEWORK_EXTENSIONS = {'DEFAULT_PARENT_LOOKUP_KWARG_NAME_PREFIX': ''}
 

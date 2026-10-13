@@ -31,6 +31,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       minio:
         condition: service_healthy
 

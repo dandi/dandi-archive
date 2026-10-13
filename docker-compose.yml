@@ -25,6 +25,16 @@ services:
     volumes:
       - rabbitmq:/var/lib/rabbitmq
 
+  redis:
+    image: redis:8-alpine
+    # This is only used as a cache, so disable persistence
+    command: redis-server --save ""
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      start_period: 30s
+    ports:
+      - 6379:6379
+
   minio:
     # quay.io/minio/minio requires a login since 2026-09-24
     image: bitnamilegacy/minio:latest
