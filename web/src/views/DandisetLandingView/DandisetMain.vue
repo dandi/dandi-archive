@@ -241,9 +241,9 @@
       show-arrows
     >
       <v-tab
-        v-for="(tab, index) in tabs"
+        v-for="tab in tabs"
         :key="tab.name"
-        :value="index"
+        :value="tab.slug"
       >
         <v-icon start>
           {{ tab.icon }}
@@ -256,8 +256,7 @@
     <v-row class="justify-center">
       <v-col cols="12">
         <component
-          :is="tabs[currentTab].component"
-          v-if="tabs[currentTab]"
+          :is="currentTabComponent"
           v-bind="{ schema, meta }"
           class="d-flex flex-column pa-9 ga-3 w-100"
         />
@@ -281,6 +280,7 @@ import moment from 'moment';
 import DOMPurify from 'dompurify';
 import { useDisplay } from 'vuetify';
 
+import { useRouteQuery } from '@/composables/useRouteQuery';
 import { useDandisetStore } from '@/stores/dandiset';
 import { getDoiMetadata } from '@/utils/doi';
 import { getExampleNotebooks } from '@/utils/notebooks';
@@ -299,11 +299,13 @@ const MAX_DESCRIPTION_LENGTH = 400;
 const baseTabs = [
   {
     name: 'Overview',
+    slug: 'overview',
     component: OverviewTab,
     icon: 'mdi-information-outline',
   },
   {
     name: 'How to Cite',
+    slug: 'how-to-cite',
     component: HowToCiteTab,
     icon: 'mdi-format-quote-close',
   },
@@ -365,7 +367,9 @@ const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed
   () => meta.value?.about,
 );
 
-const currentTab = ref(0);
+const notebooksTab = {
+  name: 'Notebooks', slug: 'notebooks', component: NotebooksTab, icon: 'mdi-notebook-outline',
+};
 
 const exampleNotebooks = ref<DandisetNotebooks | null>(null);
 
@@ -373,16 +377,24 @@ const tabs = computed(() => {
   if (!exampleNotebooks.value) {
     return baseTabs;
   }
-  return [
-    ...baseTabs,
-    { name: 'Notebooks', component: NotebooksTab, icon: 'mdi-notebook-outline' },
-  ];
+  return [...baseTabs, notebooksTab];
 });
+
+// The selected tab is kept in the URL (e.g. ?tab=how-to-cite) so that it can be linked to.
+const selectedTab = useRouteQuery('tab', 'overview', [...baseTabs, notebooksTab].map((tab) => tab.slug));
+// Show the first tab while the selected one isn't available, e.g. until it is known whether
+// this dandiset has notebooks.
+const currentTab = computed({
+  get: () => (tabs.value.find((tab) => tab.slug === selectedTab.value) ?? tabs.value[0]).slug,
+  set: (slug: string) => { selectedTab.value = slug; },
+});
+const currentTabComponent = computed(
+  () => tabs.value.find((tab) => tab.slug === currentTab.value)?.component,
+);
 
 watch(
   () => currentDandiset.value?.dandiset.identifier,
   async (identifier) => {
-    currentTab.value = 0;
     const result = identifier ? await getExampleNotebooks(identifier) : null;
     if (currentDandiset.value?.dandiset.identifier === identifier) {
       exampleNotebooks.value = result;
