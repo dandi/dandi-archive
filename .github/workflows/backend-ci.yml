@@ -3,11 +3,13 @@ on:
   pull_request:
     paths-ignore:
       - "web/**"
+      - "doc/**"
   push:
     branches:
       - master
     paths-ignore:
       - "web/**"
+      - "doc/**"
 permissions:
   contents: read
 jobs:
