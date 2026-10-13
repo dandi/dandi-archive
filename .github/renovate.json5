@@ -3,4 +3,5 @@
   extends: [
     'github>kitware-resonant/.github:renovate-project.json5',
   ],
+  "labels": ["dependencies"],
 }

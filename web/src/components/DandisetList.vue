@@ -69,7 +69,7 @@
           >
             mdi-database
           </v-icon>
-          {{ filesize(item.size, { round: 1, base: 10, standard: 'iec' }) }}
+          {{ filesize(item.size, { round: 1, base: 10, standard: 'si' }) }}
         </template>
       </v-list-item-subtitle>
 
@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, type PropType } from 'vue';
+import { computed, type PropType } from 'vue';
 import { useRoute } from 'vue-router';
 import moment from 'moment';
 import { filesize } from 'filesize';
@@ -97,9 +97,10 @@ defineProps({
 });
 
 const route = useRoute();
+
 const instanceStore = useInstanceStore();
-onMounted(() => instanceStore.fetchInstanceInfo());
-const archiveName = computed(() => instanceStore.instanceName);
+instanceStore.load();
+const archiveName = computed(() => instanceStore.instanceName ?? '');
 
 // current position in search result set = items on prev pages + position on current page
 function getPos(index: number) {

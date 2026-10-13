@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from django.db import transaction
 
 if TYPE_CHECKING:
-    from datetime import datetime
+    from datetime import date
 
     from django.contrib.auth.models import User
 
@@ -90,7 +90,7 @@ def create_embargoed_dandiset(  # noqa: PLR0913
     version_metadata: dict,
     funding_source: str | None,
     award_number: str | None,
-    embargo_end_date: datetime,
+    embargo_end_date: date,
 ) -> tuple[Dandiset, Version]:
     with transaction.atomic():
         dandiset, draft_version = _create_dandiset(
@@ -101,6 +101,7 @@ def create_embargoed_dandiset(  # noqa: PLR0913
         )
 
         dandiset.embargo_status = Dandiset.EmbargoStatus.EMBARGOED
+        dandiset.embargo_end_date = embargo_end_date
         dandiset.full_clean()
         dandiset.save()
 

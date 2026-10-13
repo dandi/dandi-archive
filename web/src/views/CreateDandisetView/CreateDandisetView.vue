@@ -154,9 +154,11 @@
               v-model="awardNumber"
               label="Grant/Award number"
               :counter="120"
+              required
               variant="outlined"
               density="compact"
               class="mb-4"
+              :rules="awardNumberRules"
             />
 
             <div class="text-h5 mb-2">
@@ -260,12 +262,18 @@ const saveDisabled = computed(
   () => !name.value
       || !description.value
       || (!embargoed.value && !license.value)
-      || (embargoed.value && hasAward.value && (!fundingSource.value || !grantEndDate.value || !isGrantEndDateValid.value))
+      || (embargoed.value && hasAward.value
+        && (!fundingSource.value || !awardNumber.value || !grantEndDate.value || !isGrantEndDateValid.value))
       || (embargoed.value && !hasAward.value && !embargoEndDate.value),
 );
 
 const fundingSourceRules = computed(
   () => [(v: string) => !!v || 'Funding source is required'],
+);
+
+// The server rejects a funding source without an award number.
+const awardNumberRules = computed(
+  () => [(v: string) => !!v || 'Award number (or project name) is required'],
 );
 
 const grantEndDateRules = computed(() => [
@@ -317,12 +325,11 @@ async function registerDandiset() {
   }
 
   if (embargoed.value) {
-    // Handle embargoed dandiset creation with new structure
     const embargoData = {
       hasAward: hasAward.value,
-      funding_source: hasAward.value ? fundingSource.value : undefined,
-      award_number: hasAward.value ? awardNumber.value : undefined,
-      embargo_end_date: hasAward.value ? grantEndDate.value : embargoEndDate.value,
+      fundingSource: hasAward.value ? fundingSource.value : undefined,
+      awardNumber: hasAward.value ? awardNumber.value : undefined,
+      embargoEndDate: hasAward.value ? grantEndDate.value : embargoEndDate.value,
     };
 
     const { data } = await dandiRest.createEmbargoedDandiset(name.value, metadata, embargoData);

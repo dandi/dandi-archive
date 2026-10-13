@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import typing
 from typing import TYPE_CHECKING
 
 from django.db import transaction
@@ -14,16 +15,18 @@ from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from s3_file_field._multipart import TransferredPart, TransferredParts
 
-from dandiapi.api.models import AssetBlob, Dandiset, Upload
+from dandiapi.api.models import AssetBlob, Upload
 from dandiapi.api.multipart import DandiS3MultipartManager
 from dandiapi.api.permissions import AuthenticatedRequest, IsApproved
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.tasks import calculate_sha256
-from dandiapi.api.views.serializers import AssetBlobSerializer
+from dandiapi.api.views.serializers import AssetBlobSerializer, DandisetIdentifierField
 
 if TYPE_CHECKING:
+    from collections import OrderedDict
+
     from rest_framework.request import Request
 
 supported_digests = {'dandi:dandi-etag': 'etag', 'dandi:sha2-256': 'sha256'}
@@ -37,9 +40,21 @@ class DigestSerializer(serializers.Serializer):
 
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
+    dandiset = DandisetIdentifierField()
     contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
-    digest = DigestSerializer()
-    dandiset = serializers.RegexField(f'^{Dandiset.IDENTIFIER_REGEX}$')
+    digest = DigestSerializer(required=False)
+
+    def get_digest_data(self) -> tuple[str, int]:
+        """Return a tuple of (etag, content_size), raising an exception if invalid."""
+        self.is_valid(raise_exception=True)
+
+        data = typing.cast('OrderedDict', self.validated_data)
+
+        digest = data['digest']
+        if digest['algorithm'] != 'dandi:dandi-etag':
+            raise ValidationError('Unsupported Digest Type')
+
+        return digest['value'], data['contentSize']
 
 
 class PartInitializationResponseSerializer(serializers.Serializer):
@@ -126,15 +141,12 @@ def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
     """
     request_serializer = UploadInitializationRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    content_size = request_serializer.validated_data['contentSize']
-    digest = request_serializer.validated_data['digest']
-    if digest['algorithm'] != 'dandi:dandi-etag':
-        return Response('Unsupported Digest Type', status=400)
-    etag = digest['value']
-    dandiset_id = int(request_serializer.validated_data['dandiset'])
+
+    etag, content_size = request_serializer.get_digest_data()
+
     dandiset = get_object_or_404(
         get_visible_dandisets(request.user),
-        id=dandiset_id,
+        id=request_serializer.validated_data['dandiset'],
     )
     if not is_dandiset_owner(dandiset, request.user):
         raise NotAllowedError

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
 from django.conf import settings
@@ -22,6 +21,28 @@ logger = logging.getLogger(name=__name__)
 # TODO: Move this somewhere better?
 def zarr_s3_path(zarr_id: str, zarr_path: str = ''):
     return f'{settings.DANDI_ZARR_PREFIX_NAME}/{zarr_id}/{zarr_path}'
+
+
+def validate_zarr_path(path: str) -> str:
+    """
+    Reject zarr paths that could traverse outside the zarr archive's S3 prefix.
+
+    User-supplied paths are interpolated into an S3 key of the form
+    ``{DANDI_ZARR_PREFIX_NAME}/{zarr_id}/{path}``. django-storages' ``clean_name``
+    runs ``posixpath.normpath`` -- which collapses ``..`` -- *before* its
+    ``safe_join`` guard, and the storage ``location`` is empty, so ``safe_join``
+    only blocks escaping the (non-representable) bucket root. A ``..`` segment
+    therefore resolves to an arbitrary key elsewhere in the bucket, permitting
+    reads, overwrites, and deletes of unrelated objects. Reject any such segment.
+
+    Backslashes are normalized to forward slashes before the check because
+    ``clean_name`` performs the same replacement *after* normpath, which would
+    otherwise let a segment containing backslashes survive normpath and then
+    re-form a traversal sequence in the final key.
+    """
+    if any(segment == '..' for segment in path.replace('\\', '/').split('/')):
+        raise ValidationError('Zarr path cannot contain ".." components.')
+    return path
 
 
 # The status of the zarr ingestion (checksums, size, file count)
@@ -81,10 +102,7 @@ class ZarrArchive(TimeStampedModel):
 
     @property
     def s3_url(self):
-        signed_url = self.storage.url(self.s3_path(''))
-        # Strip off the query parameters from the presigning, as they are different every time
-        parsed = urlparse(signed_url)
-        return urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+        return self.storage.url(self.s3_path(''), signed=False)
 
     def s3_path(self, zarr_path: str) -> str:
         """Generate a full S3 object path from a path in this zarr_archive."""

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import TYPE_CHECKING
 
 from dandischema.consts import DANDI_SCHEMA_VERSION
@@ -39,19 +40,15 @@ def test_asset_full_metadata_access(
     )
 
     # Test that access is correctly inferred from embargo status
-    assert embargoed_zarr_asset.full_metadata['access'] == [
-        {'schemaKey': 'AccessRequirements', 'status': AccessType.EmbargoedAccess.value}
-    ]
-    assert embargoed_blob_asset.full_metadata['access'] == [
-        {'schemaKey': 'AccessRequirements', 'status': AccessType.EmbargoedAccess.value}
-    ]
+    for embargoed_asset in [embargoed_zarr_asset, embargoed_blob_asset]:
+        assert embargoed_asset.full_metadata['access'][0]['schemaKey'] == 'AccessRequirements'
+        assert (
+            embargoed_asset.full_metadata['access'][0]['status'] == AccessType.EmbargoedAccess.value
+        )
 
-    assert open_zarr_asset.full_metadata['access'] == [
-        {'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}
-    ]
-    assert open_blob_asset.full_metadata['access'] == [
-        {'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}
-    ]
+    for open_asset in [open_zarr_asset, open_blob_asset]:
+        assert open_asset.full_metadata['access'][0]['schemaKey'] == 'AccessRequirements'
+        assert open_asset.full_metadata['access'][0]['status'] == AccessType.OpenAccess.value
 
 
 @pytest.mark.django_db
@@ -80,10 +77,10 @@ def test_access_metadata_embargoed_zarr_with_embargoed_until(
     embargoed_zarr_archive_factory, draft_asset_factory
 ):
     """Embargoed zarr asset returns embargoedUntil from draft version."""
-    zarr = embargoed_zarr_archive_factory()
+    zarr = embargoed_zarr_archive_factory(
+        dandiset__embargo_end_date=date.fromisoformat('2026-06-15')
+    )
     draft_version = zarr.dandiset.draft_version
-    draft_version.metadata['access'][0]['embargoedUntil'] = '2026-06-15'
-    draft_version.save()
 
     asset = draft_asset_factory(zarr=zarr, blob=None)
     draft_version.assets.add(asset)
@@ -96,27 +93,14 @@ def test_access_metadata_embargoed_zarr_with_embargoed_until(
 
 
 @pytest.mark.django_db
-def test_access_metadata_embargoed_zarr_without_embargoed_until(
-    embargoed_zarr_archive_factory, draft_asset_factory
-):
-    """Embargoed zarr asset without embargoedUntil on version has no embargoedUntil in access."""
-    zarr = embargoed_zarr_archive_factory()
-    asset = draft_asset_factory(zarr=zarr, blob=None)
-    zarr.dandiset.draft_version.assets.add(asset)
-
-    assert 'embargoedUntil' not in asset.access_metadata()
-
-
-@pytest.mark.django_db
 def test_access_metadata_embargoed_blob_with_embargoed_until(
     embargoed_asset_blob, draft_asset_factory
 ):
     """Embargoed blob asset returns embargoedUntil from version."""
     draft_version = DraftVersionFactory.create(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED,
+        dandiset__embargo_end_date=date.fromisoformat('2026-06-15'),
     )
-    draft_version.metadata['access'][0]['embargoedUntil'] = '2026-06-15'
-    draft_version.save()
 
     asset = draft_asset_factory(blob=embargoed_asset_blob)
     draft_version.assets.add(asset)
@@ -134,18 +118,16 @@ def test_access_metadata_embargoed_blob_shared_across_embargoed_dandisets(
 ):
     """Blob shared by multiple embargoed dandisets returns minimum embargo end date."""
     version_a = DraftVersionFactory.create(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED,
+        dandiset__embargo_end_date=date.fromisoformat('2026-08-01'),
     )
-    version_a.metadata['access'][0]['embargoedUntil'] = '2026-08-01'
-    version_a.save()
     asset_a = draft_asset_factory(blob=embargoed_asset_blob)
     version_a.assets.add(asset_a)
 
     version_b = DraftVersionFactory.create(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED,
+        dandiset__embargo_end_date=date.fromisoformat('2018-10-25'),
     )
-    version_b.metadata['access'][0]['embargoedUntil'] = '2018-10-25'
-    version_b.save()
     asset_b = draft_asset_factory(blob=embargoed_asset_blob)
     version_b.assets.add(asset_b)
 
@@ -165,21 +147,3 @@ def test_access_metadata_embargoed_blob_in_open_dandiset_raises(
 
     with pytest.raises(EmbargoedAssetWithinOpenDandisetError):
         asset.access_metadata()
-
-
-@pytest.mark.django_db
-def test_access_metadata_embargoed_blob_no_embargoed_until(
-    embargoed_asset_blob, draft_asset_factory
-):
-    """Embargoed blob with no embargoedUntil on any version has no embargoedUntil in access."""
-    assets = []
-    for _ in range(5):
-        draft_version = DraftVersionFactory.create(
-            dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
-        )
-        asset = draft_asset_factory(blob=embargoed_asset_blob)
-        draft_version.assets.add(asset)
-        assets.append(asset)
-
-    for asset in assets:
-        assert 'embargoedUntil' not in asset.access_metadata()

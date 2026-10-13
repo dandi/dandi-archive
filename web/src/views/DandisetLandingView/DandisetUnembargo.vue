@@ -28,7 +28,7 @@
             {{ formatDate(item.created, 'LLL') }}
           </template>
           <template #item.size="{ item }">
-            {{ filesize(item.size, { round: 1, base: 10, standard: 'iec' }) }}
+            {{ filesize(item.size, { round: 1, base: 10, standard: 'si' }) }}
           </template>
         </v-data-table>
 
@@ -168,11 +168,9 @@
       :is-owner="true"
     />
 
-    <v-row>
-      <v-list-subheader class="mb-2 text-black text-h5">
-        This Version
-      </v-list-subheader>
-    </v-row>
+    <v-card-title class="px-0">
+      This Version
+    </v-card-title>
     <v-row
       class="pa-2 mb-5 text-body-2 align-center"
       style="border-top: thin solid rgba(0, 0, 0, 0.12);

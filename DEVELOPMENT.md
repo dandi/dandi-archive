@@ -27,7 +27,7 @@ This is the simplest configuration for developers to start with.
 ### Run Application
 1. Run the following commands in three separate VSCode built-in-terminals:
    1. `./manage.py runserver_plus 0.0.0.0:8000`
-   1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
+   1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-mingle --without-heartbeat --without-gossip --queues celery,calculate_sha256,ingest_zarr_archive,manifest-worker --beat`
    1. `cd web/ && npm install && npm run dev`
 1. Access the site, starting at http://localhost:8000/admin/
 1. When finished, use `Ctrl+C`
@@ -82,7 +82,7 @@ but allows developers to run Python code on their native system.
 1. Run the Celery app
     1. Start a new terminal
     1. Run `export UV_ENV_FILE=./dev/.env.docker-compose-native`
-    1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
+    1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-mingle --without-heartbeat --without-gossip --queues celery,calculate_sha256,ingest_zarr_archive,manifest-worker --beat`
 1. When finished, run `docker compose stop`
 
 ## Testing

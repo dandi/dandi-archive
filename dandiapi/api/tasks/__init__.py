@@ -50,7 +50,7 @@ def calculate_sha256(blob_id: str | UUID) -> None:
     AssetBlob.objects.filter(blob_id=blob_id).update(sha256=sha256)
 
 
-@shared_task(soft_time_limit=180)
+@shared_task(soft_time_limit=360)
 def write_manifest_files(version_id: int) -> None:
     version: Version = Version.objects.get(id=version_id)
     logger.info('Writing manifests for version %s:%s', version.dandiset.identifier, version.version)
@@ -93,7 +93,7 @@ def publish_dandiset_task(dandiset_id: int, user_id: int):
     _publish_dandiset(dandiset_id=dandiset_id, user_id=user_id)
 
 
-@shared_task(soft_time_limit=1200)
+@shared_task(soft_time_limit=3600)
 def unembargo_dandiset_task(dandiset_id: int, user_id: int):
     from dandiapi.api.services.embargo import unembargo_dandiset
 

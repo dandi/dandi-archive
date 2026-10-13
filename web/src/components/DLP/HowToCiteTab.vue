@@ -266,7 +266,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, type PropType, ref } from 'vue';
+import { computed, type PropType, ref } from 'vue';
 
 import { useDandisetStore } from '@/stores/dandiset';
 import { useInstanceStore } from '@/stores/instance';
@@ -286,8 +286,8 @@ const props = defineProps({
 
 const store = useDandisetStore();
 const instanceStore = useInstanceStore();
-onMounted(() => instanceStore.fetchInstanceInfo());
-const instanceName = computed(() => instanceStore.instanceName);
+instanceStore.load();
+const instanceName = computed(() => instanceStore.instanceName ?? '');
 const instanceIdentifier = computed(() => instanceStore.instanceIdentifier);
 const archiveIdentifier = computed(() => {
   if (!instanceIdentifier.value) {
@@ -328,7 +328,14 @@ const cffObject = computed(() => {
     return null;
   }
 
-  return dandisetToCFF(props.meta, typeof doi.value === 'string' ? doi.value : undefined, instanceName.value, instanceStore.instanceUrl || undefined);
+  return dandisetToCFF(
+    props.meta,
+    typeof doi.value === 'string' ? doi.value : undefined,
+    isDraft.value,
+    currentDandiset.value?.modified,
+    instanceName.value,
+    instanceStore.instanceUrl || undefined,
+  );
 });
 
 // Generate citations in different formats

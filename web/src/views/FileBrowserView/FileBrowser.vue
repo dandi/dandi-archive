@@ -40,6 +40,12 @@
         </v-card>
       </v-dialog>
 
+      <TableViewer
+        :items="items"
+        :identifier="identifier"
+        :version="version"
+      />
+
       <v-row>
         <v-col :cols="12">
           <v-card>
@@ -101,7 +107,8 @@
               <!-- Extra item to navigate up the tree -->
               <v-list-item
                 v-if="location !== rootDirectory"
-                @click="navigateToParent"
+                :to="locationRoute(parentLocation)"
+                :active="false"
               >
                 <template #prepend>
                   <v-icon
@@ -110,15 +117,23 @@
                   >
                     mdi-folder
                   </v-icon>
-                  ..
                 </template>
+                <v-list-item-title>..</v-list-item-title>
               </v-list-item>
 
+              <!--
+                Render each row as a real link so that
+                the browser treats it as one: right click offers "Open link in new tab", and
+                ctrl/cmd/middle click work as they do anywhere else. Buttons in the append
+                slot stop the click and prevent its default so the row link isn't followed.
+              -->
               <v-list-item
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
-                @click="openItem(item)"
+                :href="item.asset && !tableViewerRoute(item, route) ? inlineURI(item.asset.asset_id) : undefined"
+                :to="tableViewerRoute(item, route) || (item.asset ? undefined : locationRoute(item.path))"
+                :active="false"
               >
                 <template #prepend>
                   <v-icon
@@ -132,8 +147,10 @@
                       mdi-file
                     </template>
                   </v-icon>
-                  {{ item.name }}
                 </template>
+                <v-list-item-title :title="item.name">
+                  {{ item.name }}
+                </v-list-item-title>
 
                 <template #append>
                   <v-list-item-action>
@@ -141,7 +158,7 @@
                       v-if="showDelete(item)"
                       icon
                       variant="text"
-                      @click.stop="setItemToDelete(item)"
+                      @click.stop.prevent="setItemToDelete(item)"
                     >
                       <v-icon color="error">
                         mdi-delete
@@ -155,8 +172,10 @@
                         <v-btn
                           icon
                           variant="text"
-                          :href="inlineURI(item.asset.asset_id)"
+                          :href="tableViewerRoute(item, route) ? undefined : inlineURI(item.asset.asset_id)"
+                          :to="tableViewerRoute(item, route)"
                           v-bind="openInBtnProps"
+                          @click.stop
                         >
                           <v-icon color="primary">
                             mdi-open-in-app
@@ -175,6 +194,7 @@
                           variant="text"
                           :href="downloadURI(item.asset.asset_id)"
                           v-bind="downloadProps"
+                          @click.stop
                         >
                           <v-icon color="primary">
                             mdi-download
@@ -215,8 +235,8 @@
                           color="primary"
                           size="x-small"
                           :disabled="!item.services || !item.services.length"
-
                           v-bind="openWithProps"
+                          @click.stop.prevent
                         >
                           Open With <v-icon size="small">
                             mdi-menu-down
@@ -288,6 +308,8 @@ import type { AssetPath } from '@/types';
 import { getExternalServices } from '@/utils/externalServices';
 import FileBrowserPagination from '@/components/FileBrowser/FileBrowserPagination.vue';
 import FileUploadInstructions from '@/components/FileBrowser/FileUploadInstructions.vue';
+import TableViewer from '@/components/FileBrowser/TableViewer.vue';
+import { tableViewerRoute } from '@/components/FileBrowser/tableViewer';
 
 const rootDirectory = '';
 const FILES_PER_PAGE = 15;
@@ -361,6 +383,7 @@ const isOwner = computed(() => !!(
   user.value && owners.value?.includes(user.value?.username)
 ));
 const itemsNotFound = computed(() => items.value && !items.value.length);
+const parentLocation = computed(() => location.value.split('/').slice(0, -1).join('/'));
 
 
 
@@ -368,20 +391,12 @@ function locationSlice(index: number) {
   return `${splitLocation.value.slice(0, index + 1).join('/')}/`;
 }
 
-function openItem(item: AssetPath) {
-  const { asset, path } = item;
-
-  if (asset) {
-    // If the item is an asset, open it in the browser.
-    window.open(inlineURI(asset.asset_id), "_self");
-  } else {
-    // If it's a directory, move into it.
-    location.value = path;
-  }
-}
-
-function navigateToParent() {
-  location.value = location.value.split('/').slice(0, -1).join('/');
+// The route for a directory, so that directory rows can be rendered as links.
+function locationRoute(newLocation: string): RouteLocationRaw {
+  return {
+    name: 'fileBrowser',
+    query: { location: newLocation, page: '1' },
+  } as RouteLocationRaw;
 }
 
 function downloadURI(asset_id: string) {
@@ -397,7 +412,7 @@ function assetMetadataURI(asset_id: string) {
 }
 
 function fileSize(item: AssetPath) {
-  return filesize(item.aggregate_size, { round: 1, base: 10, standard: 'iec' });
+  return filesize(item.aggregate_size, { round: 1, base: 10, standard: 'si' });
 }
 
 function showDelete(item: AssetPath) {

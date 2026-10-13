@@ -24,6 +24,6 @@ registerPlugins(app)
 registerDirectives(app)
 
 // Fetch instance config early so page titles and identifiers are available
-useInstanceStore().fetchInstanceInfo();
+useInstanceStore().load();
 
 app.mount('#app')

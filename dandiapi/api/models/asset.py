@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 import re
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse, urlunparse
 import uuid
 
 from dandischema.digests.dandietag import DandiETag
@@ -13,8 +12,7 @@ from django.contrib.postgres.indexes import HashIndex
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import CharField, DateField, Min, Q
-from django.db.models.functions import Cast
+from django.db.models import Min, Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
@@ -98,10 +96,7 @@ class AssetBlob(TimeStampedModel):
 
     @property
     def s3_url(self) -> str:
-        signed_url = self.blob.url
-        # Strip off the query parameters from the presigning, as they are different every time
-        parsed = urlparse(signed_url)
-        return urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+        return self.blob.storage.url(self.blob.name, signed=False)
 
     def __str__(self) -> str:
         return self.blob.name
@@ -134,7 +129,9 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     Status = AssetStatus
 
     class Meta:
-        ordering = ['created']
+        # `id` breaks ties between assets created at the same instant, so that paginated
+        # listings (LIMIT/OFFSET) neither repeat nor skip assets at page boundaries.
+        ordering = ['created', 'id']
         indexes = [
             # Other statuses are likely too common to index, but pending assets are continually
             # polled and being moved through the pipeline.
@@ -260,13 +257,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         # For zarr assets, is_embargoed is based on the dandiset directly, and a zarr can
         # only be associated with one dandiset, so we know this dandiset is embargoed
         if self.zarr is not None:
-            draft_version = self.zarr.dandiset.draft_version
-
-            # EmbargoedUntil isn't guaranteed to be set
-            embargo_end_date: str | None = draft_version.metadata['access'][0].get('embargoedUntil')
-            if embargo_end_date is not None:
-                access['embargoedUntil'] = embargo_end_date
-
+            access['embargoedUntil'] = self.zarr.dandiset.embargo_end_date.isoformat()
             return access
 
         # In the blob case, we need to consider all dandisets this blob might be associated with,
@@ -282,17 +273,16 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             )
 
         # Retrieve the minimum embargo end date, across all dandisets
-        embargo_end_date: datetime.date | None = (
-            self.blob.assets.filter(versions__isnull=False)
-            .annotate(
-                embargo_end_date=Cast(
-                    Cast('versions__metadata__access__0__embargoedUntil', output_field=CharField()),
-                    output_field=DateField(),
-                )
-            )
-            .aggregate(min_embargo_end_date=Min('embargo_end_date'))['min_embargo_end_date']
-        )
+        embargo_end_date: datetime.date | None = self.blob.assets.filter(
+            versions__isnull=False
+        ).aggregate(min_embargo_end_date=Min('versions__dandiset__embargo_end_date'))[
+            'min_embargo_end_date'
+        ]
 
+        # The only way embargo_end_date can be None here is if asset isn't associated with any
+        # versions (most likely due to being updated). Even so, sometimes these assets are accessed
+        # directly, so we need to handle that case.
+        # TODO: Update once https://github.com/dandi/dandi-archive/issues/2733 is addressed
         if embargo_end_date is not None:
             access['embargoedUntil'] = embargo_end_date.isoformat()
 

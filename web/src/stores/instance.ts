@@ -1,40 +1,53 @@
 import { defineStore } from 'pinia';
 
 import { dandiRest } from '@/rest';
+import type { Info } from '@/types';
 
-interface InstanceState {
-  instanceName: string;
-  instanceIdentifier: string | null;
-  instanceUrl: string | null;
-  loaded: boolean;
-  _fetchPromise: Promise<void> | null;
+// Values of DJANGO_DANDI_INSTANCE_NAME for the DANDI-operated deployments,
+// reported by the server at /api/info/.
+const PRODUCTION_INSTANCE_NAME = 'DANDI';
+const SANDBOX_INSTANCE_NAME = 'DANDI-SANDBOX';
+
+// Shared by all callers of load() so the request is only made once per session.
+let infoRequest: Promise<Info> | undefined;
+
+interface State {
+  info: Info | null;
 }
 
 export const useInstanceStore = defineStore('instance', {
-  state: (): InstanceState => ({
-    instanceName: '',
-    instanceIdentifier: null,
-    instanceUrl: null,
-    loaded: false,
-    _fetchPromise: null,
+  state: (): State => ({
+    info: null,
   }),
+  getters: {
+    instanceName: (state) => state.info?.instance_config.instance_name,
+    instanceIdentifier: (state) => state.info?.instance_config.instance_identifier ?? null,
+    instanceUrl: (state) => state.info?.instance_config.instance_url ?? null,
+    // Until /api/info/ has been fetched successfully, the instance is not considered
+    // production or sandbox, so features gated on these getters fail closed.
+    isProduction(): boolean {
+      return this.instanceName === PRODUCTION_INSTANCE_NAME;
+    },
+    isSandbox(): boolean {
+      return this.instanceName === SANDBOX_INSTANCE_NAME;
+    },
+  },
   actions: {
-    async fetchInstanceInfo() {
-      if (this.loaded) {
+    async load() {
+      if (this.info) {
         return;
       }
-      if (this._fetchPromise) {
-        return this._fetchPromise;
+      if (infoRequest === undefined) {
+        infoRequest = dandiRest.info();
       }
-      this._fetchPromise = this._doFetch();
-      return this._fetchPromise;
-    },
-    async _doFetch() {
-      const info = await dandiRest.info();
-      this.instanceName = info.instance_config.instance_name;
-      this.instanceIdentifier = info.instance_config.instance_identifier;
-      this.instanceUrl = info.instance_config.instance_url;
-      this.loaded = true;
+      try {
+        this.info = await infoRequest;
+      } catch (error) {
+        // Leave the instance identity unknown; clearing the shared request
+        // lets a later call retry.
+        console.error('Error fetching server instance info:', error);
+        infoRequest = undefined;
+      }
     },
   },
 });

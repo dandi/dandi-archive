@@ -76,4 +76,4 @@ def api_client() -> APIClient:
 
 
 def get_first_allowed_license() -> str:
-    return sorted(x.value for x in get_instance_config().licenses)[0]
+    return min(x.value for x in get_instance_config().licenses)

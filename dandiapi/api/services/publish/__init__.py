@@ -58,11 +58,12 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  #
     if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
         raise NotAllowedError('Operation only allowed on OPEN dandisets', 400)
 
-    if dandiset.zarr_archives.exists():
-        raise NotAllowedError('Cannot publish dandisets which contain zarrs', 400)
-
     with transaction.atomic():
         draft_version: Version = dandiset.versions.select_for_update().get(version='draft')
+
+        if draft_version.assets.filter(zarr__isnull=False).exists():
+            raise NotAllowedError('Cannot publish dandisets which contain zarrs', 400)
+
         if not draft_version.publishable:
             match draft_version.status:
                 case Version.Status.PUBLISHED:
@@ -100,10 +101,15 @@ def _build_publishable_version_from_draft(draft_version: Version) -> Version:
         }
     )
 
+    release_notes = draft_version.release_notes
+    if release_notes:
+        publishable_version_metadata['releaseNotes'] = release_notes
+
     return Version(
         dandiset=draft_version.dandiset,
         name=draft_version.name,
         metadata=publishable_version_metadata,
+        release_notes=draft_version.release_notes,
         status=Version.Status.VALID,
         version=Version.next_published_version(draft_version.dandiset),
     )
@@ -190,16 +196,16 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
 
         validate(new_version.metadata, schema_key='PublishedDandiset', json_validation=True)
 
-        # Write updated manifest files and create DOI after
-        # published version has been committed to DB.
-        transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
-
         def _create_doi(version_id: int):
             version = Version.objects.get(id=version_id)
             version.doi = doi.create_doi(version)
             version.save()
 
-        transaction.on_commit(lambda: _create_doi(new_version.id))
+        # Call _create_doi before writing manifest files, so that the new DOI is included in the
+        # manifests. If DOI creation fails, proceed to writing manifests anyway, to maintain
+        # existing behavior.
+        transaction.on_commit(lambda: _create_doi(new_version.id), robust=True)
+        transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
 
         user = User.objects.get(id=user_id)
         audit.publish_dandiset(
@@ -207,9 +213,14 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         )
 
 
-def publish_dandiset(*, user: User, dandiset: Dandiset) -> None:
+def publish_dandiset(*, user: User, dandiset: Dandiset, release_notes: str | None = None) -> None:
     from dandiapi.api.tasks import publish_dandiset_task
 
     with transaction.atomic():
         _lock_dandiset_for_publishing(user=user, dandiset=dandiset)
+
+        Version.objects.filter(dandiset=dandiset, version='draft').update(
+            release_notes=release_notes or ''
+        )
+
         transaction.on_commit(lambda: publish_dandiset_task.delay(dandiset.id, user.id))
