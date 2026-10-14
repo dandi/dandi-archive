@@ -123,17 +123,28 @@
             <span>Redo</span>
           </v-tooltip>
           <v-spacer />
-          <v-btn
-            :href="aiEditorURL"
-            target="_blank"
-            rel="noopener"
-            variant="tonal"
-            color="primary"
-            size="small"
-            prepend-icon="mdi-robot"
+          <v-tooltip
+            location="bottom"
+            :disabled="!readonly"
           >
-            Beta feature: try AI assisted metadata editing
-          </v-btn>
+            <template #activator="{ props }">
+              <div v-bind="props">
+                <v-btn
+                  :href="aiEditorURL"
+                  :disabled="readonly"
+                  target="_blank"
+                  rel="noopener"
+                  variant="tonal"
+                  color="primary"
+                  size="small"
+                  prepend-icon="mdi-robot"
+                >
+                  Beta feature: try AI assisted metadata editing
+                </v-btn>
+              </div>
+            </template>
+            <span>{{ aiEditorDisabledReason }}</span>
+          </v-tooltip>
           <v-tooltip location="bottom">
             <template #activator="{ props }">
               <v-btn
@@ -250,6 +261,7 @@ import VJsf from '@koumoul/vjsf';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
+import { draftVersion } from '@/utils/constants';
 import type { DandiModel } from './types';
 import { isJSONSchema } from './types';
 import { EditorInterface } from './editor';
@@ -289,6 +301,9 @@ const aiEditorURL = computed(() => `https://medit.dandiarchive.org/?dandiset=${i
 const schema: ComputedRef<JSONSchema7> = computed(() => store.schema);
 const model = computed(() => currentDandiset.value?.metadata);
 const readonly = computed(() => !store.userCanModifyDandiset);
+const aiEditorDisabledReason = computed(() => (currentDandiset.value?.version !== draftVersion
+  ? 'Metadata can only be edited on the draft version of a Dandiset'
+  : 'Only owners of this Dandiset can edit its metadata'));
 // const isDataInLocalStorage = computed(
 //   () => (model.value ? dataInLocalStorage(model.value.id) : false),
 // );
