@@ -49,6 +49,15 @@ export const useDandisetStore = defineStore('dandiset', {
       // otherwise check if they are an owner
       return !!(state.owners?.find((owner) => owner.username === user.value?.username));
     },
+    // a user-facing explanation of why the metadata can't be edited, or undefined if it can
+    metadataReadonlyReason(): string | undefined {
+      if (this.userCanModifyDandiset) {
+        return undefined;
+      }
+      return this.dandiset?.metadata?.version !== draftVersion
+        ? 'Metadata can only be edited on the draft version of a Dandiset'
+        : 'Only owners of this Dandiset can edit its metadata';
+    },
   },
   actions: {
     async uninitializeDandisets() {

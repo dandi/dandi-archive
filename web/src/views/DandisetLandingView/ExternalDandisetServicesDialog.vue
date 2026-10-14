@@ -71,7 +71,7 @@
             </div>
           </template>
           <span v-if="store.userCanModifyDandiset">Open the Dandiset in the AI assisted metadata editor (Beta)</span>
-          <span v-else>{{ aiEditorDisabledReason }}</span>
+          <span v-else>{{ store.metadataReadonlyReason }}</span>
         </v-tooltip>
         <v-tooltip
           v-if="atlas"
@@ -108,7 +108,6 @@ import { useDandisetStore } from '@/stores/dandiset';
 import { useInstanceStore } from '@/stores/instance';
 import type { Atlas } from '@/utils/atlas';
 import { atlasDandisetURL, getAtlasForDandiset } from '@/utils/atlas';
-import { draftVersion } from '@/utils/constants';
 
 const store = useDandisetStore();
 const instanceStore = useInstanceStore();
@@ -132,11 +131,6 @@ const neurosiftURL = computed(() => {
 
   return `https://neurosift.app/dandiset/${dandisetId}?dandisetVersion=${dandisetVersion}${stagingParam}`;
 });
-
-// The AI editor saves back to the archive, so only offer it where the user could save.
-const aiEditorDisabledReason = computed(() => (currentDandiset.value?.version !== draftVersion
-  ? 'Metadata can only be edited on the draft version of a Dandiset'
-  : 'Only owners of this Dandiset can edit its metadata'));
 
 const aiEditorURL = computed(() => {
   if (!currentDandiset.value) {
