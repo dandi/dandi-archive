@@ -374,7 +374,6 @@ def test_version_aggregate_assets_summary(draft_asset_factory):
     assert version.metadata['assetsSummary']['schemaKey'] == 'AssetsSummary'
 
 
-@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_version_aggregate_assets_summary_unchanged_keeps_modified(draft_asset_factory):
     version = DraftVersionFactory.create(status=Version.Status.VALID)
