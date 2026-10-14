@@ -1,3 +1,29 @@
+# v1.0.19 (Wed Oct 14 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Do not bump draft `modified` when assetsSummary is unchanged [#2950](https://github.com/dandi/dandi-archive/pull/2950) ([@claude](https://github.com/claude) [@jjnesbitt](https://github.com/jjnesbitt) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Add table visualizer for .tsv assets [#2928](https://github.com/dandi/dandi-archive/pull/2928) ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Begin collecting internal knowledge through skills (Vuetify'ing components) [#2929](https://github.com/dandi/dandi-archive/pull/2929) ([@claude](https://github.com/claude) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🧪 Tests
+
+- Skip test workflows for changes only to doc/ [#2938](https://github.com/dandi/dandi-archive/pull/2938) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 5
+
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v1.0.18 (Tue Oct 06 2026)
 
 :tada: This release contains work from new contributors! :tada:
