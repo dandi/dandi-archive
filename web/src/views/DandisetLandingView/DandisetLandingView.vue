@@ -120,7 +120,7 @@ import {
 } from 'vue';
 import type { Ref } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
-import type { RouteLocationRaw } from 'vue-router';
+import type { LocationQuery, RouteLocationRaw } from 'vue-router';
 import { useDisplay } from 'vuetify';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
@@ -234,22 +234,28 @@ watch([() => props.identifier, () => props.version], async () => {
   loading.value = false;
 });
 
-const page = ref(Number(route.query.pos) || 1);
+// The listing the user came here from (if any) and this dandiset's position in it, as passed
+// by DandisetList.vue. It is kept in history.state rather than in the URL so that the URL of
+// this page stays a clean, shareable identifier of the dandiset.
+const listing: { query: LocationQuery, pos: number } | undefined = window.history.state?.listing;
+const listingQuery = listing?.query ?? {};
+
+const page = ref(listing?.pos || 1);
 const pages = ref(1);
 const nextDandiset: Ref<Partial<Dandiset>[]> = ref([]);
 
 async function fetchNextPage() {
-  const sortOption = Number(route.query.sortOption) || 0;
-  const sortDir = Number(route.query.sortDir || -1);
+  const sortOption = Number(listingQuery.sortOption) || 0;
+  const sortDir = Number(listingQuery.sortDir || -1);
   const sortField = sortingOptions[sortOption].djangoField;
   const ordering = ((sortDir === -1) ? '-' : '') + sortField;
   const response = await dandiRest.dandisets({
     page: page.value,
     page_size: 1,
     ordering,
-    search: route.query.search,
-    draft: route.query.showDrafts || true,
-    empty: route.query.showEmpty,
+    search: listingQuery.search,
+    draft: listingQuery.showDrafts || true,
+    empty: listingQuery.showEmpty,
   });
 
   pages.value = (response.data?.count) ? response.data?.count : 1;
@@ -267,9 +273,7 @@ function navigateToPage() {
       router.push({
         name: route.name || undefined,
         params: { identifier },
-        query: {
-          ...route.query,
-        },
+        state: { listing: { query: listingQuery, pos: page.value } },
       });
     }
   }
