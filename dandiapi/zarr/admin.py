@@ -3,8 +3,15 @@ from __future__ import annotations
 from django.contrib import admin, messages
 from django.utils.translation import ngettext
 
-from dandiapi.zarr.models import ZarrArchive
+from dandiapi.zarr.models import ZarrArchive, ZarrUpload
 from dandiapi.zarr.tasks import ingest_zarr_archive
+
+
+@admin.register(ZarrUpload)
+class ZarrUploadAdmin(admin.ModelAdmin):
+    list_display = ['id', 'upload_id', 'zarr', 'chunk_key', 'etag', 'size', 'created']
+    list_display_links = ['id', 'upload_id']
+    list_select_related = ['zarr']
 
 
 @admin.register(ZarrArchive)

@@ -7,8 +7,8 @@ from zarr_checksum.checksum import EMPTY_CHECKSUM
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.tests.factories import UserFactory
 from dandiapi.api.tests.fuzzy import HTTP_URL_RE
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
-from dandiapi.zarr.tests.factories import ZarrArchiveFactory
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUpload, ZarrUploadType
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory, ZarrUploadFactory
 
 
 @pytest.mark.django_db
@@ -64,6 +64,22 @@ def test_zarr_rest_upload_start(
         assert tags == {'embargoed': 'true'}
     else:
         assert tags == {}
+
+
+@pytest.mark.django_db
+def test_zarr_rest_upload_start_multipart_rejected(api_client):
+    """Single-part upload to a multipart zarr must be rejected."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create(
+        dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART
+    )
+
+    resp = api_client.post(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
+        [{'path': 'foo/bar.txt', 'base64md5': 'DMF1ucDxtqgxw5niaXcmYQ=='}],
+    )
+    assert resp.status_code == 400
 
 
 @pytest.mark.django_db
@@ -126,6 +142,34 @@ def test_zarr_rest_finalize(
     zarr_archive.refresh_from_db()
     assert zarr_archive.checksum is not None
     assert zarr_archive.checksum != EMPTY_CHECKSUM
+    assert zarr_archive.status == ZarrArchiveStatus.COMPLETE
+
+
+@pytest.mark.django_db
+def test_zarr_rest_finalize_active_uploads(api_client, zarr_file_factory):
+    """Finalizing a zarr with uploads still outstanding must be rejected."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create(
+        dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART
+    )
+    zarr_file_factory(zarr_archive=zarr_archive)
+    ZarrUploadFactory.create(zarr=zarr_archive)
+
+    resp = api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
+    assert resp.status_code == 400
+
+    # No ingestion may have been kicked off
+    zarr_archive.refresh_from_db()
+    assert zarr_archive.status == ZarrArchiveStatus.PENDING
+    assert zarr_archive.checksum is None
+
+    # Once the upload is validated away, the zarr can be finalized
+    ZarrUpload.objects.all().delete()
+    resp = api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
+    assert resp.status_code == 204
+
+    zarr_archive.refresh_from_db()
     assert zarr_archive.status == ZarrArchiveStatus.COMPLETE
 
 
