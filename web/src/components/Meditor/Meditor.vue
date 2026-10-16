@@ -130,7 +130,7 @@
             <template #activator="{ props }">
               <div v-bind="props">
                 <v-btn
-                  :href="aiEditorURL"
+                  :href="readonly ? undefined : aiEditorURL"
                   :disabled="readonly"
                   target="_blank"
                   rel="noopener"

@@ -54,7 +54,7 @@
           <template #activator="{ props }">
             <div v-bind="props">
               <v-list-item
-                :href="aiEditorURL"
+                :href="store.userCanModifyDandiset ? aiEditorURL : undefined"
                 :disabled="!store.userCanModifyDandiset"
                 target="_blank"
                 rel="noopener"
