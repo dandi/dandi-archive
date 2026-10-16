@@ -70,8 +70,7 @@
               </v-list-item>
             </div>
           </template>
-          <span v-if="store.userCanModifyDandiset">Open the Dandiset in the AI assisted metadata editor (Beta)</span>
-          <span v-else>{{ store.metadataReadonlyReason }}</span>
+          <span>{{ store.metadataReadonlyReason ?? 'Open the Dandiset in the AI assisted metadata editor (Beta)' }}</span>
         </v-tooltip>
         <v-tooltip
           v-if="atlas"
