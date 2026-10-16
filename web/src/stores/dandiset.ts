@@ -37,28 +37,27 @@ export const useDandisetStore = defineStore('dandiset', {
     draftVersion: (state) => state.versions?.find((v) => v.version === draftVersion),
     publishedVersions: (state) => state.versions?.filter((v) => v.version !== draftVersion),
     schemaVersion: (state) => state.schema?.properties.schemaVersion.default,
-    userCanModifyDandiset: (state) => {
-      // published versions are never editable, and logged out users can never edit a dandiset
-      if (state.dandiset?.metadata?.version !== draftVersion || !user.value) {
-        return false;
-      }
-      // if they're an admin, they can edit any dandiset
-      if (user.value?.admin) {
-        return true;
-      }
-      // otherwise check if they are an owner
-      return !!(state.owners?.find((owner) => owner.username === user.value?.username));
+    // derived from metadataReadonlyReason so the permission rules live in one place
+    userCanModifyDandiset(): boolean {
+      return this.metadataReadonlyReason === undefined;
     },
     // a user-facing explanation of why the metadata can't be edited, or undefined if it can
-    metadataReadonlyReason(): string | undefined {
-      if (this.userCanModifyDandiset) {
-        return undefined;
-      }
-      if (this.dandiset?.metadata?.version !== draftVersion) {
+    metadataReadonlyReason: (state): string | undefined => {
+      // published versions are never editable
+      if (state.dandiset?.metadata?.version !== draftVersion) {
         return 'Metadata can only be edited on the draft version of a Dandiset';
       }
+      // logged out users can never edit a dandiset
       if (!user.value) {
         return 'Log in to edit this Dandiset\'s metadata';
+      }
+      // if they're an admin, they can edit any dandiset
+      if (user.value.admin) {
+        return undefined;
+      }
+      // otherwise check if they are an owner
+      if (state.owners?.find((owner) => owner.username === user.value?.username)) {
+        return undefined;
       }
       return 'Only owners of this Dandiset can edit its metadata';
     },
