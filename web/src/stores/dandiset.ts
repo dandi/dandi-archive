@@ -54,9 +54,13 @@ export const useDandisetStore = defineStore('dandiset', {
       if (this.userCanModifyDandiset) {
         return undefined;
       }
-      return this.dandiset?.metadata?.version !== draftVersion
-        ? 'Metadata can only be edited on the draft version of a Dandiset'
-        : 'Only owners of this Dandiset can edit its metadata';
+      if (this.dandiset?.metadata?.version !== draftVersion) {
+        return 'Metadata can only be edited on the draft version of a Dandiset';
+      }
+      if (!user.value) {
+        return 'Log in to edit this Dandiset\'s metadata';
+      }
+      return 'Only owners of this Dandiset can edit its metadata';
     },
   },
   actions: {
