@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { clientUrl, registerNewUser, LOGOUT_BUTTON_TEXT, registerDandiset } from "../utils.ts";
+import { clientUrl, registerNewUser, LOGOUT_BUTTON_TEXT, registerDandiset, fetchInstanceConfig } from "../utils.ts";
 import { faker } from "@faker-js/faker";
 
 test.describe("dandiset landing page", async () => {
@@ -62,8 +62,14 @@ test.describe("dandiset landing page", async () => {
 
     let dandisetId: string | undefined;
     let page: Page;
+    let instanceName: string;
+    let instanceIdentifier: string | null;
 
     test.beforeAll(async ({ browser }) => {
+      const config = await fetchInstanceConfig();
+      instanceName = config.instance_name;
+      instanceIdentifier = config.instance_identifier;
+
       page = await browser.newPage();
       await registerNewUser(page);
       const dandisetName = faker.lorem.words();
@@ -101,16 +107,27 @@ test.describe("dandiset landing page", async () => {
       await expect(page.getByRole("heading", { name: "Full Citation" })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Materials and Methods" })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Data Availability Statement" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "DANDI Identifier" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Dandiset Identifier" })).toBeVisible();
+      if (instanceIdentifier) {
+        await expect(page.getByRole("heading", { name: "Archive Identifier" })).toBeVisible();
+      }
       await expect(page.getByRole("heading", { name: "License" })).toBeVisible();
     });
 
-    test("displays DANDI identifier with correct format", async () => {
+    test("displays dandiset identifier with correct format", async () => {
       await page.getByRole("tab", { name: "How to Cite" }).click();
 
-      // The identifier should follow the format DANDI:<id>/draft
-      await expect(page.getByText(`DANDI:${dandisetId}/draft`)).toBeVisible();
-      await expect(page.getByText("DANDI Archive RRID: SCR_017571")).toBeVisible();
+      // The dandiset identifier should follow the format <instance_name>:<id>/draft
+      await expect(page.getByText(`${instanceName}:${dandisetId}/draft`)).toBeVisible();
+    });
+
+    test("displays archive identifier when configured", async () => {
+      await page.getByRole("tab", { name: "How to Cite" }).click();
+
+      if (instanceIdentifier) {
+        const expectedArchiveId = `${instanceName} Archive ${instanceIdentifier}`;
+        await expect(page.getByText(expectedArchiveId)).toBeVisible();
+      }
     });
 
     test("displays citation format selector", async () => {

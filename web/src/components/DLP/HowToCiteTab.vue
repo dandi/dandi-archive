@@ -181,19 +181,19 @@
 
         <v-divider class="my-4" />
 
-        <!-- DANDI Identifier -->
+        <!-- Dandiset Identifier -->
         <h3 class="text-h6 mb-2">
-          DANDI Identifier
+          Dandiset Identifier
         </h3>
         <div class="copy-block mb-2">
           <div class="copy-block-content copy-block-inline">
-            <span>{{ dandiIdentifier }}</span>
+            <span>{{ instanceName }}:{{ dandisetVersionIdentifier }}</span>
             <v-btn
               icon
               size="small"
               variant="text"
               class="copy-btn"
-              @click="copyToClipboard(dandiIdentifier)"
+              @click="copyToClipboard(`${instanceName}:${dandisetVersionIdentifier}`)"
             >
               <v-icon size="small">
                 mdi-content-copy
@@ -207,9 +207,39 @@
             </v-btn>
           </div>
         </div>
-        <p class="text-body-2 text-grey mb-4">
-          DANDI Archive RRID: SCR_017571
-        </p>
+
+        <!-- Archive Identifier -->
+        <h3
+          v-if="archiveIdentifier"
+          class="text-h6 mb-2 mt-4"
+        >
+          Archive Identifier
+        </h3>
+        <div
+          v-if="archiveIdentifier"
+          class="copy-block mb-4"
+        >
+          <div class="copy-block-content copy-block-inline">
+            <span>{{ archiveIdentifier }}</span>
+            <v-btn
+              icon
+              size="small"
+              variant="text"
+              class="copy-btn"
+              @click="copyToClipboard(archiveIdentifier)"
+            >
+              <v-icon size="small">
+                mdi-content-copy
+              </v-icon>
+              <v-tooltip
+                activator="parent"
+                location="top"
+              >
+                Copy archive identifier to clipboard
+              </v-tooltip>
+            </v-btn>
+          </div>
+        </div>
 
         <!-- License Information -->
         <div v-if="licenses && licenses.length">
@@ -239,6 +269,7 @@
 import { computed, type PropType, ref } from 'vue';
 
 import { useDandisetStore } from '@/stores/dandiset';
+import { useInstanceStore } from '@/stores/instance';
 import type { DandisetMetadata } from '@/types';
 import { dandisetToCFF, cffToBibTeX, cffToAPA, cffToMLA, cffToChicago, cffToHarvard, cffToVancouver, cffToIEEE, cffToRIS, cffToYAML } from '@/utils/cff';
 
@@ -254,6 +285,16 @@ const props = defineProps({
 });
 
 const store = useDandisetStore();
+const instanceStore = useInstanceStore();
+instanceStore.load();
+const instanceName = computed(() => instanceStore.instanceName ?? '');
+const instanceIdentifier = computed(() => instanceStore.instanceIdentifier);
+const archiveIdentifier = computed(() => {
+  if (!instanceIdentifier.value) {
+    return '';
+  }
+  return `${instanceName.value} Archive ${instanceIdentifier.value}`;
+});
 const currentDandiset = computed(() => store.dandiset);
 const isDraft = computed(() => store.version === 'draft');
 const publishedVersions = computed(() => store.publishedVersions);
@@ -287,7 +328,14 @@ const cffObject = computed(() => {
     return null;
   }
 
-  return dandisetToCFF(props.meta, typeof doi.value === 'string' ? doi.value : undefined, isDraft.value, currentDandiset.value?.modified);
+  return dandisetToCFF(
+    props.meta,
+    typeof doi.value === 'string' ? doi.value : undefined,
+    isDraft.value,
+    currentDandiset.value?.modified,
+    instanceName.value,
+    instanceStore.instanceUrl || undefined,
+  );
 });
 
 // Generate citations in different formats
@@ -305,17 +353,15 @@ const formattedCitations = computed<Record<CitationFormat, string>>(() => {
       cff: '',
     };
   }
-  const identifier = dandiIdentifier.value;
-
   return {
-    apa: cffToAPA(cffObject.value),
-    mla: cffToMLA(cffObject.value),
-    chicago: cffToChicago(cffObject.value),
-    harvard: cffToHarvard(cffObject.value),
-    vancouver: cffToVancouver(cffObject.value),
-    ieee: cffToIEEE(cffObject.value),
-    bibtex: cffToBibTeX(cffObject.value, identifier),
-    ris: cffToRIS(cffObject.value, identifier),
+    apa: cffToAPA(cffObject.value, instanceName.value),
+    mla: cffToMLA(cffObject.value, instanceName.value),
+    chicago: cffToChicago(cffObject.value, instanceName.value),
+    harvard: cffToHarvard(cffObject.value, instanceName.value),
+    vancouver: cffToVancouver(cffObject.value, instanceName.value),
+    ieee: cffToIEEE(cffObject.value, instanceName.value),
+    bibtex: cffToBibTeX(cffObject.value, dandisetVersionIdentifier.value, instanceName.value),
+    ris: cffToRIS(cffObject.value, dandisetVersionIdentifier.value, instanceName.value),
     cff: cffToYAML(cffObject.value),
   };
 });
@@ -352,14 +398,14 @@ const isCodeFormat = computed(() => {
   return ['bibtex', 'ris', 'cff'].includes(selectedCitationFormat.value);
 });
 
-const dandiIdentifier = computed(() => {
+const dandisetVersionIdentifier = computed(() => {
   if (!currentDandiset.value) {
     return '';
   }
 
   const { identifier } = currentDandiset.value.dandiset;
   const version = props.meta?.version || currentDandiset.value.version;
-  return `DANDI:${identifier}/${version}`;
+  return `${identifier}/${version}`;
 });
 
 const dandiUrl = computed(() => {
@@ -371,17 +417,20 @@ const dandiUrl = computed(() => {
   }
 
   const { identifier } = currentDandiset.value.dandiset;
-  return `https://dandiarchive.org/dandiset/${identifier}`;
+  const baseUrl = instanceStore.instanceUrl || window.location.origin;
+  return `${baseUrl}/dandiset/${identifier}`;
 });
 
 const methodsText = computed(() => {
   const url = dandiUrl.value;
-  return `Data associated with this study are available on the DANDI Archive (RRID:SCR_017571): ${url}`;
+  const rridPart = instanceIdentifier.value ? ` (${instanceIdentifier.value})` : '';
+  return `Data associated with this study are available on the ${instanceName.value} Archive${rridPart}: ${url}`;
 });
 
 const dataAvailabilityText = computed(() => {
   const url = dandiUrl.value;
-  return `Data are publicly available on the DANDI Archive (RRID:SCR_017571) at the following URL: ${url}`;
+  const rridPart = instanceIdentifier.value ? ` (${instanceIdentifier.value})` : '';
+  return `Data are publicly available on the ${instanceName.value} Archive${rridPart} at the following URL: ${url}`;
 });
 
 function formatLicense(license: string): string {
