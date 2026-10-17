@@ -150,7 +150,7 @@ const operatorHelp = [
   { example: 'approach:electrophysiology', description: 'Has assets using an approach' },
   { example: 'technique:"spike sorting"', description: 'Has assets using a measurement technique' },
   { example: 'standard:nwb', description: 'Has assets in a data standard (e.g. nwb, bids)' },
-  { example: 'variable:LFP', description: 'Contains a measured variable / neurodata type' },
+  { example: 'variable:LFP', description: 'Contains a neurodata type (or one of its subtypes)' },
   { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, GitHub username, or email)' },
 ];
 
