@@ -6,10 +6,17 @@ from django.urls import include, path, re_path, register_converter, reverse_lazy
 from django.views.generic import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
+from oauth2_provider import urls as oauth2_urls
+from oauth2_provider import views as oauth2_views
 from rest_framework import permissions
 from rest_framework_extensions.routers import ExtendedSimpleRouter
 
 from dandiapi.api.views import (
+    ApplicationDelete,
+    ApplicationDetail,
+    ApplicationList,
+    ApplicationRegistration,
+    ApplicationUpdate,
     AssetViewSet,
     DandisetViewSet,
     DashboardView,
@@ -115,6 +122,32 @@ webdav_schema_view = get_schema_view(
 )
 
 
+# django-oauth-toolkit ships self-service views (under "applications/") that let any
+# logged-in user register and manage OAuth2 applications. Registering an external
+# application should be an administrative action, so those views are replaced with
+# admin-only versions here; everything else is mounted exactly as the toolkit defines it.
+oauth2_urlpatterns = [
+    *oauth2_urls.base_urlpatterns,
+    path('applications/', ApplicationList.as_view(), name='list'),
+    path('applications/register/', ApplicationRegistration.as_view(), name='register'),
+    path('applications/<slug:pk>/', ApplicationDetail.as_view(), name='detail'),
+    path('applications/<slug:pk>/delete/', ApplicationDelete.as_view(), name='delete'),
+    path('applications/<slug:pk>/update/', ApplicationUpdate.as_view(), name='update'),
+    # Users may still list and revoke the tokens they have authorized themselves
+    path(
+        'authorized_tokens/',
+        oauth2_views.AuthorizedTokensListView.as_view(),
+        name='authorized-token-list',
+    ),
+    path(
+        'authorized_tokens/<slug:pk>/delete/',
+        oauth2_views.AuthorizedTokenDeleteView.as_view(),
+        name='authorized-token-delete',
+    ),
+    *oauth2_urls.oidc_urlpatterns,
+]
+
+
 class DandisetIDConverter:
     regex = r'\d{6}'
 
@@ -140,7 +173,10 @@ urlpatterns = [
     # this url overrides the authorize url in oauth2_provider.urls to
     # support our user signup workflow
     path('oauth/authorize/', authorize_view, name='authorize'),
-    path('oauth/', include('oauth2_provider.urls')),
+    path(
+        'oauth/',
+        include((oauth2_urlpatterns, 'oauth2_provider'), namespace='oauth2_provider'),
+    ),
     # Doc page views
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
