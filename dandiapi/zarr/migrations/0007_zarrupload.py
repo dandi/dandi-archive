@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True)),
-                ('blob', models.FileField(blank=True, upload_to='')),
+                ('blob', models.FileField(blank=True, max_length=1024, upload_to='')),
                 ('upload_id', models.UUIDField(db_index=True, default=uuid.uuid4, unique=True)),
                 (
                     'etag',

@@ -146,9 +146,15 @@ class ZarrArchive(TimeStampedModel):
 class ZarrUpload(BaseUpload):
     """A multipart upload of a single chunk of a zarr archive."""
 
+    # S3 object keys may be up to 1024 bytes long
+    MAX_OBJECT_KEY_LENGTH = 1024
+
+    # Overridden to hold the full object key, which includes the (arbitrarily long) chunk key
+    blob = models.FileField(blank=True, max_length=MAX_OBJECT_KEY_LENGTH)
+
     zarr = models.ForeignKey(ZarrArchive, related_name='uploads', on_delete=models.CASCADE)
     # The path of this chunk within the zarr archive
-    chunk_key = models.CharField(max_length=1024)
+    chunk_key = models.CharField(max_length=MAX_OBJECT_KEY_LENGTH)
 
     class Meta(BaseUpload.Meta):
         abstract = False
@@ -175,6 +181,11 @@ class ZarrUpload(BaseUpload):
         upload_id = uuid4()
         chunk_key = chunk_key.lstrip('/')
         object_key = zarr.s3_path(chunk_key)
+
+        # Check this before creating the multipart upload, so that S3 doesn't reject the key
+        if len(object_key.encode()) > cls.MAX_OBJECT_KEY_LENGTH:
+            raise ValidationError('Chunk key is too long.')
+
         multipart_initialization = cls._initialize_multipart_upload(
             size=size,
             object_key=object_key,

@@ -44,9 +44,13 @@ logger = logging.getLogger(__name__)
 
 class ZarrUploadInitializationRequestSerializer(serializers.Serializer):
     zarr_id = serializers.UUIDField()
-    chunk_key = serializers.CharField(validators=[validate_zarr_path])
+    chunk_key = serializers.CharField(
+        validators=[validate_zarr_path], max_length=ZarrUpload.MAX_OBJECT_KEY_LENGTH
+    )
     contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
-    content_type = serializers.CharField(required=False, default='application/octet-stream')
+    content_type = serializers.CharField(
+        required=False, default='application/octet-stream', max_length=255
+    )
     digest = DigestSerializer()
 
     def get_digest_data(self) -> tuple[str, int]:

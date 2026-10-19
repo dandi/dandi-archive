@@ -109,6 +109,53 @@ def test_zarr_multipart_upload_initialize_rejects_path_traversal(api_client, chu
 
 
 @pytest.mark.django_db
+def test_zarr_multipart_upload_initialize_long_chunk_key(api_client):
+    """A chunk key whose object key is exactly at the S3 limit must be accepted."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create(
+        dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART
+    )
+
+    chunk_key = 'a' * (ZarrUpload.MAX_OBJECT_KEY_LENGTH - len(zarr_archive.s3_path('')))
+    resp = api_client.post(
+        '/api/zarr/uploads/initialize/', initialize_body(zarr_archive, chunk_key=chunk_key)
+    )
+    assert resp.status_code == 200
+
+    upload = ZarrUpload.objects.get(upload_id=resp.data['upload_id'])
+    assert upload.chunk_key == chunk_key
+    assert upload.blob.name == zarr_archive.s3_path(chunk_key)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'chunk_key_char',
+    [
+        'a',
+        # A multi-byte character, so that the key is within the limit in characters, but not bytes
+        '\N{GREEK SMALL LETTER ALPHA}',
+    ],
+)
+def test_zarr_multipart_upload_initialize_chunk_key_too_long(api_client, chunk_key_char):
+    """A chunk key whose object key exceeds the S3 limit must be rejected."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    zarr_archive = ZarrArchiveFactory.create(
+        dandiset__owners=[user], upload_type=ZarrUploadType.MULTIPART
+    )
+
+    chunk_key = chunk_key_char * (
+        ZarrUpload.MAX_OBJECT_KEY_LENGTH - len(zarr_archive.s3_path('')) + 1
+    )
+    resp = api_client.post(
+        '/api/zarr/uploads/initialize/', initialize_body(zarr_archive, chunk_key=chunk_key)
+    )
+    assert resp.status_code == 400
+    assert not ZarrUpload.objects.exists()
+
+
+@pytest.mark.django_db
 def test_zarr_multipart_upload_initialize_not_an_owner(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
