@@ -19,7 +19,7 @@ WHERE record_type = 'upload_zarr_chunks'
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('api', '0033_remove_upload_embargoed'),
+        ('api', '0034_remove_upload_embargoed'),
     ]
 
     operations = [
