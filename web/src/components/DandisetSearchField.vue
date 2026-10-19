@@ -152,6 +152,14 @@ const operatorHelp = [
   { example: 'standard:nwb', description: 'Has assets in a data standard (e.g. nwb, bids)' },
   { example: 'variable:LFP', description: 'Contains a measured variable / neurodata type' },
   { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, GitHub username, or email)' },
+  { example: 'contributor:"Doe, Jane"', description: 'Listed as a contributor (any role; matches name, email, ORCID, or ROR ID)' },
+  { example: 'author:Doe', description: 'Listed as an Author (matches name, email, ORCID, or ROR ID)' },
+  { example: 'data_curator:Doe', description: 'Listed as a Data Curator' },
+  { example: 'funder:NIH', description: 'Listed as a Funder' },
+  { example: 'contact_person:Doe', description: 'Listed as the Contact Person' },
+  { example: 'maintainer:Doe', description: 'Listed as a Maintainer' },
+  { example: 'project_leader:Doe', description: 'Listed as the Project Leader (also: data_collector, data_manager, sponsor)' },
+  { example: 'affiliation:Stanford', description: 'Has a contributor affiliated with the named organization (or ROR ID)' },
 ];
 
 // The set of operators we suggest, derived from the help table so the two
