@@ -127,7 +127,7 @@ def test_asset_rest_bulk_delete_nonexistent_asset(api_client, version_with_asset
         {'asset_ids': [str(assets[0].asset_id), str(missing_id)]},
         format='json',
     )
-    assert resp.status_code == 404
+    assert resp.status_code == 409
     assert resp.data['missing_asset_ids'] == [str(missing_id)]
 
     # Nothing should have been removed
@@ -149,7 +149,7 @@ def test_asset_rest_bulk_delete_asset_of_other_version(
     resp = api_client.post(
         bulk_delete_url(version), {'asset_ids': [str(other_asset.asset_id)]}, format='json'
     )
-    assert resp.status_code == 404
+    assert resp.status_code == 409
     assert other_asset in other_version.assets.all()
 
 

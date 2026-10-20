@@ -34,7 +34,7 @@ class ZarrArchiveBelongsToDifferentDandisetError(DandiError):
 
 
 class AssetsNotFoundError(DandiError):
-    http_status_code = status.HTTP_404_NOT_FOUND
+    http_status_code = status.HTTP_409_CONFLICT
     asset_ids: list[str]
     message = 'Some assets do not belong to this version.'
 
