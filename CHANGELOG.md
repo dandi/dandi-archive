@@ -1,3 +1,15 @@
+# v1.1.0 (Tue Oct 20 2026)
+
+#### 🚀 Enhancement
+
+- Disable AI meditor on published versions [#2973](https://github.com/dandi/dandi-archive/pull/2973) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 1
+
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v1.0.19 (Wed Oct 14 2026)
 
 :tada: This release contains work from a new contributor! :tada:
