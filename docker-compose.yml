@@ -1,7 +1,11 @@
 services:
   postgres:
+<<<<<<< before updating
     image: postgres:18
     command: postgres -c log_lock_waits=on -c log_min_duration_statement=100
+=======
+    image: postgres:18.6
+>>>>>>> after updating
     shm_size: 128mb
     environment:
       POSTGRES_DB: django
@@ -15,7 +19,7 @@ services:
       - postgres:/var/lib/postgresql
 
   rabbitmq:
-    image: rabbitmq:management-alpine
+    image: rabbitmq:4.3.6-management-alpine
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       start_period: 30s
@@ -25,24 +29,31 @@ services:
     volumes:
       - rabbitmq:/var/lib/rabbitmq
 
+<<<<<<< before updating
   minio:
     # quay.io/minio/minio requires a login since 2026-09-24
     image: bitnamilegacy/minio:latest
+=======
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.48
+>>>>>>> after updating
     environment:
-      MINIO_ROOT_USER: minioAccessKey
-      MINIO_ROOT_PASSWORD: minioSecretKey
+      AWS_ACCESS_KEY_ID: seaweedAccessKey
+      AWS_SECRET_ACCESS_KEY: seaweedSecretKey
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      # "mc ready" doesn't terminate on failure, so time it out
-      timeout: 1s
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8333/healthz"]
       start_period: 30s
     ports:
-      - 9000:9000
-      - 9001:9001
+      - 8333:8333
+      - 23646:23646
     volumes:
+<<<<<<< before updating
       - minio:/bitnami/minio/data
+=======
+      - seaweedfs:/data
+>>>>>>> after updating
 
 volumes:
   postgres:
-  minio:
   rabbitmq:
+  seaweedfs:
