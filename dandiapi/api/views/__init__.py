@@ -9,6 +9,7 @@ from .info import info_view
 from .robots import robots_txt_view
 from .root import root_content_view
 from .schema import schema_list_view, schema_view
+from .sitemap import sitemap_view
 from .stats import stats_view
 from .upload import (
     blob_read_view,
@@ -35,6 +36,7 @@ __all__ = [
     'root_content_view',
     'schema_list_view',
     'schema_view',
+    'sitemap_view',
     'stats_view',
     'upload_complete_view',
     'upload_initialize_view',

@@ -13,5 +13,13 @@ export default {
       to: `${apiUrl}/info/?format=json`,
       status: 200,
     });
+
+    // Serve the dandiset sitemap from the frontend domain so crawlers associate it with the
+    // landing pages it lists
+    netlifyConfig.redirects.unshift({
+      from: '/sitemap.xml',
+      to: `${apiUrl}/sitemap.xml`,
+      status: 200,
+    });
   },
 };
