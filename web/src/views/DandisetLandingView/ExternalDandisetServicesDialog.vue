@@ -54,7 +54,8 @@
           <template #activator="{ props }">
             <div v-bind="props">
               <v-list-item
-                :href="aiEditorURL"
+                :href="store.userCanModifyDandiset ? aiEditorURL : undefined"
+                :disabled="!store.userCanModifyDandiset"
                 target="_blank"
                 rel="noopener"
               >
@@ -69,7 +70,7 @@
               </v-list-item>
             </div>
           </template>
-          <span>Open the Dandiset in the AI assisted metadata editor (Beta)</span>
+          <span>{{ store.metadataReadonlyReason ?? 'Open the Dandiset in the AI assisted metadata editor (Beta)' }}</span>
         </v-tooltip>
         <v-tooltip
           v-if="atlas"
