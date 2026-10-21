@@ -15,6 +15,10 @@ class DandiError(Exception):
 
         super().__init__(*args)
 
+    @property
+    def response_data(self) -> object:
+        return self.message
+
 
 class NotAllowedError(DandiError):
     message = 'Action not allowed'
