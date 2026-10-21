@@ -181,9 +181,9 @@
           </v-badge>
         </v-tab>
         <v-tab
-          v-for="(propKey, i) in fieldsToRender"
-          :key="`tab-${i+1}`"
-          :value="`tab-${i+1}`"
+          v-for="propKey in fieldsToRender"
+          :key="`tab-${propKey}`"
+          :value="`tab-${propKey}`"
           class="font-weight-medium text-caption"
         >
           <v-badge
@@ -222,13 +222,13 @@
         </v-tabs-window-item>
       </v-tabs-window>
       <v-tabs-window
-        v-for="(propKey, i) in fieldsToRender"
-        :key="`tab-window-${i+1}`"
+        v-for="propKey in fieldsToRender"
+        :key="`tab-window-${propKey}`"
         v-model="tab"
       >
         <v-tabs-window-item
           eager
-          :value="`tab-${i+1}`"
+          :value="`tab-${propKey}`"
         >
           <v-card class="pa-2 px-1">
             <v-form
@@ -262,7 +262,6 @@ import VJsf from '@koumoul/vjsf';
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { DandiModel } from './types';
-import { isJSONSchema } from './types';
 import { EditorInterface } from './editor';
 import { validateDandisetMetadata, VJSFVuetifyDefaultProps } from './utils';
 
@@ -274,22 +273,7 @@ import {
   // getTransactionsLocalStorage,
 } from './localStorage';
 import VJsfWrapper from './VJsfWrapper.vue';
-import { editorInterface, open } from './state';
-
-function renderField(fieldSchema: JSONSchema7) {
-  const { properties } = fieldSchema;
-
-  if (fieldSchema.readOnly) { return false; }
-  const allSubPropsReadOnly = properties !== undefined && Object.keys(properties).every(
-    (key) => {
-      const subProp = properties[key];
-      return isJSONSchema(subProp) && subProp.readOnly;
-    },
-  );
-
-  if (allSubPropsReadOnly) { return false; }
-  return true;
-}
+import { editorInterface, open, tab } from './state';
 
 const store = useDandisetStore();
 
@@ -305,7 +289,6 @@ const readonly = computed(() => !store.userCanModifyDandiset);
 // );
 
 const invalidPermissionSnackbar = ref(false);
-const tab = ref(null);
 // const loadFromLocalStoragePrompt = ref(false);
 
 editorInterface.value = new EditorInterface(schema.value, model.value as DandiModel);
@@ -317,6 +300,7 @@ const {
   complexSchema,
   complexModelValidation,
   transactionTracker,
+  fieldsToRender,
 } = editorInterface.value;
 const CommonVJSFOptions = computed(() => ({
   // Always validate the metadata immediately upong the meditor opening
@@ -328,7 +312,6 @@ const CommonVJSFOptions = computed(() => ({
   // Hide the read-only properties in the schema
   readOnlyPropertiesMode: 'hide',
 }));
-
 
 watchEffect(() => {
   if (schema.value && editorInterface.value) {
@@ -459,10 +442,6 @@ function getSchemaTitle(propKey: string) {
   const properties = complexSchema?.properties as any;
   return properties ? properties[propKey].title || propKey : propKey;
 }
-
-const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
-  (p) => renderField((complexSchema as any).properties[p]),
-);
 
 // TODO: fix and re-enable this
 // function loadDataFromLocalStorage() {
