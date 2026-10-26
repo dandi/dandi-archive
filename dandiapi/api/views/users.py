@@ -16,7 +16,11 @@ from rest_framework.response import Response
 
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.permissions import AuthenticatedRequest, IsAdminUser, IsApproved
-from dandiapi.api.views.serializers import UserDetailSerializer, UserSerializer
+from dandiapi.api.views.serializers import (
+    UserDetailSerializer,
+    UserMeSerializer,
+    UserSerializer,
+)
 
 if TYPE_CHECKING:
     from django.http.response import HttpResponseBase
@@ -84,7 +88,7 @@ def serialize_user(user: User):
 
 @swagger_auto_schema(
     method='GET',
-    responses={200: UserDetailSerializer},
+    responses={200: UserMeSerializer},
 )
 @api_view(['GET'])
 @parser_classes([JSONParser])
@@ -96,7 +100,10 @@ def users_me_view(request: AuthenticatedRequest) -> HttpResponseBase:
         user_dict = social_account_to_dict(social_account)
     else:
         user_dict = user_to_dict(request.user)
-    response_serializer = UserDetailSerializer(user_dict)
+    # The email is only exposed to the user themselves, so the web client can
+    # offer them as the contact person when creating a Dandiset.
+    user_dict['email'] = request.user.email
+    response_serializer = UserMeSerializer(user_dict)
     return Response(response_serializer.data)
 
 
