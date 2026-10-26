@@ -52,7 +52,8 @@ def test_asset_rest_bulk_delete(api_client, version_with_assets):
         {'asset_ids': [str(asset.asset_id) for asset in assets]},
         format='json',
     )
-    assert resp.status_code == 204
+    assert resp.status_code == 200
+    assert resp.data == len(assets)
 
     # All assets are disassociated from the version, but not deleted
     assert version.assets.count() == 0
@@ -87,7 +88,8 @@ def test_asset_rest_bulk_delete_partial(api_client, version_with_assets):
         {'asset_ids': [str(assets[0].asset_id), str(assets[1].asset_id)]},
         format='json',
     )
-    assert resp.status_code == 204
+    assert resp.status_code == 200
+    assert resp.data == 2
 
     # Ordering doesn't matter because it's just one asset
     assert list(version.assets.all()) == [assets[2]]
@@ -111,7 +113,8 @@ def test_asset_rest_bulk_delete_duplicate_ids(api_client, version_with_assets):
     resp = api_client.post(
         bulk_delete_url(version), {'asset_ids': [asset_id, asset_id]}, format='json'
     )
-    assert resp.status_code == 204
+    assert resp.status_code == 200
+    assert resp.data == 1
     assert version.assets.count() == 2
     assert AuditRecord.objects.filter(record_type='remove_asset').count() == 1
 
@@ -127,11 +130,11 @@ def test_asset_rest_bulk_delete_nonexistent_asset(api_client, version_with_asset
         {'asset_ids': [str(assets[0].asset_id), str(missing_id)]},
         format='json',
     )
-    assert resp.status_code == 404
-    assert str(missing_id) in resp.data
+    assert resp.status_code == 200
+    assert resp.data == 1
 
-    # Nothing should have been removed
-    assert version.assets.count() == 3
+    # The matching asset was removed
+    assert version.assets.count() == 2
 
 
 @pytest.mark.django_db
@@ -149,7 +152,8 @@ def test_asset_rest_bulk_delete_asset_of_other_version(
     resp = api_client.post(
         bulk_delete_url(version), {'asset_ids': [str(other_asset.asset_id)]}, format='json'
     )
-    assert resp.status_code == 204
+    assert resp.status_code == 200
+    assert resp.data == 0
 
 
 @pytest.mark.django_db

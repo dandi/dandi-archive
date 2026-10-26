@@ -439,13 +439,13 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         serializer = AssetBulkDeleteRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        bulk_remove_assets_from_version(
+        removed = bulk_remove_assets_from_version(
             user=request.user,
             version=version,
             asset_ids=serializer.validated_data['asset_ids'],
         )
 
-        return Response(None, status=status.HTTP_204_NO_CONTENT)
+        return Response(removed, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(query_serializer=AssetListSerializer, responses={200: AssetSerializer})
     def list(self, request, *args, **kwargs):
