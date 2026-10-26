@@ -18,7 +18,6 @@ from dandiapi.api.services import audit
 from dandiapi.api.services.asset.exceptions import (
     AssetAlreadyExistsError,
     AssetPathConflictError,
-    AssetsNotFoundError,
     DandisetOwnerRequiredError,
     DraftDandisetNotModifiableError,
     ZarrArchiveBelongsToDifferentDandisetError,
@@ -232,13 +231,6 @@ def bulk_remove_assets_from_version(*, user: User, version: Version, asset_ids: 
         raise DandisetOwnerRequiredError
     if version.version != 'draft':
         raise DraftDandisetNotModifiableError
-
-    # Ensure all of the supplied assets actually belong to this version, so that a request
-    # naming an unknown asset fails without removing any of the others.
-    existing = set(version.assets.filter(asset_id__in=asset_ids).values_list('asset_id', flat=True))
-    missing = [str(asset_id) for asset_id in asset_ids if asset_id not in existing]
-    if missing:
-        raise AssetsNotFoundError(missing)
 
     with transaction.atomic():
         # Lock the assets for the duration of the transaction. The ordering is required to
