@@ -375,7 +375,7 @@ Drafts already have rows for the new target, so publication is not interrupted.
 1. **dandi-cli:** fix the NWB Inspector version and release.
 2. **dandi-schema:** add `ValidatorType`, `VALIDATOR_CODES`, the two fields and the publication rule, then bump the version and release.
 3. **dandi-archive:** upgrade dandischema, then ship the table, endpoints, stamping, `/info/` fields and banner. The feature stays off while the setting is unset.
-4. **Record storage:** decide on it and set it up.
+4. **Record storage:** decide on it and set it up. When the majority of records are available, review them for accuracy and summarize potential effects and performance.
 5. **First target:** follow the "New validator release" steps above, with the sweep covering every draft and published version.
 
    The existing `revalidate --versions` management command cannot re-pend drafts as is. `validate_version_metadata` returns early unless a version is `PENDING`, so the command must first set them `PENDING`.
