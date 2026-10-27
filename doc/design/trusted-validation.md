@@ -7,8 +7,9 @@ Status: proposal
 # Contents
 
 - [Overview](#overview)
-- [Goals](#goals)
-- [Non-goals](#non-goals)
+  - [Goals](#goals)
+  - [Non-goals](#non-goals)
+  - [Summary](#summary)
 - [Terminology](#terminology)
 - [Current state](#current-state)
 - [Proposed solution](#proposed-solution)
@@ -26,6 +27,22 @@ Status: proposal
 - [Open questions](#open-questions)
 
 # Overview
+
+## Goals
+
+- A Dandiset version cannot be published unless a trusted validation record for its current content contains no errors.
+- The record must come from an exact, known set of validator versions:
+  - **Drafts:** the latest set the archive is configured for.
+  - **Published versions:** the set frozen at publication, so later validator releases never make them invalid.
+- Errors and warnings are shown to everyone in a banner on the Dandiset landing page ([#1486](https://github.com/dandi/dandi-archive/issues/1486)). Warnings do not block publication but reflect overall quality.
+
+## Non-goals
+
+- Running validators inside the archive, or storing full records in its database.
+- Changing the metadata of versions published before this feature. Their results only drive the banner.
+- Per-asset validation status driven by these records.
+
+## Summary
 
 Today the archive only validates *metadata*: each Asset's metadata against the `PublishedAsset` schema, and the draft Version's metadata against the `PublishedDandiset` schema.
 
@@ -45,20 +62,6 @@ The changes in each repository are small:
 | dandi-archive | One table, one endpoint, a few lines in draft validation and publishing, `/info/` fields, a banner, a daily check |
 | dandi-infrastructure | One config var, plus whatever record storage needs |
 | dandi-cli | Bug fixes so records carry correct validator versions |
-
-# Goals
-
-- A Dandiset version cannot be published unless a trusted validation record for its current content contains no errors.
-- The record must come from an exact, known set of validator versions:
-  - **Drafts:** the latest set the archive is configured for.
-  - **Published versions:** the set frozen at publication, so later validator releases never make them invalid.
-- Errors and warnings are shown to everyone in a banner on the Dandiset landing page ([#1486](https://github.com/dandi/dandi-archive/issues/1486)). Warnings do not block publication but reflect overall quality.
-
-# Non-goals
-
-- Running validators inside the archive, or storing full records in its database.
-- Changing the metadata of versions published before this feature. Their results only drive the banner.
-- Per-asset validation status driven by these records.
 
 # Terminology
 
