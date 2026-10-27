@@ -42,7 +42,7 @@ The changes in each repository are small:
 | Repository | Change |
 |---|---|
 | dandi-schema | Two read-only `Dandiset` fields, one publication rule, one schema version bump |
-| dandi-archive | One table, one endpoint, a few lines in draft validation, `/info/` fields, a banner |
+| dandi-archive | One table, one endpoint, a few lines in draft validation and publishing, `/info/` fields, a banner, a daily check |
 | dandi-infrastructure | One config var, plus whatever record storage needs |
 | dandi-cli | Bug fixes so records carry correct validator versions |
 
@@ -259,7 +259,9 @@ def _validation_fields(version: Version) -> dict:
 
 It persists the merged metadata in the same `update()` that stores `status` and `validation_errors`.
 
-Draft validation is publish-time validation (see [Current state](#current-state)). So whenever `validatedBy` is not `true`, the new schema rule produces an ordinary validation error on `validatedBy`, and the draft becomes `INVALID`. The existing publish gating, validation dialog and Publish button handle the rest, and **the publish service needs no change**.
+That `update()` does not bump `Version.modified` when the only metadata change is to these two fields. Today `validate_version_metadata` always sets `modified=now`. Keeping that would move the "Last update" date on every `PUT` even though the content didn't change. Content changes already bump `modified` themselves (see also [#2950](https://github.com/dandi/dandi-archive/pull/2950)).
+
+Draft validation is publish-time validation (see [Current state](#current-state)). So whenever `validatedBy` is not `true`, the new schema rule produces an ordinary validation error on `validatedBy`, and the draft becomes `INVALID`. The existing publish gating, validation dialog and Publish button handle the rest, and **the publish service needs no new check**.
 
 Two more details:
 - `Version.strip_metadata` adds both fields to its computed fields, so owners cannot set them through the metadata editor or the API.
@@ -268,6 +270,8 @@ Two more details:
 #### Publication
 
 The published Version inherits both fields from the draft's metadata. Published metadata is immutable, so the published Version stays tied to those validator versions permanently. `_publish_dandiset`'s final `validate(..., 'PublishedDandiset')` enforces the rule a second time.
+
+Publishing also copies the draft's summary row for the required version code to the new published Version. The content is identical, so the fingerprints match by construction. The published Version's banner shows the result straight away, and the runner never re-validates content that already passed as the draft.
 
 #### Read API
 
@@ -323,8 +327,8 @@ These need to land before the full sweep:
 The runner runs on trusted compute, outside these repositories. This is its contract with the archive:
 
 1. **Choose the validator versions.**
-   - For a published Version with `validatedRequiredVersions` in its metadata, run exactly those versions against that release's tag in the `dandisets/` DataLad clone.
-   - For drafts, use `validation_target` from `/api/info/`.
+   - For drafts, and for versions published before this feature, use `validation_target` from `/api/info/`.
+   - Versions published with this feature already have a summary copied at publication (see [Publication](#publication)), so they need no run. If one is re-run, for example after a runner bug fix, use exactly its `validatedRequiredVersions` against that release's tag in the `dandisets/` DataLad clone.
    - Other validator versions may be run and uploaded too.
 2. **Validate**, with `--min-severity INFO -f json_lines`, so that warnings and hints are recorded.
 3. **Prepare the result.** Relativize paths (see [dandi-cli](#dandi-cli)) and store the JSONL in record storage. Then compute the counts, `top_issues` and the content fingerprint.
@@ -355,7 +359,7 @@ The archive monitors the delay so a stalled runner is noticed:
   )
   ```
 
-  `modified` only approximates when the wait began. Every change to the draft resets it, and so does the re-validation that follows each `PUT`.
+  `modified` only approximates when the wait began, since every change to the draft resets it.
 - **Notification.** If any drafts are found, the task emails `DANDI_DEV_EMAIL` with each Dandiset and how long it has waited. That setting already exists, so no infrastructure change is needed.
 
 ### Old files vs. new checks (accepted trade-off)
@@ -385,7 +389,7 @@ Drafts already have rows for the new target, so publication is not interrupted.
 
 1. **dandi-cli:** fix the NWB Inspector version and release.
 2. **dandi-schema:** add `ValidatorType`, `VALIDATOR_CODES`, the two fields and the publication rule, then bump the version and release.
-3. **dandi-archive:** upgrade dandischema, then ship the table, endpoints, stamping, `/info/` fields and banner. The feature stays off while the setting is unset.
+3. **dandi-archive:** upgrade dandischema, then ship the table, endpoints, stamping, publish-time copy, `/info/` fields, banner and daily check. The feature stays off while the setting is unset.
 4. **Record storage:** decide on it and set it up.
 5. **First target:** follow the "New validator release" steps above, with the sweep covering every draft and published version. When the majority of records are available, review them for accuracy and summarize potential effects and performance, before changing `DJANGO_DANDI_VALIDATION_TARGET`.
 
@@ -405,5 +409,4 @@ Drafts already have rows for the new target, so publication is not interrupted.
 
 1. **Field names.** In dandischema, `*By` fields hold an agent or activity (`publishedBy`, `wasGeneratedBy`, `wasAttributedTo`), so a boolean `validatedBy` may surprise readers. Alternatives include `validationPassed` for the boolean and `validatorVersions` for the map. The names must be settled before the schema is released.
 2. **Admin override.** The schema rule blocks superusers too. Is an override needed, for example an admin-only flag on the `PUT` that forces `success`?
-3. **`modified` bumps.** Re-pending a draft after a `PUT` makes `validate_version_metadata` bump `Version.modified`. That moves the "Last update" date even though the content didn't change. Consider not bumping `modified` when only the validation fields change (see also [#2950](https://github.com/dandi/dandi-archive/pull/2950)).
-4. **Record storage.** Where should records live? See [Record storage (to be decided)](#record-storage-to-be-decided).
+3. **Record storage.** Where should records live? See [Record storage (to be decided)](#record-storage-to-be-decided).
