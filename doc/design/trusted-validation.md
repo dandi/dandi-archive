@@ -375,8 +375,8 @@ Drafts already have rows for the new target, so publication is not interrupted.
 1. **dandi-cli:** fix the NWB Inspector version and release.
 2. **dandi-schema:** add `ValidatorType`, `VALIDATOR_CODES`, the two fields and the publication rule, then bump the version and release.
 3. **dandi-archive:** upgrade dandischema, then ship the table, endpoints, stamping, `/info/` fields and banner. The feature stays off while the setting is unset.
-4. **Record storage:** decide on it and set it up. When the majority of records are available, review them for accuracy and summarize potential effects and performance.
-5. **First target:** follow the "New validator release" steps above, with the sweep covering every draft and published version.
+4. **Record storage:** decide on it and set it up.
+5. **First target:** follow the "New validator release" steps above, with the sweep covering every draft and published version. When the majority of records are available, review them for accuracy and summarize potential effects and performance, before changing `DJANGO_DANDI_VALIDATION_TARGET`.
 
    The existing `revalidate --versions` management command cannot re-pend drafts as is. `validate_version_metadata` returns early unless a version is `PENDING`, so the command must first set them `PENDING`.
 
@@ -394,7 +394,6 @@ Drafts already have rows for the new target, so publication is not interrupted.
 
 1. **Field names.** In dandischema, `*By` fields hold an agent or activity (`publishedBy`, `wasGeneratedBy`, `wasAttributedTo`), so a boolean `validatedBy` may surprise readers. Alternatives include `validationPassed` for the boolean and `validatorVersions` for the map. The names must be settled before the schema is released.
 2. **Admin override.** The schema rule blocks superusers too. Is an override needed, for example an admin-only flag on the `PUT` that forces `success`?
-3. **Fingerprint source.** Confirm that the `dandisets/` DataLad clones expose each file's DANDI etag or Zarr checksum, so the runner can compute the fingerprint from what it actually validated.
-4. **Old files vs. new checks.** Files from earlier releases are re-checked with the latest validators, so a minor metadata enhancement could be blocked by a check that did not exist when the file was published. The advantage is that content and structure enhancements go hand-in-hand with metadata ones.
-5. **`modified` bumps.** Re-pending a draft after a `PUT` makes `validate_version_metadata` bump `Version.modified`. That moves the "Last update" date even though the content didn't change. Consider not bumping `modified` when only the validation fields change (see also [#2950](https://github.com/dandi/dandi-archive/pull/2950)).
-6. **Record storage.** Where should records live? See [Record storage (to be decided)](#record-storage-to-be-decided).
+3. **Old files vs. new checks.** Files from earlier releases are re-checked with the latest validators, so a minor metadata enhancement could be blocked by a check that did not exist when the file was published. The advantage is that content and structure enhancements go hand-in-hand with metadata ones.
+4. **`modified` bumps.** Re-pending a draft after a `PUT` makes `validate_version_metadata` bump `Version.modified`. That moves the "Last update" date even though the content didn't change. Consider not bumping `modified` when only the validation fields change (see also [#2950](https://github.com/dandi/dandi-archive/pull/2950)).
+5. **Record storage.** Where should records live? See [Record storage (to be decided)](#record-storage-to-be-decided).
