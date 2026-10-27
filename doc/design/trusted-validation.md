@@ -74,9 +74,9 @@ The changes in each repository are small:
   - **Checkable against records:** every key except `hdmf` is a `Validator` value that dandi-cli writes into each record's `origin`, so those versions can be checked against each record's `origin.validator_version`.
   - **hdmf:** the runner reports its version from its own environment.
 - **Version code:** a short, readable string form of a validator-versions map. It is used in the API path and in the archive's setting, and is suggested for record file names and the runner's container tag.
-  - **Form:** each package's short code (see `VALIDATOR_CODES` under [dandi-schema](#dandi-schema)) followed directly by its version, in the code table's order, joined with `_`. For the map above: `cli0.75.0_schema0.12.0_nwbi0.7.1_pynwb3.1.0_hdmf4.1.0_bids2.1.0`.
-  - **Parsing:** split on `_`, then split each part where its leading letters end.
-  - **Why this is unambiguous:** codes contain only letters, and normalized PEP 440 versions start with a digit and contain no `_`.
+  - **Form:** each package's one-letter code (see `VALIDATOR_CODES` under [dandi-schema](#dandi-schema)) followed directly by its version, in the code table's order, with no separator between entries. For the map above: `d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0`.
+  - **Parsing:** each entry matches `([a-z])(\d+(?:\.\d+)*)`, and a whole code matches `(?:[a-z]\d+(?:\.\d+)*)+`.
+  - **Why this is unambiguous:** codes are single letters, and versions must be plain releases made only of digits and periods (e.g. `0.75.0`). A pre-release, post-release, dev or local version (e.g. `1.0rc1`, `0.75.0+12.gabc`) cannot be encoded. The fixed order means equal maps always give identical codes.
 - **Validation target:** the validator versions drafts must currently be validated with (see [Setting](#setting)).
 
 # Current state
@@ -112,14 +112,14 @@ class ValidatorType(Enum):
     bids_validator_deno = "bids-validator-deno"
 
 
-#: Short code of each package in a version code, in the code's order
+#: One-letter code of each package in a version code, in the code's order
 VALIDATOR_CODES = {
-    ValidatorType.dandi: "cli",
-    ValidatorType.dandischema: "schema",
-    ValidatorType.nwbinspector: "nwbi",
-    ValidatorType.pynwb: "pynwb",
-    ValidatorType.hdmf: "hdmf",
-    ValidatorType.bids_validator_deno: "bids",
+    ValidatorType.dandi: "d",
+    ValidatorType.dandischema: "s",
+    ValidatorType.nwbinspector: "n",
+    ValidatorType.pynwb: "p",
+    ValidatorType.hdmf: "h",
+    ValidatorType.bids_validator_deno: "b",
 }
 
 
@@ -201,7 +201,7 @@ There is one row per Version and set of validator versions. Only the row matchin
 | `GET` | `/api/dandisets/{id}/versions/{version}/validation_summary/{validation_versions}/` | public |
 | `PUT` | `/api/dandisets/{id}/versions/{version}/validation_summary/{validation_versions}/` | `IsAdminUser` |
 
-`{validation_versions}` is a version code. The trusted runner authenticates with a staff user's existing API token, so no new authentication mechanism is needed.
+`{validation_versions}` is a version code. Version codes contain periods, which Django REST Framework's default lookup pattern excludes, so the route sets its own `lookup_value_regex`, as the existing versions endpoint already does. The trusted runner authenticates with a staff user's existing API token, so no new authentication mechanism is needed.
 
 `PUT` body:
 
@@ -218,7 +218,7 @@ There is one row per Version and set of validator versions. Only the row matchin
       "example_paths": ["sub-01/sub-01_ses-1.nwb"]
     }
   ],
-  "report_url": "https://<record-storage>/000029/draft/cli0.75.0_schema0.12.0_nwbi0.7.1_pynwb3.1.0_hdmf4.1.0_bids2.1.0.jsonl"
+  "report_url": "https://<record-storage>/000029/draft/d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0.jsonl"
 }
 ```
 
@@ -310,7 +310,7 @@ Candidates include:
 Add one line under `# DANDI-specific variables` in `terraform/api.tf`, and in `staging.tf` if staging should gate too:
 
 ```hcl
-DJANGO_DANDI_VALIDATION_TARGET = "cli0.75.0_schema0.12.0_nwbi0.7.1_pynwb3.1.0_hdmf4.1.0_bids2.1.0"
+DJANGO_DANDI_VALIDATION_TARGET = "d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0"
 ```
 
 Bumping the target is then a reviewed infrastructure change. Any infrastructure for record storage, such as a bucket and the runner's write credentials, would also go here.
@@ -338,11 +338,11 @@ The runner runs on trusted compute, outside these repositories. This is its cont
 4. **`PUT`** the summary to `validation_summary/{version code}/`.
 5. **Prioritize** drafts whose `validatedBy` is `null` or whose `validation_summary` is `stale`. These are the drafts whose owners are waiting to publish (see [Publication latency](#publication-latency-accepted-trade-off)).
 
-**Environment.** Running validation in a container image tagged with the version code is strongly recommended, for example `dandi-validation:cli0.75.0_schema0.12.0_nwbi0.7.1_pynwb3.1.0_hdmf4.1.0_bids2.1.0`.
+**Environment.** Running validation in a container image tagged with the version code is strongly recommended, for example `dandi-validation:d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0`.
 
 - **Provenance:** the string that identifies each record then also names the exact environment that produced it.
 - **Reproducibility:** re-running a set of versions uses the same image.
-- **Tag limits:** container tags allow only letters, digits, `_`, `.` and `-`, up to 128 characters. Targets should therefore use released versions, without a local `+…` segment.
+- **Tag limits:** container tags allow only letters, digits, `_`, `.` and `-`, up to 128 characters. Every version code fits, because versions are already limited to plain releases.
 
 ## Publication latency (accepted trade-off)
 
