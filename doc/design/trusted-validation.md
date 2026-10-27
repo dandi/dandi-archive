@@ -21,7 +21,7 @@ Status: proposal
   - [Publication latency (accepted trade-off)](#publication-latency-accepted-trade-off)
 - [Lifecycles](#lifecycles)
 - [Rollout](#rollout)
-- [Alternatives considered](#alternatives-considered)
+- [Alternatives to consider](#alternatives-to-consider)
 - [Open questions](#open-questions)
 
 ## Overview
@@ -72,7 +72,7 @@ These are the parts of the archive this design builds on.
 
 - Running validators inside the archive, or storing full records in its database.
 - Changing the metadata of versions published before this feature. Their results only drive the banner.
-- Per-asset validation status driven by these records (see [Alternatives considered](#alternatives-considered)).
+- Per-asset validation status driven by these records.
 
 ## Terminology
 
@@ -380,20 +380,15 @@ Drafts already have rows for the new target, so publication is not interrupted.
 
    The existing `revalidate --versions` management command cannot re-pend drafts as is. `validate_version_metadata` returns early unless a version is `PENDING`, so the command must first set them `PENDING`.
 
-## Alternatives considered
+## Alternatives to consider
 
-- **Fail the existing per-asset status.**
-  - Asset rows are shared between draft and published Versions, so one status can't reflect different validator versions per Version.
-  - Published assets are never re-validated (`AssetHasBeenPublishedError`), so an unchanged file carried into a new draft could never block it.
-  - BIDS and other dataset-level results have no single asset.
-  - Mapping millions of records onto asset rows on every sweep is expensive.
+- **A dedicated publish check in the archive instead of a schema rule.** This would need changes to `Version.publishable` and `_lock_dandiset_for_publishing`, a new exception, and frontend gating, all of which the schema rule reuses. The schema rule also makes the requirement visible to anyone validating DANDI metadata.
 - **Store full records in the archive database.** They are large, and it would tie the archive to dandi-cli's record model, which rejects unknown enum values.
 - **The archive pulls summaries from record storage instead of the runner pushing them.**
   - Pulling needs a periodic re-check of every draft that lacks a passing record, plus a storage URL setting, and it suffers from any caching delay.
   - With a push, the runner signals exactly when a result exists.
   - Pulling can be added later using the same table.
 - **A richer provenance object**, e.g. a `ValidationActivity(Activity)` with `Software` entries in `wasAssociatedWith`, mirroring `publishedBy: PublishActivity`. It is more expressive, but the map and boolean are simpler to look up and to enforce in `check_publication_status`.
-- **A dedicated publish check in the archive instead of a schema rule.** This would need changes to `Version.publishable` and `_lock_dandiset_for_publishing`, a new exception, and frontend gating, all of which the schema rule reuses. The schema rule also makes the requirement visible to anyone validating DANDI metadata.
 
 ## Open questions
 
