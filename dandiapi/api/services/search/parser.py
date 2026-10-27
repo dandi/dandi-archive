@@ -8,6 +8,27 @@ that looks like an operator (``"foo:bar"`` is treated as free text).
 Errors are raised explicitly via :class:`SearchSyntaxError`:
 - unbalanced quotes
 - unknown operator key (with a "did you mean?" suggestion when close)
+- reserved syntax (see below)
+
+Grammar, in EBNF. ``key`` must be one of :data:`OPERATOR_KEYS`, and the
+first matching alternative of ``term`` wins::
+
+    query    = [ ws ] , [ term , { ws , term } ] , [ ws ] ;
+    term     = operator | phrase | word ;
+    operator = key , ":" , ( phrase | token ) ;
+    phrase   = '"' , { any character except '"' } , '"' ;
+    word     = token - reserved ;
+    token    = non-space , { non-space } ;
+    key      = ( "a" .. "z" | "_" ) , { "a" .. "z" | "_" } ;
+    reserved = "AND" | "OR" | "NOT"
+             | "-" , key , ":" , { non-space }
+             | { non-space } , ( "(" | ")" ) , { non-space } ;
+    ws       = " " , { " " } ;
+
+Terms combine with AND. The ``reserved`` forms are rejected with a 400 so
+that boolean operators, negation, and grouping can be added later without
+changing the meaning of queries people already use. Quoting a reserved form
+searches for it as text.
 
 The view layer translates :class:`SearchSyntaxError` into a 400 response.
 """
@@ -102,6 +123,32 @@ def _validate_operator_key(key: str) -> None:
     )
 
 
+# Uppercase boolean words are reserved; lowercase "and"/"or"/"not" are
+# ordinary free text.
+_RESERVED_WORDS = frozenset({'AND', 'OR', 'NOT'})
+_NEGATED_OP_RE = re.compile(r'^-[a-z_]+:')
+
+
+def _check_reserved(token: str) -> None:
+    """Reject unquoted syntax reserved for boolean operators, negation, and grouping."""
+    if token in _RESERVED_WORDS:
+        raise SearchSyntaxError(
+            f'"{token}" is reserved for boolean search, which is not supported yet. '
+            'Terms are always combined with AND. Wrap it in double quotes '
+            f'("{token}") to search for the word.'
+        )
+    if _NEGATED_OP_RE.match(token):
+        raise SearchSyntaxError(
+            f'"{token}": excluding results with a leading "-" is not supported yet. '
+            f'Wrap the term in double quotes ("{token}") to search for it as text.'
+        )
+    if '(' in token or ')' in token:
+        raise SearchSyntaxError(
+            f'"{token}": parentheses are reserved for grouping, which is not supported '
+            'yet. Wrap the text in double quotes to search for it, e.g. "(CA1)".'
+        )
+
+
 def parse_search(query: str) -> ParsedSearch:
     parsed = ParsedSearch()
     if not query:
@@ -121,6 +168,7 @@ def parse_search(query: str) -> ParsedSearch:
             parsed.free_text.append(free)
         else:
             bare = match.group('bare')
+            _check_reserved(bare)
             if op_match := _BARE_OP_RE.match(bare):
                 key = op_match.group(1)
                 _validate_operator_key(key)

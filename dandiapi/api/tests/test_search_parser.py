@@ -104,3 +104,45 @@ def test_parse_search(query, expected_free_text, expected_operators):
 def test_parse_search_raises_on_invalid_query(query, expected_message_fragment):
     with pytest.raises(SearchSyntaxError, match=expected_message_fragment):
         parse_search(query)
+
+
+@pytest.mark.parametrize(
+    'query',
+    [
+        'species:mouse OR species:rat',
+        'hippocampus AND cortex',
+        'NOT species:mouse',
+        '-species:mouse',
+        'hippocampus -created_after:2024-01-01',
+        '(species:mouse species:rat)',
+        'species:mouse)',
+        'Allen (2020)',
+    ],
+)
+def test_reserved_syntax_raises(query):
+    with pytest.raises(SearchSyntaxError):
+        parse_search(query)
+
+
+@pytest.mark.parametrize(
+    ('query', 'expected_free_text', 'expected_operators'),
+    [
+        # Lowercase boolean words are ordinary text.
+        ('mouse or rat', ['mouse', 'or', 'rat'], []),
+        ('cats and dogs not birds', ['cats', 'and', 'dogs', 'not', 'birds'], []),
+        # Quoting opts out of the reservation.
+        ('"OR" "(2020)" "-species:mouse"', ['OR', '(2020)', '-species:mouse'], []),
+        (
+            'technique:"patch clamp (whole cell)"',
+            [],
+            [Operator('technique', 'patch clamp (whole cell)')],
+        ),
+        # A leading "-" is only reserved in front of an operator key.
+        ('-80C storage', ['-80C', 'storage'], []),
+        ('cre-dependent', ['cre-dependent'], []),
+    ],
+)
+def test_reserved_syntax_escapes(query, expected_free_text, expected_operators):
+    parsed = parse_search(query)
+    assert parsed.free_text == expected_free_text
+    assert parsed.operators == expected_operators
