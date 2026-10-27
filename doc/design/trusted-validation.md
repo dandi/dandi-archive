@@ -16,7 +16,7 @@ Neither the archive backend nor any external service runs the validators that ch
 This document proposes:
 
 1. Run `dandi validate` from a trusted, internal compute source over every Dandiset version, more than 2 PB in total. This uses the streaming support being developed in dandi-cli ([dandi/dandi-cli#1956](https://github.com/dandi/dandi-cli/pull/1956)).
-2. Store the resulting validation records outside the archive, served from the GitHub CDN.
+2. Store the resulting validation records.
 3. Record in each Version's metadata the exact validator versions its records must come from. Also record whether a record exists for those versions that has no errors.
 4. Prevent publication when that is not the case, and show a banner with errors *and* warnings to everyone viewing the Dandiset. This addresses [#1486](https://github.com/dandi/dandi-archive/issues/1486).
 
@@ -42,7 +42,7 @@ These are the parts of the archive this design builds on.
   - validates it against `PublishedDandiset`;
   - stores the outcome in `Version.status` / `Version.validation_errors`.
 
-  Any rule dandischema enforces on *published* Dandisets therefore already marks the draft `INVALID`. That blocks publishing, and the UI shows the error in its existing validation dialog.
+  Any rule dandischema enforces on *published* Dandisets therefore already marks the draft `INVALID`. That blocks re-publishing at a later time, and the UI shows the error in its existing validation dialog. One side-effect this could have is preventing minor dataset metadata enhancements; but the advantage is continued content/structure enhancement to go hand-in-hand.
 - **When validation runs.** Every change to a draft (adding or removing assets, editing metadata, unembargoing, Zarr ingestion) sets the draft to `PENDING`. A beat job (`validate_draft_version_metadata`, every `DANDI_VALIDATION_JOB_INTERVAL` seconds) then re-validates it.
 - **Publishing copies the draft's metadata.** `_build_publishable_version_from_draft` deep-copies the draft's metadata into the new published Version. Published metadata is immutable.
 - **Server-computed fields** such as `assetsSummary` are removed from user-supplied metadata by `Version.strip_metadata`.
