@@ -218,6 +218,12 @@ DANDI_DOI_PUBLISH: bool = env.bool('DJANGO_DANDI_DOI_PUBLISH', default=False)
 
 DANDI_VALIDATION_JOB_INTERVAL: int = env.int('DJANGO_DANDI_VALIDATION_JOB_INTERVAL', default=60)
 
+# Reload the anatomy search ontology tables after `migrate` when the packaged
+# file has changed. See `dandiapi.search.ontology`.
+DANDI_ANATOMY_ONTOLOGY_AUTOLOAD: bool = env.bool(
+    'DJANGO_DANDI_ANATOMY_ONTOLOGY_AUTOLOAD', default=True
+)
+
 DANDI_AUTO_APPROVE_USERS = False
 
 DANDI_DEV_EMAIL: str

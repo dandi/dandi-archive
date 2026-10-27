@@ -14,6 +14,7 @@ from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
 from dandiapi.api.services.search.anatomy import CURIE_SQL_TEMPLATE, normalize_curie
 from dandiapi.api.services.search.parser import SearchSyntaxError
+from dandiapi.search.models import OntologyTerm
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -32,7 +33,7 @@ _DATE_OPS = frozenset(
     }
 )
 _OWNER_OPS = frozenset({'owner'})
-_ANATOMY_OPS = frozenset({'anatomy_exact'})
+_ANATOMY_OPS = frozenset({'anatomy', 'anatomy_exact'})
 
 
 def _annotate_latest_version_modified(queryset):
@@ -99,11 +100,14 @@ def _apply_summary_filters(
     return queryset.filter(id__in=version_qs.values_list('dandiset_id', flat=True).distinct())
 
 
-# Matches a Version whose `about` holds an Anatomy entry whose identifier,
-# normalized to a CURIE, is one of the given CURIEs, or whose `name` matches
-# the given regex. `metadata` is left unqualified because Django may alias the
-# Version table in subqueries. The interpolated piece is a trusted constant;
-# every user-derived value is bound via params.
+# Matches a Version whose `about` holds an Anatomy entry that is (a) one of the
+# given CURIEs, (b) a descendant of one of the given terms in the ontology
+# closure, or (c) named like the given regex while carrying no identifier the
+# ontology tables know. An entry with a known identifier is judged by that
+# identifier alone, so a "hypothalamus" term is not found under "thalamus".
+# `metadata` is left unqualified because Django may alias the Version table in
+# subqueries. The interpolated piece is a trusted constant; every user-derived
+# value is bound via params.
 _ANATOMY_CURIE_SQL = CURIE_SQL_TEMPLATE.format(expr="a->>'identifier'")
 _ANATOMY_WHERE = f"""
 EXISTS (
@@ -113,31 +117,68 @@ EXISTS (
              THEN metadata->'about' ELSE '[]'::jsonb END
     ) AS a
     WHERE a->>'schemaKey' = 'Anatomy'
-      AND ({_ANATOMY_CURIE_SQL} = ANY(%s::text[]) OR a->>'name' ~* %s)
+      AND (
+        {_ANATOMY_CURIE_SQL} = ANY(%s::text[])
+        OR {_ANATOMY_CURIE_SQL} IN (
+            SELECT t.curie
+            FROM search_ontologyterm t
+            JOIN search_ontologyclosure c ON c.descendant_id = t.id
+            WHERE c.ancestor_id = ANY(%s::bigint[])
+        )
+        OR (
+            a->>'name' ~* %s
+            AND NOT EXISTS (
+                SELECT 1 FROM search_ontologyterm known
+                WHERE known.curie = {_ANATOMY_CURIE_SQL}
+            )
+        )
+      )
 )
 """  # noqa: S608
 
 
-def _anatomy_params(value: str) -> list:
-    """Resolve an `anatomy_exact:` value into the params of `_ANATOMY_WHERE`.
+def _name_regex(value: str, *, whole: bool) -> str:
+    """Build a Postgres regex matching `value` as the whole name, or as whole words in it."""
+    if whole:
+        return f'^{re.escape(value)}$'
+    return f'(^|[^[:alnum:]]){re.escape(value)}($|[^[:alnum:]])'
 
-    An identifier (CURIE, underscore form, or IRI) matches entries with that
-    identifier. Any other value matches entries whose recorded name is the
-    whole value, case-insensitively.
+
+def _anatomy_params(value: str, *, expand: bool) -> list:
+    """Resolve an anatomy operator value into the params of `_ANATOMY_WHERE`.
+
+    An identifier (CURIE, underscore form, or IRI) is matched as that term. Any
+    other value is looked up as a label or synonym, exactly first and then by
+    substring, and is also matched against the recorded `name` so that entries
+    with no usable identifier, or an install with empty ontology tables, still work.
     """
     curie = normalize_curie(value)
     if curie is not None:
-        return [[curie], None]
-    return [[], f'^{re.escape(value)}$']
+        terms = OntologyTerm.objects.filter(curie=curie)
+        curies = [curie]
+        name_pattern = None
+    else:
+        terms = OntologyTerm.objects.filter(names__contains=[value.lower()])
+        if not terms.exists():
+            terms = OntologyTerm.objects.filter(label__icontains=value)
+        curies = []
+        # Without expansion the recorded name has to be the whole value, or
+        # "hippocampus" would still pick up "CA1 field of hippocampus".
+        name_pattern = _name_regex(value, whole=not expand)
+
+    if expand:
+        return [curies, list(terms.values_list('id', flat=True)), name_pattern]
+    return [[*curies, *terms.values_list('curie', flat=True)], [], name_pattern]
 
 
-def _apply_anatomy_filters(queryset: QuerySet[Dandiset], values: list[str]) -> QuerySet[Dandiset]:
-    """Restrict dandisets to those with a version whose `about` anatomy matches every value."""
+def _apply_anatomy_filters(
+    queryset: QuerySet[Dandiset], clauses: list[tuple[str, str]]
+) -> QuerySet[Dandiset]:
+    """Restrict dandisets to those with a version whose `about` anatomy matches every clause."""
     version_qs = Version.objects.all()
-    for value in values:
-        version_qs = version_qs.extra(  # noqa: S610
-            where=[_ANATOMY_WHERE], params=_anatomy_params(value)
-        )
+    for operator, value in clauses:
+        params = _anatomy_params(value, expand=operator == 'anatomy')
+        version_qs = version_qs.extra(where=[_ANATOMY_WHERE], params=params)  # noqa: S610
     return queryset.filter(id__in=version_qs.values_list('dandiset_id', flat=True).distinct())
 
 
@@ -221,7 +262,7 @@ def apply_search_filters(
         return queryset
 
     summary_clauses: list[tuple[str, str]] = []
-    anatomy_values: list[str] = []
+    anatomy_clauses: list[tuple[str, str]] = []
     annotated: set[str] = set()
 
     for op in parsed.operators:
@@ -237,12 +278,12 @@ def apply_search_filters(
         elif key in _OWNER_OPS:
             queryset = _apply_owner_filter(queryset, value)
         elif key in _ANATOMY_OPS:
-            anatomy_values.append(value)
+            anatomy_clauses.append((key, value))
 
     if summary_clauses:
         queryset = _apply_summary_filters(queryset, summary_clauses)
 
-    if anatomy_values:
-        queryset = _apply_anatomy_filters(queryset, anatomy_values)
+    if anatomy_clauses:
+        queryset = _apply_anatomy_filters(queryset, anatomy_clauses)
 
     return queryset

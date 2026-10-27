@@ -117,8 +117,8 @@ def test_anatomy_exact_value_keeps_its_colons():
 @pytest.mark.parametrize(
     ('query', 'suggestion'),
     [
-        ('uberon:0002421', 'anatomy_exact:UBERON:0002421'),
-        ('mba:1089', 'anatomy_exact:MBA:1089'),
+        ('uberon:0002421', 'anatomy:UBERON:0002421'),
+        ('mba:1089', 'anatomy:MBA:1089'),
     ],
 )
 def test_bare_lowercase_curie_suggests_the_anatomy_operator(query, suggestion):

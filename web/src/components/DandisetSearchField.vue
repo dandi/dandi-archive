@@ -152,7 +152,8 @@ const operatorHelp = [
   { example: 'standard:nwb', description: 'Has assets in a data standard (e.g. nwb, bids)' },
   { example: 'variable:LFP', description: 'Contains a measured variable / neurodata type' },
   { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, GitHub username, or email)' },
-  { example: 'anatomy_exact:UBERON:0002421', description: 'About a brain region (CURIE, term URL, or exact region name)' },
+  { example: 'anatomy:hippocampus', description: 'About a brain region or any of its parts (name, UBERON:0002421, MBA:1089, or URL)' },
+  { example: 'anatomy_exact:hippocampus', description: 'About exactly that region, without its parts' },
 ];
 
 // The set of operators we suggest, derived from the help table so the two
