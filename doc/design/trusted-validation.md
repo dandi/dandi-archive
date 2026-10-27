@@ -75,17 +75,18 @@ These are the parts of the archive this design builds on.
 
 ## Terminology
 
-- **Validator versions:** the map of validator name to exact version used to produce a record. For example:
+- **Validator versions:** the map from each package that affects validation results to the exact version used to produce a record. All six keys are always present:
 
   ```json
-  {"dandi": "0.75.0", "nwbinspector": "0.6.5", "bids-validator-deno": "2.1.0"}
+  {"dandi": "0.75.0", "dandischema": "0.12.0", "nwbinspector": "0.7.1", "pynwb": "3.1.0", "hdmf": "4.1.0", "bids-validator-deno": "2.1.0"}
   ```
 
-  Keys are the `Validator` values that dandi-cli already writes into each record's `origin.validator`, so records can be checked against the map directly.
-- **Canonical string:** the single string form of a validator-versions map. It is used in the API path and in the archive's setting, and is suggested for record file names.
-  - **Form:** for each entry write `name-version`, sort by name, and join with `_`. Example: `bids-validator-deno-2.1.0_dandi-0.75.0_nwbinspector-0.6.5`.
-  - **Parsing:** split on `_`, then split each part on its last `-`.
-  - **Why this is unambiguous:** normalized distribution names contain no `_`, and normalized PEP 440 versions contain neither `-` nor `_`.
+  - **Checkable against records:** every key except `hdmf` is a `Validator` value that dandi-cli writes into each record's `origin`, so those versions can be checked against each record's `origin.validator_version`.
+  - **hdmf:** the runner reports its version from its own environment.
+- **Version code:** a short, readable string form of a validator-versions map. It is used in the API path, in the archive's setting, and is suggested for record file names.
+  - **Form:** each package's short code (see `VALIDATOR_CODES` under [dandi-schema](#dandi-schema)) followed directly by its version, in the code table's order, joined with `_`. For the map above: `cli0.75.0_schema0.12.0_nwbi0.7.1_pynwb3.1.0_hdmf4.1.0_bids2.1.0`.
+  - **Parsing:** split on `_`, then split each part where its leading letters end.
+  - **Why this is unambiguous:** codes contain only letters, and normalized PEP 440 versions start with a digit and contain no `_`.
 - **Validation target:** the validator versions drafts must currently be validated with (see [Setting](#setting)).
 
 ## Proposed solution
@@ -96,11 +97,25 @@ Add two read-only fields to `Dandiset`. Map-valued fields keyed by an enum alrea
 
 ```python
 class ValidatorType(Enum):
-    """Validators whose versions identify a Dandiset validation record"""
+    """Packages whose versions identify a Dandiset validation record"""
 
     dandi = "dandi"
+    dandischema = "dandischema"
     nwbinspector = "nwbinspector"
+    pynwb = "pynwb"
+    hdmf = "hdmf"
     bids_validator_deno = "bids-validator-deno"
+
+
+#: Short code of each package in a version code, in the code's order
+VALIDATOR_CODES = {
+    ValidatorType.dandi: "cli",
+    ValidatorType.dandischema: "schema",
+    ValidatorType.nwbinspector: "nwbi",
+    ValidatorType.pynwb: "pynwb",
+    ValidatorType.hdmf: "hdmf",
+    ValidatorType.bids_validator_deno: "bids",
+}
 
 
 class Dandiset(CommonModel):
@@ -134,6 +149,8 @@ if self.validatedRequiredVersions is not None and self.validatedBy is not True:
 
 The rule only applies when `validatedRequiredVersions` is set. Already-published metadata, which lacks the field, stays valid, and archive instances that don't enable the feature are unaffected.
 
+The archive and the runner both depend on dandischema. So `VALIDATOR_CODES`, plus two small helpers that build and parse version codes, live next to `ValidatorType`, giving one definition for both. The constant does not change the JSON Schema.
+
 The schema change also needs some housekeeping:
 - bump `DANDI_SCHEMA_VERSION` and add the previous version to `ALLOWED_INPUT_SCHEMAS`;
 - add `("<new version>", ["validatedRequiredVersions", "validatedBy"])` to `SIMPLE_DOWNGRADES` in `migrate()`.
@@ -142,7 +159,7 @@ The schema change also needs some housekeeping:
 
 #### Setting
 
-`DANDI_VALIDATION_TARGET`, read from `DJANGO_DANDI_VALIDATION_TARGET`, holds the validation target as a canonical string.
+`DANDI_VALIDATION_TARGET`, read from `DJANGO_DANDI_VALIDATION_TARGET`, holds the validation target as a version code.
 
 - **Unset:** the feature is off. Nothing is stamped and publication is not gated, so rollout and other instances (sandbox, vendored deployments) are safe by default.
 - **Exposed** as `validation_target` on `/api/info/`.
@@ -154,7 +171,7 @@ class VersionValidationSummary(TimeStampedModel):
     version = models.ForeignKey(
         Version, related_name='validation_summaries', on_delete=models.CASCADE
     )
-    validators = models.CharField(max_length=255)  # canonical string
+    validators = models.CharField(max_length=255)  # version code
     content_fingerprint = models.CharField(max_length=64)
     success = models.BooleanField()  # computed by the archive, see below
     summary = models.JSONField()  # counts, top issues, report URL, timestamps
@@ -177,7 +194,7 @@ There is one row per Version and set of validator versions. Only the row matchin
 | `GET` | `/api/dandisets/{id}/versions/{version}/validation_summary/{validation_versions}/` | public |
 | `PUT` | `/api/dandisets/{id}/versions/{version}/validation_summary/{validation_versions}/` | `IsAdminUser` |
 
-`{validation_versions}` is a canonical string. The trusted runner authenticates with a staff user's existing API token, so no new authentication mechanism is needed.
+`{validation_versions}` is a version code. The trusted runner authenticates with a staff user's existing API token, so no new authentication mechanism is needed.
 
 `PUT` body:
 
@@ -194,13 +211,13 @@ There is one row per Version and set of validator versions. Only the row matchin
       "example_paths": ["sub-01/sub-01_ses-1.nwb"]
     }
   ],
-  "report_url": "https://<record-storage>/000029/draft/bids-validator-deno-2.1.0_dandi-0.75.0_nwbinspector-0.6.5.jsonl"
+  "report_url": "https://<record-storage>/000029/draft/cli0.75.0_schema0.12.0_nwbi0.7.1_pynwb3.1.0_hdmf4.1.0_bids2.1.0.jsonl"
 }
 ```
 
 On `PUT` the archive:
 
-1. **Validates the request.** The path must parse as a canonical string, and the body must match the schema above.
+1. **Validates the request.** The path must parse as a version code with all six packages, and the body must match the schema above.
 2. **Computes `success`** as `counts.CRITICAL + counts.ERROR == 0`, so only `ERROR` and `CRITICAL` block publication. The archive, not the runner, applies this policy. dandi-cli maps validator severities onto its own as follows:
    - NWB Inspector: `CRITICAL` → `ERROR`, best-practice violations → `WARNING`, suggestions → `HINT`.
    - BIDS validator: errors → `ERROR`, warnings → `HINT`.
@@ -228,7 +245,7 @@ def _validation_fields(version: Version) -> dict:
     target = settings.DANDI_VALIDATION_TARGET  # parsed map, or None
     if target is None:
         return {}
-    row = version.validation_summaries.filter(validators=canonical(target)).first()
+    row = version.validation_summaries.filter(validators=version_code(target)).first()
     if row is None or row.content_fingerprint != content_fingerprint(version):
         passed = None  # no record for this content yet
     else:
@@ -282,7 +299,7 @@ Candidates include:
 Add one line under `# DANDI-specific variables` in `terraform/api.tf`, and in `staging.tf` if staging should gate too:
 
 ```hcl
-DJANGO_DANDI_VALIDATION_TARGET = "bids-validator-deno-2.1.0_dandi-0.75.0_nwbinspector-0.6.5"
+DJANGO_DANDI_VALIDATION_TARGET = "cli0.75.0_schema0.12.0_nwbi0.7.1_pynwb3.1.0_hdmf4.1.0_bids2.1.0"
 ```
 
 Bumping the target is then a reviewed infrastructure change. Any infrastructure for record storage, such as a bucket and the runner's write credentials, would also go here.
@@ -307,7 +324,7 @@ The runner runs on trusted compute, outside these repositories. This is its cont
    - Other validator versions may be run and uploaded too.
 2. **Validate**, with `--min-severity INFO -f json_lines`, so that warnings and hints are recorded.
 3. **Prepare the result.** Relativize paths (see [dandi-cli](#dandi-cli)) and store the JSONL in record storage. Then compute the counts, `top_issues` and the content fingerprint.
-4. **`PUT`** the summary to `validation_summary/{canonical}/`.
+4. **`PUT`** the summary to `validation_summary/{version code}/`.
 5. **Prioritize** drafts whose `validatedBy` is `null` or whose `validation_summary` is `stale`. These are the drafts whose owners are waiting to publish.
 
 ## Lifecycles
@@ -332,7 +349,7 @@ Drafts already have rows for the new target, so publication is not interrupted.
 ## Rollout
 
 1. **dandi-cli:** fix the NWB Inspector version and release.
-2. **dandi-schema:** add `ValidatorType`, the two fields and the publication rule, then bump the version and release.
+2. **dandi-schema:** add `ValidatorType`, `VALIDATOR_CODES`, the two fields and the publication rule, then bump the version and release.
 3. **dandi-archive:** upgrade dandischema, then ship the table, endpoints, stamping, `/info/` fields and banner. The feature stays off while the setting is unset.
 4. **Record storage:** decide on it and set it up.
 5. **First target:** follow the "New validator release" steps above, with the sweep covering every draft and published version.
@@ -357,12 +374,25 @@ Drafts already have rows for the new target, so publication is not interrupted.
 ## Open questions
 
 1. **Field names.** In dandischema, `*By` fields hold an agent or activity (`publishedBy`, `wasGeneratedBy`, `wasAttributedTo`), so a boolean `validatedBy` may surprise readers. Alternatives include `validationPassed` for the boolean and `validatorVersions` for the map. The names must be settled before the schema is released.
-2. **Map keys.** Should they be plain distribution names, matching dandi-cli's `Validator` values, or namespaced values like `DigestType`'s `dandi:sha2-256`?
-3. **Should other versions be in the map?** pynwb, hdmf and dandischema also affect results. Should they be part of `validatedRequiredVersions`, or is a lock file per set of validator versions on the runner side enough?
-4. **Admin override.** The schema rule blocks superusers too. Is an override needed, for example an admin-only flag on the `PUT` that forces `success`?
-5. **Fingerprint source.** Confirm that the `dandisets/` DataLad clones expose each file's DANDI etag or Zarr checksum, so the runner can compute the fingerprint from what it actually validated.
-6. **Publication latency.** After any change, owners wait for the DataLad backup plus a runner pass before they can publish. That also applies after an embargo is lifted, once the content becomes publicly readable. What turnaround should the runner guarantee?
-7. **Old files vs. new checks.** Files from earlier releases are re-checked with the latest validators, so a minor metadata enhancement could be blocked by a check that did not exist when the file was published. The advantage is that content and structure enhancements go hand-in-hand with metadata ones.
-8. **`modified` bumps.** Re-pending a draft after a `PUT` makes `validate_version_metadata` bump `Version.modified`. That moves the "Last update" date even though the content didn't change. Consider not bumping `modified` when only the validation fields change (see also [#2950](https://github.com/dandi/dandi-archive/pull/2950)).
-9. **Record storage.** Where should records live? See [Record storage (to be decided)](#record-storage-to-be-decided).
-10. **Listing indicators.** [#741](https://github.com/dandi/dandi-archive/issues/741) asks for a compact error/warning indicator in the Dandiset list, derived from the same rows.
+2. **Map keys.** Should they be plain distribution names, or namespaced values like `DigestType`'s `dandi:sha2-256`?
+   - **Plain:**
+
+     ```json
+     "validatedRequiredVersions": {"dandi": "0.75.0", "dandischema": "0.12.0", "nwbinspector": "0.7.1", "pynwb": "3.1.0", "hdmf": "4.1.0", "bids-validator-deno": "2.1.0"}
+     ```
+
+     Five of the six keys match dandi-cli's `Validator` values directly. The drawback is that they are not JSON-LD terms. `dandi` collides with the `dandi:` prefix in the `@context`, and the other keys are dropped when the metadata is expanded as JSON-LD.
+   - **Namespaced:**
+
+     ```json
+     "validatedRequiredVersions": {"dandi:dandi": "0.75.0", "dandi:dandischema": "0.12.0", "dandi:nwbinspector": "0.7.1", "dandi:pynwb": "3.1.0", "dandi:hdmf": "4.1.0", "dandi:bids-validator-deno": "2.1.0"}
+     ```
+
+     Each key is a DANDI IRI, as with `digest`. The cost is that `generate_context` needs one entry per member, as it has for `DigestType`, and consumers strip the prefix to compare with records.
+3. **Admin override.** The schema rule blocks superusers too. Is an override needed, for example an admin-only flag on the `PUT` that forces `success`?
+4. **Fingerprint source.** Confirm that the `dandisets/` DataLad clones expose each file's DANDI etag or Zarr checksum, so the runner can compute the fingerprint from what it actually validated.
+5. **Publication latency.** After any change, owners wait for the DataLad backup plus a runner pass before they can publish. That also applies after an embargo is lifted, once the content becomes publicly readable. What turnaround should the runner guarantee?
+6. **Old files vs. new checks.** Files from earlier releases are re-checked with the latest validators, so a minor metadata enhancement could be blocked by a check that did not exist when the file was published. The advantage is that content and structure enhancements go hand-in-hand with metadata ones.
+7. **`modified` bumps.** Re-pending a draft after a `PUT` makes `validate_version_metadata` bump `Version.modified`. That moves the "Last update" date even though the content didn't change. Consider not bumping `modified` when only the validation fields change (see also [#2950](https://github.com/dandi/dandi-archive/pull/2950)).
+8. **Record storage.** Where should records live? See [Record storage (to be decided)](#record-storage-to-be-decided).
+9. **Listing indicators.** [#741](https://github.com/dandi/dandi-archive/issues/741) asks for a compact error/warning indicator in the Dandiset list, derived from the same rows.
