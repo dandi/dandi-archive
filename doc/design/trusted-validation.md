@@ -18,6 +18,7 @@ Status: proposal
   - [dandi-infrastructure](#dandi-infrastructure)
   - [dandi-cli](#dandi-cli)
   - [Validation runner](#validation-runner)
+  - [Publication latency (accepted trade-off)](#publication-latency-accepted-trade-off)
 - [Lifecycles](#lifecycles)
 - [Rollout](#rollout)
 - [Alternatives considered](#alternatives-considered)
@@ -75,7 +76,7 @@ These are the parts of the archive this design builds on.
 
 ## Terminology
 
-- **Validator versions:** the map from each package that affects validation results to the exact version used to produce a record. All six keys are always present:
+- **Validator versions:** the map from each package that affects validation results to the exact version used to produce a record. Keys are plain distribution names, and all six are always present:
 
   ```json
   {"dandi": "0.75.0", "dandischema": "0.12.0", "nwbinspector": "0.7.1", "pynwb": "3.1.0", "hdmf": "4.1.0", "bids-validator-deno": "2.1.0"}
@@ -150,6 +151,8 @@ if self.validatedRequiredVersions is not None and self.validatedBy is not True:
 The rule only applies when `validatedRequiredVersions` is set. Already-published metadata, which lacks the field, stays valid, and archive instances that don't enable the feature are unaffected.
 
 The archive and the runner both depend on dandischema. So `VALIDATOR_CODES`, plus two small helpers that build and parse version codes, live next to `ValidatorType`, giving one definition for both. The constant does not change the JSON Schema.
+
+**JSON-LD.** Plain distribution names are not JSON-LD terms. `dandi` would collide with the `dandi:` prefix in the `@context`, and the other keys would be dropped when the metadata is expanded. To keep the map intact, `generate_context` should give `validatedRequiredVersions` `"@type": "@json"`, so JSON-LD treats the whole map as a single JSON literal.
 
 The schema change also needs some housekeeping:
 - bump `DANDI_SCHEMA_VERSION` and add the previous version to `ALLOWED_INPUT_SCHEMAS`;
@@ -325,7 +328,28 @@ The runner runs on trusted compute, outside these repositories. This is its cont
 2. **Validate**, with `--min-severity INFO -f json_lines`, so that warnings and hints are recorded.
 3. **Prepare the result.** Relativize paths (see [dandi-cli](#dandi-cli)) and store the JSONL in record storage. Then compute the counts, `top_issues` and the content fingerprint.
 4. **`PUT`** the summary to `validation_summary/{version code}/`.
-5. **Prioritize** drafts whose `validatedBy` is `null` or whose `validation_summary` is `stale`. These are the drafts whose owners are waiting to publish.
+5. **Prioritize** drafts whose `validatedBy` is `null` or whose `validation_summary` is `stale`. These are the drafts whose owners are waiting to publish (see [Publication latency](#publication-latency-accepted-trade-off)).
+
+### Publication latency (accepted trade-off)
+
+After any change to a draft, its owner can publish only once the DataLad backup has caught up and the runner has validated the new content. The same applies after an embargo is lifted, once the content becomes publicly readable. This delay is accepted in exchange for publishing only validated content.
+
+The archive monitors the delay so a stalled runner is noticed:
+
+- **Daily check.** A beat task, scheduled like `send_pending_users_email`, lists open drafts that still lack a record for their current content three days after their last change. Embargoed drafts are left out, because the runner cannot read their content.
+
+  ```python
+  Version.objects.filter(
+      version='draft',
+      dandiset__embargo_status=DandisetEmbargoStatus.OPEN,
+      metadata__validatedRequiredVersions__isnull=False,
+      metadata__validatedBy=None,  # JSON null: no record for the current content
+      modified__lt=timezone.now() - timedelta(days=3),
+  )
+  ```
+
+  `modified` only approximates when the wait began. Every change to the draft resets it, and so does the re-validation that follows each `PUT`.
+- **Notification.** If any drafts are found, the task emails `DANDI_DEV_EMAIL` with each Dandiset and how long it has waited. That setting already exists, so no infrastructure change is needed.
 
 ## Lifecycles
 
@@ -374,25 +398,9 @@ Drafts already have rows for the new target, so publication is not interrupted.
 ## Open questions
 
 1. **Field names.** In dandischema, `*By` fields hold an agent or activity (`publishedBy`, `wasGeneratedBy`, `wasAttributedTo`), so a boolean `validatedBy` may surprise readers. Alternatives include `validationPassed` for the boolean and `validatorVersions` for the map. The names must be settled before the schema is released.
-2. **Map keys.** Should they be plain distribution names, or namespaced values like `DigestType`'s `dandi:sha2-256`?
-   - **Plain:**
-
-     ```json
-     "validatedRequiredVersions": {"dandi": "0.75.0", "dandischema": "0.12.0", "nwbinspector": "0.7.1", "pynwb": "3.1.0", "hdmf": "4.1.0", "bids-validator-deno": "2.1.0"}
-     ```
-
-     Five of the six keys match dandi-cli's `Validator` values directly. The drawback is that they are not JSON-LD terms. `dandi` collides with the `dandi:` prefix in the `@context`, and the other keys are dropped when the metadata is expanded as JSON-LD.
-   - **Namespaced:**
-
-     ```json
-     "validatedRequiredVersions": {"dandi:dandi": "0.75.0", "dandi:dandischema": "0.12.0", "dandi:nwbinspector": "0.7.1", "dandi:pynwb": "3.1.0", "dandi:hdmf": "4.1.0", "dandi:bids-validator-deno": "2.1.0"}
-     ```
-
-     Each key is a DANDI IRI, as with `digest`. The cost is that `generate_context` needs one entry per member, as it has for `DigestType`, and consumers strip the prefix to compare with records.
-3. **Admin override.** The schema rule blocks superusers too. Is an override needed, for example an admin-only flag on the `PUT` that forces `success`?
-4. **Fingerprint source.** Confirm that the `dandisets/` DataLad clones expose each file's DANDI etag or Zarr checksum, so the runner can compute the fingerprint from what it actually validated.
-5. **Publication latency.** After any change, owners wait for the DataLad backup plus a runner pass before they can publish. That also applies after an embargo is lifted, once the content becomes publicly readable. What turnaround should the runner guarantee?
-6. **Old files vs. new checks.** Files from earlier releases are re-checked with the latest validators, so a minor metadata enhancement could be blocked by a check that did not exist when the file was published. The advantage is that content and structure enhancements go hand-in-hand with metadata ones.
-7. **`modified` bumps.** Re-pending a draft after a `PUT` makes `validate_version_metadata` bump `Version.modified`. That moves the "Last update" date even though the content didn't change. Consider not bumping `modified` when only the validation fields change (see also [#2950](https://github.com/dandi/dandi-archive/pull/2950)).
-8. **Record storage.** Where should records live? See [Record storage (to be decided)](#record-storage-to-be-decided).
-9. **Listing indicators.** [#741](https://github.com/dandi/dandi-archive/issues/741) asks for a compact error/warning indicator in the Dandiset list, derived from the same rows.
+2. **Admin override.** The schema rule blocks superusers too. Is an override needed, for example an admin-only flag on the `PUT` that forces `success`?
+3. **Fingerprint source.** Confirm that the `dandisets/` DataLad clones expose each file's DANDI etag or Zarr checksum, so the runner can compute the fingerprint from what it actually validated.
+4. **Old files vs. new checks.** Files from earlier releases are re-checked with the latest validators, so a minor metadata enhancement could be blocked by a check that did not exist when the file was published. The advantage is that content and structure enhancements go hand-in-hand with metadata ones.
+5. **`modified` bumps.** Re-pending a draft after a `PUT` makes `validate_version_metadata` bump `Version.modified`. That moves the "Last update" date even though the content didn't change. Consider not bumping `modified` when only the validation fields change (see also [#2950](https://github.com/dandi/dandi-archive/pull/2950)).
+6. **Record storage.** Where should records live? See [Record storage (to be decided)](#record-storage-to-be-decided).
+7. **Listing indicators.** [#741](https://github.com/dandi/dandi-archive/issues/741) asks for a compact error/warning indicator in the Dandiset list, derived from the same rows.
