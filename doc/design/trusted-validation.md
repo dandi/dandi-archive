@@ -4,7 +4,7 @@ Authors: Cody Baker
 
 Status: proposal
 
-## Contents
+# Contents
 
 - [Overview](#overview)
 - [Goals](#goals)
@@ -25,7 +25,7 @@ Status: proposal
 - [Alternatives to consider](#alternatives-to-consider)
 - [Open questions](#open-questions)
 
-## Overview
+# Overview
 
 Today the archive only validates *metadata*: each Asset's metadata against the `PublishedAsset` schema, and the draft Version's metadata against the `PublishedDandiset` schema.
 
@@ -46,7 +46,7 @@ The changes in each repository are small:
 | dandi-infrastructure | One config var, plus whatever record storage needs |
 | dandi-cli | Bug fixes so records carry correct validator versions |
 
-## Goals
+# Goals
 
 - A Dandiset version cannot be published unless a trusted validation record for its current content contains no errors.
 - The record must come from an exact, known set of validator versions:
@@ -54,13 +54,13 @@ The changes in each repository are small:
   - **Published versions:** the set frozen at publication, so later validator releases never make them invalid.
 - Errors and warnings are shown to everyone in a banner on the Dandiset landing page ([#1486](https://github.com/dandi/dandi-archive/issues/1486)). Warnings do not block publication but reflect overall quality.
 
-## Non-goals
+# Non-goals
 
 - Running validators inside the archive, or storing full records in its database.
 - Changing the metadata of versions published before this feature. Their results only drive the banner.
 - Per-asset validation status driven by these records.
 
-## Terminology
+# Terminology
 
 - **Validator versions:** the map from each package that affects validation results to the exact version used to produce a record. Keys are plain distribution names, and all six are always present:
 
@@ -76,7 +76,7 @@ The changes in each repository are small:
   - **Why this is unambiguous:** codes contain only letters, and normalized PEP 440 versions start with a digit and contain no `_`.
 - **Validation target:** the validator versions drafts must currently be validated with (see [Setting](#setting)).
 
-## Current state
+# Current state
 
 These are the parts of the archive this design builds on.
 
@@ -91,9 +91,9 @@ These are the parts of the archive this design builds on.
 - **Publishing copies the draft's metadata.** `_build_publishable_version_from_draft` deep-copies the draft's metadata into the new published Version. Published metadata is immutable.
 - **Server-computed fields** such as `assetsSummary` are removed from user-supplied metadata by `Version.strip_metadata`.
 
-## Proposed solution
+# Proposed solution
 
-### dandi-schema
+## dandi-schema
 
 Add two read-only fields to `Dandiset`. Map-valued fields keyed by an enum already exist (`BareAsset.digest: Dict[DigestType, str]`).
 
@@ -159,16 +159,16 @@ The schema change also needs some housekeeping:
 - bump `DANDI_SCHEMA_VERSION` and add the previous version to `ALLOWED_INPUT_SCHEMAS`;
 - add `("<new version>", ["validatedRequiredVersions", "validatedBy"])` to `SIMPLE_DOWNGRADES` in `migrate()`.
 
-### dandi-archive
+## dandi-archive
 
-#### Setting
+### Setting
 
 `DANDI_VALIDATION_TARGET`, read from `DJANGO_DANDI_VALIDATION_TARGET`, holds the validation target as a version code.
 
 - **Unset:** the feature is off. Nothing is stamped and publication is not gated, so rollout and other instances (sandbox, vendored deployments) are safe by default.
 - **Exposed** as `validation_target` on `/api/info/`.
 
-#### Summary table
+### Summary table
 
 ```python
 class VersionValidationSummary(TimeStampedModel):
@@ -190,7 +190,7 @@ class VersionValidationSummary(TimeStampedModel):
 
 There is one row per Version and set of validator versions. Only the row matching the Version's `validatedRequiredVersions` affects publication. The other rows are informational, and they let the next target be computed ahead of time (see [Lifecycles](#lifecycles)).
 
-#### Endpoints
+### Endpoints
 
 | Method | Path | Permission |
 |---|---|---|
@@ -228,7 +228,7 @@ On `PUT` the archive:
 3. **Upserts the row** for `(version, validators)`. Re-running the same validator versions, for example after a runner bug fix, overwrites the row.
 4. **Re-pends a draft.** If the version is the draft and its status is `VALID` or `INVALID`, the archive sets it to `PENDING`, so the next beat job recomputes `validatedBy`. A draft that is `Publishing` or `Published` is left alone.
 
-#### Content fingerprint
+### Content fingerprint
 
 A record must describe the draft's *current* content. Otherwise a record produced from a stale DataLad clone could approve newer, unvalidated content.
 
@@ -240,7 +240,7 @@ The fingerprint is the SHA-256 of the sorted list of `(path, digest)` pairs for 
 
 Dandiset-level metadata is excluded, because the archive already validates it independently.
 
-#### Stamping during draft validation
+### Stamping during draft validation
 
 When `DANDI_VALIDATION_TARGET` is set, `validate_version_metadata` first merges two fields into the draft's metadata, then validates as today:
 
@@ -267,20 +267,20 @@ Two more details:
 - `Version.strip_metadata` adds both fields to its computed fields, so owners cannot set them through the metadata editor or the API.
 - The concurrent `aggregate_assets_summary` task already uses optimistic concurrency on `metadata`, so it retries if validation changed the metadata underneath it.
 
-#### Publication
+### Publication
 
 The published Version inherits both fields from the draft's metadata. Published metadata is immutable, so the published Version stays tied to those validator versions permanently. `_publish_dandiset`'s final `validate(..., 'PublishedDandiset')` enforces the rule a second time.
 
 Publishing also copies the draft's summary row for the required version code to the new published Version. The content is identical, so the fingerprints match by construction. The published Version's banner shows the result straight away, and the runner never re-validates content that already passed as the draft.
 
-#### Read API
+### Read API
 
 - **Version details:** `VersionDetailSerializer`, the `/versions/{version}/info/` payload the landing page already loads, gains two fields:
   - `validation_summary` is the row matching the Version's `validatedRequiredVersions`. For versions without that field, it is the most recent row, and it is `null` if there is no row.
   - For drafts, `stale` is set when that row's fingerprint differs from the current content.
 - **Raw metadata:** both metadata fields also appear in the raw metadata at `GET /api/dandisets/{id}/versions/{version}/`.
 
-#### Frontend
+### Frontend
 
 - **Banner** at the top of `DandisetMain.vue`:
   - error styling if errors exist, warning styling if only warnings exist, and nothing or a small "validated" chip otherwise;
@@ -289,7 +289,7 @@ Publishing also copies the draft's summary row for the required version code to 
 - **Details:** this opens `ValidationErrorDialog.vue` with a new tab built from `top_issues`, plus a link to the full records at `report_url`. Each issue maps to the dialog's existing `{field, message, path}` shape, so grouping by path works unchanged.
 - **Validation error:** add an entry for `validatedBy` to `VALIDATION_ICONS`, with a clearer message.
 
-### Record storage (to be decided)
+## Record storage (to be decided)
 
 Where the full JSONL records live is not decided yet. The archive needs three things from it:
 
@@ -302,7 +302,7 @@ Candidates include:
 - **A GitHub repository served through a CDN.** GitHub rejects files over 100 MB, and CDNs may cache branch URLs.
 - **An S3 bucket.** It needs the bucket itself and write credentials for the runner.
 
-### dandi-infrastructure
+## dandi-infrastructure
 
 Add one line under `# DANDI-specific variables` in `terraform/api.tf`, and in `staging.tf` if staging should gate too:
 
@@ -312,7 +312,7 @@ DJANGO_DANDI_VALIDATION_TARGET = "cli0.75.0_schema0.12.0_nwbi0.7.1_pynwb3.1.0_hd
 
 Bumping the target is then a reviewed infrastructure change. Any infrastructure for record storage, such as a bucket and the runner's write credentials, would also go here.
 
-### dandi-cli
+## dandi-cli
 
 These need to land before the full sweep:
 
@@ -322,7 +322,7 @@ These need to land before the full sweep:
   - pynwb result IDs embed the error message (`pynwb.<message>`), so the runner should group them under a fixed ID when building `top_issues`.
   - NWB Inspector results set `dandiset_path` to the file's parent directory instead of the Dandiset root.
 
-### Validation runner
+## Validation runner
 
 The runner runs on trusted compute, outside these repositories. This is its contract with the archive:
 
@@ -341,7 +341,7 @@ The runner runs on trusted compute, outside these repositories. This is its cont
 - **Reproducibility:** re-running a set of versions uses the same image.
 - **Tag limits:** container tags allow only letters, digits, `_`, `.` and `-`, up to 128 characters. Targets should therefore use released versions, without a local `+…` segment.
 
-### Publication latency (accepted trade-off)
+## Publication latency (accepted trade-off)
 
 After any change to a draft, its owner can publish only once the DataLad backup has caught up and the runner has validated the new content. The same applies after an embargo is lifted, once the content becomes publicly readable. This delay is accepted in exchange for publishing only validated content.
 
@@ -362,11 +362,11 @@ The archive monitors the delay so a stalled runner is noticed:
   `modified` only approximates when the wait began, since every change to the draft resets it.
 - **Notification.** If any drafts are found, the task emails `DANDI_DEV_EMAIL` with each Dandiset and how long it has waited. That setting already exists, so no infrastructure change is needed.
 
-### Old files vs. new checks (accepted trade-off)
+## Old files vs. new checks (accepted trade-off)
 
 Drafts are always validated with the latest validation target, so files carried over from earlier releases are re-checked with the latest validators. A minor metadata enhancement could therefore be blocked by a check that did not exist when the file was published. This is accepted, because it means content and structure enhancements go hand-in-hand with metadata ones.
 
-## Lifecycles
+# Lifecycles
 
 **Draft.**
 
@@ -385,7 +385,7 @@ Drafts are always validated with the latest validation target, so files carried 
 
 Drafts already have rows for the new target, so publication is not interrupted.
 
-## Rollout
+# Rollout
 
 1. **dandi-cli:** fix the NWB Inspector version and release.
 2. **dandi-schema:** add `ValidatorType`, `VALIDATOR_CODES`, the two fields and the publication rule, then bump the version and release.
@@ -395,7 +395,7 @@ Drafts already have rows for the new target, so publication is not interrupted.
 
    The existing `revalidate --versions` management command cannot re-pend drafts as is. `validate_version_metadata` returns early unless a version is `PENDING`, so the command must first set them `PENDING`.
 
-## Alternatives to consider
+# Alternatives to consider
 
 - **A dedicated publish check in the archive instead of a schema rule.** This would need changes to `Version.publishable` and `_lock_dandiset_for_publishing`, a new exception, and frontend gating, all of which the schema rule reuses. The schema rule also makes the requirement visible to anyone validating DANDI metadata.
 - **Store full records in the archive database.** They are large, and it would tie the archive to dandi-cli's record model, which rejects unknown enum values.
@@ -405,7 +405,7 @@ Drafts already have rows for the new target, so publication is not interrupted.
   - Pulling can be added later using the same table.
 - **A richer provenance object**, e.g. a `ValidationActivity(Activity)` with `Software` entries in `wasAssociatedWith`, mirroring `publishedBy: PublishActivity`. It is more expressive, but the map and boolean are simpler to look up and to enforce in `check_publication_status`.
 
-## Open questions
+# Open questions
 
 1. **Field names.** In dandischema, `*By` fields hold an agent or activity (`publishedBy`, `wasGeneratedBy`, `wasAttributedTo`), so a boolean `validatedBy` may surprise readers. Alternatives include `validationPassed` for the boolean and `validatorVersions` for the map. The names must be settled before the schema is released.
 2. **Admin override.** The schema rule blocks superusers too. Is an override needed, for example an admin-only flag on the `PUT` that forces `success`?
