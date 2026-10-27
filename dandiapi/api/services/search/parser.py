@@ -35,6 +35,10 @@ OPERATOR_KEYS: frozenset[str] = frozenset(
     }
 )
 
+# URL schemes look like operator keys to the tokenizer. A pasted URL is far
+# more likely to be something to search for than a mistyped operator.
+_URL_SCHEMES: frozenset[str] = frozenset({'http', 'https'})
+
 # A token in the input is one of:
 #   key:"quoted value"       — operator with quoted value
 #   "quoted text"            — quoted free text (escapes operator-like content)
@@ -121,7 +125,8 @@ def parse_search(query: str) -> ParsedSearch:
             parsed.free_text.append(free)
         else:
             bare = match.group('bare')
-            if op_match := _BARE_OP_RE.match(bare):
+            op_match = _BARE_OP_RE.match(bare)
+            if op_match and op_match.group(1) not in _URL_SCHEMES:
                 key = op_match.group(1)
                 _validate_operator_key(key)
                 parsed.operators.append(Operator(key, op_match.group(2)))

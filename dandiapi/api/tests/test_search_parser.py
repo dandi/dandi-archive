@@ -104,3 +104,22 @@ def test_parse_search(query, expected_free_text, expected_operators):
 def test_parse_search_raises_on_invalid_query(query, expected_message_fragment):
     with pytest.raises(SearchSyntaxError, match=expected_message_fragment):
         parse_search(query)
+
+
+@pytest.mark.parametrize(
+    'query',
+    [
+        'http://purl.obolibrary.org/obo/UBERON_0002421',
+        'https://dandiarchive.org/dandiset/000003',
+    ],
+)
+def test_bare_url_is_free_text(query):
+    parsed = parse_search(query)
+    assert parsed.free_text == [query]
+    assert parsed.operators == []
+
+
+def test_url_scheme_inside_an_operator_value_is_kept():
+    parsed = parse_search('owner:"https://github.com/jdoe" hippocampus')
+    assert parsed.operators == [Operator('owner', 'https://github.com/jdoe')]
+    assert parsed.free_text == ['hippocampus']
