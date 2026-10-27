@@ -9,8 +9,8 @@ Status: proposal
 - [Overview](#overview)
 - [Goals](#goals)
 - [Non-goals](#non-goals)
-- [Current state](#current-state)
 - [Terminology](#terminology)
+- [Current state](#current-state)
 - [Proposed solution](#proposed-solution)
   - [dandi-schema](#dandi-schema)
   - [dandi-archive](#dandi-archive)
@@ -60,21 +60,6 @@ The changes in each repository are small:
 - Changing the metadata of versions published before this feature. Their results only drive the banner.
 - Per-asset validation status driven by these records.
 
-## Current state
-
-These are the parts of the archive this design builds on.
-
-- **Version status and publishing.** `Version.status` reflects *Dandiset metadata* validation only. `Version.publishable` requires `status == VALID` and every asset `VALID`, and `_lock_dandiset_for_publishing` refuses to publish otherwise.
-- **Draft validation is publish-time validation.** `validate_version_metadata` (`dandiapi/api/services/metadata/`) does three things:
-  - it builds the would-be published metadata with `_build_publishable_version_from_draft`, which injects `datePublished` and `publishedBy`;
-  - it validates that metadata against `PublishedDandiset`;
-  - it stores the outcome in `Version.status` / `Version.validation_errors`.
-
-  Any rule dandischema enforces on *published* Dandisets therefore already marks the draft `INVALID`. That blocks re-publishing at a later time, and the UI shows the error in its existing validation dialog.
-- **When validation runs.** Every change to a draft (adding or removing assets, editing metadata, unembargoing, Zarr ingestion) sets the draft to `PENDING`. A beat job (`validate_draft_version_metadata`, every `DANDI_VALIDATION_JOB_INTERVAL` seconds) then re-validates it.
-- **Publishing copies the draft's metadata.** `_build_publishable_version_from_draft` deep-copies the draft's metadata into the new published Version. Published metadata is immutable.
-- **Server-computed fields** such as `assetsSummary` are removed from user-supplied metadata by `Version.strip_metadata`.
-
 ## Terminology
 
 - **Validator versions:** the map from each package that affects validation results to the exact version used to produce a record. Keys are plain distribution names, and all six are always present:
@@ -90,6 +75,21 @@ These are the parts of the archive this design builds on.
   - **Parsing:** split on `_`, then split each part where its leading letters end.
   - **Why this is unambiguous:** codes contain only letters, and normalized PEP 440 versions start with a digit and contain no `_`.
 - **Validation target:** the validator versions drafts must currently be validated with (see [Setting](#setting)).
+
+## Current state
+
+These are the parts of the archive this design builds on.
+
+- **Version status and publishing.** `Version.status` reflects *Dandiset metadata* validation only. `Version.publishable` requires `status == VALID` and every asset `VALID`, and `_lock_dandiset_for_publishing` refuses to publish otherwise.
+- **Draft validation is publish-time validation.** `validate_version_metadata` (`dandiapi/api/services/metadata/`) does three things:
+  - it builds the would-be published metadata with `_build_publishable_version_from_draft`, which injects `datePublished` and `publishedBy`;
+  - it validates that metadata against `PublishedDandiset`;
+  - it stores the outcome in `Version.status` / `Version.validation_errors`.
+
+  Any rule dandischema enforces on *published* Dandisets therefore already marks the draft `INVALID`. That blocks re-publishing at a later time, and the UI shows the error in its existing validation dialog.
+- **When validation runs.** Every change to a draft (adding or removing assets, editing metadata, unembargoing, Zarr ingestion) sets the draft to `PENDING`. A beat job (`validate_draft_version_metadata`, every `DANDI_VALIDATION_JOB_INTERVAL` seconds) then re-validates it.
+- **Publishing copies the draft's metadata.** `_build_publishable_version_from_draft` deep-copies the draft's metadata into the new published Version. Published metadata is immutable.
+- **Server-computed fields** such as `assetsSummary` are removed from user-supplied metadata by `Version.strip_metadata`.
 
 ## Proposed solution
 
