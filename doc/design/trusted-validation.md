@@ -7,9 +7,9 @@ Status: proposal
 ## Contents
 
 - [Overview](#overview)
-- [Current state](#current-state)
 - [Goals](#goals)
 - [Non-goals](#non-goals)
+- [Current state](#current-state)
 - [Terminology](#terminology)
 - [Proposed solution](#proposed-solution)
   - [dandi-schema](#dandi-schema)
@@ -46,6 +46,20 @@ The changes in each repository are small:
 | dandi-infrastructure | One config var, plus whatever record storage needs |
 | dandi-cli | Bug fixes so records carry correct validator versions |
 
+## Goals
+
+- A Dandiset version cannot be published unless a trusted validation record for its current content contains no errors.
+- The record must come from an exact, known set of validator versions:
+  - **Drafts:** the latest set the archive is configured for.
+  - **Published versions:** the set frozen at publication, so later validator releases never make them invalid.
+- Errors and warnings are shown to everyone in a banner on the Dandiset landing page ([#1486](https://github.com/dandi/dandi-archive/issues/1486)). Warnings do not block publication but reflect overall quality.
+
+## Non-goals
+
+- Running validators inside the archive, or storing full records in its database.
+- Changing the metadata of versions published before this feature. Their results only drive the banner.
+- Per-asset validation status driven by these records.
+
 ## Current state
 
 These are the parts of the archive this design builds on.
@@ -60,20 +74,6 @@ These are the parts of the archive this design builds on.
 - **When validation runs.** Every change to a draft (adding or removing assets, editing metadata, unembargoing, Zarr ingestion) sets the draft to `PENDING`. A beat job (`validate_draft_version_metadata`, every `DANDI_VALIDATION_JOB_INTERVAL` seconds) then re-validates it.
 - **Publishing copies the draft's metadata.** `_build_publishable_version_from_draft` deep-copies the draft's metadata into the new published Version. Published metadata is immutable.
 - **Server-computed fields** such as `assetsSummary` are removed from user-supplied metadata by `Version.strip_metadata`.
-
-## Goals
-
-- A Dandiset version cannot be published unless a trusted validation record for its current content contains no errors.
-- The record must come from an exact, known set of validator versions:
-  - **Drafts:** the latest set the archive is configured for.
-  - **Published versions:** the set frozen at publication, so later validator releases never make them invalid.
-- Errors and warnings are shown to everyone in a banner on the Dandiset landing page ([#1486](https://github.com/dandi/dandi-archive/issues/1486)). Warnings do not block publication but reflect overall quality.
-
-## Non-goals
-
-- Running validators inside the archive, or storing full records in its database.
-- Changing the metadata of versions published before this feature. Their results only drive the banner.
-- Per-asset validation status driven by these records.
 
 ## Terminology
 
