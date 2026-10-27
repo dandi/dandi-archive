@@ -19,6 +19,7 @@ Status: proposal
   - [dandi-cli](#dandi-cli)
   - [Validation runner](#validation-runner)
   - [Publication latency (accepted trade-off)](#publication-latency-accepted-trade-off)
+  - [Old files vs. new checks (accepted trade-off)](#old-files-vs-new-checks-accepted-trade-off)
 - [Lifecycles](#lifecycles)
 - [Rollout](#rollout)
 - [Alternatives to consider](#alternatives-to-consider)
@@ -357,6 +358,10 @@ The archive monitors the delay so a stalled runner is noticed:
   `modified` only approximates when the wait began. Every change to the draft resets it, and so does the re-validation that follows each `PUT`.
 - **Notification.** If any drafts are found, the task emails `DANDI_DEV_EMAIL` with each Dandiset and how long it has waited. That setting already exists, so no infrastructure change is needed.
 
+### Old files vs. new checks (accepted trade-off)
+
+Drafts are always validated with the latest validation target, so files carried over from earlier releases are re-checked with the latest validators. A minor metadata enhancement could therefore be blocked by a check that did not exist when the file was published. This is accepted, because it means content and structure enhancements go hand-in-hand with metadata ones.
+
 ## Lifecycles
 
 **Draft.**
@@ -400,6 +405,5 @@ Drafts already have rows for the new target, so publication is not interrupted.
 
 1. **Field names.** In dandischema, `*By` fields hold an agent or activity (`publishedBy`, `wasGeneratedBy`, `wasAttributedTo`), so a boolean `validatedBy` may surprise readers. Alternatives include `validationPassed` for the boolean and `validatorVersions` for the map. The names must be settled before the schema is released.
 2. **Admin override.** The schema rule blocks superusers too. Is an override needed, for example an admin-only flag on the `PUT` that forces `success`?
-3. **Old files vs. new checks.** Files from earlier releases are re-checked with the latest validators, so a minor metadata enhancement could be blocked by a check that did not exist when the file was published. The advantage is that content and structure enhancements go hand-in-hand with metadata ones.
-4. **`modified` bumps.** Re-pending a draft after a `PUT` makes `validate_version_metadata` bump `Version.modified`. That moves the "Last update" date even though the content didn't change. Consider not bumping `modified` when only the validation fields change (see also [#2950](https://github.com/dandi/dandi-archive/pull/2950)).
-5. **Record storage.** Where should records live? See [Record storage (to be decided)](#record-storage-to-be-decided).
+3. **`modified` bumps.** Re-pending a draft after a `PUT` makes `validate_version_metadata` bump `Version.modified`. That moves the "Last update" date even though the content didn't change. Consider not bumping `modified` when only the validation fields change (see also [#2950](https://github.com/dandi/dandi-archive/pull/2950)).
+4. **Record storage.** Where should records live? See [Record storage (to be decided)](#record-storage-to-be-decided).
