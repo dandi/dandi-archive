@@ -1940,6 +1940,36 @@ def test_advanced_search_technique_with_quoted_phrase(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
+def test_advanced_search_technique_matches_nwb_subtype_techniques(api_client):
+    # Techniques are derived from neurodata types, so a dandiset with only
+    # CurrentClampSeries/VoltageClampSeries never lists "patch clamp technique".
+    # `technique:"patch clamp"` must still find it via the PatchClampSeries
+    # subtypes (https://github.com/dandi/dandi-archive/issues/2907).
+    icephys = _seed_dandiset_with_summary(
+        assets_summary={
+            'measurementTechnique': [
+                {'name': 'current clamp technique'},
+                {'name': 'voltage clamp technique'},
+            ]
+        },
+    )
+    patch_only = _seed_dandiset_with_summary(
+        assets_summary={'measurementTechnique': [{'name': 'patch clamp technique'}]},
+    )
+    _seed_dandiset_with_summary(
+        assets_summary={'measurementTechnique': [{'name': 'spike sorting technique'}]},
+    )
+
+    assert _search_ids(api_client, 'technique:"patch clamp"') == {
+        icephys.identifier,
+        patch_only.identifier,
+    }
+    # Expansion only goes down the hierarchy, not up.
+    assert _search_ids(api_client, 'technique:"current clamp"') == {icephys.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
 def test_advanced_search_standard_matches_data_standard(api_client):
     # `standard:` matches the version's assetsSummary.dataStandard — real
     # entries are like "Neurodata Without Borders (NWB)" or "Brain Imaging
@@ -1974,6 +2004,33 @@ def test_advanced_search_variable_matches_bare_string_array(api_client):
     assert _search_ids(api_client, 'variable:electrical') == {ephys.identifier}
     assert _search_ids(api_client, 'variable:series') == {ephys.identifier}
     assert _search_ids(api_client, 'variable:nosuchtype') == set()
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_variable_matches_nwb_subtypes(api_client):
+    # `variableMeasured` lists only the types actually in the files, never their
+    # parents, so querying a parent type must also match its subtypes
+    # (https://github.com/dandi/dandi-archive/issues/2907).
+    icephys = _seed_dandiset_with_summary(
+        assets_summary={'variableMeasured': ['CurrentClampSeries', 'VoltageClampSeries']},
+    )
+    patch_only = _seed_dandiset_with_summary(
+        assets_summary={'variableMeasured': ['PatchClampSeries']},
+    )
+    ecephys = _seed_dandiset_with_summary(
+        assets_summary={'variableMeasured': ['ElectricalSeries']},
+    )
+    _seed_dandiset_with_summary(
+        assets_summary={'variableMeasured': ['Units']},
+    )
+
+    both = {icephys.identifier, patch_only.identifier}
+    assert _search_ids(api_client, 'variable:PatchClampSeries') == both
+    assert _search_ids(api_client, 'variable:patchclampseries') == both
+    assert _search_ids(api_client, 'variable:TimeSeries') == {*both, ecephys.identifier}
+    # Expansion only goes down the hierarchy, not up.
+    assert _search_ids(api_client, 'variable:CurrentClampSeries') == {icephys.identifier}
 
 
 @pytest.mark.ai_generated
