@@ -84,7 +84,7 @@ These are the parts of the archive this design builds on.
 
   - **Checkable against records:** every key except `hdmf` is a `Validator` value that dandi-cli writes into each record's `origin`, so those versions can be checked against each record's `origin.validator_version`.
   - **hdmf:** the runner reports its version from its own environment.
-- **Version code:** a short, readable string form of a validator-versions map. It is used in the API path, in the archive's setting, and is suggested for record file names.
+- **Version code:** a short, readable string form of a validator-versions map. It is used in the API path and in the archive's setting, and is suggested for record file names and the runner's container tag.
   - **Form:** each package's short code (see `VALIDATOR_CODES` under [dandi-schema](#dandi-schema)) followed directly by its version, in the code table's order, joined with `_`. For the map above: `cli0.75.0_schema0.12.0_nwbi0.7.1_pynwb3.1.0_hdmf4.1.0_bids2.1.0`.
   - **Parsing:** split on `_`, then split each part where its leading letters end.
   - **Why this is unambiguous:** codes contain only letters, and normalized PEP 440 versions start with a digit and contain no `_`.
@@ -329,6 +329,12 @@ The runner runs on trusted compute, outside these repositories. This is its cont
 3. **Prepare the result.** Relativize paths (see [dandi-cli](#dandi-cli)) and store the JSONL in record storage. Then compute the counts, `top_issues` and the content fingerprint.
 4. **`PUT`** the summary to `validation_summary/{version code}/`.
 5. **Prioritize** drafts whose `validatedBy` is `null` or whose `validation_summary` is `stale`. These are the drafts whose owners are waiting to publish (see [Publication latency](#publication-latency-accepted-trade-off)).
+
+**Environment.** Running validation in a container image tagged with the version code is strongly recommended, for example `dandi-validation:cli0.75.0_schema0.12.0_nwbi0.7.1_pynwb3.1.0_hdmf4.1.0_bids2.1.0`.
+
+- **Provenance:** the string that identifies each record then also names the exact environment that produced it.
+- **Reproducibility:** re-running a set of versions uses the same image.
+- **Tag limits:** container tags allow only letters, digits, `_`, `.` and `-`, up to 128 characters. Targets should therefore use released versions, without a local `+…` segment.
 
 ### Publication latency (accepted trade-off)
 
