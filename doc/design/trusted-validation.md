@@ -11,7 +11,7 @@ Today the archive only validates *metadata*:
 - Each Asset's metadata is checked against the `PublishedAsset` schema.
 - The draft Version's metadata is checked against the `PublishedDandiset` schema.
 
-The archive does not run the validators that check the *contents* of files and datasets: NWB Inspector, the BIDS validator, and the `dandi validate` layout and Zarr checks. As a result, Dandisets with invalid NWB files or BIDS layouts can be published (e.g. [#2412](https://github.com/dandi/dandi-archive/issues/2412)).
+Neither the archive backend nor any external service runs the validators that check the *contents* of files nor the *layout* of datasets: NWB Inspector, PyNWB validation, BIDS validator, or even the ad-hoc DANDI layout enforced by CLI command `dandi validate`. As a result, Dandisets with invalid NWB files or BIDS/DANDI layouts can be published (e.g. [#2412](https://github.com/dandi/dandi-archive/issues/2412)).
 
 This document proposes:
 
