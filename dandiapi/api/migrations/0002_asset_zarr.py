@@ -10,8 +10,7 @@ class Migration(migrations.Migration):
     replaces = [
         (
             'zarr',
-            '0004_remove_embargoedzarrarchive_zarr-embargoedzarrarchive-'
-            'consistent-checksum-status_and_more',
+            '0004_remove_embargoedzarrarchive_zarr-embargoedzarrarchive-consistent-checksum-status_and_more',
         )
     ]
 

@@ -57,11 +57,20 @@
         </div>
       </template>
       <template #emptyFallback>
-        <span class="font-italic font-weight-bold">
-          No funding information available.
-        </span>
+        <v-alert
+          variant="text"
+          density="comfortable"
+          class="mb-0 bg-blue-grey-lighten-5"
+          icon="mdi-information-outline"
+        >
+          <div class="font-weight-bold">
+            No funding information provided.
+          </div>
+        </v-alert>
       </template>
     </MetadataCard>
+
+    <AnatomyCard :about="meta.about" />
 
     <MetadataCard
       v-if="protocols && protocols.length"
@@ -246,6 +255,7 @@ import { computed, onMounted, onUnmounted } from 'vue';
 import { useDisplay, useTheme } from 'vuetify';
 
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
+import AnatomyCard from '@/components/DLP/AnatomyCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
 
 import type { ComputedRef, PropType } from 'vue';

@@ -34,9 +34,11 @@ In order to facilitate restoration of deleted data, as well as for general audit
 ```python
 from django.db import models
 
+
 class GarbageCollectionEvent(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=255)
+
 
 class GarbageCollectionEventRecord(models.Model):
     event = models.ForeignKey(GarbageCollectionEvent)
