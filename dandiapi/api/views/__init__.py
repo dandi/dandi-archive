@@ -6,13 +6,6 @@ from .auth import auth_token_view, authorize_view, user_questionnaire_form_view
 from .dandiset import DandisetViewSet
 from .dashboard import DashboardView, mailchimp_csv_view, user_approval_view
 from .info import info_view
-from .oauth import (
-    ApplicationDelete,
-    ApplicationDetail,
-    ApplicationList,
-    ApplicationRegistration,
-    ApplicationUpdate,
-)
 from .robots import robots_txt_view
 from .root import root_content_view
 from .schema import schema_list_view, schema_view
@@ -27,11 +20,6 @@ from .users import users_list_view, users_me_view, users_search_view
 from .version import VersionViewSet
 
 __all__ = [
-    'ApplicationDelete',
-    'ApplicationDetail',
-    'ApplicationList',
-    'ApplicationRegistration',
-    'ApplicationUpdate',
     'AssetViewSet',
     'DandisetViewSet',
     'DashboardView',

@@ -7,16 +7,10 @@ from django.views.generic import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from oauth2_provider import urls as oauth2_urls
-from oauth2_provider import views as oauth2_views
 from rest_framework import permissions
 from rest_framework_extensions.routers import ExtendedSimpleRouter
 
 from dandiapi.api.views import (
-    ApplicationDelete,
-    ApplicationDetail,
-    ApplicationList,
-    ApplicationRegistration,
-    ApplicationUpdate,
     AssetViewSet,
     DandisetViewSet,
     DashboardView,
@@ -122,29 +116,11 @@ webdav_schema_view = get_schema_view(
 )
 
 
-# django-oauth-toolkit ships self-service views (under "applications/") that let any
-# logged-in user register and manage OAuth2 applications. Registering an external
-# application should be an administrative action, so those views are replaced with
-# admin-only versions here; everything else is mounted exactly as the toolkit defines it.
+# The toolkit's routes, minus its self-service application management views (under
+# "applications/"), which let any logged-in user register an OAuth2 application.
+# Applications are managed through the Django admin instead.
 oauth2_urlpatterns = [
-    *oauth2_urls.base_urlpatterns,
-    path('applications/', ApplicationList.as_view(), name='list'),
-    path('applications/register/', ApplicationRegistration.as_view(), name='register'),
-    path('applications/<slug:pk>/', ApplicationDetail.as_view(), name='detail'),
-    path('applications/<slug:pk>/delete/', ApplicationDelete.as_view(), name='delete'),
-    path('applications/<slug:pk>/update/', ApplicationUpdate.as_view(), name='update'),
-    # Users may still list and revoke the tokens they have authorized themselves
-    path(
-        'authorized_tokens/',
-        oauth2_views.AuthorizedTokensListView.as_view(),
-        name='authorized-token-list',
-    ),
-    path(
-        'authorized_tokens/<slug:pk>/delete/',
-        oauth2_views.AuthorizedTokenDeleteView.as_view(),
-        name='authorized-token-delete',
-    ),
-    *oauth2_urls.oidc_urlpatterns,
+    url for url in oauth2_urls.urlpatterns if not str(url.pattern).startswith('applications/')
 ]
 
 
