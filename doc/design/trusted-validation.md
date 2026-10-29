@@ -441,8 +441,7 @@ Drafts already have rows for the new target, so publication is not interrupted. 
 
 # Open questions
 
-1. **Field names.** In dandischema, `*By` fields hold an agent or activity (`publishedBy`, `wasGeneratedBy`, `wasAttributedTo`), so a boolean `validatedBy` may surprise readers. Alternatives include `validationPassed` for the boolean and `validatorVersions` for the map. The names must be settled before the schema is released.
-2. **Isolation level.** The subprocess drops credentials, but runs on a dyno whose environment holds them. Full isolation would need a separate Heroku app without database or bucket-write credentials, which would bring back a narrow write endpoint with its own token. Is the subprocess enough?
-3. **Worker size and sweep budget.** Which dyno size and count, and where should the initial sweep run (Heroku scaled up, or a container near the bucket)? To be decided from the pilot.
-4. **Retry thresholds.** How many retries, and how much backoff, before a run is marked failed?
-5. **Coverage.** Zarr assets and files other than NWB and BIDS are reported as "not checked". Should any of them be validated?
+1. **Isolation level.** The subprocess drops credentials, but runs on a dyno whose environment holds them. Full isolation would need a separate Heroku app without database or bucket-write credentials, which would bring back a narrow write endpoint with its own token. Is the subprocess enough?
+2. **Worker size and sweep budget.** Which dyno size and count, and where should the initial sweep run (Heroku scaled up, or a container near the bucket)? To be decided from the pilot.
+3. **Retry thresholds.** How many retries, and how much backoff, before a run is marked failed?
+4. **Coverage.** Zarr assets and files other than NWB and BIDS are reported as "not checked". Should any of them be validated?
