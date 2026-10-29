@@ -6,10 +6,9 @@ from typing import TYPE_CHECKING
 from allauth.socialaccount.models import SocialAccount
 from dandischema.conf import get_instance_config
 from django.contrib.auth.models import User
-from django.contrib.postgres.lookups import Unaccent
 from django.db import transaction
-from django.db.models import Count, Max, OuterRef, QuerySet, Subquery, Sum, TextField
-from django.db.models.functions import Cast, Coalesce
+from django.db.models import Count, F, Max, OuterRef, QuerySet, Subquery, Sum
+from django.db.models.functions import Coalesce
 from django.db.models.query_utils import Q
 from django.http import Http404
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -51,6 +50,7 @@ from dandiapi.api.services.permissions.dandiset import (
 )
 from dandiapi.api.services.search import SearchSyntaxError, parse_search
 from dandiapi.api.services.search.filters import apply_search_filters
+from dandiapi.api.services.search.text import RANK_ANNOTATION, apply_free_text
 from dandiapi.api.views.common import DANDISET_PK_PARAM
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
@@ -75,10 +75,12 @@ if TYPE_CHECKING:
 
 
 class DandisetOrderingFilter(filters.OrderingFilter):
-    ordering_fields = ['id', 'name', 'modified', 'size', 'stars']
+    ordering_fields = ['id', 'name', 'modified', 'size', 'stars', 'relevance']
     ordering_description = (
         'Which field to use when ordering the results. '
-        'Options are id, -id, name, -name, modified, -modified, size, -size, stars, -stars.'
+        'Options are id, -id, name, -name, modified, -modified, size, -size, stars, -stars, '
+        'relevance, -relevance. -relevance puts the best matches to the free text '
+        'first; without free text it is the same as -modified.'
     )
 
     def filter_queryset(self, request, queryset, view):
@@ -86,6 +88,17 @@ class DandisetOrderingFilter(filters.OrderingFilter):
         if not orderings:
             return queryset
         ordering = orderings[0]
+
+        if ordering.endswith('relevance'):
+            # Only a search with free text annotates a rank. Without one,
+            # fall back to the most recently modified first.
+            if RANK_ANNOTATION not in queryset.query.annotations:
+                ordering = '-modified'
+            else:
+                rank = F(RANK_ANNOTATION)
+                return queryset.order_by(
+                    rank.desc() if ordering.startswith('-') else rank.asc(), 'id'
+                )
 
         # ordering can be either 'created' or '-created', so test for both
         if ordering.endswith('id'):
@@ -150,7 +163,7 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
         # Parse Gmail-style operators (e.g. species:mouse, created_after:2024-01-01)
         # out of the search string, and apply them as structured filters. Anything
         # left over (free text, including quoted phrases) flows through the existing
-        # full-text path unchanged. Surface any parse / validation problems as 400.
+        # full-text path. Surface any parse / validation problems as 400.
         try:
             parsed = parse_search(search_term)
             queryset = apply_search_filters(queryset, parsed)
@@ -160,21 +173,7 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
         if not parsed.free_text:
             return queryset
 
-        # Build a Q object that requires all free-text words to be present
-        q_filter = Q()
-        for word in parsed.free_text:
-            q_filter &= Q(search_field__icontains=word)
-
-        # We must formulate the filter using a separate query first, as otherwise
-        # the generated SQL is incompatible with previously generated clauses
-        matching_dandiset_ids = (
-            Version.objects.alias(search_field=Unaccent(Cast('metadata', TextField())))
-            .filter(q_filter)
-            .values_list('dandiset_id', flat=True)
-            .distinct()
-        )
-
-        return queryset.filter(id__in=matching_dandiset_ids)
+        return apply_free_text(queryset, parsed.free_text)
 
 
 class DandisetViewSet(ReadOnlyModelViewSet):
