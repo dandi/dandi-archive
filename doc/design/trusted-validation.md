@@ -198,7 +198,6 @@ Validation is queued on a dedicated `validation` queue in two ways, both only wh
 
 A draft is eligible when all of these hold, and the task checks them again first, so duplicate requests are no-ops:
 
-- it is not `PENDING` or `VALIDATING`, since its stored fingerprint may be stale until metadata validation runs;
 - every blob asset has a `sha256` and every Zarr is `COMPLETE`;
 - it has no complete row for its required code and stored fingerprint, and no run is in progress.
 
@@ -206,16 +205,20 @@ Each run's state lives in its row (`queued`, `running`, `complete`, `failed` or 
 
 ### Content fingerprint
 
-The fingerprint is the SHA-256 of the sorted list of `(path, digest)` pairs for the version's assets. `digest` is the blob's DANDI etag (`AssetBlob.etag`) or the Zarr checksum (`ZarrArchive.checksum`). Zarr assets are included because layout and BIDS checks still see their paths, even though their content is not checked. Dandiset-level metadata is excluded, because the archive already validates it independently.
+The fingerprint is a dataset-level checksum of the version's `(path, digest)` pairs. `digest` is the blob's DANDI etag (`AssetBlob.etag`) or the Zarr checksum (`ZarrArchive.checksum`). Zarr assets are included because layout and BIDS checks still see their paths, even though their content is not checked. Dandiset-level metadata is excluded, because the archive already validates it independently.
 
-- **Stored.** `validate_version_metadata`, which runs after every content change, computes it and stores it in a new `Version` column. Existing versions are backfilled, or computed when the column is null. The etag is known at upload, so the later arrival of `sha256` does not change it. Hashing must fit within that task's `soft_time_limit` of 30 seconds; the pilot measures it on the largest draft.
+- **Updated in O(1).** The fingerprint is a multiset hash, so each asset change updates it in constant time instead of rehashing every asset.
+  - **How.** Each `(path, digest)` pair is hashed to an element. The version stores the element-wise sum of its pairs' elements as its fingerprint state, and the fingerprint is the SHA-256 of that state.
+  - **Where.** Adding an asset adds its element, removing one subtracts it, and replacing one does both. Every asset change goes through `_add_asset_to_version` and `_remove_asset_from_version` (`services/asset/`), which update the state in the same transaction. When a Zarr's checksum changes on ingestion, its entry is replaced the same way. The etag is known at upload, so the later arrival of `sha256` does not change the fingerprint.
+  - **Construction.** Use a multiset hash with a large state, such as LtHash (1024 16-bit lanes, 2 KB; Lewi et al., 2019). A plain sum of SHA-256 digests modulo 2^256 is cheaper, but generalized-birthday attacks make it practical to craft a set of files that collides with another.
+  - **Backfill.** Existing versions get a one-off O(n) computation. The same management command can recompute any version from scratch to check for drift.
 - **Why.** The draft can change while a run is in progress. The task records the fingerprint of the snapshot it validated, and on completion keeps the result only if the draft still has that fingerprint.
 
 ### Required versions
 
 Each draft stores its required version code in a new `Version` column, next to its content fingerprint.
 
-- **Moved on file changes.** Whenever `validate_version_metadata` computes a fingerprint that differs from the stored one (an asset was added, removed or replaced), it stores the new fingerprint and sets the required code to the current target. A draft therefore moves to newer validators only when its files change.
+- **Moved on file changes.** Whenever an asset change updates the fingerprint (an asset was added, removed or replaced), the same update sets the required code to the current target. A draft therefore moves to newer validators only when its files change.
 - **Kept on metadata-only changes.** A metadata-only change leaves the fingerprint, and so the required code, unchanged. The draft keeps its result, needs no new run, and is never blocked by checks added later.
 - **Frozen at publication.** Published versions copy both columns from the draft and never change them. Publication requires `validatedBy: true`, so a published version's result is always a passing one.
 - **Unset.** Drafts without a required code get the current target the first time one is set.
@@ -413,8 +416,8 @@ Metadata-only changes are not affected: a draft keeps the validator versions and
 
 **Draft with changed files.**
 
-1. The owner changes the draft's files, and it goes `PENDING`.
-2. Metadata validation stores the new fingerprint, moves the draft's required versions to the current target, stamps them, and sets `validatedBy = null`. The draft becomes `INVALID` with the error "a validation record … is required to publish", which the UI shows as "Content validation queued".
+1. The owner changes the draft's files. The same change updates the fingerprint and moves the draft's required versions to the current target, and the draft goes `PENDING`.
+2. Metadata validation stamps the required versions and sets `validatedBy = null`. The draft becomes `INVALID` with the error "a validation record … is required to publish", which the UI shows as "Content validation queued".
 3. The manifest hook queues validation, or the reconciler does once every checksum exists.
 4. The run completes. If the draft still has the same fingerprint, the row is stored and the draft is stamped:
    - if it has no errors, `validatedBy = true` and the draft becomes `VALID`, so it can be published;
@@ -425,7 +428,7 @@ Metadata-only changes are not affected: a draft keeps the validator versions and
 **Metadata-only edit.**
 
 1. The owner edits only the draft's metadata, and it goes `PENDING`.
-2. Metadata validation finds the fingerprint unchanged, so the draft keeps its required versions and result. No run is queued.
+2. The fingerprint is unchanged, so the draft keeps its required versions and result. No run is queued.
 3. If that result passed, the draft becomes `VALID` straight away and can be published, even if the target has moved on since.
 
 **New validator release.**
@@ -441,9 +444,9 @@ Published versions keep their frozen validator versions.
 1. **dandi-schema:** add `ValidatorType`, the two fields and the publication rule, then bump the version and release.
 2. **datalad-fuse:** release with the remfile backend.
 3. **dandi-cli:** release with the streaming stack, the `INTERNAL` classification, hdmf's version in records and the NWB Inspector fix.
-4. **dandi-archive:** upgrade dandischema and run `migrate_version_metadata --all`. Ship the table, fingerprint and required-code columns with their backfill, task, reconciler, environments, process type, stamping, publish-time copy, `/info/` fields, banner and daily check, with the target unset and gating off.
+4. **dandi-archive:** upgrade dandischema and run `migrate_version_metadata --all`. Ship the table, the fingerprint state, fingerprint and required-code columns with their backfill, task, reconciler, environments, process type, stamping, publish-time copy, `/info/` fields, banner and daily check, with the target unset and gating off.
 5. **dandi-infrastructure:** add the worker formation, staging first.
-6. **Pilot** on a small, a BIDS and a large Dandiset. Measure seconds per file, peak memory, bytes read, cold environment build time, fingerprint hashing time on the largest draft, how long re-validating the largest Dandiset takes after a one-file change, and how long the largest Dandiset takes compared with Heroku's daily dyno restart. Then choose the dyno size and count.
+6. **Pilot** on a small, a BIDS and a large Dandiset. Measure seconds per file, peak memory, bytes read, cold environment build time, the fingerprint backfill time, how long re-validating the largest Dandiset takes after a one-file change, and how long the largest Dandiset takes compared with Heroku's daily dyno restart. Then choose the dyno size and count.
 7. **Shadow mode:** set the target with gating off. Existing drafts get it as their required versions. Results and the banner appear, but publication is not gated.
 8. **Sweep** every draft. Published versions are not validated: their results are frozen at publication. Either scale the worker up temporarily, or run the same lock file as a container near the bucket and import the results with a management command; estimate the cost first.
    - **Capacity:** `files × seconds per file ÷ processes`. For example, 500k files at 30 seconds each is about 170 process-days, or about 11 days with 16 processes.
