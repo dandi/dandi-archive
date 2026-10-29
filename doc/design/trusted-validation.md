@@ -29,7 +29,7 @@ Status: proposal
 
 - A Dandiset version cannot be published unless a trusted validation record for its current content contains no errors.
 - The record must come from an exact, known set of validator versions:
-  - **Drafts:** the latest set the archive is configured for.
+  - **Drafts:** the latest set the archive is configured for, unless their files are unchanged since their latest published version, in which case they keep that version's set.
   - **Published versions:** the set frozen at publication, so later validator releases never make them invalid.
 - Errors and warnings are shown to everyone in a banner on the Dandiset landing page ([#1486](https://github.com/dandi/dandi-archive/issues/1486)). Warnings do not block publication but reflect overall quality.
 - Changes only to the metadata of previously published versions should not trigger version bumps for dataset validation.
@@ -69,7 +69,7 @@ The changes in each repository can be summarized as:
   - **Form:** each package's one-letter code (see `VALIDATOR_CODES` under [Validator environments](#validator-environments)) followed directly by its version, in the code table's order, with no separator between entries. For the map above: `d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0`.
   - **Parsing:** each entry matches `([a-z])(\d+(?:\.\d+)*)`, and a whole code matches `(?:[a-z]\d+(?:\.\d+)*)+`.
   - **Why this is unambiguous:** codes are single letters, and versions must be plain releases made only of digits and periods (e.g. `0.75.0`). A pre-release, post-release, dev or local version (e.g. `1.0rc1`, `0.75.0+12.gabc`) cannot be encoded. The fixed order means equal maps always give identical codes.
-- **Validation target:** the version code drafts must currently be validated with (see [Settings](#settings)).
+- **Validation target:** the version code drafts must currently be validated with (see [Settings](#settings)), unless their files are unchanged since their latest published version (see [Stamping](#stamping)).
 - **Content fingerprint:** a hash of the files a version contains (see [Content fingerprint](#content-fingerprint)).
 
 # Current state
@@ -199,6 +199,7 @@ A draft is eligible when all of these hold, and the task checks them again first
 
 - it is not `PENDING` or `VALIDATING`, since its stored fingerprint may be stale until metadata validation runs;
 - every blob asset has a `sha256` and every Zarr is `COMPLETE`;
+- its files changed since its latest published version, or that version predates this feature. Otherwise the draft keeps that version's result (see [Stamping](#stamping)) and is not re-validated;
 - some installed environment has no complete row for the draft's stored fingerprint, and no run is in progress. Environments are run with the target first.
 
 Each run's state lives in its row (`queued`, `running`, `complete`, `failed` or `superseded`, with `requested_at`, `heartbeat_at` and `attempts`), and the reconciler re-queues runs whose heartbeat stopped. Published versions are never queued: their rows are copied at publication (see [Publication](#publication)), and versions published before this feature are handled by the sweep (see [Rollout](#rollout)).
@@ -288,14 +289,27 @@ def _validation_fields(version: Version) -> dict | None:
     target = settings.DANDI_VALIDATION_TARGET  # parsed map, or None
     if target is None:
         return None  # remove both fields
-    row = version.validation_summaries.filter(
-        validators=version_code(target),
+    required, versions = target, [version]
+    published = version.dandiset.most_recent_published_version
+    if (
+        published is not None
+        and published.content_fingerprint == version.content_fingerprint
+        and 'validatedRequiredVersions' in published.metadata
+    ):
+        # Only metadata changed since the latest release: keep its versions and result
+        required = published.metadata['validatedRequiredVersions']
+        versions.append(published)
+    row = VersionValidationSummary.objects.filter(
+        version__in=versions,
+        validators=version_code(required),
         content_fingerprint=version.content_fingerprint,
         state='complete',
     ).first()
     passed = row.success if row else None  # None: no complete record for this content yet
-    return {'validatedRequiredVersions': target, 'validatedBy': passed}
+    return {'validatedRequiredVersions': required, 'validatedBy': passed}
 ```
+
+- **Metadata-only changes.** If the draft's files are unchanged since its latest published version (same fingerprint), the draft keeps that version's `validatedRequiredVersions` and its result, even if the target has moved on since. A metadata-only edit after publication therefore needs no new run and is never blocked by checks added later. Versions published before this feature have no required versions to keep, so their drafts use the target.
 
 - **Writes.** The helper merges the fields into the draft's metadata, re-runs schema validation, and writes `status`, `validation_errors` and `metadata` with `.update()`. It does not bump `Version.modified` when the only metadata change is to these two fields. Today `validate_version_metadata` always sets `modified=now`, which would move the "Last update" date on every result even though the content didn't change. Content changes already bump `modified` themselves (see also [#2950](https://github.com/dandi/dandi-archive/pull/2950)).
 - **Gating.** Draft validation is publish-time validation (see [Current state](#current-state)). So whenever `validatedBy` is not `true`, the new schema rule produces an ordinary validation error on `validatedBy`, and the draft becomes `INVALID`. The existing publish gating handles the rest, and **the publish service needs no new check**.
@@ -304,7 +318,7 @@ def _validation_fields(version: Version) -> dict | None:
 
 ### Publication
 
-The published Version inherits both fields from the draft's metadata. Published metadata is immutable, so the published Version stays tied to those validator versions permanently. `_publish_dandiset`'s final `validate(..., 'PublishedDandiset')` enforces the rule a second time.
+The published Version inherits both fields from the draft's metadata, and the draft's stored fingerprint. Published metadata is immutable, so the published Version stays tied to those validator versions permanently. `_publish_dandiset`'s final `validate(..., 'PublishedDandiset')` enforces the rule a second time.
 
 Publishing also copies the draft's complete row for the required version code to the new published Version. The content is identical, so the fingerprints match by construction and the record object is shared. The published Version's banner shows the result straight away, and its content is never validated twice.
 
@@ -391,13 +405,15 @@ The archive monitors the delay so a stalled worker is noticed:
 
 ## Old files vs. new checks (accepted trade-off)
 
-Drafts are always validated with the latest validation target, so files carried over from earlier releases are re-checked with the latest validators. A minor metadata enhancement could therefore be blocked by a check that did not exist when the file was published. This is accepted, because it means content and structure enhancements go hand-in-hand with metadata ones.
+Once a draft's files change, the whole Dandiset is validated with the latest validation target, so files carried over from earlier releases are re-checked with the latest validators. A small content change, such as adding one file, could therefore be blocked by a check that did not exist when the other files were published. This is accepted, because it means content and structure enhancements go hand-in-hand.
+
+Metadata-only changes are not affected: a draft whose files are unchanged since its latest published version keeps that version's validator versions and result (see [Stamping](#stamping)).
 
 # Lifecycles
 
-**Draft.**
+**Draft with changed files.**
 
-1. The owner changes the draft, and it goes `PENDING`.
+1. The owner changes the draft's files, and it goes `PENDING`.
 2. Metadata validation stores the new fingerprint, stamps `validatedRequiredVersions` with the target and sets `validatedBy = null`. The draft becomes `INVALID` with the error "a validation record … is required to publish", which the UI shows as "Content validation queued".
 3. The manifest hook queues validation, or the reconciler does once every checksum exists.
 4. The run completes. If the draft still has the same fingerprint, the row is stored and the draft is stamped:
@@ -406,14 +422,20 @@ Drafts are always validated with the latest validation target, so files carried 
 
    If the draft changed during the run, the row is superseded and the reconciler queues a new run.
 
+**Metadata-only edit after publication.**
+
+1. The owner edits only the draft's metadata, and it goes `PENDING`.
+2. Metadata validation finds the same fingerprint as the latest published version, so it stamps that version's `validatedRequiredVersions` and result. No run is queued.
+3. If that result passed, the draft becomes `VALID` straight away and can be published, even if the target has moved on since.
+
 **New validator release.**
 
-1. Commit the next environment's lock file and deploy. The worker builds both environments, and the reconciler validates drafts with both, target first. Rows for the next code don't affect anything.
+1. Commit the next environment's lock file and deploy. The worker builds both environments, and the reconciler validates drafts with both, target first, except drafts that keep their latest published version's result. Rows for the next code don't affect anything.
 2. Once drafts have rows for the next code, change `DJANGO_DANDI_VALIDATION_TARGET`.
 3. Set drafts to `PENDING`, with a management command, so they re-stamp.
 4. Delete the old lock file.
 
-Drafts already have rows for the new target, so publication is not interrupted. Published versions keep their frozen validator versions.
+Drafts already have rows for the new target, so publication is not interrupted. Published versions keep their frozen validator versions, and so do drafts whose files are unchanged since their latest published version.
 
 # Rollout
 
