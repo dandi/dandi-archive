@@ -24,7 +24,7 @@ const TXT_ASSET_ID = "22222222-2222-2222-2222-222222222222";
 // Where the listing says the tabular asset's bytes live. The viewer fetches
 // this directly for a dandiset that isn't embargoed, exactly as the "Open With"
 // services do.
-const TSV_BLOB_URL = "http://localhost:9000/django-storage-testing/blobs/data.tsv";
+const BLOB_ROOT = "http://localhost:9000/django-storage-testing/blobs";
 
 const TSV = [
   "subject\tsession\tnotes\treference",
@@ -63,7 +63,7 @@ function assetPath(path: string, assetId: string | null, size: number, url = "")
  * Serve a listing holding a tabular asset, a non-tabular one and a folder, so
  * that each kind of row can be compared against the others.
  */
-async function stubListing(page: Page, options: { tsvSize?: number } = {}) {
+async function stubListing(page: Page, { path = "data.tsv", size = TSV.length } = {}) {
   await page.route(/\/assets\/paths\//, (route) => route.fulfill({
     json: {
       count: 3,
@@ -71,7 +71,7 @@ async function stubListing(page: Page, options: { tsvSize?: number } = {}) {
       previous: null,
       results: [
         assetPath("sub-01", null, 100),
-        assetPath("data.tsv", TSV_ASSET_ID, options.tsvSize ?? TSV.length, TSV_BLOB_URL),
+        assetPath(path, TSV_ASSET_ID, size, `${BLOB_ROOT}/${path}`),
         assetPath("notes.txt", TXT_ASSET_ID, 20, "http://localhost:9000/blobs/notes.txt"),
       ],
     },
@@ -88,17 +88,66 @@ async function stubEmbargoed(page: Page) {
   });
 }
 
-/** Serve the tabular asset's bytes, from wherever the viewer asks for them. */
-async function stubContent(page: Page, body: string) {
+/**
+ * Serve the tabular asset's bytes, from wherever the viewer asks for them, and
+ * return the URLs it asked for.
+ */
+async function stubContent(page: Page, body: string, status = 200) {
+  const fetched: string[] = [];
   await page.route(
-    (url) => url.href.includes("/blobs/data.tsv")
+    (url) => url.href.startsWith(BLOB_ROOT)
       || /\/assets\/[^/]+\/download/.test(url.href),
-    (route) => route.fulfill({ body, contentType: "text/tab-separated-values" }),
+    (route) => {
+      fetched.push(route.request().url());
+      return route.fulfill({ status, body, contentType: "text/tab-separated-values" });
+    },
   );
+  return fetched;
 }
 
 const dialog = (page: Page) => page.locator(".v-dialog .v-card");
 const closeViewer = (page: Page) => dialog(page).getByRole("button").filter({ has: page.locator(".mdi-close") }).click();
+const openByLink = (page: Page) => page.goto(`${filesUrl}?table=data.tsv`);
+async function openByClick(page: Page) {
+  await page.goto(filesUrl);
+  await page.getByRole("link", { name: "data.tsv" }).click();
+}
+
+// What the viewer makes of a file: text the dialog must contain, and cells it
+// must show exactly.
+const CONTENT_CASES = [
+  {
+    title: "a .csv is split on commas, and quoted fields keep their commas, newlines and quotes",
+    path: "data.csv",
+    body: 'subject,notes\nsub-01,"one, two"\nsub-02,"say ""hi""\nagain"\n',
+    text: "2 rows × 2 columns",
+    cells: ["one, two", 'say "hi" again'],
+  },
+  {
+    // Left in, a byte order mark would stop the quote opening the first field.
+    title: "a byte order mark and CRLF line endings are not taken for data",
+    path: "data.csv",
+    body: '\uFEFF"subject",value\r\nsub-01,1\r\n',
+    text: "1 rows × 2 columns",
+    cells: ["subject"],
+  },
+  {
+    title: "a file with more rows than the viewer shows is truncated, with a notice",
+    body: LONG_TSV,
+    text: `only the first ${MAX_ROWS} rows are shown`,
+  },
+  {
+    title: "a file whose quoted field is never closed is shown with a warning",
+    body: MALFORMED_TSV,
+    text: "never closed",
+  },
+  {
+    title: "a file the server refuses to serve says so",
+    body: "",
+    status: 403,
+    text: "You do not have permission to view this file",
+  },
+];
 
 test.describe("Table viewer", () => {
   test("a tabular asset's row links to the viewer, and other rows keep their own links", async ({ page }) => {
@@ -107,7 +156,7 @@ test.describe("Table viewer", () => {
     await page.goto(filesUrl);
 
     // The tabular row is a router link to the viewer rather than a link to the
-    // raw asset, so it has no href of its own.
+    // raw asset.
     const tabularRow = page.getByRole("link", { name: "data.tsv" });
     await expect(tabularRow).toHaveAttribute("href", /table=data\.tsv/);
 
@@ -122,8 +171,7 @@ test.describe("Table viewer", () => {
   test("clicking a tabular asset opens it as a table, and the URL says so", async ({ page }) => {
     await stubListing(page);
     await stubContent(page, TSV);
-    await page.goto(filesUrl);
-    await page.getByRole("link", { name: "data.tsv" }).click();
+    await openByClick(page);
 
     await expect(dialog(page)).toBeVisible();
     await expect(dialog(page)).toContainText("data.tsv");
@@ -138,16 +186,26 @@ test.describe("Table viewer", () => {
   test("a cell holding a URL is rendered as a link", async ({ page }) => {
     await stubListing(page);
     await stubContent(page, TSV);
-    await page.goto(`${filesUrl}?table=data.tsv`);
+    await openByLink(page);
 
     await expect(dialog(page).getByRole("link", { name: "https://example.com/sub-01" }))
       .toHaveAttribute("href", "https://example.com/sub-01");
   });
 
+  test("the search box filters the rows", async ({ page }) => {
+    await stubListing(page);
+    await stubContent(page, TSV);
+    await openByLink(page);
+    await dialog(page).getByRole("textbox", { name: "Search table" }).fill("sub-02");
+
+    await expect(dialog(page).getByRole("cell", { name: "second session" })).toBeVisible();
+    await expect(dialog(page).getByRole("cell", { name: "first session" })).toBeHidden();
+  });
+
   test("the raw text view shows the file as it is", async ({ page }) => {
     await stubListing(page);
     await stubContent(page, TSV);
-    await page.goto(`${filesUrl}?table=data.tsv`);
+    await openByLink(page);
     await dialog(page).getByRole("button").filter({ has: page.locator(".mdi-file-document-outline") }).click();
 
     await expect(dialog(page).locator("pre")).toContainText("subject\tsession");
@@ -159,11 +217,12 @@ test.describe("Table viewer", () => {
     await page.goto(filesUrl);
 
     // The download request is answered with an abort, so that the browser stays
-    // on the file browser and the assertions below can still see it.
+    // on the file browser and the assertions below can still see it. It has to
+    // be "aborted": the default, "failed", replaces the page with an error page.
     const downloads: string[] = [];
     await page.route(/\/assets\/[^/]+\/download\/$/, (route) => {
       downloads.push(route.request().url());
-      return route.abort();
+      return route.abort("aborted");
     });
 
     // The download button sits inside the row, which is a link to the viewer
@@ -175,77 +234,67 @@ test.describe("Table viewer", () => {
     await expect.poll(() => downloads).toHaveLength(1);
     expect(downloads[0]).toContain(`assets/${TSV_ASSET_ID}/download/`);
     await expect(dialog(page)).toBeHidden();
-    expect(page.url()).not.toContain("table=");
+    expect(page.url()).toBe(filesUrl);
   });
 
-  test("a link straight into the viewer opens it, and closing returns to the listing", async ({ page }) => {
-    await stubListing(page);
-    await stubContent(page, TSV);
-    await page.goto(`${filesUrl}?table=data.tsv`);
-    await expect(dialog(page)).toBeVisible();
+  for (const { how, open, close } of [
+    { how: "opened by a link and closed by its button", open: openByLink, close: closeViewer },
+    { how: "opened from the listing and closed by its button", open: openByClick, close: closeViewer },
+    { how: "opened from the listing and closed by the back button", open: openByClick, close: (page: Page) => page.goBack() },
+  ]) {
+    test(`a viewer ${how} returns to the listing`, async ({ page }) => {
+      await stubListing(page);
+      await stubContent(page, TSV);
+      await open(page);
+      await expect(dialog(page)).toBeVisible();
 
-    await closeViewer(page);
+      await close(page);
 
-    await expect(dialog(page)).toBeHidden();
-    expect(page.url()).not.toContain("table=");
-    await expect(page.getByRole("link", { name: "data.tsv" })).toBeVisible();
-  });
+      await expect(dialog(page)).toBeHidden();
+      expect(page.url()).toBe(filesUrl);
+      // No history entry is left behind for the back button to land on.
+      await page.goBack();
+      expect(page.url()).toBe("about:blank");
+    });
+  }
 
-  test("the browser's back button closes the viewer", async ({ page }) => {
-    await stubListing(page);
-    await stubContent(page, TSV);
-    await page.goto(filesUrl);
-    await page.getByRole("link", { name: "data.tsv" }).click();
-    await expect(dialog(page)).toBeVisible();
+  for (const path of ["notes.txt", "missing.tsv"]) {
+    test(`a link naming ${path} leaves the viewer closed`, async ({ page }) => {
+      await stubListing(page);
+      await page.goto(`${filesUrl}?table=${path}`);
 
-    await page.goBack();
+      await expect(page.getByRole("link", { name: "data.tsv" })).toBeVisible();
+      await expect(dialog(page)).toBeHidden();
+    });
+  }
 
-    await expect(dialog(page)).toBeHidden();
-    expect(page.url()).not.toContain("table=");
-  });
+  for (const { title, path = "data.tsv", body, status, text, cells = [] } of CONTENT_CASES) {
+    test(title, async ({ page }) => {
+      await stubListing(page, { path });
+      await stubContent(page, body, status);
+      await page.goto(`${filesUrl}?table=${path}`);
 
-  test("a file with more rows than the viewer shows is truncated, with a notice", async ({ page }) => {
-    await stubListing(page);
-    await stubContent(page, LONG_TSV);
-    await page.goto(`${filesUrl}?table=data.tsv`);
-
-    await expect(dialog(page)).toContainText(`only the first ${MAX_ROWS} rows are shown`);
-  });
-
-  test("a file whose quoted field is never closed is shown with a warning", async ({ page }) => {
-    await stubListing(page);
-    await stubContent(page, MALFORMED_TSV);
-    await page.goto(`${filesUrl}?table=data.tsv`);
-
-    await expect(dialog(page)).toContainText("never closed");
-  });
+      await expect(dialog(page)).toContainText(text);
+      for (const cell of cells) {
+        await expect(dialog(page).getByText(cell, { exact: true })).toBeVisible();
+      }
+    });
+  }
 
   test("a file too large to preview is not fetched at all", async ({ page }) => {
-    let requested = false;
-    await stubListing(page, { tsvSize: 60e6 });
-    await page.route(
-      (url) => url.href.includes("/blobs/data.tsv"),
-      (route) => { requested = true; return route.fulfill({ body: TSV }); },
-    );
-    await page.goto(`${filesUrl}?table=data.tsv`);
+    await stubListing(page, { size: 60e6 });
+    const fetched = await stubContent(page, TSV);
+    await openByLink(page);
 
     await expect(dialog(page)).toContainText("too large to preview");
-    expect(requested).toBe(false);
+    expect(fetched).toEqual([]);
   });
 
   test("an embargoed asset is fetched through the API rather than its S3 URL", async ({ page }) => {
-    const fetched: string[] = [];
     await stubListing(page);
     await stubEmbargoed(page);
-    await page.route(
-      (url) => url.href.includes("/blobs/data.tsv")
-        || /\/assets\/[^/]+\/download/.test(url.href),
-      (route) => {
-        fetched.push(route.request().url());
-        return route.fulfill({ body: TSV, contentType: "text/tab-separated-values" });
-      },
-    );
-    await page.goto(`${filesUrl}?table=data.tsv`);
+    const fetched = await stubContent(page, TSV);
+    await openByLink(page);
 
     // The ready-made S3 URL denies access for an embargoed asset, so the viewer
     // has to ask the API, which is the request that carries the user's
