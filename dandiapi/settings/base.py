@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+<<<<<<< before updating
 from datetime import timedelta
 import logging
+=======
+import datetime as dt
+>>>>>>> after updating
 from pathlib import Path
 import sys
 from typing import TYPE_CHECKING, cast
@@ -91,9 +95,15 @@ MIDDLEWARE = [
 TIME_ZONE = 'UTC'
 
 DATABASES = {
+<<<<<<< before updating
     'default': {
         **env.db_url('DJANGO_DATABASE_URL', engine='django.db.backends.postgresql'),
         'CONN_MAX_AGE': timedelta(minutes=10).total_seconds(),
+=======
+    "default": {
+        **env.db_url("DJANGO_DATABASE_URL", engine="django.db.backends.postgresql"),
+        "CONN_MAX_AGE": dt.timedelta(minutes=10).total_seconds(),
+>>>>>>> after updating
     },
 }
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
