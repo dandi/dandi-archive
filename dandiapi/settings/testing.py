@@ -29,6 +29,9 @@ CELERY_TASK_ALWAYS_EAGER = True
 
 DANDI_ZARR_PREFIX_NAME = 'test-zarr'
 
+# Tests that need the anatomy ontology point this at a small fixture.
+DANDI_ANATOMY_ONTOLOGY_PATH = None
+
 DANDI_JUPYTERHUB_URL = 'https://hub.dandiarchive.org/'
 
 DANDI_DEV_EMAIL = 'test-dev@example.com'

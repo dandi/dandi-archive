@@ -34,6 +34,7 @@ OPERATOR_KEYS: frozenset[str] = frozenset(
         'standard',
         'variable',
         'owner',
+        'anatomy',
         'anatomy_exact',
     }
 )
@@ -92,7 +93,7 @@ def _validate_operator_key(key: str, value: str) -> None:
     if key.upper() in ANATOMY_ONTOLOGIES:
         # A bare lowercase CURIE such as `uberon:0002421`.
         raise SearchSyntaxError(
-            f'Unknown search operator "{key}". Did you mean "anatomy_exact:{key.upper()}:{value}"?'
+            f'Unknown search operator "{key}". Did you mean "anatomy:{key.upper()}:{value}"?'
         )
     if key == 'file_type':
         # Removed operator; there is no close-enough key for the generic

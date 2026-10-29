@@ -7,6 +7,7 @@ import re
 from typing import TYPE_CHECKING
 
 from django.contrib.auth.models import User
+from django.db import connection
 from django.db.models import OuterRef, Q, Subquery, Value
 from django.db.models.functions import Concat
 
@@ -14,6 +15,7 @@ from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
 from dandiapi.api.services.search.anatomy import CURIE_SQL_TEMPLATE, normalize_curie
 from dandiapi.api.services.search.parser import SearchSyntaxError
+from dandiapi.search.ontology import anatomy_ontology
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -32,7 +34,7 @@ _DATE_OPS = frozenset(
     }
 )
 _OWNER_OPS = frozenset({'owner'})
-_ANATOMY_OPS = frozenset({'anatomy_exact'})
+_ANATOMY_OPS = frozenset({'anatomy', 'anatomy_exact'})
 
 
 def _annotate_latest_version_modified(queryset):
@@ -99,45 +101,87 @@ def _apply_summary_filters(
     return queryset.filter(id__in=version_qs.values_list('dandiset_id', flat=True).distinct())
 
 
-# Matches a Version whose `about` holds an Anatomy entry whose identifier,
-# normalized to a CURIE, is one of the given CURIEs, or whose `name` matches
-# the given regex. `metadata` is left unqualified because Django may alias the
-# Version table in subqueries. The interpolated piece is a trusted constant;
-# every user-derived value is bound via params.
+# The Anatomy entries of a Version's `about`, as rows `a`. `metadata` is left
+# unqualified because Django may alias the Version table in subqueries.
+_ANATOMY_ENTRIES = """
+jsonb_array_elements(
+    CASE WHEN jsonb_typeof(metadata->'about') = 'array'
+         THEN metadata->'about' ELSE '[]'::jsonb END
+) AS a
+"""
 _ANATOMY_CURIE_SQL = CURIE_SQL_TEMPLATE.format(expr="a->>'identifier'")
+
+# Matches a Version that holds an Anatomy entry with one of the given CURIEs, or
+# whose id is one of the given ids. The interpolated pieces are trusted
+# constants; every user-derived value is bound via params.
 _ANATOMY_WHERE = f"""
 EXISTS (
-    SELECT 1
-    FROM jsonb_array_elements(
-        CASE WHEN jsonb_typeof(metadata->'about') = 'array'
-             THEN metadata->'about' ELSE '[]'::jsonb END
-    ) AS a
-    WHERE a->>'schemaKey' = 'Anatomy'
-      AND ({_ANATOMY_CURIE_SQL} = ANY(%s::text[]) OR a->>'name' ~* %s)
+    SELECT 1 FROM {_ANATOMY_ENTRIES}
+    WHERE a->>'schemaKey' = 'Anatomy' AND {_ANATOMY_CURIE_SQL} = ANY(%s::text[])
 )
+OR id = ANY(%s::bigint[])
+"""  # noqa: S608
+
+# Every Anatomy entry whose recorded name matches a regex, with its CURIE.
+_ANATOMY_NAMES_SQL = f"""
+SELECT id, {_ANATOMY_CURIE_SQL}
+FROM {Version._meta.db_table}, {_ANATOMY_ENTRIES}
+WHERE a->>'schemaKey' = 'Anatomy' AND a->>'name' ~* %s
 """  # noqa: S608
 
 
-def _anatomy_params(value: str) -> list:
-    """Resolve an `anatomy_exact:` value into the params of `_ANATOMY_WHERE`.
+def _name_regex(value: str, *, whole: bool) -> str:
+    """Build a Postgres regex matching `value` as the whole name, or as whole words in it."""
+    if whole:
+        return f'^{re.escape(value)}$'
+    return f'(^|[^[:alnum:]]){re.escape(value)}($|[^[:alnum:]])'
 
-    An identifier (CURIE, underscore form, or IRI) matches entries with that
-    identifier. Any other value matches entries whose recorded name is the
-    whole value, case-insensitively.
+
+def _versions_matching_name(pattern: str) -> list[int]:
+    """Return the Versions with an Anatomy entry named like `pattern` and no known identifier.
+
+    An entry with an identifier the ontology knows is judged by that identifier
+    alone, so a CA1 entry whose name mentions the cortex is not a cortex hit.
     """
+    ontology = anatomy_ontology()
+    with connection.cursor() as cursor:
+        cursor.execute(_ANATOMY_NAMES_SQL, [pattern])
+        return sorted({version_id for version_id, curie in cursor if curie not in ontology})
+
+
+def _anatomy_params(value: str, *, expand: bool) -> list:
+    """Resolve an anatomy operator value into the params of `_ANATOMY_WHERE`.
+
+    An identifier (CURIE, underscore form, or IRI) is matched as that term. Any
+    other value is looked up as a label or synonym, exactly first and then by
+    substring, and is also matched against the recorded `name` so that entries
+    with no usable identifier, or an install without the ontology, still work.
+    With `expand`, every term is widened to everything it contains.
+    """
+    ontology = anatomy_ontology()
     curie = normalize_curie(value)
     if curie is not None:
-        return [[curie], None]
-    return [[], f'^{re.escape(value)}$']
+        terms = {curie}
+        version_ids = []
+    else:
+        terms = ontology.find(value)
+        # Without expansion the recorded name has to be the whole value, or
+        # "hippocampus" would still pick up "CA1 field of hippocampus".
+        version_ids = _versions_matching_name(_name_regex(value, whole=not expand))
+
+    if expand:
+        terms = set().union(*(ontology.descendants(term) for term in terms))
+    return [sorted(terms), version_ids]
 
 
-def _apply_anatomy_filters(queryset: QuerySet[Dandiset], values: list[str]) -> QuerySet[Dandiset]:
-    """Restrict dandisets to those with a version whose `about` anatomy matches every value."""
+def _apply_anatomy_filters(
+    queryset: QuerySet[Dandiset], clauses: list[tuple[str, str]]
+) -> QuerySet[Dandiset]:
+    """Restrict dandisets to those with a version whose `about` anatomy matches every clause."""
     version_qs = Version.objects.all()
-    for value in values:
-        version_qs = version_qs.extra(  # noqa: S610
-            where=[_ANATOMY_WHERE], params=_anatomy_params(value)
-        )
+    for operator, value in clauses:
+        params = _anatomy_params(value, expand=operator == 'anatomy')
+        version_qs = version_qs.extra(where=[_ANATOMY_WHERE], params=params)  # noqa: S610
     return queryset.filter(id__in=version_qs.values_list('dandiset_id', flat=True).distinct())
 
 
@@ -221,7 +265,7 @@ def apply_search_filters(
         return queryset
 
     summary_clauses: list[tuple[str, str]] = []
-    anatomy_values: list[str] = []
+    anatomy_clauses: list[tuple[str, str]] = []
     annotated: set[str] = set()
 
     for op in parsed.operators:
@@ -237,12 +281,12 @@ def apply_search_filters(
         elif key in _OWNER_OPS:
             queryset = _apply_owner_filter(queryset, value)
         elif key in _ANATOMY_OPS:
-            anatomy_values.append(value)
+            anatomy_clauses.append((key, value))
 
     if summary_clauses:
         queryset = _apply_summary_filters(queryset, summary_clauses)
 
-    if anatomy_values:
-        queryset = _apply_anatomy_filters(queryset, anatomy_values)
+    if anatomy_clauses:
+        queryset = _apply_anatomy_filters(queryset, anatomy_clauses)
 
     return queryset

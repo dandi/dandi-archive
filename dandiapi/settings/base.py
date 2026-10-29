@@ -218,6 +218,12 @@ DANDI_DOI_PUBLISH: bool = env.bool('DJANGO_DANDI_DOI_PUBLISH', default=False)
 
 DANDI_VALIDATION_JOB_INTERVAL: int = env.int('DJANGO_DANDI_VALIDATION_JOB_INTERVAL', default=60)
 
+# The packaged ontology that the `anatomy:` search operators expand terms with.
+# See `dandiapi.search.ontology`. When unset, they match literally.
+DANDI_ANATOMY_ONTOLOGY_PATH: Path | None = (
+    BASE_DIR / 'dandiapi' / 'search' / 'data' / 'anatomy_ontology.json.gz'
+)
+
 DANDI_AUTO_APPROVE_USERS = False
 
 DANDI_DEV_EMAIL: str
