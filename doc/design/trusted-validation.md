@@ -29,8 +29,8 @@ Status: proposal
 
 - A Dandiset version cannot be published unless a trusted validation record for its current content contains no errors.
 - The record must come from an exact, known set of validator versions:
-  - **Drafts:** the latest set the archive is configured for, unless their files are unchanged since their latest published version, in which case they keep that version's set.
-  - **Published versions:** the set frozen at publication, so later validator releases never make them invalid.
+  - **Drafts:** the latest set the archive was configured for at the draft's last file change (an asset added, removed or replaced). Metadata-only changes don't move it.
+  - **Published versions:** the set frozen at publication, which is only possible if the version was valid then, so later validator releases never make them invalid.
 - Errors and warnings are shown to everyone in a banner on the Dandiset landing page ([#1486](https://github.com/dandi/dandi-archive/issues/1486)). Warnings do not block publication but reflect overall quality.
 - Changes only to the metadata of previously published versions should not trigger version bumps for dataset validation.
 
@@ -64,12 +64,13 @@ The changes in each repository can be summarized as:
   ```
 
   - **Source:** all six are read from the validator environment that produced the record (see [Validator environments](#validator-environments)). `dandischema` here is that environment's dandischema, not the archive's own dandischema library or the metadata's `schemaVersion`.
-  - **Sanity check:** every key except `hdmf` also appears in each record's `origin.validator_version`.
+  - **Sanity check:** every key also appears in the records. Five appear as a record's `origin.validator` with its `origin.validator_version`, and `hdmf` appears alongside `pynwb`, since pynwb validation runs on hdmf (see [dandi-cli](#dandi-cli)).
 - **Version code:** a short, readable string form of a validator-versions map. It names the validator environment's lock file, the archive's setting, and the record's path in the bucket. A container tagged with the code can reproduce records outside the archive.
   - **Form:** each package's one-letter code (see `VALIDATOR_CODES` under [Validator environments](#validator-environments)) followed directly by its version, in the code table's order, with no separator between entries. For the map above: `d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0`.
   - **Parsing:** each entry matches `([a-z])(\d+(?:\.\d+)*)`, and a whole code matches `(?:[a-z]\d+(?:\.\d+)*)+`.
   - **Why this is unambiguous:** codes are single letters, and versions must be plain releases made only of digits and periods (e.g. `0.75.0`). A pre-release, post-release, dev or local version (e.g. `1.0rc1`, `0.75.0+12.gabc`) cannot be encoded. The fixed order means equal maps always give identical codes.
-- **Validation target:** the version code drafts must currently be validated with (see [Settings](#settings)), unless their files are unchanged since their latest published version (see [Stamping](#stamping)).
+- **Validation target:** the latest validator versions, as a version code (see [Settings](#settings)).
+- **Required versions:** the version code a draft must be validated with: the validation target at the draft's last file change (see [Required versions](#required-versions)).
 - **Content fingerprint:** a hash of the files a version contains (see [Content fingerprint](#content-fingerprint)).
 
 # Current state
@@ -157,13 +158,13 @@ The schema change also needs some housekeeping:
 
 ### Settings
 
-- **`DJANGO_DANDI_VALIDATION_ENABLED`** (boolean, off by default) turns the validation worker on. It gates the manifest hook and the reconciler (see [Triggering](#triggering)).
-- **`DJANGO_DANDI_VALIDATION_TARGET`** holds the validation target as a version code, and only gates publication.
-  - **Unset:** nothing is stamped, and stamping removes both fields from draft metadata, so publication is not gated.
-  - **Set:** it must name an installed validator environment; otherwise the worker alerts.
+- **`DJANGO_DANDI_VALIDATION_TARGET`** holds the validation target as a version code.
+  - **Unset:** the feature is off. Nothing is validated or stamped, and stamping removes both fields from draft metadata.
+  - **Set:** the worker runs, and drafts whose files change are moved to this target (see [Required versions](#required-versions)). It must name an installed validator environment; otherwise the worker alerts.
   - **Exposed** as `validation_target` on `/api/info/`.
+- **`DJANGO_DANDI_VALIDATION_GATING`** (boolean, off by default). When on, both fields are stamped into draft metadata and publication is gated. When off, stamping removes them.
 
-With the worker enabled and the target unset, the archive runs in shadow mode: results and the banner appear, but publication is not gated.
+With the target set and gating off, the archive runs in shadow mode: results and the banner appear, but publication is not gated.
 
 ### Validator environments
 
@@ -186,11 +187,11 @@ With the worker enabled and the target unset, the archive runs in shadow mode: r
 
 - **Subprocess.** The task runs `dandi validate` as a subprocess from the environment. The archive's own dandischema pin therefore stays independent of the validators, `dandi validate -J` works (its process pool doesn't run inside a Celery child), and a crash or out-of-memory kill only ends the subprocess.
 - **Isolation.** The subprocess environment drops `DATABASE_URL`, `AWS_*`, `DJANGO_*` and other secrets, and sets `DANDI_CACHE=ignore` so dandi-cli's own per-file cache is not used (see [No per-asset caching](#no-per-asset-caching)). It runs with memory and CPU limits, the parent process is non-dumpable, and results come back as JSONL on stdout. Only the parent writes to the database or the bucket. A crafted file that exploits a parser bug still runs on the same dyno (see [Open questions](#open-questions)).
-- **Fallback.** If the pilot shows that building environments at startup is infeasible, use a single environment in the slug and accept a waiting window when the target changes.
+- **Fallback.** If the pilot shows that building environments at startup is infeasible, use a single environment in the slug. A target change then also moves drafts that still need a run to the new target (see [Required versions](#required-versions)).
 
 ### Triggering
 
-Validation is queued on a dedicated `validation` queue in two ways, both only while the worker is enabled:
+Validation is queued on a dedicated `validation` queue in two ways, both only while a target is set:
 
 - **Manifest hook:** at the end of `write_manifest_files`, for drafts only. Publishing and some management commands also call it for published versions, so it checks `version.version == 'draft'`.
 - **Reconciler:** a beat task every few minutes. It is what guarantees coverage, because checksums arrive after the manifests are written and the draft is not re-pended then. The hook only cuts latency.
@@ -199,10 +200,9 @@ A draft is eligible when all of these hold, and the task checks them again first
 
 - it is not `PENDING` or `VALIDATING`, since its stored fingerprint may be stale until metadata validation runs;
 - every blob asset has a `sha256` and every Zarr is `COMPLETE`;
-- its files changed since its latest published version, or that version predates this feature. Otherwise the draft keeps that version's result (see [Stamping](#stamping)) and is not re-validated;
-- some installed environment has no complete row for the draft's stored fingerprint, and no run is in progress. Environments are run with the target first.
+- it has no complete row for its required code and stored fingerprint, and no run is in progress.
 
-Each run's state lives in its row (`queued`, `running`, `complete`, `failed` or `superseded`, with `requested_at`, `heartbeat_at` and `attempts`), and the reconciler re-queues runs whose heartbeat stopped. Published versions are never queued: their rows are copied at publication (see [Publication](#publication)), and versions published before this feature are handled by the sweep (see [Rollout](#rollout)).
+Each run's state lives in its row (`queued`, `running`, `complete`, `failed` or `superseded`, with `requested_at`, `heartbeat_at` and `attempts`), and the reconciler re-queues runs whose heartbeat stopped. Published versions are never queued: their result is frozen at publication (see [Publication](#publication)), and versions published before this feature have none.
 
 ### Content fingerprint
 
@@ -210,6 +210,16 @@ The fingerprint is the SHA-256 of the sorted list of `(path, digest)` pairs for 
 
 - **Stored.** `validate_version_metadata`, which runs after every content change, computes it and stores it in a new `Version` column. Existing versions are backfilled, or computed when the column is null. The etag is known at upload, so the later arrival of `sha256` does not change it. Hashing must fit within that task's `soft_time_limit` of 30 seconds; the pilot measures it on the largest draft.
 - **Why.** The draft can change while a run is in progress. The task records the fingerprint of the snapshot it validated, and on completion keeps the result only if the draft still has that fingerprint.
+
+### Required versions
+
+Each draft stores its required version code in a new `Version` column, next to its content fingerprint.
+
+- **Moved on file changes.** Whenever `validate_version_metadata` computes a fingerprint that differs from the stored one (an asset was added, removed or replaced), it stores the new fingerprint and sets the required code to the current target. A draft therefore moves to newer validators only when its files change.
+- **Kept on metadata-only changes.** A metadata-only change leaves the fingerprint, and so the required code, unchanged. The draft keeps its result, needs no new run, and is never blocked by checks added later.
+- **Frozen at publication.** Published versions copy both columns from the draft and never change them. Publication requires `validatedBy: true`, so a published version's result is always a passing one.
+- **Unset.** Drafts without a required code get the current target the first time one is set.
+- **Removed environments.** If a draft's required code has no installed environment and no complete row (for example, its run failed before the old lock file was deleted), the draft moves to the current target.
 
 ### No per-asset caching
 
@@ -227,7 +237,7 @@ So every run validates the whole Dandiset, and the content fingerprint covers ev
    - Zarr paths present, since an empty directory would be skipped;
    - a minimal `dandiset.yaml` with non-empty `identifier`, `name` and `description` and no `schemaVersion`;
    - no FUSE mount, and git-annex from its PyPI wheel.
-3. **Validate** with `dandi validate --missing-file-content=stream --min-severity INFO -f json_lines`, in each environment that needs a row, target first.
+3. **Validate** with `dandi validate --missing-file-content=stream --min-severity INFO -f json_lines`, in the environment for the draft's required code.
 4. **Process the results:**
    - relativize paths, strip URLs (presigned URLs carry credentials), drop `DANDI.FILE_CONTENT_STREAMED`, and group pynwb results under a fixed ID;
    - exclude results for `dandiset.yaml`, since the archive validates metadata itself;
@@ -263,10 +273,10 @@ class VersionValidationSummary(TimeStampedModel):
         ]
 ```
 
-- **One row per run target.** Rows are keyed by version, version code and fingerprint, so queuing a run for new content doesn't erase the last result. Only rows for the Version's `validatedRequiredVersions` affect publication; rows for other codes are informational and let the next target be computed ahead of time.
+- **One row per run target.** Rows are keyed by version, version code and fingerprint, so queuing a run for new content doesn't erase the last result. Only the row for the Version's required code and fingerprint affects publication; rows for other codes are informational.
 - **Provenance.** Each row's summary records the archive release (`importlib.metadata.version('dandiapi')`) that produced it.
 - **Garbage collection.** Superseded draft rows, and their records, are deleted once a newer complete row exists. This is new code: the existing garbage collection only covers uploads and blobs.
-- **Admin.** The table is registered in Django admin, so staff can review rows, including those for the next target.
+- **Admin.** The table is registered in Django admin, so staff can review rows.
 
 ### Record storage
 
@@ -286,30 +296,19 @@ A shared helper, `stamp_validation_fields(version)`, is called by `validate_vers
 
 ```python
 def _validation_fields(version: Version) -> dict | None:
-    target = settings.DANDI_VALIDATION_TARGET  # parsed map, or None
-    if target is None:
+    if not settings.DANDI_VALIDATION_GATING or version.required_validators is None:
         return None  # remove both fields
-    required, versions = target, [version]
-    published = version.dandiset.most_recent_published_version
-    if (
-        published is not None
-        and published.content_fingerprint == version.content_fingerprint
-        and 'validatedRequiredVersions' in published.metadata
-    ):
-        # Only metadata changed since the latest release: keep its versions and result
-        required = published.metadata['validatedRequiredVersions']
-        versions.append(published)
-    row = VersionValidationSummary.objects.filter(
-        version__in=versions,
-        validators=version_code(required),
+    row = version.validation_summaries.filter(
+        validators=version.required_validators,
         content_fingerprint=version.content_fingerprint,
         state='complete',
     ).first()
     passed = row.success if row else None  # None: no complete record for this content yet
-    return {'validatedRequiredVersions': required, 'validatedBy': passed}
+    return {
+        'validatedRequiredVersions': parse_version_code(version.required_validators),
+        'validatedBy': passed,
+    }
 ```
-
-- **Metadata-only changes.** If the draft's files are unchanged since its latest published version (same fingerprint), the draft keeps that version's `validatedRequiredVersions` and its result, even if the target has moved on since. A metadata-only edit after publication therefore needs no new run and is never blocked by checks added later. Versions published before this feature have no required versions to keep, so their drafts use the target.
 
 - **Writes.** The helper merges the fields into the draft's metadata, re-runs schema validation, and writes `status`, `validation_errors` and `metadata` with `.update()`. It does not bump `Version.modified` when the only metadata change is to these two fields. Today `validate_version_metadata` always sets `modified=now`, which would move the "Last update" date on every result even though the content didn't change. Content changes already bump `modified` themselves (see also [#2950](https://github.com/dandi/dandi-archive/pull/2950)).
 - **Gating.** Draft validation is publish-time validation (see [Current state](#current-state)). So whenever `validatedBy` is not `true`, the new schema rule produces an ordinary validation error on `validatedBy`, and the draft becomes `INVALID`. The existing publish gating handles the rest, and **the publish service needs no new check**.
@@ -318,7 +317,7 @@ def _validation_fields(version: Version) -> dict | None:
 
 ### Publication
 
-The published Version inherits both fields from the draft's metadata, and the draft's stored fingerprint. Published metadata is immutable, so the published Version stays tied to those validator versions permanently. `_publish_dandiset`'s final `validate(..., 'PublishedDandiset')` enforces the rule a second time.
+The published Version inherits both fields from the draft's metadata, and the draft's fingerprint and required code. Published metadata is immutable, so the published Version stays tied to those validator versions permanently. `_publish_dandiset`'s final `validate(..., 'PublishedDandiset')` enforces the rule a second time.
 
 Publishing also copies the draft's complete row for the required version code to the new published Version. The content is identical, so the fingerprints match by construction and the record object is shared. The published Version's banner shows the result straight away, and its content is never validated twice.
 
@@ -326,7 +325,7 @@ Publishing also copies the draft's complete row for the required version code to
 
 There are no separate validation endpoints. `VersionDetailSerializer`, the `/versions/{version}/info/` payload the landing page already loads, applies the existing embargo check and gains:
 
-- **`validation_summary`:** the newest complete row for the Version's `validatedRequiredVersions`. For versions without that field, it is the newest complete row, and it is `null` if there is none.
+- **`validation_summary`:** the complete row for the Version's required code and fingerprint. For versions without a required code, it is the newest complete row, and it is `null` if there is none.
 - **`validation_run`:** the state of the current run, if any: queued, running (n of m files), or failed.
 - **`stale`** (drafts only): set when the summary's fingerprint differs from the draft's current one.
 
@@ -368,14 +367,14 @@ validation-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --l
 
 ## dandi-infrastructure
 
-- **Config vars.** Add `DJANGO_DANDI_VALIDATION_ENABLED` and `DJANGO_DANDI_VALIDATION_TARGET` under `# DANDI-specific variables` in `terraform/api.tf`, and in `staging.tf` if staging should validate too:
+- **Config vars.** Add `DJANGO_DANDI_VALIDATION_TARGET` and `DJANGO_DANDI_VALIDATION_GATING` under `# DANDI-specific variables` in `terraform/api.tf`, and in `staging.tf` if staging should validate too:
 
   ```hcl
-  DJANGO_DANDI_VALIDATION_ENABLED = "true"
-  DJANGO_DANDI_VALIDATION_TARGET  = "d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0"
+  DJANGO_DANDI_VALIDATION_TARGET = "d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0"
+  DJANGO_DANDI_VALIDATION_GATING = "true"
   ```
 
-- **Formation.** Add a `heroku_formation` for `validation-worker` next to `api_checksum_worker`, sized from the pilot (`standard-2x` has only 1 GB of memory), with quantity 0 on staging until it is enabled.
+- **Formation.** Add a `heroku_formation` for `validation-worker` next to `api_checksum_worker`, sized from the pilot (`standard-2x` has only 1 GB of memory), with quantity 0 on staging until a target is set there.
 - **No storage changes.** Records go in the existing bucket, which the archive can already write.
 
 Bumping the target is a reviewed dandi-archive change that adds the new lock file, followed by the config var change.
@@ -384,6 +383,7 @@ Bumping the target is a reviewed dandi-archive change that adds the new lock fil
 
 - **Release the streaming stack** ([#1955](https://github.com/dandi/dandi-cli/pull/1955), [#1956](https://github.com/dandi/dandi-cli/pull/1956), [#1957](https://github.com/dandi/dandi-cli/pull/1957)). It currently depends on datalad-fuse by git URL, which PyPI rejects, so it needs a datalad-fuse release with the remfile backend first.
 - **Classify streamed-read failures as `INTERNAL`**, so the archive can tell them apart from content errors without matching message text.
+- **Record hdmf's version.** pynwb validation runs on hdmf, but records only carry pynwb's version, because dandi-cli has no `hdmf` validator. Add an optional `Origin` field for the versions of libraries a validator depends on (bumping `record_version`), and fill it with hdmf's version in pynwb and NWB Inspector records.
 - **NWB Inspector version.** Every NWB Inspector record currently reports `validator_version: ""`, because the cache in `_get_nwb_inspector_version` (`dandi/files/bases.py`) starts as `""` and is checked with `is not None`. The archive reads versions from the environment, so this is now a consistency fix rather than a prerequisite.
 - **Absolute paths.** Records contain absolute local paths. The archive relativizes them for now, and a CLI option can come later.
 - **Unstable IDs and wrong `dandiset_path`.**
@@ -398,7 +398,7 @@ The archive monitors the delay so a stalled worker is noticed:
 
 - **Daily check.** A beat task, scheduled like `send_pending_users_email`, emails `DANDI_DEV_EMAIL` with each affected Dandiset and how long it has waited. It selects:
   - runs queued or running for more than three days since `requested_at`, failed runs, and runs whose heartbeat stopped;
-  - as a fallback, drafts that were never queued: target set, `validatedBy` null, no row for the target and stored fingerprint, and `modified` older than three days.
+  - as a fallback, drafts that were never queued: no row for their required code and stored fingerprint, and `modified` older than three days.
 
   Embargoed drafts are listed in a separate section, since they don't block owners yet.
 - **Alerts.** Sentry reports task errors, and an alert fires when the `validation` queue grows past a threshold.
@@ -407,14 +407,14 @@ The archive monitors the delay so a stalled worker is noticed:
 
 Once a draft's files change, the whole Dandiset is validated with the latest validation target, so files carried over from earlier releases are re-checked with the latest validators. A small content change, such as adding one file, could therefore be blocked by a check that did not exist when the other files were published. This is accepted, because it means content and structure enhancements go hand-in-hand.
 
-Metadata-only changes are not affected: a draft whose files are unchanged since its latest published version keeps that version's validator versions and result (see [Stamping](#stamping)).
+Metadata-only changes are not affected: a draft keeps the validator versions and result from its last file change (see [Required versions](#required-versions)).
 
 # Lifecycles
 
 **Draft with changed files.**
 
 1. The owner changes the draft's files, and it goes `PENDING`.
-2. Metadata validation stores the new fingerprint, stamps `validatedRequiredVersions` with the target and sets `validatedBy = null`. The draft becomes `INVALID` with the error "a validation record … is required to publish", which the UI shows as "Content validation queued".
+2. Metadata validation stores the new fingerprint, moves the draft's required versions to the current target, stamps them, and sets `validatedBy = null`. The draft becomes `INVALID` with the error "a validation record … is required to publish", which the UI shows as "Content validation queued".
 3. The manifest hook queues validation, or the reconciler does once every checksum exists.
 4. The run completes. If the draft still has the same fingerprint, the row is stored and the draft is stamped:
    - if it has no errors, `validatedBy = true` and the draft becomes `VALID`, so it can be published;
@@ -422,36 +422,34 @@ Metadata-only changes are not affected: a draft whose files are unchanged since 
 
    If the draft changed during the run, the row is superseded and the reconciler queues a new run.
 
-**Metadata-only edit after publication.**
+**Metadata-only edit.**
 
 1. The owner edits only the draft's metadata, and it goes `PENDING`.
-2. Metadata validation finds the same fingerprint as the latest published version, so it stamps that version's `validatedRequiredVersions` and result. No run is queued.
+2. Metadata validation finds the fingerprint unchanged, so the draft keeps its required versions and result. No run is queued.
 3. If that result passed, the draft becomes `VALID` straight away and can be published, even if the target has moved on since.
 
 **New validator release.**
 
-1. Commit the next environment's lock file and deploy. The worker builds both environments, and the reconciler validates drafts with both, target first, except drafts that keep their latest published version's result. Rows for the next code don't affect anything.
-2. Once drafts have rows for the next code, change `DJANGO_DANDI_VALIDATION_TARGET`.
-3. Set drafts to `PENDING`, with a management command, so they re-stamp.
-4. Delete the old lock file.
+1. Commit the next environment's lock file and deploy.
+2. Change `DJANGO_DANDI_VALIDATION_TARGET`. Drafts keep their required versions until their files next change, so nothing is re-validated and publication is not interrupted.
+3. Delete the old lock file once no queued or failed run still needs it.
 
-Drafts already have rows for the new target, so publication is not interrupted. Published versions keep their frozen validator versions, and so do drafts whose files are unchanged since their latest published version.
+Published versions keep their frozen validator versions.
 
 # Rollout
 
 1. **dandi-schema:** add `ValidatorType`, the two fields and the publication rule, then bump the version and release.
 2. **datalad-fuse:** release with the remfile backend.
-3. **dandi-cli:** release with the streaming stack, the `INTERNAL` classification and the NWB Inspector fix.
-4. **dandi-archive:** upgrade dandischema and run `migrate_version_metadata --all`. Ship the table, fingerprint column and backfill, task, reconciler, environments, process type, stamping, publish-time copy, `/info/` fields, banner and daily check, with the worker disabled and the target unset.
+3. **dandi-cli:** release with the streaming stack, the `INTERNAL` classification, hdmf's version in records and the NWB Inspector fix.
+4. **dandi-archive:** upgrade dandischema and run `migrate_version_metadata --all`. Ship the table, fingerprint and required-code columns with their backfill, task, reconciler, environments, process type, stamping, publish-time copy, `/info/` fields, banner and daily check, with the target unset and gating off.
 5. **dandi-infrastructure:** add the worker formation, staging first.
 6. **Pilot** on a small, a BIDS and a large Dandiset. Measure seconds per file, peak memory, bytes read, cold environment build time, fingerprint hashing time on the largest draft, how long re-validating the largest Dandiset takes after a one-file change, and how long the largest Dandiset takes compared with Heroku's daily dyno restart. Then choose the dyno size and count.
-7. **Shadow mode:** enable the worker with the target unset. Results and the banner appear, but publication is not gated.
-8. **Sweep** every draft and every published version. Either scale the worker up temporarily, or run the same lock file as a container near the bucket and import the results with a management command; estimate the cost first.
+7. **Shadow mode:** set the target with gating off. Existing drafts get it as their required versions. Results and the banner appear, but publication is not gated.
+8. **Sweep** every draft. Published versions are not validated: their results are frozen at publication. Either scale the worker up temporarily, or run the same lock file as a container near the bucket and import the results with a management command; estimate the cost first.
    - **Capacity:** `files × seconds per file ÷ processes`. For example, 500k files at 30 seconds each is about 170 process-days, or about 11 days with 16 processes.
    - **Regions:** Heroku's US region runs in AWS us-east-1, while the bucket is in us-east-2.
-   - Versions published before this feature get rows only, which drive the banner.
 9. **Review:** when the majority of records are available, review them for accuracy and summarize potential effects and performance.
-10. **Set the target**, then set drafts to `PENDING` so they are stamped. The existing `revalidate --versions` management command cannot do this as is: `validate_version_metadata` returns early unless a version is `PENDING`, so the command must first set them `PENDING`.
+10. **Turn gating on**, then set drafts to `PENDING` so they are stamped. The existing `revalidate --versions` management command cannot do this as is: `validate_version_metadata` returns early unless a version is `PENDING`, so the command must first set them `PENDING`.
 
 # Alternatives to consider
 
