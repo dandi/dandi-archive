@@ -45,12 +45,23 @@ pytestmark = pytest.mark.ai_generated
         ),
         # Special characters preserved inside quoted operator value
         ('species:"C57BL/6"', [], [Operator('species', 'C57BL/6')]),
+        # Data-standard operator
+        ('standard:nwb', [], [Operator('standard', 'nwb')]),
+        # Measured-variable operator
+        ('variable:LFP', [], [Operator('variable', 'LFP')]),
         # Quoted token that *looks* like an operator is treated as free text —
         # documented escape hatch for searching for a literal colon.
         ('"foo:bar" hippocampus', ['foo:bar', 'hippocampus'], []),
         # Owner operator
         ('owner:jdoe', [], [Operator('owner', 'jdoe')]),
         ('owner:user@example.com', [], [Operator('owner', 'user@example.com')]),
+        # Known operator keys are case-insensitive
+        ('AUTHOR:Doe', [], [Operator('author', 'Doe')]),
+        # Uppercase prefixes that aren't operators stay free text (citations,
+        # RRIDs), in both bare and quoted-value form
+        ('DANDI:000123', ['DANDI:000123'], []),
+        ('RRID:SCR_016422 mouse', ['RRID:SCR_016422', 'mouse'], []),
+        ('DANDI:"000123"', ['DANDI:000123'], []),
     ],
     ids=[
         'empty',
@@ -62,9 +73,15 @@ pytestmark = pytest.mark.ai_generated
         'quoted-operator-value',
         'repeated-operator-key',
         'special-chars-in-quoted-value',
+        'standard-operator',
+        'variable-operator',
         'quoted-operator-like-token-is-free-text',
         'owner-username',
         'owner-email',
+        'uppercase-operator-key',
+        'uppercase-non-operator-prefix-is-free-text',
+        'rrid-is-free-text',
+        'uppercase-non-operator-quoted-is-free-text',
     ],
 )
 def test_parse_search(query, expected_free_text, expected_operators):

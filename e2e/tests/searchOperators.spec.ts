@@ -17,7 +17,6 @@ test.describe("search operator autocomplete", async () => {
 
     const listbox = page.locator(".operator-suggestions");
     await expect(listbox).toBeVisible();
-
     // A few representative operators should be offered.
     await expect(listbox.getByText("species:", { exact: true })).toBeVisible();
     await expect(listbox.getByText("created_after:", { exact: true })).toBeVisible();
@@ -83,12 +82,12 @@ test.describe("search operator autocomplete", async () => {
 
     const search = page.getByPlaceholder(SEARCH_PLACEHOLDER);
     await search.click();
-    await search.fill("file");
+    await search.fill("stan");
 
     const listbox = page.locator(".operator-suggestions");
-    await listbox.getByText("file_type:", { exact: true }).click();
+    await listbox.getByText("standard:", { exact: true }).click();
 
-    await expect(search).toHaveValue("file_type:");
+    await expect(search).toHaveValue("standard:");
   });
 
   test("dismisses the dropdown on Escape and submits on Enter when browsing", async ({ page }) => {

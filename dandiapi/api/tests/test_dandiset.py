@@ -8,7 +8,6 @@ from dandischema.conf import get_instance_config
 from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
-from django.db import connection
 from django.utils import timezone
 import pytest
 
@@ -20,7 +19,6 @@ from dandiapi.api.services.permissions.dandiset import (
 )
 from dandiapi.api.tests.factories import (
     DandisetFactory,
-    DraftAssetFactory,
     DraftVersionFactory,
     PublishedVersionFactory,
     UserFactory,
@@ -1593,27 +1591,26 @@ def test_dandiset_list_starred_unauthenticated(api_client):
 # --- Advanced (Gmail-style) search ---------------------------------------------------------------
 
 
-def _refresh_asset_search():
-    with connection.cursor() as cursor:
-        cursor.execute('REFRESH MATERIALIZED VIEW asset_search;')
+def _seed_dandiset_with_summary(*, assets_summary: dict, embargoed: bool = False) -> Dandiset:
+    """Create a draft dandiset + version whose metadata carries the given assetsSummary.
 
-
-def _seed_dandiset_with_asset(*, asset_metadata: dict, embargoed: bool = False) -> Dandiset:
-    """Create a draft dandiset + version + single asset with the given metadata.
-
-    Caller is responsible for `_refresh_asset_search()` after seeding all
-    fixtures so the materialized view sees them.
+    The species/approach/technique operators match against the version-level
+    `assetsSummary` aggregation, so these tests seed it directly rather than
+    going through per-asset metadata and the asset_search materialized view.
     """
     embargo_status = Dandiset.EmbargoStatus.EMBARGOED if embargoed else Dandiset.EmbargoStatus.OPEN
     dandiset = DandisetFactory.create(embargo_status=embargo_status)
     version = DraftVersionFactory.create(dandiset=dandiset)
-    base_metadata = {
-        'schemaVersion': DANDI_SCHEMA_VERSION,
-        'schemaKey': 'Asset',
-        'encodingFormat': 'application/x-nwb',
+    version.metadata = {
+        **version.metadata,
+        'assetsSummary': {
+            'schemaKey': 'AssetsSummary',
+            'numberOfBytes': 1,
+            'numberOfFiles': 1,
+            **assets_summary,
+        },
     }
-    version.assets.add(DraftAssetFactory.create(metadata={**base_metadata, **asset_metadata}))
-    add_version_asset_paths(version)
+    version.save()
     return dandiset
 
 
@@ -1671,40 +1668,14 @@ def test_advanced_search_created_before_filters_dandisets(api_client):
 @pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_species_matches(api_client):
-    mouse_dandiset = DandisetFactory.create()
-    rat_dandiset = DandisetFactory.create()
-    mouse_version = DraftVersionFactory.create(dandiset=mouse_dandiset)
-    rat_version = DraftVersionFactory.create(dandiset=rat_dandiset)
+    mouse_dandiset = _seed_dandiset_with_summary(
+        assets_summary={'species': [{'name': 'House mouse'}]},
+    )
+    _seed_dandiset_with_summary(
+        assets_summary={'species': [{'name': 'Norway rat'}]},
+    )
 
-    mouse_asset = DraftAssetFactory.create(
-        metadata={
-            'schemaVersion': DANDI_SCHEMA_VERSION,
-            'schemaKey': 'Asset',
-            'encodingFormat': 'application/x-nwb',
-            'wasAttributedTo': [{'species': {'name': 'House mouse'}}],
-        },
-    )
-    rat_asset = DraftAssetFactory.create(
-        metadata={
-            'schemaVersion': DANDI_SCHEMA_VERSION,
-            'schemaKey': 'Asset',
-            'encodingFormat': 'application/x-nwb',
-            'wasAttributedTo': [{'species': {'name': 'Norway rat'}}],
-        },
-    )
-    mouse_version.assets.add(mouse_asset)
-    rat_version.assets.add(rat_asset)
-    add_version_asset_paths(mouse_version)
-    add_version_asset_paths(rat_version)
-    _refresh_asset_search()
-
-    response = api_client.get(
-        '/api/dandisets/',
-        {'draft': 'true', 'empty': 'true', 'search': 'species:mouse'},
-    )
-    assert response.status_code == 200
-    ids = {r['identifier'] for r in response.json()['results']}
-    assert ids == {mouse_dandiset.identifier}
+    assert _search_ids(api_client, 'species:mouse') == {mouse_dandiset.identifier}
 
 
 @pytest.mark.ai_generated
@@ -1745,21 +1716,22 @@ def test_advanced_search_combines_free_text_and_operator(api_client):
     target_version = DraftVersionFactory.create(dandiset=target)
     other_version = DraftVersionFactory.create(dandiset=other)
 
-    # Inject a unique token into the target version's metadata
-    target_version.metadata = {**target_version.metadata, 'description': 'unique_search_marker_xyz'}
-    target_version.save()
-
-    species_metadata = {
-        'schemaVersion': DANDI_SCHEMA_VERSION,
-        'schemaKey': 'Asset',
-        'encodingFormat': 'application/x-nwb',
-        'wasAttributedTo': [{'species': {'name': 'House mouse'}}],
+    # Inject a unique token into the target version's metadata; both versions
+    # get a mouse species summary so only the free text distinguishes them.
+    mouse_summary = {
+        'schemaKey': 'AssetsSummary',
+        'numberOfBytes': 1,
+        'numberOfFiles': 1,
+        'species': [{'name': 'House mouse'}],
     }
-    target_version.assets.add(DraftAssetFactory.create(metadata=species_metadata))
-    other_version.assets.add(DraftAssetFactory.create(metadata=species_metadata))
-    add_version_asset_paths(target_version)
-    add_version_asset_paths(other_version)
-    _refresh_asset_search()
+    target_version.metadata = {
+        **target_version.metadata,
+        'description': 'unique_search_marker_xyz',
+        'assetsSummary': mouse_summary,
+    }
+    target_version.save()
+    other_version.metadata = {**other_version.metadata, 'assetsSummary': mouse_summary}
+    other_version.save()
 
     response = api_client.get(
         '/api/dandisets/',
@@ -1866,16 +1838,13 @@ def test_advanced_search_unbalanced_quote_returns_400(api_client):
 def test_advanced_search_species_substring_match(api_client):
     # Real DANDI species are like "Mus musculus - House mouse". A short token
     # like "mouse" should match by case-insensitive substring against the
-    # `wasAttributedTo[*].species.name` jsonpath.
-    mouse = _seed_dandiset_with_asset(
-        asset_metadata={'wasAttributedTo': [{'species': {'name': 'Mus musculus - House mouse'}}]},
+    # `assetsSummary.species[*].name` jsonpath.
+    mouse = _seed_dandiset_with_summary(
+        assets_summary={'species': [{'name': 'Mus musculus - House mouse'}]},
     )
-    rat = _seed_dandiset_with_asset(
-        asset_metadata={
-            'wasAttributedTo': [{'species': {'name': 'Rattus norvegicus - Norway rat'}}]
-        },
+    rat = _seed_dandiset_with_summary(
+        assets_summary={'species': [{'name': 'Rattus norvegicus - Norway rat'}]},
     )
-    _refresh_asset_search()
 
     assert _search_ids(api_client, 'species:mouse') == {mouse.identifier}
     assert _search_ids(api_client, 'species:musculus') == {mouse.identifier}
@@ -1884,22 +1853,21 @@ def test_advanced_search_species_substring_match(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_species_matches_any_attributed_subject(api_client):
-    # An asset can be attributed to multiple subjects of different species
-    # (e.g. xenotransplantation, multi-species recordings). The filter must
-    # scan every wasAttributedTo entry, not just the first.
-    multi = _seed_dandiset_with_asset(
-        asset_metadata={
-            'wasAttributedTo': [
-                {'species': {'name': 'House mouse'}},
-                {'species': {'name': 'Human'}},
+def test_advanced_search_species_matches_any_summary_entry(api_client):
+    # A dandiset can contain subjects of multiple species (e.g.
+    # xenotransplantation, multi-species recordings), all listed in its
+    # assetsSummary. The filter must scan every entry, not just the first.
+    multi = _seed_dandiset_with_summary(
+        assets_summary={
+            'species': [
+                {'name': 'House mouse'},
+                {'name': 'Human'},
             ],
         },
     )
-    rat = _seed_dandiset_with_asset(
-        asset_metadata={'wasAttributedTo': [{'species': {'name': 'Norway rat'}}]},
+    rat = _seed_dandiset_with_summary(
+        assets_summary={'species': [{'name': 'Norway rat'}]},
     )
-    _refresh_asset_search()
 
     # `multi` matches both queries because every array element is scanned.
     assert _search_ids(api_client, 'species:Human') == {multi.identifier}
@@ -1910,25 +1878,24 @@ def test_advanced_search_species_matches_any_attributed_subject(api_client):
 @pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_approach_matches_any_array_element(api_client):
-    # Real DANDI assets often have multiple approach entries (e.g. dandiset
+    # Real DANDI dandisets often have multiple approach entries (e.g. dandiset
     # 000017 lists both "electrophysiological approach" and "behavioral
     # approach"). The filter must match if ANY element's name matches —
     # not just the first.
-    ephys_only = _seed_dandiset_with_asset(
-        asset_metadata={'approach': [{'name': 'electrophysiological approach'}]},
+    ephys_only = _seed_dandiset_with_summary(
+        assets_summary={'approach': [{'name': 'electrophysiological approach'}]},
     )
-    behav_only = _seed_dandiset_with_asset(
-        asset_metadata={'approach': [{'name': 'behavioral approach'}]},
+    behav_only = _seed_dandiset_with_summary(
+        assets_summary={'approach': [{'name': 'behavioral approach'}]},
     )
-    multi = _seed_dandiset_with_asset(
-        asset_metadata={
+    multi = _seed_dandiset_with_summary(
+        assets_summary={
             'approach': [
                 {'name': 'behavioral approach'},
                 {'name': 'electrophysiological approach'},
             ],
         },
     )
-    _refresh_asset_search()
 
     # `multi` matches both queries because every array element is scanned.
     assert _search_ids(api_client, 'approach:electrophysiological') == {
@@ -1947,10 +1914,9 @@ def test_advanced_search_approach_handles_regex_metacharacters(api_client):
     # Postgres jsonpath like_regex would otherwise interpret `[`, `*`, etc. as
     # regex metacharacters. The filter must escape them so a search for `[pilot]`
     # matches a literal `[pilot]` in the name.
-    bracket = _seed_dandiset_with_asset(
-        asset_metadata={'approach': [{'name': 'electrophysiological [pilot]'}]},
+    bracket = _seed_dandiset_with_summary(
+        assets_summary={'approach': [{'name': 'electrophysiological [pilot]'}]},
     )
-    _refresh_asset_search()
 
     assert _search_ids(api_client, 'approach:[pilot]') == {bracket.identifier}
     # An unrelated metacharacter shouldn't match this name.
@@ -1961,13 +1927,12 @@ def test_advanced_search_approach_handles_regex_metacharacters(api_client):
 @pytest.mark.django_db
 def test_advanced_search_technique_with_quoted_phrase(api_client):
     # Quoted multi-word values must be parsed as a single token.
-    spike = _seed_dandiset_with_asset(
-        asset_metadata={'measurementTechnique': [{'name': 'spike sorting technique'}]},
+    spike = _seed_dandiset_with_summary(
+        assets_summary={'measurementTechnique': [{'name': 'spike sorting technique'}]},
     )
-    surg = _seed_dandiset_with_asset(
-        asset_metadata={'measurementTechnique': [{'name': 'surgical technique'}]},
+    surg = _seed_dandiset_with_summary(
+        assets_summary={'measurementTechnique': [{'name': 'surgical technique'}]},
     )
-    _refresh_asset_search()
 
     assert _search_ids(api_client, 'technique:"spike sorting"') == {spike.identifier}
     assert _search_ids(api_client, 'technique:surgical') == {surg.identifier}
@@ -1975,131 +1940,109 @@ def test_advanced_search_technique_with_quoted_phrase(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_file_type_alias_and_mime(api_client):
-    nwb = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'application/x-nwb'})
-    image = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'image/tiff'})
-    text = _seed_dandiset_with_asset(asset_metadata={'encodingFormat': 'text/plain'})
-    _refresh_asset_search()
+def test_advanced_search_standard_matches_data_standard(api_client):
+    # `standard:` matches the version's assetsSummary.dataStandard — real
+    # entries are like "Neurodata Without Borders (NWB)" or "Brain Imaging
+    # Data Structure (BIDS)", so short tokens match by substring.
+    nwb = _seed_dandiset_with_summary(
+        assets_summary={'dataStandard': [{'name': 'Neurodata Without Borders (NWB)'}]},
+    )
+    bids = _seed_dandiset_with_summary(
+        assets_summary={'dataStandard': [{'name': 'Brain Imaging Data Structure (BIDS)'}]},
+    )
 
-    # The short alias `nwb` resolves to the application/x-nwb mime prefix.
-    assert _search_ids(api_client, 'file_type:nwb') == {nwb.identifier}
-    # The `image` alias matches anything starting with `image/`.
-    assert _search_ids(api_client, 'file_type:image') == {image.identifier}
-    assert _search_ids(api_client, 'file_type:text') == {text.identifier}
-    # Direct MIME prefixes also work.
-    assert _search_ids(api_client, 'file_type:application/x-nwb') == {nwb.identifier}
+    assert _search_ids(api_client, 'standard:nwb') == {nwb.identifier}
+    assert _search_ids(api_client, 'standard:bids') == {bids.identifier}
 
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_asset_operators_combine_at_dandiset_level(api_client):
-    # Multiple asset operators are AND'd at the DANDISET level, not at the
-    # asset level. So `species:mouse approach:electrophysiological` returns
-    # any dandiset that has SOME mouse asset AND SOME ephys asset — they may
-    # be the same asset, but they don't have to be.
-    one_asset_both = _seed_dandiset_with_asset(
-        asset_metadata={
-            'wasAttributedTo': [{'species': {'name': 'House mouse'}}],
+def test_advanced_search_variable_matches_bare_string_array(api_client):
+    # Unlike the other summary fields, `variableMeasured` is an array of bare
+    # strings (NWB neurodata types) rather than objects with a `name`, so its
+    # jsonpath selects the elements themselves.
+    ephys = _seed_dandiset_with_summary(
+        assets_summary={'variableMeasured': ['ElectricalSeries', 'Units', 'LFP']},
+    )
+    imaging = _seed_dandiset_with_summary(
+        assets_summary={'variableMeasured': ['ImagingPlane', 'OpticalChannel']},
+    )
+
+    assert _search_ids(api_client, 'variable:LFP') == {ephys.identifier}
+    assert _search_ids(api_client, 'variable:ImagingPlane') == {imaging.identifier}
+    # Case-insensitive substring, same as the other summary operators.
+    assert _search_ids(api_client, 'variable:electrical') == {ephys.identifier}
+    assert _search_ids(api_client, 'variable:series') == {ephys.identifier}
+    assert _search_ids(api_client, 'variable:nosuchtype') == set()
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_removed_file_type_returns_helpful_400(api_client):
+    # `file_type:` was removed in favor of `standard:` and the faceted
+    # file_type query parameter. The generic unknown-operator error has no
+    # close-enough suggestion for it, so pin the explicit pointer.
+    response = api_client.get(
+        '/api/dandisets/',
+        {'draft': 'true', 'empty': 'true', 'search': 'file_type:nwb'},
+    )
+    assert response.status_code == 400
+    assert 'standard:' in response.json()['search']
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_cross_key_operators_intersect(api_client):
+    # Cross-key semantics: a SINGLE version's assetsSummary must satisfy ALL
+    # constraints. So `species:mouse approach:electrophysiological` requires
+    # a dandiset whose summary lists both. This is a dandiset-level AND: the
+    # mouse assets and the ephys assets may be different assets within it.
+    mouse_ephys = _seed_dandiset_with_summary(
+        assets_summary={
+            'species': [{'name': 'House mouse'}],
             'approach': [{'name': 'electrophysiological approach'}],
         },
     )
-    # Two distinct assets, each satisfying one of the operators.
-    two_assets_split = DandisetFactory.create()
-    two_assets_split_version = DraftVersionFactory.create(dandiset=two_assets_split)
-    two_assets_split_version.assets.add(
-        DraftAssetFactory.create(
-            metadata={
-                'schemaVersion': DANDI_SCHEMA_VERSION,
-                'schemaKey': 'Asset',
-                'encodingFormat': 'application/x-nwb',
-                'wasAttributedTo': [{'species': {'name': 'House mouse'}}],
-            },
-        ),
-        DraftAssetFactory.create(
-            metadata={
-                'schemaVersion': DANDI_SCHEMA_VERSION,
-                'schemaKey': 'Asset',
-                'encodingFormat': 'application/x-nwb',
-                'approach': [{'name': 'electrophysiological approach'}],
-            },
-        ),
-    )
-    add_version_asset_paths(two_assets_split_version)
-    # Has mouse but no ephys — should NOT match.
-    _seed_dandiset_with_asset(
-        asset_metadata={
-            'wasAttributedTo': [{'species': {'name': 'House mouse'}}],
+    _seed_dandiset_with_summary(
+        assets_summary={
+            'species': [{'name': 'House mouse'}],
             'approach': [{'name': 'behavioral approach'}],
         },
     )
-    # Has ephys but no mouse — should NOT match.
-    _seed_dandiset_with_asset(
-        asset_metadata={
-            'wasAttributedTo': [{'species': {'name': 'Norway rat'}}],
+    _seed_dandiset_with_summary(
+        assets_summary={
+            'species': [{'name': 'Norway rat'}],
             'approach': [{'name': 'electrophysiological approach'}],
         },
     )
-    _refresh_asset_search()
 
     query = 'species:mouse approach:electrophysiological'
-    assert _search_ids(api_client, query) == {
-        one_asset_both.identifier,
-        two_assets_split.identifier,
-    }
+    assert _search_ids(api_client, query) == {mouse_ephys.identifier}
 
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_repeated_same_key_operator_combines_at_dandiset_level(api_client):
-    # `species:mouse species:rat` returns dandisets that have a mouse asset
-    # AND a rat asset. The two assets can be the same row (multi-species) or
-    # two different rows — what matters is that the dandiset, as a whole,
-    # has both kinds of data represented.
-    multi_species_one_asset = _seed_dandiset_with_asset(
-        asset_metadata={
-            'wasAttributedTo': [
-                {'species': {'name': 'House mouse'}},
-                {'species': {'name': 'Norway rat'}},
+def test_advanced_search_repeated_same_key_operator_combines_with_and(api_client):
+    # Same-key semantics: `species:mouse species:rat` requires a single
+    # version's summary whose species set contains BOTH "mouse" and "rat"
+    # (matches GitHub's default for repeated keys). Pinning this so a future
+    # change to OR-within-key is a deliberate decision, not a regression.
+    multi = _seed_dandiset_with_summary(
+        assets_summary={
+            'species': [
+                {'name': 'House mouse'},
+                {'name': 'Norway rat'},
             ],
         },
     )
-    # Two assets: one mouse, one rat. This is the case that distinguishes the
-    # dandiset-level semantic from a same-asset semantic — it would have been
-    # excluded under the older "single asset matches both" rule.
-    two_assets_mouse_and_rat = DandisetFactory.create()
-    two_assets_mouse_and_rat_version = DraftVersionFactory.create(dandiset=two_assets_mouse_and_rat)
-    two_assets_mouse_and_rat_version.assets.add(
-        DraftAssetFactory.create(
-            metadata={
-                'schemaVersion': DANDI_SCHEMA_VERSION,
-                'schemaKey': 'Asset',
-                'encodingFormat': 'application/x-nwb',
-                'wasAttributedTo': [{'species': {'name': 'House mouse'}}],
-            },
-        ),
-        DraftAssetFactory.create(
-            metadata={
-                'schemaVersion': DANDI_SCHEMA_VERSION,
-                'schemaKey': 'Asset',
-                'encodingFormat': 'application/x-nwb',
-                'wasAttributedTo': [{'species': {'name': 'Norway rat'}}],
-            },
-        ),
+    _seed_dandiset_with_summary(
+        assets_summary={'species': [{'name': 'House mouse'}]},
     )
-    add_version_asset_paths(two_assets_mouse_and_rat_version)
-    # Only mouse, only rat — neither should match the combined query.
-    _seed_dandiset_with_asset(
-        asset_metadata={'wasAttributedTo': [{'species': {'name': 'House mouse'}}]},
+    _seed_dandiset_with_summary(
+        assets_summary={'species': [{'name': 'Norway rat'}]},
     )
-    _seed_dandiset_with_asset(
-        asset_metadata={'wasAttributedTo': [{'species': {'name': 'Norway rat'}}]},
-    )
-    _refresh_asset_search()
 
-    assert _search_ids(api_client, 'species:mouse species:rat') == {
-        multi_species_one_asset.identifier,
-        two_assets_mouse_and_rat.identifier,
-    }
+    assert _search_ids(api_client, 'species:mouse species:rat') == {multi.identifier}
 
 
 @pytest.mark.ai_generated
@@ -2117,15 +2060,15 @@ def test_advanced_search_empty_operator_value_returns_400(api_client):
 @pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_species_respects_embargo_visibility(api_client):
-    # An anonymous user must not be able to surface embargoed dandisets via has_*.
-    open_ds = _seed_dandiset_with_asset(
-        asset_metadata={'wasAttributedTo': [{'species': {'name': 'House mouse'}}]},
+    # An anonymous user must not be able to surface embargoed dandisets via
+    # search operators.
+    open_ds = _seed_dandiset_with_summary(
+        assets_summary={'species': [{'name': 'House mouse'}]},
     )
-    _seed_dandiset_with_asset(
-        asset_metadata={'wasAttributedTo': [{'species': {'name': 'House mouse'}}]},
+    _seed_dandiset_with_summary(
+        assets_summary={'species': [{'name': 'House mouse'}]},
         embargoed=True,
     )
-    _refresh_asset_search()
 
     # Anonymous request: embargoed must be filtered out.
     assert _search_ids(api_client, 'species:mouse') == {open_ds.identifier}
@@ -2145,15 +2088,27 @@ def test_advanced_search_owner_lookup_paths_and_combinations(api_client):
     dandiset).
     """
     # Three users with overlapping last names so we can exercise every lookup
-    # path AND the multi-user union in a single setup.
+    # path AND the multi-user union in a single setup. GitHub logins are set
+    # explicitly: they are the "username" the UI displays, and the only kind
+    # of username the filter consults. `User.username` is left at its factory
+    # default (the email address), matching production.
     alice = UserFactory.create(
-        username='Alice', email='Alice@Example.com', first_name='Alice', last_name='Smith'
+        email='Alice@Example.com',
+        first_name='Alice',
+        last_name='Smith',
+        social_account__extra_data__login='Alice-Codes',
     )
     bob = UserFactory.create(
-        username='bob', email='bob@example.com', first_name='Bob', last_name='Smith'
+        email='bob@example.com',
+        first_name='Bob',
+        last_name='Smith',
+        social_account__extra_data__login='bob-gh',
     )
     carol = UserFactory.create(
-        username='carol', email='carol@example.com', first_name='Carol', last_name='Jones'
+        email='carol@example.com',
+        first_name='Carol',
+        last_name='Jones',
+        social_account__extra_data__login='carol-gh',
     )
     alice_old = DandisetFactory.create(owners=[alice])
     alice_new = DandisetFactory.create(owners=[alice])
@@ -2169,9 +2124,9 @@ def test_advanced_search_owner_lookup_paths_and_combinations(api_client):
 
     alice_dsets = {alice_old.identifier, alice_new.identifier}
 
-    # username (case-insensitive)
-    assert _search_ids(api_client, 'owner:alice') == alice_dsets
-    assert _search_ids(api_client, 'owner:ALICE') == alice_dsets
+    # GitHub username (case-insensitive)
+    assert _search_ids(api_client, 'owner:alice-codes') == alice_dsets
+    assert _search_ids(api_client, 'owner:ALICE-CODES') == alice_dsets
 
     # email (case-insensitive)
     assert _search_ids(api_client, 'owner:alice@example.com') == alice_dsets
@@ -2188,9 +2143,24 @@ def test_advanced_search_owner_lookup_paths_and_combinations(api_client):
     # unknown user → 0 results, not 400 (a valid 0-hit query)
     assert _search_ids(api_client, 'owner:no_such_user_anywhere') == set()
 
+    # `User.username` is NOT a lookup path: in production it holds the email
+    # address, not the GitHub login the UI displays as the username. A
+    # username differing from both must not match; the GitHub login must.
+    dave = UserFactory.create(
+        username='dave-django-username',
+        email='dave@example.com',
+        first_name='Dave',
+        last_name='Miller',
+        social_account__extra_data__login='dave-gh',
+    )
+    dave_ds = DandisetFactory.create(owners=[dave])
+    DraftVersionFactory.create(dandiset=dave_ds)
+    assert _search_ids(api_client, 'owner:dave-django-username') == set()
+    assert _search_ids(api_client, 'owner:dave-gh') == {dave_ds.identifier}
+
     # combines with other operators: cross-key AND on the same dandiset.
-    # Only alice_new satisfies BOTH owner:alice AND created_after.
-    assert _search_ids(api_client, f'owner:alice created_after:{after_str}') == {
+    # Only alice_new satisfies BOTH owner:alice-codes AND created_after.
+    assert _search_ids(api_client, f'owner:alice-codes created_after:{after_str}') == {
         alice_new.identifier
     }
 
@@ -2198,17 +2168,17 @@ def test_advanced_search_owner_lookup_paths_and_combinations(api_client):
 @pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_owner_does_not_inflate_to_superuser_archive(api_client):
-    # Guardian's get_objects_for_user(with_superuser=True) returns ALL objects
-    # for superusers — wrong semantics for owner: searches. We pass
-    # with_superuser=False so `owner:admin` returns only what admin
-    # explicitly owns, not the entire archive.
-    admin = UserFactory.create(username='admin', is_superuser=True)
+    # Guardian's get_objects_for_user returns ALL objects for superusers —
+    # wrong semantics for owner: searches. The filter queries
+    # DandisetUserObjectPermission directly, so `owner:` returns only what
+    # admin explicitly owns, not the entire archive.
+    admin = UserFactory.create(is_superuser=True, social_account__extra_data__login='admin-gh')
     other = UserFactory.create()
     DraftVersionFactory.create(dandiset=DandisetFactory.create(owners=[other]))
     admin_owned = DandisetFactory.create(owners=[admin])
     DraftVersionFactory.create(dandiset=admin_owned)
 
-    assert _search_ids(api_client, 'owner:admin') == {admin_owned.identifier}
+    assert _search_ids(api_client, 'owner:admin-gh') == {admin_owned.identifier}
 
 
 # --- contributor / role operators ----------------------------------------------------------------
@@ -2338,12 +2308,12 @@ def test_advanced_search_contributor_and_role_operators(api_client):
 
 @pytest.mark.ai_generated
 @pytest.mark.django_db
-def test_advanced_search_contributor_role_substring_match(api_client):
-    """Role substring matches the dcite:-prefixed stored value.
+def test_advanced_search_contributor_role_match(api_client):
+    """Role operators match the full dcite:-prefixed stored value.
 
-    `data_curator:` should match the stored value `dcite:DataCurator` via
-    case-insensitive substring on `roleName` — users don't have to type
-    the `dcite:` prefix.
+    `data_curator:` should match the stored value `dcite:DataCurator`, so
+    users don't have to type the `dcite:` prefix. The match is anchored:
+    a role name that only contains `DataCurator` must not match.
     """
     ds = _seed_dandiset_with_contributors(
         contributors=[
@@ -2355,13 +2325,19 @@ def test_advanced_search_contributor_role_substring_match(api_client):
         ],
     )
 
-    # The operator name maps to the substring "DataCurator" (without the
-    # "dcite:" prefix) and matches the stored "dcite:DataCurator" via
-    # case-insensitive regex inside the jsonpath.
+    _seed_dandiset_with_contributors(
+        contributors=[
+            {
+                'name': 'Curator, Carl',
+                'roleName': ['dcite:DataCuratorAssistant'],
+                'schemaKey': 'Person',
+            },
+        ],
+    )
+
     assert _search_ids(api_client, 'data_curator:Curator') == {ds.identifier}
 
 
-@pytest.mark.ai_generated
 @pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_contributor_operators_and_on_same_version(api_client):
@@ -2422,6 +2398,76 @@ def test_advanced_search_contributor_operators_and_on_same_version(api_client):
     assert _search_ids(api_client, 'author:Doe funder:NIH') == {ds_both.identifier}
 
 
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_contributor_and_summary_operators_and_on_same_version(api_client):
+    """Contributor and assetsSummary predicates must hold on the same Version.
+
+    The draft has Doe as Author but no mouse data; the published version has
+    mouse data but no Doe. `author:Doe species:mouse` must not match.
+    """
+    dandiset = DandisetFactory.create()
+    draft = DraftVersionFactory.create(dandiset=dandiset)
+    draft.metadata = {
+        **draft.metadata,
+        'contributor': [
+            {'name': 'Doe, Jane', 'roleName': ['dcite:Author'], 'schemaKey': 'Person'},
+        ],
+    }
+    draft.save()
+    published = PublishedVersionFactory.create(dandiset=dandiset)
+    published.metadata = {
+        **published.metadata,
+        'contributor': [],
+        'assetsSummary': {
+            **published.metadata.get('assetsSummary', {}),
+            'species': [{'name': 'Mus musculus - House mouse'}],
+        },
+    }
+    published.save()
+
+    assert _search_ids(api_client, 'author:Doe') == {dandiset.identifier}
+    assert _search_ids(api_client, 'species:mouse') == {dandiset.identifier}
+    assert _search_ids(api_client, 'author:Doe species:mouse') == set()
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_contributor_match_on_several_versions_lists_dandiset_once(
+    api_client,
+):
+    """A dandiset whose draft and published versions both match appears once.
+
+    Also checks `ordering=-stars`: joining across matching versions would
+    multiply the star count of the dandiset with three matching versions and
+    sort it ahead of the one with more stars.
+    """
+    contributors = [{'name': 'Doe, Jane', 'roleName': ['dcite:Author'], 'schemaKey': 'Person'}]
+    many_versions = _seed_dandiset_with_contributors(contributors=contributors)
+    for _ in range(2):
+        published = PublishedVersionFactory.create(dandiset=many_versions)
+        published.metadata = {**published.metadata, 'contributor': contributors}
+        published.save()
+    many_versions.stars.create(user=UserFactory.create())
+
+    more_stars = _seed_dandiset_with_contributors(contributors=contributors)
+    for _ in range(2):
+        more_stars.stars.create(user=UserFactory.create())
+
+    response = api_client.get(
+        '/api/dandisets/',
+        {'draft': 'true', 'empty': 'true', 'search': 'author:Doe', 'ordering': '-stars'},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data['count'] == 2
+    assert [r['identifier'] for r in data['results']] == [
+        more_stars.identifier,
+        many_versions.identifier,
+    ]
+
+
+@pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_unknown_role_operator_returns_400_with_suggestion(api_client):
     response = api_client.get(
@@ -2572,9 +2618,7 @@ def test_advanced_search_num_subjects_comparators(api_client):
     ds_50 = _seed_dandiset_with_subject_count(50)
 
     # Bare value is an exact match (equivalent to `=`).
-    assert _search_ids(api_client, 'num_subjects:10') == _search_ids(
-        api_client, 'num_subjects:=10'
-    )
+    assert _search_ids(api_client, 'num_subjects:10') == _search_ids(api_client, 'num_subjects:=10')
     # Strictly greater excludes the boundary.
     assert _search_ids(api_client, 'num_subjects:>10') == {ds_50.identifier}
     # At least, including the boundary.
@@ -2586,6 +2630,8 @@ def test_advanced_search_num_subjects_comparators(api_client):
     # Exact match.
     assert _search_ids(api_client, 'num_subjects:=10') == {ds_10.identifier}
     assert _search_ids(api_client, 'num_subjects:=99') == set()
+    # Quoted form with a space between comparator and number.
+    assert _search_ids(api_client, 'num_subjects:">= 10"') == {ds_10.identifier, ds_50.identifier}
 
 
 @pytest.mark.ai_generated
@@ -2602,3 +2648,41 @@ def test_advanced_search_num_subjects_invalid_value_returns_400(api_client):
             {'draft': 'true', 'empty': 'true', 'search': f'num_subjects:{bad}'},
         )
         assert response.status_code == 400, bad
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_num_subjects_composes_on_one_version(api_client):
+    """`num_subjects:` is AND'd with `species:` on the same Version.
+
+    A published version with 20 subjects and no mouse data plus a draft with
+    2 mouse subjects must not combine into a match for
+    `num_subjects:>=10 species:mouse`.
+    """
+    split = DandisetFactory.create()
+    draft = DraftVersionFactory.create(dandiset=split)
+    published = PublishedVersionFactory.create(dandiset=split)
+    together = DandisetFactory.create()
+    together_draft = DraftVersionFactory.create(dandiset=together)
+
+    def set_summary(version, summary):
+        Version.objects.filter(pk=version.pk).update(
+            metadata={
+                **version.metadata,
+                'assetsSummary': {
+                    'schemaKey': 'AssetsSummary',
+                    'numberOfBytes': 0,
+                    'numberOfFiles': 0,
+                    **summary,
+                },
+            }
+        )
+
+    set_summary(draft, {'numberOfSubjects': 2, 'species': [{'name': 'House mouse'}]})
+    set_summary(published, {'numberOfSubjects': 20})
+    set_summary(together_draft, {'numberOfSubjects': 20, 'species': [{'name': 'House mouse'}]})
+
+    assert _search_ids(api_client, 'num_subjects:>=10 species:mouse') == {together.identifier}
+    # Each half alone matches the split dandiset through one of its versions.
+    assert split.identifier in _search_ids(api_client, 'num_subjects:>=10')
+    assert split.identifier in _search_ids(api_client, 'species:mouse')
