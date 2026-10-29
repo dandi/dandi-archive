@@ -232,7 +232,7 @@ The fingerprint is the SHA-256 of the sorted list of `(path, digest)` pairs for 
    - relativize paths, strip URLs (presigned URLs carry credentials), drop `DANDI.FILE_CONTENT_STREAMED`, and group pynwb results under a fixed ID;
    - exclude results for `dandiset.yaml`, since the archive validates metadata itself;
    - retry, with backoff, files whose results are `INTERNAL`-origin, `DANDI.FILE_CONTENT_MISSING` or streamed-read failures. If they keep failing, the row becomes `failed` with `success` left empty, and Sentry is notified;
-   - a run is complete when every file dandi-cli selects in the dataset (NWB and BIDS files) has an outcome. Zarr assets and other files (e.g. `.mp4`) are counted as "not checked";
+   - a run is complete when every NWB and BIDS file has an outcome. Zarr-backed assets (NWB or BIDS stored as Zarr) are counted as "not checked" for now (see [Open questions](#open-questions));
    - for a complete run, `success` is `counts.CRITICAL + counts.ERROR == 0`, so only `ERROR` and `CRITICAL` block publication. dandi-cli maps validator severities onto its own as follows:
      - NWB Inspector: `CRITICAL` → `ERROR`, best-practice violations → `WARNING`, suggestions → `HINT`.
      - BIDS validator: errors → `ERROR`, warnings → `HINT`.
@@ -348,7 +348,7 @@ validation-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --l
   - error styling if errors were found, warning styling if only warnings were found, and a small "validated" chip if it passed;
   - text naming the validators and their versions;
   - "results predate the latest changes" when `stale`;
-  - "Zarr and other non-NWB/BIDS files not checked" when applicable.
+  - "Zarr assets not checked" when applicable.
 - **Pending, not error.** While `validatedBy` is `null`, its validation error is shown as pending, not counted in the error total, and the Publish button says "Waiting for content validation". The page polls `/info/` while a run is queued or running.
 - **Details:** this opens `ValidationErrorDialog.vue` with a new tab built from `top_issues`, plus a link to the full record. Each issue maps to the dialog's existing `{field, message, path}` shape, so grouping by path works unchanged.
 - **Validation error:** add an entry for `validatedBy` to `VALIDATION_ICONS`, with a clearer message.
@@ -444,4 +444,4 @@ Drafts already have rows for the new target, so publication is not interrupted. 
 1. **Isolation level.** The subprocess drops credentials, but runs on a dyno whose environment holds them. Full isolation would need a separate Heroku app without database or bucket-write credentials, which would bring back a narrow write endpoint with its own token. Is the subprocess enough?
 2. **Worker size and sweep budget.** Which dyno size and count, and where should the initial sweep run (Heroku scaled up, or a container near the bucket)? To be decided from the pilot.
 3. **Retry thresholds.** How many retries, and how much backoff, before a run is marked failed?
-4. **Coverage.** Zarr assets and files other than NWB and BIDS are reported as "not checked". Should any of them be validated?
+4. **Zarr.** Every asset should be NWB or BIDS, and either can be stored as Zarr. Zarr-backed assets are reported as "not checked" for now. Should validation include them?
