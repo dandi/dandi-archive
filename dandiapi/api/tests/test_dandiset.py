@@ -2528,10 +2528,10 @@ def _seed_dandiset_with_subject_count(n: int | None) -> Dandiset:
 @pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_num_subjects_operator(api_client):
-    """`num_subjects:N` is "at least N subjects" against assetsSummary.numberOfSubjects.
+    """`num_subjects:N` is "exactly N subjects" against assetsSummary.numberOfSubjects.
 
-    Covers the threshold (exact + above match, below doesn't), missing
-    field (doesn't match), case-insensitivity, and composition with another
+    Covers exact matching (above and below don't match), missing field
+    (doesn't match), case-insensitivity, and composition with another
     operator on the same dandiset.
     """
     ds_2 = _seed_dandiset_with_subject_count(2)
@@ -2539,18 +2539,15 @@ def test_advanced_search_num_subjects_operator(api_client):
     ds_50 = _seed_dandiset_with_subject_count(50)
     ds_unknown = _seed_dandiset_with_subject_count(None)  # no numberOfSubjects field
 
-    # >= threshold semantics
-    assert _search_ids(api_client, 'num_subjects:10') == {ds_10.identifier, ds_50.identifier}
-    assert _search_ids(api_client, 'num_subjects:0') == {
-        ds_2.identifier,
-        ds_10.identifier,
-        ds_50.identifier,
-    }
+    # Exact-match semantics
+    assert _search_ids(api_client, 'num_subjects:10') == {ds_10.identifier}
+    assert _search_ids(api_client, 'num_subjects:7') == set()
     # ds_unknown never matches: a missing count must not be coerced to 0
-    assert ds_unknown.identifier not in _search_ids(api_client, 'num_subjects:0')
+    assert _search_ids(api_client, 'num_subjects:0') == set()
+    assert ds_unknown.identifier not in _search_ids(api_client, 'num_subjects:>=0')
 
     # Case-insensitive operator key
-    assert _search_ids(api_client, 'NUM_SUBJECTS:10') == {ds_10.identifier, ds_50.identifier}
+    assert _search_ids(api_client, 'NUM_SUBJECTS:10') == {ds_10.identifier}
 
     # Composes with another operator (here `name` free-text would compose
     # via the existing path; use a date operator to stay structured-only).
@@ -2558,9 +2555,9 @@ def test_advanced_search_num_subjects_operator(api_client):
     cutoff = timezone.now() - datetime.timedelta(days=1)
     Dandiset.objects.filter(pk=ds_2.pk).update(created=cutoff - datetime.timedelta(days=30))
     after_str = (cutoff + datetime.timedelta(seconds=1)).date().isoformat()
-    # `num_subjects:2 created_after:<recent>` → dandisets with >=2 subjects
+    # `num_subjects:>=2 created_after:<recent>` → dandisets with >=2 subjects
     # AND created in the last day → ds_10 + ds_50 (ds_2 is older).
-    assert _search_ids(api_client, f'num_subjects:2 created_after:{after_str}') == {
+    assert _search_ids(api_client, f'num_subjects:>=2 created_after:{after_str}') == {
         ds_10.identifier,
         ds_50.identifier,
     }
@@ -2569,14 +2566,14 @@ def test_advanced_search_num_subjects_operator(api_client):
 @pytest.mark.ai_generated
 @pytest.mark.django_db
 def test_advanced_search_num_subjects_comparators(api_client):
-    """Count values accept `>`, `>=`, `<`, `<=`, `=` prefixes; bare means `>=`."""
+    """Count values accept `>`, `>=`, `<`, `<=`, `=` prefixes; bare means `=`."""
     ds_2 = _seed_dandiset_with_subject_count(2)
     ds_10 = _seed_dandiset_with_subject_count(10)
     ds_50 = _seed_dandiset_with_subject_count(50)
 
-    # Bare value is still "at least" (equivalent to `>=`).
+    # Bare value is an exact match (equivalent to `=`).
     assert _search_ids(api_client, 'num_subjects:10') == _search_ids(
-        api_client, 'num_subjects:>=10'
+        api_client, 'num_subjects:=10'
     )
     # Strictly greater excludes the boundary.
     assert _search_ids(api_client, 'num_subjects:>10') == {ds_50.identifier}

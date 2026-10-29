@@ -60,12 +60,11 @@ AFFILIATION_OPS = frozenset({'affiliation'})
 
 # Numeric count operators: short name → jsonpath into `Version.metadata`.
 # Value is a non-negative integer, optionally prefixed with a comparator
-# (`>`, `>=`, `<`, `<=`, `=`); a bare value means `>=`. So `num_subjects:10`
-# and `num_subjects:>=10` both match dandisets whose
-# `assetsSummary.numberOfSubjects` is at least 10, while `num_subjects:<5` and
-# `num_subjects:=0` match below / exact. The bare-defaults-to-"at least"
-# behavior reflects the intent behind count search ("studies with at least N
-# <thing>"). Comparator parsing lives in `filters._apply_count_filter`.
+# (`>`, `>=`, `<`, `<=`, `=`); a bare value is an exact match, as in GitHub's
+# `comments:10`. So `num_subjects:10` and `num_subjects:=10` both match
+# dandisets whose `assetsSummary.numberOfSubjects` is 10, while
+# `num_subjects:>=10` matches at least 10. Comparator parsing lives in
+# `filters._apply_count_filter`.
 #
 # Only `num_subjects` is exposed for now. The `assetsSummary` schema also
 # carries `numberOfFiles`, `numberOfBytes`, `numberOfSamples`, and

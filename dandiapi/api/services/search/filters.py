@@ -170,9 +170,9 @@ def _apply_contributor_filters(
 
 # Comparator prefix → Postgres jsonpath operator. The keys are the syntax we
 # accept in a count value (`num_subjects:>=10`); the values are the jsonpath
-# operators we emit. A bare value (no prefix) defaults to `>=` — "at least N"
-# is the intent behind count search. Mapped through this fixed allowlist so the
-# operator is never interpolated from user text into the jsonpath.
+# operators we emit. A bare value (no prefix) is an exact match, as in GitHub's
+# `comments:10`. Mapped through this fixed allowlist so the operator is never
+# interpolated from user text into the jsonpath.
 _COUNT_COMPARATORS = {
     '>': '>',
     '>=': '>=',
@@ -192,10 +192,10 @@ def _apply_count_filter(
 
     The value is a non-negative integer, optionally prefixed with a comparator:
 
-    - `num_subjects:10` or `num_subjects:>=10` — at least 10 (bare defaults to `>=`)
+    - `num_subjects:10` or `num_subjects:=10` — exactly 10 (bare defaults to `=`)
     - `num_subjects:>10` / `num_subjects:<10` — strictly above / below
+    - `num_subjects:>=10` — at least 10
     - `num_subjects:<=10` — at most 10
-    - `num_subjects:=10` — exactly 10
 
     `jsonpath_path` is a trusted constant pointing into `Version.metadata`. The
     comparator is mapped through `_COUNT_COMPARATORS` (never taken verbatim from
@@ -213,7 +213,7 @@ def _apply_count_filter(
             'prefixed with a comparator — e.g. `num_subjects:10`, `num_subjects:>=5`, '
             '`num_subjects:<100`, `num_subjects:=0`.'
         )
-    op = _COUNT_COMPARATORS[match.group('op') or '>=']
+    op = _COUNT_COMPARATORS[match.group('op') or '=']
     n = int(match.group('n'))
     jsonpath = f'{jsonpath_path} ? (@ {op} $val)'
     vars_json = json.dumps({'val': n})
