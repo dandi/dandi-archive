@@ -1,3 +1,22 @@
+# v1.1.1 (Thu Oct 29 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Add e2e tests for the table viewer [#2974](https://github.com/dandi/dandi-archive/pull/2974) ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Don't expose oauth application management URLs [#2978](https://github.com/dandi/dandi-archive/pull/2978) ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 3
+
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v1.1.0 (Tue Oct 20 2026)
 
 #### 🚀 Enhancement
