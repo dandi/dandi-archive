@@ -33,13 +33,7 @@ Status: proposal
   - **Drafts:** the latest set the archive is configured for.
   - **Published versions:** the set frozen at publication, so later validator releases never make them invalid.
 - Errors and warnings are shown to everyone in a banner on the Dandiset landing page ([#1486](https://github.com/dandi/dandi-archive/issues/1486)). Warnings do not block publication but reflect overall quality.
-
-## Non-goals
-
-- Storing validation results in Dandiset metadata beyond the two gating fields, or storing full records in the database.
-- Running validators on the `web` dyno or on the default `worker` dyno.
-- Changing the metadata of versions published before this feature. Their results only drive the banner.
-- Per-asset validation status driven by these records.
+- Changes only to the metadata of previously published versions should not trigger version bumps for dataset validation.
 
 ## Summary
 
