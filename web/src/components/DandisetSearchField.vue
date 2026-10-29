@@ -50,7 +50,7 @@
             </div>
             <div class="text-body-2 mb-2">
               Combine free text with <code>key:value</code> filters.
-              Quote multi-word values: <code>technique:"patch clamp"</code>.
+              Quote multi-word values: <code>technique:"spike sorting"</code>.
             </div>
             <v-table density="compact">
               <tbody>
@@ -148,9 +148,10 @@ const operatorHelp = [
   { example: 'published_before:2024-01-01', description: 'Most recent publication before' },
   { example: 'species:mouse', description: 'Has assets attributed to a species' },
   { example: 'approach:electrophysiology', description: 'Has assets using an approach' },
-  { example: 'technique:"patch clamp"', description: 'Has assets using a measurement technique' },
-  { example: 'file_type:nwb', description: 'Has assets of a file type (nwb, image, text, video)' },
-  { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, username, or email)' },
+  { example: 'technique:"spike sorting"', description: 'Has assets using a measurement technique' },
+  { example: 'standard:nwb', description: 'Has assets in a data standard (e.g. nwb, bids)' },
+  { example: 'variable:LFP', description: 'Contains a measured variable / neurodata type' },
+  { example: 'owner:"Jane Doe"', description: 'Owned by a user (name, GitHub username, or email)' },
   { example: 'contributor:"Doe, Jane"', description: 'Listed as a contributor (any role; matches name, email, ORCID, or ROR ID)' },
   { example: 'author:Doe', description: 'Listed as an Author (matches name, email, ORCID, or ROR ID)' },
   { example: 'data_curator:Doe', description: 'Listed as a Data Curator' },
@@ -159,6 +160,7 @@ const operatorHelp = [
   { example: 'maintainer:Doe', description: 'Listed as a Maintainer' },
   { example: 'project_leader:Doe', description: 'Listed as the Project Leader (also: data_collector, data_manager, sponsor)' },
   { example: 'affiliation:Stanford', description: 'Has a contributor affiliated with the named organization (or ROR ID)' },
+  { example: 'num_subjects:>=10', description: 'Subject count, assetsSummary.numberOfSubjects (also >, <, <=, =; bare means exactly)' },
 ];
 
 // The set of operators we suggest, derived from the help table so the two

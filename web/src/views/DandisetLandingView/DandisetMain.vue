@@ -270,6 +270,7 @@
 import {
   computed,
   ref,
+  watch,
   watchEffect,
   type ComputedRef,
 } from 'vue';
@@ -282,9 +283,12 @@ import { useDisplay } from 'vuetify';
 
 import { useDandisetStore } from '@/stores/dandiset';
 import { getDoiMetadata } from '@/utils/doi';
+import { getExampleNotebooks } from '@/utils/notebooks';
+import type { DandisetNotebooks } from '@/utils/notebooks';
 import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from '@/types';
 
 import HowToCiteTab from '@/components/DLP/HowToCiteTab.vue';
+import NotebooksTab from '@/components/DLP/NotebooksTab.vue';
 import OverviewTab from '@/components/DLP/OverviewTab.vue';
 import ShareDialog from './ShareDialog.vue';
 import StarButton from '@/components/StarButton.vue';
@@ -292,7 +296,7 @@ import StarButton from '@/components/StarButton.vue';
 // max description length before it's truncated and "see more" button is shown
 const MAX_DESCRIPTION_LENGTH = 400;
 
-const tabs = [
+const baseTabs = [
   {
     name: 'Overview',
     component: OverviewTab,
@@ -362,6 +366,30 @@ const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed
 );
 
 const currentTab = ref(0);
+
+const exampleNotebooks = ref<DandisetNotebooks | null>(null);
+
+const tabs = computed(() => {
+  if (!exampleNotebooks.value) {
+    return baseTabs;
+  }
+  return [
+    ...baseTabs,
+    { name: 'Notebooks', component: NotebooksTab, icon: 'mdi-notebook-outline' },
+  ];
+});
+
+watch(
+  () => currentDandiset.value?.dandiset.identifier,
+  async (identifier) => {
+    currentTab.value = 0;
+    const result = identifier ? await getExampleNotebooks(identifier) : null;
+    if (currentDandiset.value?.dandiset.identifier === identifier) {
+      exampleNotebooks.value = result;
+    }
+  },
+  { immediate: true },
+);
 
 function formatDate(date: string): string {
   return moment(date).format('LL');

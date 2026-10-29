@@ -3,7 +3,7 @@ from __future__ import annotations
 from difflib import ndiff
 from pprint import pformat
 
-from dandischema import migrate
+from dandischema.metadata import migrate
 import djclick as click
 
 from dandiapi.api.models import Version

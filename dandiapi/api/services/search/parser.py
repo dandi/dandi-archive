@@ -30,6 +30,9 @@ from dandiapi.api.services.search.operators import OPERATOR_KEYS
 # alternative so quoted segments stay together.
 # Operator keys are matched case-insensitively (`AUTHOR:doe` works the same
 # as `author:doe`) — we lowercase the captured key before validation/dispatch.
+# A prefix with any uppercase letter that isn't a known operator stays free
+# text, so identifiers like `DANDI:000123`, `RRID:...` and `ORCID:...` search
+# as they did before operators were case-insensitive.
 _TOKEN_RE = re.compile(
     r'(?P<op_key>[A-Za-z_]+):"(?P<op_qval>[^"]*)"'
     r'|"(?P<free_quoted>[^"]*)"'
@@ -73,12 +76,29 @@ def _check_balanced_quotes(query: str) -> None:
 def _validate_operator_key(key: str) -> None:
     if key in OPERATOR_KEYS:
         return
+    if key == 'file_type':
+        # Removed operator; there is no close-enough key for the generic
+        # suggestion below to fire, so point at the replacements explicitly.
+        raise SearchSyntaxError(
+            'The "file_type" operator has been removed. Use standard: to match '
+            'a data standard (e.g. standard:nwb), or the file type filter in '
+            'the search sidebar.'
+        )
     suggestions = get_close_matches(key, OPERATOR_KEYS, n=1, cutoff=0.6)
     hint = f' Did you mean "{suggestions[0]}"?' if suggestions else ''
     raise SearchSyntaxError(
         f'Unknown search operator "{key}".{hint} '
         'Wrap the term in double quotes (e.g. "foo:bar") to search for it as text.'
     )
+
+
+def _operator_key(raw_key: str) -> str | None:
+    """Return the normalized operator key, or None if the token is free text."""
+    key = raw_key.lower()
+    if key not in OPERATOR_KEYS and raw_key != key:
+        return None
+    _validate_operator_key(key)
+    return key
 
 
 def parse_search(query: str) -> ParsedSearch:
@@ -93,17 +113,17 @@ def parse_search(query: str) -> ParsedSearch:
     _check_balanced_quotes(query)
 
     for match in _TOKEN_RE.finditer(query):
-        if (key := match.group('op_key')) is not None:
-            key = key.lower()
-            _validate_operator_key(key)
-            parsed.operators.append(Operator(key, match.group('op_qval')))
+        if (raw_key := match.group('op_key')) is not None:
+            if (key := _operator_key(raw_key)) is None:
+                parsed.free_text.append(f'{raw_key}:{match.group("op_qval")}')
+            else:
+                parsed.operators.append(Operator(key, match.group('op_qval')))
         elif (free := match.group('free_quoted')) is not None:
             parsed.free_text.append(free)
         else:
             bare = match.group('bare')
-            if op_match := _BARE_OP_RE.match(bare):
-                key = op_match.group(1).lower()
-                _validate_operator_key(key)
+            op_match = _BARE_OP_RE.match(bare)
+            if op_match and (key := _operator_key(op_match.group(1))) is not None:
                 parsed.operators.append(Operator(key, op_match.group(2)))
             else:
                 parsed.free_text.append(bare)

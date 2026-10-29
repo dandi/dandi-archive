@@ -8,15 +8,6 @@ it up automatically via :data:`OPERATOR_KEYS`.
 
 from __future__ import annotations
 
-# File-type operator: short name → MIME prefix matched with istartswith.
-# Keep in sync with DandisetSearchQueryParameterSerializer.
-FILE_TYPE_ALIASES = {
-    'nwb': 'application/x-nwb',
-    'image': 'image/',
-    'text': 'text/',
-    'video': 'video/',
-}
-
 DATE_OPS = frozenset(
     {
         'created_before',
@@ -28,7 +19,17 @@ DATE_OPS = frozenset(
     }
 )
 
-ASSET_OPS = frozenset({'species', 'approach', 'technique', 'file_type'})
+# Maps each operator to a Postgres jsonpath into the version-level
+# `assetsSummary` aggregation. Paths MUST be trusted constants: they're
+# interpolated into the SQL. `variableMeasured` holds bare strings rather
+# than objects with a `name`, so its path selects the elements themselves.
+SUMMARY_PATH_OPS = {
+    'species': '$.assetsSummary.species[*].name',
+    'approach': '$.assetsSummary.approach[*].name',
+    'technique': '$.assetsSummary.measurementTechnique[*].name',
+    'standard': '$.assetsSummary.dataStandard[*].name',
+    'variable': '$.assetsSummary.variableMeasured[*]',
+}
 
 OWNER_OPS = frozenset({'owner'})
 
@@ -58,17 +59,33 @@ CONTRIBUTOR_ROLE_OPS: dict[str, str | None] = {
 
 AFFILIATION_OPS = frozenset({'affiliation'})
 
-# Asset-name jsonpaths: each operator selects a different array path on
-# `asset_metadata` whose elements have a `.name` we substring-match against.
-# Paths MUST be trusted constants (interpolated into the SQL).
-ASSET_NAME_PATH_OPS = {
-    'species': '$.wasAttributedTo[*].species.name',
-    'approach': '$.approach[*].name',
-    'technique': '$.measurementTechnique[*].name',
+# Numeric count operators: short name → jsonpath into `Version.metadata`.
+# Value is a non-negative integer, optionally prefixed with a comparator
+# (`>`, `>=`, `<`, `<=`, `=`); a bare value is an exact match, as in GitHub's
+# `comments:10`. So `num_subjects:10` and `num_subjects:=10` both match
+# dandisets whose `assetsSummary.numberOfSubjects` is 10, while
+# `num_subjects:>=10` matches at least 10. Comparator parsing lives in
+# `filters._count_where`.
+#
+# Only `num_subjects` is exposed for now. The `assetsSummary` schema also
+# carries `numberOfFiles`, `numberOfBytes`, `numberOfSamples`, and
+# `numberOfCells` — each would be a one-line entry here.
+#
+# `num_sessions` is intentionally absent: dandischema's `AssetsSummary` does
+# not aggregate sessions, and there is no per-asset `sessionId` field from
+# which to derive a count. Adding a `num_sessions:` operator would require
+# upstream schema work.
+COUNT_OPS: dict[str, str] = {
+    'num_subjects': '$.assetsSummary.numberOfSubjects',
 }
 
 # Union of every operator key. The parser uses this for its allowlist;
 # adding a new operator anywhere above is automatically known to the parser.
 OPERATOR_KEYS: frozenset[str] = (
-    DATE_OPS | ASSET_OPS | OWNER_OPS | AFFILIATION_OPS | frozenset(CONTRIBUTOR_ROLE_OPS)
+    DATE_OPS
+    | frozenset(SUMMARY_PATH_OPS)
+    | OWNER_OPS
+    | AFFILIATION_OPS
+    | frozenset(CONTRIBUTOR_ROLE_OPS)
+    | frozenset(COUNT_OPS)
 )

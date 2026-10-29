@@ -42,7 +42,7 @@ def user_greeting_name(user: User, socialaccount: SocialAccount = None) -> str:
     return social_user['username']
 
 
-def build_message(  # noqa: PLR0913
+def build_message(  # noqa: PLR0913, PLR0917
     to: list[str],
     subject: str,
     message: str,
