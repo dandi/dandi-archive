@@ -8,7 +8,6 @@ Status: proposal
 
 - [Overview](#overview)
   - [Goals](#goals)
-  - [Non-goals](#non-goals)
   - [Summary](#summary)
 - [Terminology](#terminology)
 - [Current state](#current-state)
@@ -186,7 +185,7 @@ With the worker enabled and the target unset, the archive runs in shadow mode: r
   ```
 
 - **Subprocess.** The task runs `dandi validate` as a subprocess from the environment. The archive's own dandischema pin therefore stays independent of the validators, `dandi validate -J` works (its process pool doesn't run inside a Celery child), and a crash or out-of-memory kill only ends the subprocess.
-- **Isolation.** The subprocess environment drops `DATABASE_URL`, `AWS_*`, `DJANGO_*` and other secrets, but keeps `HOME`/`DANDI_CACHE` so dandi-cli's per-file cache on the dyno disk is used. It runs with memory and CPU limits, the parent process is non-dumpable, and results come back as JSONL on stdout. Only the parent writes to the database or the bucket. A crafted file that exploits a parser bug still runs on the same dyno (see [Open questions](#open-questions)).
+- **Isolation.** The subprocess environment drops `DATABASE_URL`, `AWS_*`, `DJANGO_*` and other secrets, and sets `DANDI_CACHE=ignore` so dandi-cli's own per-file cache is not used (see [No per-asset caching](#no-per-asset-caching)). It runs with memory and CPU limits, the parent process is non-dumpable, and results come back as JSONL on stdout. Only the parent writes to the database or the bucket. A crafted file that exploits a parser bug still runs on the same dyno (see [Open questions](#open-questions)).
 - **Fallback.** If the pilot shows that building environments at startup is infeasible, use a single environment in the slug and accept a waiting window when the target changes.
 
 ### Triggering
@@ -210,6 +209,12 @@ The fingerprint is the SHA-256 of the sorted list of `(path, digest)` pairs for 
 
 - **Stored.** `validate_version_metadata`, which runs after every content change, computes it and stores it in a new `Version` column. Existing versions are backfilled, or computed when the column is null. The etag is known at upload, so the later arrival of `sha256` does not change it. Hashing must fit within that task's `soft_time_limit` of 30 seconds; the pilot measures it on the largest draft.
 - **Why.** The draft can change while a run is in progress. The task records the fingerprint of the snapshot it validated, and on completion keeps the result only if the draft still has that fingerprint.
+
+### No per-asset caching
+
+Results are not cached per asset, because an asset's result can depend on other files. For example, if a video file's path changes without updating the `ImageSeries` that points to it, the NWB file itself becomes invalid even though its own content is unchanged.
+
+So every run validates the whole Dandiset, and the content fingerprint covers every path and checksum in it. A change to any file therefore invalidates the whole record, while metadata-only changes don't. The subprocess also disables dandi-cli's own per-file cache, which is keyed by file content.
 
 ### Validation task
 
@@ -373,7 +378,7 @@ Bumping the target is a reviewed dandi-archive change that adds the new lock fil
 
 ## Publication latency (accepted trade-off)
 
-After a content change, the owner can publish only once the worker has validated the new content: the queue wait plus validation of the new files. Embargoed drafts are validated too, and their record carries over at unembargo because the fingerprint doesn't change, so publishing right after unembargo is not delayed. This delay is accepted in exchange for publishing only validated content.
+After a content change, the owner can publish only once the worker has validated the new content: the queue wait plus a full validation of the Dandiset (see [No per-asset caching](#no-per-asset-caching)). Embargoed drafts are validated too, and their record carries over at unembargo because the fingerprint doesn't change, so publishing right after unembargo is not delayed. This delay is accepted in exchange for publishing only validated content.
 
 The archive monitors the delay so a stalled worker is noticed:
 
@@ -417,7 +422,7 @@ Drafts already have rows for the new target, so publication is not interrupted. 
 3. **dandi-cli:** release with the streaming stack, the `INTERNAL` classification and the NWB Inspector fix.
 4. **dandi-archive:** upgrade dandischema and run `migrate_version_metadata --all`. Ship the table, fingerprint column and backfill, task, reconciler, environments, process type, stamping, publish-time copy, `/info/` fields, banner and daily check, with the worker disabled and the target unset.
 5. **dandi-infrastructure:** add the worker formation, staging first.
-6. **Pilot** on a small, a BIDS and a large Dandiset. Measure seconds per file, peak memory, bytes read, cold environment build time, fingerprint hashing time on the largest draft, the cost of a run after a restart empties the cache, and how long the largest Dandiset takes compared with Heroku's daily dyno restart. Then choose the dyno size and count.
+6. **Pilot** on a small, a BIDS and a large Dandiset. Measure seconds per file, peak memory, bytes read, cold environment build time, fingerprint hashing time on the largest draft, how long re-validating the largest Dandiset takes after a one-file change, and how long the largest Dandiset takes compared with Heroku's daily dyno restart. Then choose the dyno size and count.
 7. **Shadow mode:** enable the worker with the target unset. Results and the banner appear, but publication is not gated.
 8. **Sweep** every draft and every published version. Either scale the worker up temporarily, or run the same lock file as a container near the bucket and import the results with a management command; estimate the cost first.
    - **Capacity:** `files × seconds per file ÷ processes`. For example, 500k files at 30 seconds each is about 170 process-days, or about 11 days with 16 processes.
