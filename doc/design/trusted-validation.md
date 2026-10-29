@@ -42,7 +42,7 @@ Neither the archive backend nor any external service runs the validators that ch
 
 This document proposes running `dandi validate` inside the archive, in a dedicated Celery worker, over every draft Dandiset. After a draft's asset manifests are written, the worker builds a DataLad dataset from the version's assets and streams validation through dandi-cli's datalad-fuse support ([dandi/dandi-cli#1955](https://github.com/dandi/dandi-cli/pull/1955), [#1956](https://github.com/dandi/dandi-cli/pull/1956), [#1957](https://github.com/dandi/dandi-cli/pull/1957)). This approach simplifies the majority of modifications that would be required to both the BIDS-Validator and the NWB Inspector to adapt them away from filesystems (even symlinked 'mock' ones as DataLad creates).
 
-- **Results:** each Version's metadata gets two fields: the exact validator versions its result must come from, and whether that result passed. A summary of each result goes in a new table, and the full record goes in the archive bucket.
+- **Results:** each draft Dandisets metadata gets two new fields: the exact validator versions its result must come from (corresponding generally to the 'latest' at time of last asset modification), and whether that result passed or failed (with detailed JSON record of all errors, warnings, etc.). A summary of each result goes in a new table, and the full record goes in the archive bucket.
 - **Gating:** the archive blocks publication unless that result has no errors.
 
 The changes in each repository are small:
