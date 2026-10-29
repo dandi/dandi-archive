@@ -45,7 +45,7 @@ This document proposes running `dandi validate` inside the archive, in a dedicat
 - **Results:** each draft Dandisets metadata gets two new fields: the exact validator versions its result must come from (corresponding generally to the 'latest' at time of last asset modification), and whether that result passed or failed (with detailed JSON record of all errors, warnings, etc.). A summary of each result goes in a new table, and the full record goes in the archive bucket.
 - **Gating:** the archive blocks publication unless that result has no errors.
 
-The changes in each repository are small:
+The changes in each repository can be summarized as:
 
 | Repository | Change |
 |---|---|
