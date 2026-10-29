@@ -1,6 +1,6 @@
-"""Build and load the anatomy term and closure tables.
+"""Build the packaged anatomy ontology and answer containment queries from it.
 
-The closure is the reachability relation of one directed "contains" graph whose
+A term's descendants are what it reaches in one directed "contains" graph whose
 edges run from a region to the things found inside it:
 
 1. ``is_a`` and ``part_of`` between two anatomy terms. The BICAN atlas
@@ -15,37 +15,36 @@ species and a search on ``MBA:1089`` stays inside the mouse atlas.
 
 Edges to anything that is not an anatomy term (taxa, cell types) are dropped.
 
-The ontology data reaches a deployment in two steps:
+``manage.py build_anatomy_ontology`` downloads the releases pinned in
+:data:`ONTOLOGY_SOURCES`, keeps the nervous system, the sense organs, and the
+atlas terms, and writes the terms and edges to :data:`PACKAGED_ONTOLOGY`,
+which is committed. Updating the ontologies is a pull request that changes the
+pins and that file.
 
-1. ``manage.py build_anatomy_ontology`` downloads the releases pinned in
-   :data:`ONTOLOGY_SOURCES`, keeps the nervous system, the sense organs, and
-   the atlas terms, and writes the terms and edges to
-   :data:`PACKAGED_ONTOLOGY`, which is committed. Updating the ontologies is
-   a pull request that changes the pins and that file.
-2. After every ``migrate`` (the release phase of each deploy),
-   :func:`ensure_packaged_ontology_loaded` reloads the tables if the packaged
-   file differs from the one recorded in :class:`OntologyRelease`. Nothing is
-   downloaded in production.
+Nothing about the ontology is stored in the database. Each process reads the
+packaged file once, on its first anatomy search, into an
+:class:`AnatomyOntology`, which resolves names and expands a term to everything
+it contains. The search then matches the resulting CURIEs against the
+Dandiset metadata.
 """
 
 from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
+from functools import cache
 import gzip
-import hashlib
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.request import urlopen
 
-from django.db import transaction
+from django.conf import settings
 
 from dandiapi.api.services.search.anatomy import normalize_curie
-from dandiapi.search.models import OntologyClosure, OntologyRelease, OntologyTerm
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable
 
 # Pinned releases. UBERON by release tag, the BICAN atlases by commit.
 ONTOLOGY_SOURCES: tuple[str, ...] = (
@@ -80,7 +79,6 @@ PACKAGED_ONTOLOGY = Path(__file__).parent / 'data' / 'anatomy_ontology.json.gz'
 _PART_OF = 'http://purl.obolibrary.org/obo/BFO_0000050'
 _CONTAINMENT_PREDICATES = frozenset({'is_a', _PART_OF})
 _REFERENCE_ONTOLOGY = 'UBERON'
-_BATCH_SIZE = 10_000
 
 
 @dataclass
@@ -232,66 +230,51 @@ def write_package(package: dict[str, Any], path: Path) -> None:
         stream.write(data)
 
 
-def read_package(path: Path = PACKAGED_ONTOLOGY) -> tuple[dict[str, Any], str]:
-    """Return the packaged ontology and the sha256 of its JSON content."""
-    data = gzip.decompress(path.read_bytes())
-    return json.loads(data), hashlib.sha256(data).hexdigest()
+def read_package(path: Path = PACKAGED_ONTOLOGY) -> dict[str, Any]:
+    """Return the packaged ontology."""
+    return json.loads(gzip.decompress(path.read_bytes()))
 
 
-def compute_closure(package: dict[str, Any]) -> Iterator[tuple[str, str]]:
-    """Yield every (ancestor, descendant) CURIE pair of a package, including (term, term)."""
-    children: dict[str, set[str]] = defaultdict(set)
-    for parent, child in package['contains']:
-        children[parent].add(child)
-    for curie, *_ in package['terms']:
-        for descendant in _reachable(children, curie):
-            yield curie, descendant
+class AnatomyOntology:
+    """The packaged ontology held in memory: term names and the contains graph."""
+
+    def __init__(self, package: dict[str, Any] | None = None) -> None:
+        package = package or {'terms': [], 'contains': []}
+        self.labels: dict[str, str] = {}
+        # Lowercased label or synonym -> the CURIEs that carry it.
+        self._by_name: dict[str, set[str]] = defaultdict(set)
+        self._children: dict[str, set[str]] = defaultdict(set)
+        for curie, _iri, label, synonyms in package['terms']:
+            self.labels[curie] = label
+            for name in (label, *synonyms):
+                self._by_name[name.lower()].add(curie)
+        for parent, child in package['contains']:
+            self._children[parent].add(child)
+
+    def __contains__(self, curie: object) -> bool:
+        return curie in self.labels
+
+    def find(self, name: str) -> set[str]:
+        """Return the terms with `name` as label or synonym, else those whose label contains it."""
+        exact = self._by_name.get(name.lower())
+        if exact:
+            return set(exact)
+        needle = name.lower()
+        return {curie for curie, label in self.labels.items() if needle in label.lower()}
+
+    def descendants(self, curie: str) -> set[str]:
+        """Return `curie` and every term it contains, directly or not."""
+        return _reachable(self._children, curie)
 
 
-@transaction.atomic
-def replace_ontology_tables(package: dict[str, Any], checksum: str) -> tuple[int, int]:
-    """Replace the term and closure tables with `package`. Returns (terms, closure rows)."""
-    OntologyClosure.objects.all().delete()
-    OntologyTerm.objects.all().delete()
-
-    OntologyTerm.objects.bulk_create(
-        (
-            OntologyTerm(
-                curie=curie,
-                ontology=curie.split(':', 1)[0],
-                iri=iri,
-                label=label,
-                names=sorted({name.lower() for name in (label, *synonyms)}),
-            )
-            for curie, iri, label, synonyms in package['terms']
-        ),
-        batch_size=_BATCH_SIZE,
-    )
-    pk_of = dict(OntologyTerm.objects.values_list('curie', 'id'))
-
-    closure_rows = 0
-    batch: list[OntologyClosure] = []
-    for ancestor, descendant in compute_closure(package):
-        batch.append(OntologyClosure(ancestor_id=pk_of[ancestor], descendant_id=pk_of[descendant]))
-        if len(batch) >= _BATCH_SIZE:
-            OntologyClosure.objects.bulk_create(batch)
-            closure_rows += len(batch)
-            batch = []
-    OntologyClosure.objects.bulk_create(batch)
-    closure_rows += len(batch)
-
-    OntologyRelease.objects.create(checksum=checksum, sources=package['sources'])
-    return len(pk_of), closure_rows
+@cache
+def _load(path: str) -> AnatomyOntology:
+    return AnatomyOntology(read_package(Path(path)))
 
 
-def ensure_packaged_ontology_loaded(path: Path = PACKAGED_ONTOLOGY, *, force: bool = False) -> bool:
-    """Load the packaged ontology unless it is already the latest one loaded.
-
-    Returns whether the tables were reloaded.
-    """
-    package, checksum = read_package(path)
-    latest = OntologyRelease.objects.order_by('-loaded', '-id').first()
-    if not force and latest is not None and latest.checksum == checksum:
-        return False
-    replace_ontology_tables(package, checksum)
-    return True
+def anatomy_ontology() -> AnatomyOntology:
+    """Return the ontology named by `DANDI_ANATOMY_ONTOLOGY_PATH`, or an empty one if unset."""
+    path = settings.DANDI_ANATOMY_ONTOLOGY_PATH
+    if not path:
+        return AnatomyOntology()
+    return _load(str(path))

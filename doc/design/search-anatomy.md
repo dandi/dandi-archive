@@ -86,24 +86,30 @@ A value that is not an identifier is resolved to terms by case-insensitive exact
 match on label or synonym, and by substring of the label if nothing matches
 exactly. The same value is also compared with the recorded `name` of each
 Anatomy entry, but only for entries whose identifier is missing or not in the
-ontology tables. An entry with a known identifier is judged by the identifier
+ontology. An entry with a known identifier is judged by the identifier
 alone. For `anatomy:` the name comparison is by whole words, which keeps
 "hypothalamus" out of the results for `anatomy:thalamus`. For `anatomy_exact:`
-the recorded name has to be the whole value. With empty ontology tables both
+the recorded name has to be the whole value. Without the ontology both
 operators fall back to literal identifiers and names.
 
 ## Storage
 
-Three tables in the `search` app hold the ontology. `OntologyTerm` has the
-canonical CURIE, IRI, label, and the lowercased label and synonyms.
-`OntologyClosure` has one row per (ancestor, descendant) pair, including each
-term paired with itself. `OntologyRelease` records the checksum and source URLs
-of each load.
+The ontology is not stored in the database. It ships with the code as
+`dandiapi/search/data/anatomy_ontology.json.gz` (about 300 KB): each kept term's
+CURIE, IRI, label, and synonyms, and the containment edges between terms. Each
+process reads the file into memory on its first anatomy search, which takes
+under 100 ms and about 20 MB, and keeps a name index and the containment graph.
+The `DANDI_ANATOMY_ONTOLOGY_PATH` setting names the file; the test settings
+leave it unset, and tests point it at a small fixture graph.
 
 Only the part of UBERON inside the nervous system or the sense organs is kept,
-plus every atlas term: 12,717 terms and 286,680 closure rows, against 24,220
-terms and about 913,000 rows for the whole of UBERON. Anatomy entries outside
-that part still match by literal identifier and by name, without expansion.
+plus every atlas term: 12,717 terms, against 24,220 for the whole of UBERON.
+Anatomy entries outside that part still match by literal identifier and by
+name, without expansion.
+
+The ontology is static reference data that changes only when the pins change.
+Keeping it out of the database means no models, migrations, or load step for
+it, and the data in production is always the file in the deployed commit.
 
 ## Updating the Ontologies
 
@@ -113,31 +119,42 @@ downloads them, keeps the terms described above, and writes the terms and their
 containment edges to `dandiapi/search/data/anatomy_ontology.json.gz` (about
 300 KB). The output is reproducible byte for byte. Updating the ontologies is a
 pull request that changes the pins and that file, so the change is reviewed and
-deployed like code.
-
-Nothing is downloaded in production. After every `migrate`, which runs in the
-release phase of each deploy, a `post_migrate` handler compares the packaged
-file's checksum with the latest `OntologyRelease` and reloads the tables in one
-transaction if they differ. A fresh load takes under 20 seconds; when the file
-is unchanged the check is a single query. `manage.py load_anatomy_ontology
---force` reloads by hand. The handler is off in the test settings, where tests
-load a small fixture graph.
+deployed like code. Nothing is downloaded in production.
 
 ## Query
 
-The filter is a single `EXISTS` over `jsonb_array_elements(metadata->'about')`
-on `api_version`. A Dandiset matches when one of its versions has an Anatomy
-entry that satisfies every anatomy clause.
+The ontology work happens in Python before the query. The value is resolved to
+terms, and for `anatomy:` each term is expanded to everything it contains by
+walking the containment graph (a few milliseconds even for "brain", which
+contains about 11,000 terms). The resulting CURIEs are bound as one array
+parameter.
 
-The closure join adds one `IN` subquery over `search_ontologyclosure`.
+The filter is then a single `EXISTS` over `jsonb_array_elements(metadata->'about')`
+on `api_version` that compares each Anatomy entry's normalized identifier with
+that array, with no joins. A Dandiset matches when one of its versions satisfies
+every anatomy clause.
+
+Matching by recorded name needs to know whether an entry's identifier is in the
+ontology, which only Python knows. A value that is not an identifier therefore
+runs one preliminary query for the versions whose Anatomy entries are named like
+the value, drops entries with a known identifier, and passes the remaining
+version ids to the filter.
 
 ## Alternatives
 
-A materialized view that extracts each Dandiset's anatomy CURIEs and their
-ancestors into an indexed array, in the style of the existing `asset_search`
-view, would move the closure join out of query time. With about 120 Dandisets
-carrying anatomy this is not needed yet, but it is the natural place for
-asset-level anatomy if dandischema starts aggregating it into
+An earlier revision loaded the ontology into three tables (terms, a
+precomputed ancestor/descendant closure of about 287,000 rows, and a release
+record) through a `post_migrate` handler, and joined the closure at query time.
+That put static reference data next to the archive's live data, with its own
+migrations and load step, for no gain at this scale.
+
+Going further, the expansion could be moved from the query to the data: when a
+version's metadata is saved, store each Anatomy entry's CURIE and all of its
+ancestors in an indexed array, so `anatomy:X` becomes an array containment test.
+This is the materialized-view direction, in the style of the existing
+`asset_search` view. It needs a backfill whenever the ontology changes, and
+with about 120 Dandisets carrying anatomy it is not needed yet, but it is the
+natural place for asset-level anatomy if dandischema starts aggregating it into
 `assetsSummary.anatomy`.
 
 ## Future Work
@@ -148,6 +165,6 @@ the location fields of NWB files, and for dandischema to aggregate it into
 `assetsSummary.anatomy`. The filter reads its entries from one JSON array, so
 adding a second array is a small change.
 
-The search field could autocomplete anatomy values from `OntologyTerm` once a
+The search field could autocomplete anatomy values from the in-memory ontology once a
 token starts with `anatomy:`, showing the label and CURIE. The metadata editor
 could normalize identifiers to one form on save.

@@ -8,15 +8,14 @@ import pytest
 
 from dandiapi.api.services.search.anatomy import normalize_curie
 from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory
-from dandiapi.search.models import OntologyClosure, OntologyRelease, OntologyTerm
 from dandiapi.search.ontology import (
     ONTOLOGY_SOURCES,
     UBERON_ROOTS,
+    AnatomyOntology,
     OntologyGraph,
     add_obographs,
+    anatomy_ontology,
     build_package,
-    compute_closure,
-    ensure_packaged_ontology_loaded,
     read_package,
     write_package,
 )
@@ -76,7 +75,7 @@ def _search_ids(api_client, query: str) -> set[str]:
     return {r['identifier'] for r in response.json()['results']}
 
 
-# The tests above run with empty ontology tables, where both operators fall
+# The tests above run without an ontology, where both operators fall
 # back to literal identifiers and names. The tests below load a small graph.
 
 
@@ -160,7 +159,7 @@ def test_bare_lowercase_curie_suggests_the_anatomy_operator(api_client):
 
 
 @pytest.mark.django_db
-def test_anatomy_without_ontology_tables_matches_literally(api_client):
+def test_anatomy_without_an_ontology_matches_literally(api_client):
     hpf = _seed({'name': 'Hippocampus', 'identifier': f'{OBO}UBERON_0002421'})
     _seed({'name': 'CA1 field', 'identifier': f'{OBO}UBERON_0003881'})
     assert _search_ids(api_client, 'anatomy:UBERON:0002421') == {hpf.identifier}
@@ -273,10 +272,8 @@ def _fixture_package() -> dict:
 
 
 def _descendants(package: dict) -> dict[str, set[str]]:
-    result: dict[str, set[str]] = {}
-    for ancestor, descendant in compute_closure(package):
-        result.setdefault(ancestor, set()).add(descendant)
-    return result
+    ontology = AnatomyOntology(package)
+    return {curie: ontology.descendants(curie) for curie, *_ in package['terms']}
 
 
 def test_add_obographs_keeps_only_live_anatomy_terms():
@@ -295,7 +292,7 @@ def test_package_keeps_the_nervous_system_and_every_atlas_term():
     assert {'MBA:997', MBA_HPF, MBA_CA1} <= curies
 
 
-def test_closure_follows_part_of_downward_only():
+def test_descendants_follow_part_of_downward_only():
     descendants = _descendants(_fixture_package())
     assert {HIPPOCAMPAL_FORMATION, AMMONS_HORN, CA1} <= descendants[HIPPOCAMPAL_FORMATION]
     assert BRAIN not in descendants[HIPPOCAMPAL_FORMATION]
@@ -304,7 +301,7 @@ def test_closure_follows_part_of_downward_only():
     assert BRAIN not in descendants[CORTEX]
 
 
-def test_closure_reaches_atlases_from_uberon_but_not_the_reverse():
+def test_descendants_reach_atlases_from_uberon_but_not_the_reverse():
     descendants = _descendants(_fixture_package())
     # UBERON -> atlas, via the UBERON xref and via the atlas is_a edge.
     assert {MBA_HPF, MBA_CA1} <= descendants[HIPPOCAMPAL_FORMATION]
@@ -322,9 +319,7 @@ def test_package_file_round_trips_reproducibly(tmp_path):
     write_package(package, first)
     write_package(package, second)
     assert first.read_bytes() == second.read_bytes()
-    loaded, checksum = read_package(first)
-    assert loaded == package
-    assert len(checksum) == 64
+    assert read_package(first) == package
 
 
 def test_pinned_sources_are_pinned():
@@ -334,7 +329,7 @@ def test_pinned_sources_are_pinned():
 
 
 def test_packaged_ontology_was_built_from_the_pinned_sources():
-    package, _ = read_package()
+    package = read_package()
     assert package['sources'] == list(ONTOLOGY_SOURCES)
     assert package['uberon_roots'] == list(UBERON_ROOTS)
     assert any(curie == HIPPOCAMPAL_FORMATION for curie, *_ in package['terms'])
@@ -348,46 +343,42 @@ def package_file(tmp_path):
 
 
 @pytest.fixture
-def ontology_tables(db, package_file):
-    assert ensure_packaged_ontology_loaded(package_file)
+def ontology(settings, package_file):
+    settings.DANDI_ANATOMY_ONTOLOGY_PATH = package_file
+    return anatomy_ontology()
 
 
-@pytest.mark.django_db
-def test_load_records_the_release_and_skips_an_unchanged_file(package_file):
-    assert ensure_packaged_ontology_loaded(package_file)
-    _, checksum = read_package(package_file)
-    release = OntologyRelease.objects.get()
-    assert release.checksum == checksum
-    assert release.sources == list(FIXTURE_SOURCES)
-    term = OntologyTerm.objects.get(curie=HIPPOCAMPAL_FORMATION)
-    assert term.names == ['hippocampal formation', 'hippocampus']
-    assert term.ontology == 'UBERON'
-    counts = (OntologyTerm.objects.count(), OntologyClosure.objects.count())
-
-    assert not ensure_packaged_ontology_loaded(package_file)
-    assert OntologyRelease.objects.count() == 1
-
-    assert ensure_packaged_ontology_loaded(package_file, force=True)
-    assert OntologyRelease.objects.count() == 2
-    assert (OntologyTerm.objects.count(), OntologyClosure.objects.count()) == counts
+def test_anatomy_ontology_resolves_names_and_expands(ontology):
+    assert ontology.find('Hippocampus') == {HIPPOCAMPAL_FORMATION}
+    assert ontology.find('CA1') == {MBA_CA1}
+    # No term is named "ammon", so labels containing it are used.
+    assert ontology.find('ammon') == {AMMONS_HORN}
+    assert ontology.find('spleen') == set()
+    assert ontology.descendants(HIPPOCAMPAL_FORMATION) == {
+        HIPPOCAMPAL_FORMATION,
+        AMMONS_HORN,
+        CA1,
+        MBA_HPF,
+        MBA_CA1,
+    }
+    assert MBA_HPF in ontology
+    assert HEART not in ontology
 
 
-@pytest.mark.django_db
-def test_a_changed_package_replaces_the_tables(tmp_path, package_file):
-    ensure_packaged_ontology_loaded(package_file)
-    smaller = _fixture_package()
-    smaller['terms'] = [t for t in smaller['terms'] if t[0] != CORTEX]
-    smaller['contains'] = [e for e in smaller['contains'] if CORTEX not in e]
-    path = tmp_path / 'smaller.json.gz'
-    write_package(smaller, path)
-
-    assert ensure_packaged_ontology_loaded(path)
-    assert not OntologyTerm.objects.filter(curie=CORTEX).exists()
-    assert OntologyRelease.objects.count() == 2
+def test_anatomy_ontology_is_read_once_per_path(settings, package_file):
+    settings.DANDI_ANATOMY_ONTOLOGY_PATH = package_file
+    assert anatomy_ontology() is anatomy_ontology()
+    settings.DANDI_ANATOMY_ONTOLOGY_PATH = None
+    assert anatomy_ontology().labels == {}
 
 
-@pytest.mark.django_db
-def test_build_and_load_commands(tmp_path):
+def test_empty_anatomy_ontology_knows_nothing():
+    ontology = AnatomyOntology()
+    assert ontology.find('hippocampus') == set()
+    assert ontology.descendants(HIPPOCAMPAL_FORMATION) == {HIPPOCAMPAL_FORMATION}
+
+
+def test_build_command(tmp_path):
     uberon = tmp_path / 'uberon.json'
     uberon.write_text(json.dumps(UBERON_DOCUMENT))
     mba = tmp_path / 'mba.json'
@@ -403,31 +394,12 @@ def test_build_and_load_commands(tmp_path):
         '--output',
         str(output),
     )
-    call_command('load_anatomy_ontology', '--path', str(output))
 
-    assert OntologyTerm.objects.count() == len(read_package(output)[0]['terms'])
-    assert OntologyClosure.objects.filter(
-        ancestor__curie=HIPPOCAMPAL_FORMATION, descendant__curie=MBA_CA1
-    ).exists()
-
-
-@pytest.mark.django_db
-def test_migrate_loads_the_packaged_ontology_only_when_enabled(settings, monkeypatch, package_file):
-    monkeypatch.setattr('dandiapi.search.ontology.PACKAGED_ONTOLOGY', package_file)
-    monkeypatch.setattr(ensure_packaged_ontology_loaded, '__defaults__', (package_file,))
-
-    call_command('migrate', verbosity=0)
-    assert not OntologyRelease.objects.exists()
-
-    settings.DANDI_ANATOMY_ONTOLOGY_AUTOLOAD = True
-    call_command('migrate', verbosity=0)
-    assert OntologyRelease.objects.count() == 1
-    call_command('migrate', verbosity=0)
-    assert OntologyRelease.objects.count() == 1
+    assert read_package(output) == _fixture_package() | {'sources': [str(uberon), str(mba)]}
 
 
 @pytest.fixture
-def anatomy_dandisets(ontology_tables):
+def anatomy_dandisets(db, ontology):
     return {
         'brain': _seed({'name': 'brain', 'identifier': f'{OBO}UBERON_0000955'}),
         'hpf': _seed({'name': 'Hippocampus', 'identifier': 'UBERON:0002421'}),
@@ -506,7 +478,7 @@ def test_anatomy_search_on_a_small_region_does_not_return_larger_ones(
 
 
 @pytest.mark.django_db
-def test_anatomy_outside_the_packaged_graph_still_matches_literally(api_client, ontology_tables):
+def test_anatomy_outside_the_packaged_graph_still_matches_literally(api_client, ontology):
     heart = _seed({'name': 'heart', 'identifier': f'{OBO}UBERON_0000948'})
     assert _search_ids(api_client, 'anatomy:UBERON:0000948') == {heart.identifier}
     assert _search_ids(api_client, 'anatomy:heart') == {heart.identifier}
@@ -525,9 +497,7 @@ def test_anatomy_combines_with_other_operators_and_repeats(api_client, anatomy_d
 
 
 @pytest.mark.django_db
-def test_anatomy_name_matching_is_by_whole_word_on_anatomy_entries_only(
-    api_client, ontology_tables
-):
+def test_anatomy_name_matching_is_by_whole_word_on_anatomy_entries_only(api_client, ontology):
     _seed({'name': 'hippocampus sclerosis'}, schema_key='Disorder')
     thalamus = _seed({'name': 'Thalamus (TH)'})
     _seed({'name': 'hypothalamus'})
@@ -539,7 +509,7 @@ def test_anatomy_name_matching_is_by_whole_word_on_anatomy_entries_only(
 
 
 @pytest.mark.django_db
-def test_anatomy_entry_with_a_known_identifier_is_not_matched_by_name(api_client, ontology_tables):
+def test_anatomy_entry_with_a_known_identifier_is_not_matched_by_name(api_client, ontology):
     # The label mentions the cortex, but the identifier says CA1.
     _seed({'name': 'CA1, below the cerebral cortex', 'identifier': 'UBERON:0003881'})
     assert _search_ids(api_client, 'anatomy:"cerebral cortex"') == set()

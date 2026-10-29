@@ -29,8 +29,8 @@ CELERY_TASK_ALWAYS_EAGER = True
 
 DANDI_ZARR_PREFIX_NAME = 'test-zarr'
 
-# Tests load small fixture ontologies; don't load the packaged one into the test database.
-DANDI_ANATOMY_ONTOLOGY_AUTOLOAD = False
+# Tests that need the anatomy ontology point this at a small fixture.
+DANDI_ANATOMY_ONTOLOGY_PATH = None
 
 DANDI_JUPYTERHUB_URL = 'https://hub.dandiarchive.org/'
 

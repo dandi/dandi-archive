@@ -7,6 +7,7 @@ import re
 from typing import TYPE_CHECKING
 
 from django.contrib.auth.models import User
+from django.db import connection
 from django.db.models import OuterRef, Q, Subquery, Value
 from django.db.models.functions import Concat
 
@@ -14,7 +15,7 @@ from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
 from dandiapi.api.services.search.anatomy import CURIE_SQL_TEMPLATE, normalize_curie
 from dandiapi.api.services.search.parser import SearchSyntaxError
-from dandiapi.search.models import OntologyTerm
+from dandiapi.search.ontology import anatomy_ontology
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -100,40 +101,32 @@ def _apply_summary_filters(
     return queryset.filter(id__in=version_qs.values_list('dandiset_id', flat=True).distinct())
 
 
-# Matches a Version whose `about` holds an Anatomy entry that is (a) one of the
-# given CURIEs, (b) a descendant of one of the given terms in the ontology
-# closure, or (c) named like the given regex while carrying no identifier the
-# ontology tables know. An entry with a known identifier is judged by that
-# identifier alone, so a "hypothalamus" term is not found under "thalamus".
-# `metadata` is left unqualified because Django may alias the Version table in
-# subqueries. The interpolated piece is a trusted constant; every user-derived
-# value is bound via params.
+# The Anatomy entries of a Version's `about`, as rows `a`. `metadata` is left
+# unqualified because Django may alias the Version table in subqueries.
+_ANATOMY_ENTRIES = """
+jsonb_array_elements(
+    CASE WHEN jsonb_typeof(metadata->'about') = 'array'
+         THEN metadata->'about' ELSE '[]'::jsonb END
+) AS a
+"""
 _ANATOMY_CURIE_SQL = CURIE_SQL_TEMPLATE.format(expr="a->>'identifier'")
+
+# Matches a Version that holds an Anatomy entry with one of the given CURIEs, or
+# whose id is one of the given ids. The interpolated pieces are trusted
+# constants; every user-derived value is bound via params.
 _ANATOMY_WHERE = f"""
 EXISTS (
-    SELECT 1
-    FROM jsonb_array_elements(
-        CASE WHEN jsonb_typeof(metadata->'about') = 'array'
-             THEN metadata->'about' ELSE '[]'::jsonb END
-    ) AS a
-    WHERE a->>'schemaKey' = 'Anatomy'
-      AND (
-        {_ANATOMY_CURIE_SQL} = ANY(%s::text[])
-        OR {_ANATOMY_CURIE_SQL} IN (
-            SELECT t.curie
-            FROM search_ontologyterm t
-            JOIN search_ontologyclosure c ON c.descendant_id = t.id
-            WHERE c.ancestor_id = ANY(%s::bigint[])
-        )
-        OR (
-            a->>'name' ~* %s
-            AND NOT EXISTS (
-                SELECT 1 FROM search_ontologyterm known
-                WHERE known.curie = {_ANATOMY_CURIE_SQL}
-            )
-        )
-      )
+    SELECT 1 FROM {_ANATOMY_ENTRIES}
+    WHERE a->>'schemaKey' = 'Anatomy' AND {_ANATOMY_CURIE_SQL} = ANY(%s::text[])
 )
+OR id = ANY(%s::bigint[])
+"""  # noqa: S608
+
+# Every Anatomy entry whose recorded name matches a regex, with its CURIE.
+_ANATOMY_NAMES_SQL = f"""
+SELECT id, {_ANATOMY_CURIE_SQL}
+FROM {Version._meta.db_table}, {_ANATOMY_ENTRIES}
+WHERE a->>'schemaKey' = 'Anatomy' AND a->>'name' ~* %s
 """  # noqa: S608
 
 
@@ -144,31 +137,41 @@ def _name_regex(value: str, *, whole: bool) -> str:
     return f'(^|[^[:alnum:]]){re.escape(value)}($|[^[:alnum:]])'
 
 
+def _versions_matching_name(pattern: str) -> list[int]:
+    """Return the Versions with an Anatomy entry named like `pattern` and no known identifier.
+
+    An entry with an identifier the ontology knows is judged by that identifier
+    alone, so a CA1 entry whose name mentions the cortex is not a cortex hit.
+    """
+    ontology = anatomy_ontology()
+    with connection.cursor() as cursor:
+        cursor.execute(_ANATOMY_NAMES_SQL, [pattern])
+        return sorted({version_id for version_id, curie in cursor if curie not in ontology})
+
+
 def _anatomy_params(value: str, *, expand: bool) -> list:
     """Resolve an anatomy operator value into the params of `_ANATOMY_WHERE`.
 
     An identifier (CURIE, underscore form, or IRI) is matched as that term. Any
     other value is looked up as a label or synonym, exactly first and then by
     substring, and is also matched against the recorded `name` so that entries
-    with no usable identifier, or an install with empty ontology tables, still work.
+    with no usable identifier, or an install without the ontology, still work.
+    With `expand`, every term is widened to everything it contains.
     """
+    ontology = anatomy_ontology()
     curie = normalize_curie(value)
     if curie is not None:
-        terms = OntologyTerm.objects.filter(curie=curie)
-        curies = [curie]
-        name_pattern = None
+        terms = {curie}
+        version_ids = []
     else:
-        terms = OntologyTerm.objects.filter(names__contains=[value.lower()])
-        if not terms.exists():
-            terms = OntologyTerm.objects.filter(label__icontains=value)
-        curies = []
+        terms = ontology.find(value)
         # Without expansion the recorded name has to be the whole value, or
         # "hippocampus" would still pick up "CA1 field of hippocampus".
-        name_pattern = _name_regex(value, whole=not expand)
+        version_ids = _versions_matching_name(_name_regex(value, whole=not expand))
 
     if expand:
-        return [curies, list(terms.values_list('id', flat=True)), name_pattern]
-    return [[*curies, *terms.values_list('curie', flat=True)], [], name_pattern]
+        terms = set().union(*(ontology.descendants(term) for term in terms))
+    return [sorted(terms), version_ids]
 
 
 def _apply_anatomy_filters(
