@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from dandischema.models import RoleType
 import pytest
 
+from dandiapi.api.services.search.operators import CONTRIBUTOR_ROLE_OPS
 from dandiapi.api.services.search.parser import (
     Operator,
     SearchSyntaxError,
@@ -53,6 +55,13 @@ pytestmark = pytest.mark.ai_generated
         # Owner operator
         ('owner:jdoe', [], [Operator('owner', 'jdoe')]),
         ('owner:user@example.com', [], [Operator('owner', 'user@example.com')]),
+        # Known operator keys are case-insensitive
+        ('AUTHOR:Doe', [], [Operator('author', 'Doe')]),
+        # Uppercase prefixes that aren't operators stay free text (citations,
+        # RRIDs), in both bare and quoted-value form
+        ('DANDI:000123', ['DANDI:000123'], []),
+        ('RRID:SCR_016422 mouse', ['RRID:SCR_016422', 'mouse'], []),
+        ('DANDI:"000123"', ['DANDI:000123'], []),
     ],
     ids=[
         'empty',
@@ -69,6 +78,10 @@ pytestmark = pytest.mark.ai_generated
         'quoted-operator-like-token-is-free-text',
         'owner-username',
         'owner-email',
+        'uppercase-operator-key',
+        'uppercase-non-operator-prefix-is-free-text',
+        'rrid-is-free-text',
+        'uppercase-non-operator-quoted-is-free-text',
     ],
 )
 def test_parse_search(query, expected_free_text, expected_operators):
@@ -104,3 +117,21 @@ def test_parse_search(query, expected_free_text, expected_operators):
 def test_parse_search_raises_on_invalid_query(query, expected_message_fragment):
     with pytest.raises(SearchSyntaxError, match=expected_message_fragment):
         parse_search(query)
+
+
+def test_contributor_role_ops_match_actual_dandischema_roletype():
+    """Guard against schema drift.
+
+    Every non-catch-all `CONTRIBUTOR_ROLE_OPS` value must match a real
+    `dandischema.RoleType` member name. Renames or removals on the schema
+    side trip this test, forcing an explicit decision here instead of
+    silently changing user-facing search syntax.
+    """
+    role_names = {r.name for r in RoleType}
+    for op_name, role_name in CONTRIBUTOR_ROLE_OPS.items():
+        if role_name is None:
+            continue
+        assert role_name in role_names, (
+            f'CONTRIBUTOR_ROLE_OPS[{op_name!r}] = {role_name!r} is not a valid '
+            'dandischema.RoleType member name'
+        )
