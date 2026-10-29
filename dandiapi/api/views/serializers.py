@@ -329,7 +329,10 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
             'assetsSummary.dataStandard, e.g. standard:nwb, and variable '
             'matches assetsSummary.variableMeasured, e.g. variable:LFP); '
             'owner (case-insensitive match against GitHub username, email, '
-            'first name, last name, or "first last"). '
+            'first name, last name, or "first last"); '
+            'anatomy_exact (a CURIE such as UBERON:0002421 or MBA:1089, a term '
+            "URL, or a region name; matches Anatomy entries in the dandiset's "
+            '`about` field by identifier, or by the whole recorded name). '
             'Invalid syntax returns HTTP 400 with the offending token; '
             'unknown operators get a "Did you mean?" suggestion.'
         ),
