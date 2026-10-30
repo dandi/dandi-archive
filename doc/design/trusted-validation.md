@@ -6,11 +6,11 @@ Status: proposal
 
 # Contents
 
+- [Terminology](#terminology)
 - [Flow](#flow)
 - [Overview](#overview)
   - [Goals](#goals)
   - [Summary](#summary)
-- [Terminology](#terminology)
 - [Current state](#current-state)
 - [Proposed solution](#proposed-solution)
   - [dandi-schema](#dandi-schema)
@@ -41,6 +41,32 @@ Status: proposal
 - [Proposed Rollout Order](#proposed-rollout-order)
 - [Alternatives to consider](#alternatives-to-consider)
 - [Open questions](#open-questions)
+
+# Terminology
+
+- **Validator versions:** the map from each package that affects validation results to the exact version used to produce a record. Keys are plain distribution names, and all six are always present:
+
+  ```json
+  {"dandi": "0.75.0", "dandischema": "0.12.0", "nwbinspector": "0.7.1", "pynwb": "3.1.0", "hdmf": "4.1.0", "bids-validator-deno": "2.1.0"}
+  ```
+
+  - **Source:** all six are read from the validator image that produced the record (see [Validator image](#validator-image)). `dandischema` here is that image's dandischema, not the archive's own dandischema library or the metadata's `schemaVersion`.
+  - **Sanity check:** every key also appears in the records. Five appear as a record's `origin.validator` with its `origin.validator_version`, and `hdmf` appears alongside `pynwb`, since pynwb validation runs on hdmf (see [dandi-cli](#dandi-cli)).
+- **Version code:** a short, readable string form of a validator-versions map. It is the container image's tag and part of the record's path in the bucket.
+  - **Form:** each package's one-letter code (see `VALIDATOR_CODES` under [Validator image](#validator-image)) followed directly by its version, in the code table's order, with entries joined by `-`. For the map above: `d0.75.0-s0.12.0-n0.7.1-p3.1.0-h4.1.0-b2.1.0`.
+  - **Why this is unambiguous:** codes are single letters, and every version must be a proper semver `MAJOR.MINOR.PATCH` release made only of digits and periods (e.g. `0.75.0`), so `-` never appears inside an entry. Anything else, such as a pre-release, dev or local version (e.g. `1.0rc1`, `0.75.0+12.gabc`) or a different number of parts, is rejected with an error (see [Version updates](#version-updates)). The fixed order means equal maps always give identical codes.
+
+  <details>
+  <summary>Implementation</summary>
+
+  - **Parsing:** split on `-`; each entry matches `([a-z])(\d+\.\d+\.\d+)`, and a whole code matches `[a-z]\d+\.\d+\.\d+(?:-[a-z]\d+\.\d+\.\d+)*`.
+  - **Semver check:** every version must match `^\d+\.\d+\.\d+$`, a proper `MAJOR.MINOR.PATCH` release. Both building a code from resolved versions and parsing a code raise an error naming the package and version when one doesn't.
+
+  </details>
+
+- **Validation target:** the version code of the newest released worker image, which tracks the latest validator releases on PyPI (see [Version updates](#version-updates)).
+- **Required versions:** the version code a draft must be validated with: the validation target at the draft's last file change (see [Required versions](#required-versions)).
+- **Content fingerprint:** a hash of the files a version contains (see [Content fingerprint](#content-fingerprint)).
 
 # Flow
 
@@ -111,32 +137,6 @@ The changes in each repository can be summarized as:
 | dandi-infrastructure | A new Heroku container app for the worker, and config vars on both apps |
 | dandi-cli | A release with the streaming stack and small fixes |
 | datalad-fuse | A release with the remfile backend, so dandi-cli can depend on it |
-
-# Terminology
-
-- **Validator versions:** the map from each package that affects validation results to the exact version used to produce a record. Keys are plain distribution names, and all six are always present:
-
-  ```json
-  {"dandi": "0.75.0", "dandischema": "0.12.0", "nwbinspector": "0.7.1", "pynwb": "3.1.0", "hdmf": "4.1.0", "bids-validator-deno": "2.1.0"}
-  ```
-
-  - **Source:** all six are read from the validator image that produced the record (see [Validator image](#validator-image)). `dandischema` here is that image's dandischema, not the archive's own dandischema library or the metadata's `schemaVersion`.
-  - **Sanity check:** every key also appears in the records. Five appear as a record's `origin.validator` with its `origin.validator_version`, and `hdmf` appears alongside `pynwb`, since pynwb validation runs on hdmf (see [dandi-cli](#dandi-cli)).
-- **Version code:** a short, readable string form of a validator-versions map. It is the container image's tag and part of the record's path in the bucket.
-  - **Form:** each package's one-letter code (see `VALIDATOR_CODES` under [Validator image](#validator-image)) followed directly by its version, in the code table's order, with entries joined by `-`. For the map above: `d0.75.0-s0.12.0-n0.7.1-p3.1.0-h4.1.0-b2.1.0`.
-  - **Why this is unambiguous:** codes are single letters, and every version must be a proper semver `MAJOR.MINOR.PATCH` release made only of digits and periods (e.g. `0.75.0`), so `-` never appears inside an entry. Anything else, such as a pre-release, dev or local version (e.g. `1.0rc1`, `0.75.0+12.gabc`) or a different number of parts, is rejected with an error (see [Version updates](#version-updates)). The fixed order means equal maps always give identical codes.
-
-  <details>
-  <summary>Implementation</summary>
-
-  - **Parsing:** split on `-`; each entry matches `([a-z])(\d+\.\d+\.\d+)`, and a whole code matches `[a-z]\d+\.\d+\.\d+(?:-[a-z]\d+\.\d+\.\d+)*`.
-  - **Semver check:** every version must match `^\d+\.\d+\.\d+$`, a proper `MAJOR.MINOR.PATCH` release. Both building a code from resolved versions and parsing a code raise an error naming the package and version when one doesn't.
-
-  </details>
-
-- **Validation target:** the version code of the newest released worker image, which tracks the latest validator releases on PyPI (see [Version updates](#version-updates)).
-- **Required versions:** the version code a draft must be validated with: the validation target at the draft's last file change (see [Required versions](#required-versions)).
-- **Content fingerprint:** a hash of the files a version contains (see [Content fingerprint](#content-fingerprint)).
 
 # Current state
 
