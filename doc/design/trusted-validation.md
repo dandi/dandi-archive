@@ -65,7 +65,7 @@ The changes in each repository can be summarized as:
 
   - **Source:** all six are read from the validator image that produced the record (see [Validator image](#validator-image)). `dandischema` here is that image's dandischema, not the archive's own dandischema library or the metadata's `schemaVersion`.
   - **Sanity check:** every key also appears in the records. Five appear as a record's `origin.validator` with its `origin.validator_version`, and `hdmf` appears alongside `pynwb`, since pynwb validation runs on hdmf (see [dandi-cli](#dandi-cli)).
-- **Version code:** a short, readable string form of a validator-versions map. It names the validator lock file and container image tag, the archive's setting, and the record's path in the bucket.
+- **Version code:** a short, readable string form of a validator-versions map. It names the validator environment's directory and container image tag, the archive's setting, and the record's path in the bucket.
   - **Form:** each package's one-letter code (see `VALIDATOR_CODES` under [Validator image](#validator-image)) followed directly by its version, in the code table's order, with no separator between entries. For the map above: `d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0`.
   - **Parsing:** each entry matches `([a-z])(\d+(?:\.\d+)*)`, and a whole code matches `(?:[a-z]\d+(?:\.\d+)*)+`.
   - **Why this is unambiguous:** codes are single letters, and versions must be plain releases made only of digits and periods (e.g. `0.75.0`). A pre-release, post-release, dev or local version (e.g. `1.0rc1`, `0.75.0+12.gabc`) cannot be encoded. The fixed order means equal maps always give identical codes.
@@ -178,7 +178,9 @@ With the target set and gating off, the archive runs in shadow mode: results and
 
 ### Validator image
 
-- **One image per version code.** A Dockerfile in dandi-archive builds the worker image from a committed lock file named by its version code, e.g. `validators/d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0.txt`, with `uv pip sync --require-hashes`. The image also contains git-annex (from its PyPI wheel) and the worker's small program (see [Validation worker app](#validation-worker-app)), which doesn't import Django.
+- **One environment per version code.** Each version code has a directory in dandi-archive, e.g. `validators/d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0/`, holding a [pixi](https://pixi.sh) manifest (`pixi.toml`) and its lock file (`pixi.lock`).
+- **What's pinned.** The lock pins conda-forge and PyPI packages with checksums: the six validator packages, plus git-annex, DataLad, datalad-container and con-duct (`duct`), which the worker uses to build the dataset and run validation (see [Validation job](#validation-job)). System tools are therefore pinned alongside the validators instead of coming from the base image.
+- **One shared Dockerfile.** `validators/Dockerfile` takes the code as a build argument (`--build-arg VERSION_CODE=<code>`), runs `pixi install --locked` in that directory, and copies the environment into a slim runtime image. The image also contains the worker's small program (see [Validation worker app](#validation-worker-app)), which doesn't import Django.
 - **Registries.** CI builds each image once and pushes it to GitHub Container Registry as `ghcr.io/dandi/dandi-validation:<version code>`, the canonical tagged copy. The same image is pushed to the worker app's Heroku registry to release it, and can be pulled anywhere else: Docker, Podman, or Apptainer on HPC (`apptainer pull docker://ghcr.io/dandi/dandi-validation:<version code>`). Heroku's registry doesn't keep version tags, so GHCR records which image produced each code.
 - **Code check.** At startup the worker derives its version code from the installed packages (`importlib.metadata`) and refuses to run if it differs from the code the image was built for.
 - **Code table.** `VALIDATOR_CODES` and two small helpers that build and parse version codes live in a dependency-free module in dandi-archive, used by both the archive and the worker image:
@@ -195,7 +197,7 @@ With the target set and gating off, the archive runs in shadow mode: results and
   }
   ```
 
-- **Subprocess.** The worker runs `dandi validate` as a subprocess, so `dandi validate -J` works and a crash or out-of-memory kill only ends that run. The subprocess doesn't receive the worker token, and it sets `DANDI_CACHE=ignore` so dandi-cli's own per-file cache is not used (see [No per-asset caching](#no-per-asset-caching)).
+- **Subprocess.** The worker runs validation as a subprocess (see [Validation job](#validation-job)), so `dandi validate -J` works and a crash or out-of-memory kill only ends that run. The subprocess doesn't receive the worker token, and it sets `DANDI_CACHE=ignore` so dandi-cli's own per-file cache is not used (see [No per-asset caching](#no-per-asset-caching)).
 - **Isolation.** The worker app holds no database, bucket or Django credentials: only the archive's URL and the worker token. It reads files through URLs the archive hands out and writes records through a presigned upload URL (see [Validation job](#validation-job)). A crafted file that exploits a parser bug can therefore reach at most the worker token, which only opens the job API.
 
 ### Triggering
@@ -248,20 +250,24 @@ The work is split between the archive and the worker app.
    - the draft's stored fingerprint;
    - each asset's path, size and `sha256`, with a direct S3 URL, never the API download URL. URLs for embargoed blobs are presigned, with an expiry at least as long as the job's time limit;
    - the `identifier`, `name` and `description` for a minimal `dandiset.yaml`;
-   - a presigned upload URL for the record (see [Record storage](#record-storage)).
+   - presigned upload URLs for the record and its provenance file (see [Record storage](#record-storage)).
 2. **Build the DataLad dataset (worker)** in a temporary directory from the job:
    - annex keys `SHA256E-s{size}--{sha256}{ext}` registered with `git annex fromkey` and `registerurl --batch`;
    - small text files (`dataset_description.json`, sidecar `.json`/`.tsv`, `README`, `.bidsignore`) downloaded and committed to git;
    - Zarr paths present, since an empty directory would be skipped;
    - a minimal `dandiset.yaml` with non-empty `identifier`, `name` and `description` and no `schemaVersion`;
    - no FUSE mount.
-3. **Validate (worker)** with `dandi validate --missing-file-content=stream --min-severity INFO -f json_lines`.
+3. **Validate (worker).** Run `dandi validate --missing-file-content=stream --min-severity INFO -f json_lines` through `datalad containers-run`, wrapped in `duct`:
+   - **`datalad containers-run`** records the run in the dataset: the command, the container and the outputs. It runs with `--explicit` and no `--input`, so nothing is fetched up front and files are streamed.
+   - **On Heroku**, the dyno already runs the validator image, so the dataset registers it with a call format of `{cmd}` and a small image file holding the image's GHCR reference and digest. The command then runs in place.
+   - **Elsewhere**, the same command registers the real image, e.g. `datalad containers-add dandi-validation --url docker://ghcr.io/dandi/dandi-validation:<version code>` (which builds an Apptainer image), and runs inside it.
+   - **`duct`** (con-duct) captures stdout, stderr and resource usage: peak memory, CPU and wall time (`info.json`, `usage.jsonl`).
 4. **Process the results (worker):**
    - relativize paths, strip URLs (presigned URLs carry credentials), drop `DANDI.FILE_CONTENT_STREAMED`, and group pynwb results under a fixed ID;
    - exclude results for `dandiset.yaml`, since the archive validates metadata itself;
    - retry, with backoff, files whose results are `INTERNAL`-origin, `DANDI.FILE_CONTENT_MISSING` or streamed-read failures. If they keep failing, report the job as failed: the row becomes `failed` with `success` left empty, and Sentry is notified;
    - a run is complete when every NWB and BIDS file has an outcome. Zarr-backed assets (NWB or BIDS stored as Zarr) are counted as "not checked" for now (see [Open questions](#open-questions)).
-5. **Report (worker).** Upload the JSONL to the presigned URL, then call the complete endpoint with the counts, top issues and checked/not-checked counts. The worker sends heartbeats throughout the run.
+5. **Report (worker).** Upload the JSONL and the provenance file to the presigned URLs, then call the complete endpoint with the counts, top issues, checked/not-checked counts, and duct's peak memory and wall time. The worker sends heartbeats throughout the run.
 6. **Store (archive).** For a complete run, set `success` to `counts.CRITICAL + counts.ERROR == 0`, so only `ERROR` and `CRITICAL` block publication. The archive applies this policy, not the worker. dandi-cli maps validator severities onto its own as follows:
    - NWB Inspector: `CRITICAL` → `ERROR`, best-practice violations → `WARNING`, suggestions → `HINT`.
    - BIDS validator: errors → `ERROR`, warnings → `HINT`.
@@ -279,7 +285,7 @@ class VersionValidationSummary(TimeStampedModel):
     content_fingerprint = models.CharField(max_length=64)
     state = models.CharField(max_length=10)  # queued, running, complete, failed, superseded
     success = models.BooleanField(null=True)  # set only for complete runs
-    summary = models.JSONField()  # counts, top issues, checked/not-checked counts, record path, archive version
+    summary = models.JSONField()  # counts, top issues, checked/not-checked counts, record path, resource usage, archive version
     requested_at = models.DateTimeField()
     heartbeat_at = models.DateTimeField(null=True)
     attempts = models.PositiveSmallIntegerField(default=0)
@@ -304,7 +310,10 @@ Full JSONL records go in the archive bucket at:
 
 ```
 dandisets/{id}/validation/{code}/{fingerprint}.jsonl
+dandisets/{id}/validation/{code}/{fingerprint}.provenance.json
 ```
+
+The provenance file holds the `datalad containers-run` record and duct's `info.json`.
 
 - **Immutable by construction.** The path is determined by the content and the validator versions, so it never needs pinning to an object version. Pinning wouldn't work anyway, since the lifecycle rule deletes older noncurrent versions under `dandisets/`.
 - **Shared.** The path leaves out the version, so a draft and the version published from it share the same object.
@@ -405,7 +414,7 @@ A small API lets the worker app claim jobs and report results. It authenticates 
 - **Releases.** CI pushes each image to GHCR and to the worker app's Heroku registry, and releases it there.
 - **No storage changes.** Records go in the existing bucket through presigned URLs the archive already knows how to sign.
 
-Bumping the target is a reviewed dandi-archive change that adds the new lock file, followed by releasing its image and changing the config var.
+Bumping the target is a reviewed dandi-archive change that adds the new environment directory, followed by releasing its image and changing the config var.
 
 ## dandi-cli
 
@@ -458,7 +467,7 @@ Metadata-only changes are not affected: a draft keeps the validator versions and
 
 **New validator release.**
 
-1. Commit the next lock file. CI builds its image and pushes it to GHCR.
+1. Commit the next version code's directory (manifest and lock). CI builds its image and pushes it to GHCR.
 2. Release that image to the worker app and change `DJANGO_DANDI_VALIDATION_TARGET` together. Drafts keep their required versions until their files next change, so nothing is re-validated and publication is not interrupted. Drafts still waiting on a run under the old code move to the new target (see [Required versions](#required-versions)).
 
 Published versions keep their frozen validator versions.
@@ -470,7 +479,7 @@ Published versions keep their frozen validator versions.
 3. **dandi-cli:** release with the streaming stack, the `INTERNAL` classification, hdmf's version in records and the NWB Inspector fix.
 4. **dandi-archive:** upgrade dandischema and run `migrate_version_metadata --all`. Ship the table, the fingerprint state, fingerprint and required-code columns with their backfill, job API, reconciler, worker program and image build, stamping, publish-time copy, `/info/` fields, banner and daily check, with the target unset and gating off.
 5. **dandi-infrastructure:** add the worker app and its formation, and the token on both apps, staging first.
-6. **Pilot** on a small, a BIDS and a large Dandiset. Measure seconds per file, peak memory, bytes read, worker start time, the fingerprint backfill time, how long re-validating the largest Dandiset takes after a one-file change, and how long the largest Dandiset takes compared with Heroku's daily dyno restart. Then choose the dyno size and count.
+6. **Pilot** on a small, a BIDS and a large Dandiset, using duct's summaries. Measure seconds per file, peak memory, bytes read, worker start time, the fingerprint backfill time, how long re-validating the largest Dandiset takes after a one-file change, and how long the largest Dandiset takes compared with Heroku's daily dyno restart. Then choose the dyno size and count.
 7. **Shadow mode:** set the target with gating off. Existing drafts get it as their required versions. Results and the banner appear, but publication is not gated.
 8. **Sweep** every draft. Published versions are not validated: their results are frozen at publication. Either scale the worker app up temporarily, or run the same image elsewhere, for example with Apptainer on HPC near the bucket, against the same job API; estimate the cost first.
    - **Capacity:** `files × seconds per file ÷ processes`. For example, 500k files at 30 seconds each is about 170 process-days, or about 11 days with 16 processes.
