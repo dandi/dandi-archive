@@ -83,14 +83,14 @@ The changes in each repository can be summarized as:
 
   - **Source:** all six are read from the validator image that produced the record (see [Validator image](#validator-image)). `dandischema` here is that image's dandischema, not the archive's own dandischema library or the metadata's `schemaVersion`.
   - **Sanity check:** every key also appears in the records. Five appear as a record's `origin.validator` with its `origin.validator_version`, and `hdmf` appears alongside `pynwb`, since pynwb validation runs on hdmf (see [dandi-cli](#dandi-cli)).
-- **Version code:** a short, readable string form of a validator-versions map. It names the validator environment's directory and container image tag, the archive's setting, and the record's path in the bucket.
+- **Version code:** a short, readable string form of a validator-versions map. It is the container image's tag and part of the record's path in the bucket.
   - **Form:** each package's one-letter code (see `VALIDATOR_CODES` under [Validator image](#validator-image)) followed directly by its version, in the code table's order, with entries joined by `-`. For the map above: `d0.75.0-s0.12.0-n0.7.1-p3.1.0-h4.1.0-b2.1.0`.
-  - **Why this is unambiguous:** codes are single letters, and versions must be plain releases made only of digits and periods (e.g. `0.75.0`), so `-` never appears inside an entry. A pre-release, post-release, dev or local version (e.g. `1.0rc1`, `0.75.0+12.gabc`) cannot be encoded. The fixed order means equal maps always give identical codes.
+  - **Why this is unambiguous:** codes are single letters, and every version must be a proper semver `MAJOR.MINOR.PATCH` release made only of digits and periods (e.g. `0.75.0`), so `-` never appears inside an entry. Anything else, such as a pre-release, dev or local version (e.g. `1.0rc1`, `0.75.0+12.gabc`) or a different number of parts, is rejected with an error (see [Version updates](#version-updates)). The fixed order means equal maps always give identical codes.
 
   <details>
   <summary>Implementation</summary>
 
-  - **Parsing:** split on `-`; each entry matches `([a-z])(\d+(?:\.\d+)*)`, and a whole code matches `[a-z]\d+(?:\.\d+)*(?:-[a-z]\d+(?:\.\d+)*)*`.
+  - **Parsing:** split on `-`; each entry matches `([a-z])(\d+\.\d+\.\d+)`, and a whole code matches `[a-z]\d+\.\d+\.\d+(?:-[a-z]\d+\.\d+\.\d+)*`.
 
   </details>
 
@@ -210,17 +210,18 @@ With a worker running and gating off, the archive runs in shadow mode: results a
 
 ### Validator image
 
-- **One environment per version code.** Each version code has a directory in dandi-archive, e.g. `validators/d0.75.0-s0.12.0-n0.7.1-p3.1.0-h4.1.0-b2.1.0/`, holding a [pixi](https://pixi.sh) manifest (`pixi.toml`) and its lock file (`pixi.lock`).
+- **Never committed.** Neither the validator versions nor the image are committed to any repository. dandi-archive only holds an unpinned [pixi](https://pixi.sh) manifest (`validators/pixi.toml`) listing the packages, and the Dockerfile. The daily scan resolves the lock file (`pixi.lock`) and builds the image from it (see [Version updates](#version-updates)).
+- **One image per version code.** Each image is built once from its resolved lock, which is kept inside the image and attached to its GHCR entry, so the image itself records its environment.
 - **What's pinned.** The lock pins conda-forge and PyPI packages with checksums: the six validator packages, plus git, git-annex, DataLad, datalad-container and con-duct (`duct`), which the worker uses to build the dataset and run validation (see [Validation job](#validation-job)). git and git-annex therefore come from the lock, at exact versions, rather than from the base image's operating-system packages, which can change whenever the base image is rebuilt.
-- **Registries.** CI builds each image once and pushes it to GitHub Container Registry as `ghcr.io/dandi/dandi-validation:<version code>`, the canonical tagged copy. The same image is pushed to the worker app's Heroku registry to release it, and can be pulled anywhere else: Docker, Podman, or Apptainer on HPC (`apptainer pull docker://ghcr.io/dandi/dandi-validation:<version code>`). Heroku's registry doesn't keep version tags, so GHCR records which image produced each code.
+- **Registries.** The scan pushes each image to GitHub Container Registry as `ghcr.io/dandi/dandi-validation:<version code>`, the canonical tagged copy, and also tags it `latest`. The same image is pushed to the worker app's Heroku registry to release it, and can be pulled anywhere else: Docker, Podman, or Apptainer on HPC (`apptainer pull docker://ghcr.io/dandi/dandi-validation:<version code>`). Heroku's registry doesn't keep version tags, so GHCR records which image produced each code.
 - **Isolation.** The worker app holds no database, bucket or Django credentials: only the archive's URL and the worker token. It reads files through URLs the archive hands out and writes records through a presigned upload URL (see [Validation job](#validation-job)). A crafted file that exploits a parser bug can therefore reach at most the worker token, which only opens the job API.
 
 <details>
 <summary>Implementation</summary>
 
-- **One shared Dockerfile.** `validators/Dockerfile` takes the code as a build argument (`--build-arg VERSION_CODE=<code>`) and has two stages:
-  - **Build:** the official pixi image on Ubuntu (`ghcr.io/prefix-dev/pixi:<pixi version>-noble`) runs `pixi install --locked` in that directory.
-  - **Runtime:** plain `ubuntu:24.04` receives only the installed environment, an activation script from `pixi shell-hook`, and the worker's small program (see [Validation worker app](#validation-worker-app)), which doesn't import Django. pixi itself isn't needed at runtime.
+- **One shared Dockerfile.** `validators/Dockerfile` builds from the resolved `pixi.toml` and `pixi.lock` and has two stages:
+  - **Build:** the official pixi image on Ubuntu (`ghcr.io/prefix-dev/pixi:<pixi version>-noble`) runs `pixi install --locked`.
+  - **Runtime:** plain `ubuntu:24.04` receives only the installed environment, its `pixi.lock`, an activation script from `pixi shell-hook`, and the worker's small program (see [Validation worker app](#validation-worker-app)), which doesn't import Django. pixi itself isn't needed at runtime.
 
   Since the environment carries its own tools and libraries, the base image only has to provide the basics, such as glibc. Both base images are pinned by digest.
 - **Code check.** At startup the worker derives its version code from the installed packages (`importlib.metadata`) and refuses to run if it differs from the code the image was built for.
@@ -244,21 +245,22 @@ With a worker running and gating off, the archive runs in shadow mode: results a
 
 ### Version updates
 
-New validator versions are picked up automatically; nobody edits a version string by hand.
+New validator versions are picked up automatically. Nothing about them is committed or edited by hand.
 
-1. **Daily scan.** A scheduled GitHub Actions workflow in dandi-archive runs once a day. It resolves the six validator packages unpinned against PyPI with pixi, which picks the newest plain releases that install together, and reads their versions from the resulting lock to compute the version code.
-2. **Pull request.** If `validators/<code>/` doesn't exist yet, the workflow creates it with those versions pinned exactly, locks it, and opens a pull request with auto-merge enabled.
-3. **Checks.** CI builds the image and runs a smoke test on a small fixture Dandiset. The pull request merges once they pass.
-4. **Release.** On merge, the release workflow pushes the image to GHCR and to the worker app's Heroku registry, and releases it.
-5. **Target.** The new image's first claim reports its code, and the archive makes it the target (see [Settings](#settings)).
+1. **Daily scan.** A scheduled GitHub Actions workflow in dandi-archive runs once a day. It resolves the unpinned `validators/pixi.toml` with `pixi lock`, which picks the newest releases of the six validator packages that install together, and reads their versions from the lock.
+2. **Version check.** Every version must be a proper semver `MAJOR.MINOR.PATCH` release. If any isn't, the workflow fails with an error naming the package and version, and alerts, instead of producing a code.
+3. **Only new versions.** The workflow computes the version code. If GHCR already has an image tagged with it, nothing has changed and the workflow stops.
+4. **Build and test.** Otherwise it builds the image from that lock and runs a smoke test on a small fixture Dandiset.
+5. **Push and release.** It pushes the image to GHCR tagged with the code and `latest`, then to the worker app's Heroku registry, and releases it.
+6. **Target.** The new image's first claim reports its code, and the archive makes it the target (see [Settings](#settings)).
 
 <details>
 <summary>Implementation</summary>
 
-- **Sources.** The six validator packages come from PyPI (pixi's `[pypi-dependencies]`), matching what the scan reads; Python, git and git-annex come from conda-forge.
-- **Plain releases only.** Pre-releases, dev releases and yanked releases are skipped, since version codes can only encode plain releases.
-- **Immutable directories.** A code's directory is created once and never edited. The other tools in the lock (git, git-annex, DataLad, datalad-container, con-duct) are only re-resolved when a new code is created, so one code always names one image.
-- **Incompatible releases.** If the newest releases can't be installed together, the resolver falls back to the newest set that can, so the scan never proposes a broken environment.
+- **Sources.** The six validator packages come from PyPI (pixi's `[pypi-dependencies]`); Python, git and git-annex come from conda-forge.
+- **Immutable images.** An image is built only for a code GHCR doesn't have yet, and is never rebuilt. The other tools in the lock (git, git-annex, DataLad, datalad-container, con-duct) are re-resolved only when a new code is built, so one code always names one image.
+- **Incompatible releases.** If the newest releases can't be installed together, the resolver falls back to the newest set that can, so the scan never builds a broken environment.
+- **Credentials.** The workflow pushes to GHCR with its GitHub token, and releases to Heroku with a Heroku API key stored as a GitHub Actions secret.
 
 </details>
 
@@ -533,7 +535,7 @@ A small API lets the worker app claim jobs and report results. It authenticates 
 
 - **Worker app.** A new Heroku app (and a staging counterpart) on the container stack, sized from the pilot. Its config vars are only the archive's API URL, the worker token and a Sentry DSN.
 - **Archive config vars.** `DJANGO_DANDI_VALIDATION_GATING` and the worker token as a secret. There is no version string to maintain: the target comes from the released worker image (see [Version updates](#version-updates)).
-- **Releases.** CI pushes each image to GHCR and to the worker app's Heroku registry, and releases it there, using a Heroku API key stored as a GitHub Actions secret.
+- **Releases.** The daily scan pushes each new image to GHCR and to the worker app's Heroku registry, and releases it there, using a Heroku API key stored as a GitHub Actions secret.
 - **No storage changes.** Records go in the existing bucket through presigned URLs the archive already knows how to sign.
 
 <details>
@@ -605,8 +607,8 @@ Metadata-only changes are not affected: a draft keeps the validator versions and
 **New validator release.**
 
 1. A new release of one of the six packages appears on PyPI.
-2. The next daily scan opens a pull request adding the new code's directory, and it merges once its checks pass.
-3. The release workflow releases the new image to the worker app, and its first claim makes the new code the target.
+2. The next daily scan resolves the new versions, checks they are proper semver, builds and tests the image for the new code, and pushes and releases it.
+3. The new image's first claim makes the new code the target.
 4. Drafts keep their required versions until their files next change, so nothing is re-validated and publication is not interrupted. Drafts still waiting on a run under the old code move to the new target (see [Required versions](#required-versions)).
 
 Published versions keep their frozen validator versions.
@@ -616,7 +618,7 @@ Published versions keep their frozen validator versions.
 1. **dandi-schema:** add `ValidatorType`, the two fields and the publication rule, then bump the version and release.
 2. **datalad-fuse:** release with the remfile backend.
 3. **dandi-cli:** release with the streaming stack, the `INTERNAL` classification, hdmf's version in records and the NWB Inspector fix.
-4. **dandi-archive:** upgrade dandischema and run `migrate_version_metadata --all`. Ship the table, the fingerprint state, fingerprint and required-code columns with their backfill, job API, reconciler, worker program and image build, stamping, publish-time copy, `/info/` fields, banner and daily check, plus the daily version scan and the release workflow, with gating off.
+4. **dandi-archive:** upgrade dandischema and run `migrate_version_metadata --all`. Ship the table, the fingerprint state, fingerprint and required-code columns with their backfill, job API, reconciler, worker program and image build, stamping, publish-time copy, `/info/` fields, banner and daily check, plus the daily version scan, with gating off.
 5. **dandi-infrastructure:** add the worker app and its formation, and the token on both apps, staging first.
 6. **Pilot** on a small, a BIDS and a large Dandiset, using duct's summaries. Measure seconds per file, peak memory, bytes read, worker start time, the fingerprint backfill time, how long re-validating the largest Dandiset takes after a one-file change, and how long the largest Dandiset takes compared with Heroku's daily dyno restart. Then choose the dyno size and count.
 7. **Shadow mode:** release the first image to the worker app with gating off. Its first claim sets the target, and existing drafts get it as their required versions. Results and the banner appear, but publication is not gated.
