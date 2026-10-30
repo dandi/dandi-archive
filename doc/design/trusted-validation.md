@@ -6,6 +6,7 @@ Status: proposal
 
 # Contents
 
+- [Flow](#flow)
 - [Overview](#overview)
   - [Goals](#goals)
   - [Summary](#summary)
@@ -40,6 +41,44 @@ Status: proposal
 - [Rollout](#rollout)
 - [Alternatives to consider](#alternatives-to-consider)
 - [Open questions](#open-questions)
+
+# Flow
+
+How a new validator release and a change to a draft's files flow through the system.
+
+```mermaid
+flowchart TD
+    subgraph scan["Daily version scan (GitHub Actions)"]
+        S1["Resolve newest validator releases on PyPI with pixi"] --> S2{"Every version MAJOR.MINOR.PATCH?"}
+        S2 -- no --> S3["Fail with an error and alert"]
+        S2 -- yes --> S4{"GHCR already has an image for this version code?"}
+        S4 -- yes --> S5["Stop: nothing new"]
+        S4 -- no --> S6["Build and smoke-test the image, push it tagged with the code and latest, release it to the worker app"]
+    end
+
+    subgraph archive["dandi-archive"]
+        A1["Owner adds, removes or replaces assets"] --> A2["Update the fingerprint in O(1) and move the draft's required versions to the current target"]
+        A2 --> A3["Queue a validation job (manifest hook or reconciler)"]
+        M1["Owner edits metadata only"] --> M2["Fingerprint unchanged: keep required versions and result"]
+        T["Validation target: newest version code reported by a worker"]
+        A7["Store the result and stamp validatedRequiredVersions and validatedBy"] --> A8{"validatedBy is true?"}
+        M2 --> A8
+        A8 -- yes --> A9["Publishing allowed"]
+        A8 -- "false or null" --> A10["Publishing blocked; banner shows the status"]
+    end
+
+    subgraph worker["Validation worker (Heroku container app)"]
+        W1["Claim a job through the job API, reporting the image's version code"] --> W2["Build a DataLad dataset from the job's asset list"]
+        W2 --> W3["Run dandi validate through datalad containers-run, wrapped in duct, streaming file contents"]
+        W3 --> W4["Upload the JSONL record and provenance to the bucket, then report the summary"]
+    end
+
+    S6 -. new image .-> W1
+    W1 -. reports code .-> T
+    T --> A2
+    A3 --> W1
+    W4 --> A7
+```
 
 # Overview
 
@@ -91,6 +130,7 @@ The changes in each repository can be summarized as:
   <summary>Implementation</summary>
 
   - **Parsing:** split on `-`; each entry matches `([a-z])(\d+\.\d+\.\d+)`, and a whole code matches `[a-z]\d+\.\d+\.\d+(?:-[a-z]\d+\.\d+\.\d+)*`.
+  - **Semver check:** every version must match `^\d+\.\d+\.\d+$`, a proper `MAJOR.MINOR.PATCH` release. Both building a code from resolved versions and parsing a code raise an error naming the package and version when one doesn't.
 
   </details>
 
