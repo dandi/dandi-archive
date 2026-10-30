@@ -140,7 +140,7 @@ Extend `Dandiset.check_publication_status`, inside the branch for published Dand
 ```python
 if self.validatedRequiredVersions is not None and self.validatedBy is not True:
     versions = ", ".join(
-        f"{package.value} {version}"
+        f"`{package.value}=={version}`"
         for package, version in self.validatedRequiredVersions.items()
     )
     if self.validatedBy is False:
@@ -149,13 +149,13 @@ if self.validatedRequiredVersions is not None and self.validatedBy is not True:
         problem = f"content validation with {versions} has not finished for the current files"
     err(
         "validatedBy",
-        f"validatedBy is {self.validatedBy}: {problem}, and it must pass before publishing",
+        f"`validatedBy` is `{self.validatedBy}`: {problem}, and it must pass before publishing",
     )
 ```
 
-The message follows the style of the existing ones (e.g. "publishedBy is required for a published Dandiset"). For example:
+The message follows the shape of the existing ones (e.g. "publishedBy is required for a published Dandiset"), with field names, values and package versions in backticks so they render as code. For example:
 
-> validatedBy is False: content validation with dandi 0.75.0, dandischema 0.12.0, nwbinspector 0.7.1, pynwb 3.1.0, hdmf 4.1.0, bids-validator-deno 2.1.0 found errors, and it must pass before publishing
+> `validatedBy` is `False`: content validation with `dandi==0.75.0`, `dandischema==0.12.0`, `nwbinspector==0.7.1`, `pynwb==3.1.0`, `hdmf==4.1.0`, `bids-validator-deno==2.1.0` found errors, and it must pass before publishing
 
 The rule only applies when `validatedRequiredVersions` is set. Already-published metadata, which lacks the field, stays valid, and archive instances that don't enable the feature are unaffected.
 
@@ -444,7 +444,7 @@ Metadata-only changes are not affected: a draft keeps the validator versions and
 **Draft with changed files.**
 
 1. The owner changes the draft's files. The same change updates the fingerprint and moves the draft's required versions to the current target, and the draft goes `PENDING`.
-2. Metadata validation stamps the required versions and sets `validatedBy = null`. The draft becomes `INVALID` with the error "validatedBy is None: content validation with … has not finished for the current files, and it must pass before publishing", which the UI shows as "Content validation queued".
+2. Metadata validation stamps the required versions and sets `validatedBy = null`. The draft becomes `INVALID` with the error "`validatedBy` is `None`: content validation with … has not finished for the current files, and it must pass before publishing", which the UI shows as "Content validation queued".
 3. The manifest hook queues validation, or the reconciler does once every checksum exists.
 4. The run completes. If the draft still has the same fingerprint, the row is stored and the draft is stamped:
    - if it has no errors, `validatedBy = true` and the draft becomes `VALID`, so it can be published;
