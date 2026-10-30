@@ -159,8 +159,6 @@ The message follows the shape of the existing ones (e.g. "publishedBy is require
 
 The rule only applies when `validatedRequiredVersions` is set. Already-published metadata, which lacks the field, stays valid, and archive instances that don't enable the feature are unaffected.
 
-**JSON-LD.** Plain distribution names are not JSON-LD terms. `dandi` would collide with the `dandi:` prefix in the `@context`, and the other keys would be dropped when the metadata is expanded. `generate_context` has no path for this today, so it needs an explicit branch, like the existing one for `digest`, that emits `{"@id": "dandi:validatedRequiredVersions", "@type": "@json"}`. JSON-LD then treats the whole map as a single JSON literal.
-
 The schema change also needs some housekeeping:
 - bump `DANDI_SCHEMA_VERSION`, and add the previous version to `ALLOWED_INPUT_SCHEMAS` and `ALLOWED_TARGET_SCHEMAS`;
 - make `migrate()` drop both fields unconditionally when downgrading below the new version. `SIMPLE_DOWNGRADES` raises on non-empty values, and `validatedBy` is never empty once stamped; the archive re-stamps both fields anyway.
