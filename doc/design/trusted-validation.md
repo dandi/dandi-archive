@@ -201,7 +201,7 @@ With the target set and gating off, the archive runs in shadow mode: results and
   }
   ```
 
-- **Subprocess.** The worker runs validation as a subprocess (see [Validation job](#validation-job)), so `dandi validate -J` works and a crash or out-of-memory kill only ends that run. The subprocess doesn't receive the worker token, and dandi-cli's per-file cache lives in a fresh temporary directory for each job (see [No caching across jobs](#no-caching-across-jobs)).
+- **Subprocess.** The worker runs validation as a subprocess (see [Validation job](#validation-job)), so `dandi validate -J` works and a crash or out-of-memory kill only ends that run. The subprocess doesn't receive the worker token.
 - **Isolation.** The worker app holds no database, bucket or Django credentials: only the archive's URL and the worker token. It reads files through URLs the archive hands out and writes records through a presigned upload URL (see [Validation job](#validation-job)). A crafted file that exploits a parser bug can therefore reach at most the worker token, which only opens the job API.
 
 ### Triggering
@@ -245,8 +245,6 @@ Each draft stores its required version code in a new `Version` column, next to i
 Per-asset results are not kept from one job to the next, because an asset's result can depend on other files. For example, if a video file's path changes without updating the `ImageSeries` that points to it, the NWB file itself becomes invalid even though its own content is unchanged.
 
 So every job validates the whole Dandiset, and the content fingerprint covers every path and checksum in it. A change to any file therefore invalidates the whole record, while metadata-only changes don't.
-
-Caching within a single job is fine. dandi-cli's per-file cache can reuse work inside one run, for example when the same file content appears at several paths. Each job points that cache at a fresh temporary directory (dandi-cli's cache follows `XDG_CACHE_HOME`) and deletes it when the job ends, so nothing carries over to the next job.
 
 ### Validation job
 
