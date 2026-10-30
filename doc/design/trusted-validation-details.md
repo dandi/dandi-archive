@@ -563,14 +563,17 @@ Published versions keep their frozen validator versions.
 
 # Rollout details
 
-Specifics of the steps in the [Proposed Rollout Order](trusted-validation.md#proposed-rollout-order).
+The specifics of each step of the [Proposed Rollout Order](trusted-validation.md#proposed-rollout-order), with the same numbering.
 
-- **dandi-cli:** the release carries the streaming stack, the `INTERNAL` classification, hdmf's version in records and the NWB Inspector fix (see [dandi-cli](#dandi-cli)).
-- **dandi-archive:** upgrade dandischema and run `migrate_version_metadata --all`. Ship the table, the fingerprint state, fingerprint and required-code columns with their backfill, job API, reconciler, worker program and image build, stamping, publish-time copy, `/info/` fields, banner and daily check, plus the daily version scan, with gating off.
-- **dandi-infrastructure:** add the worker app and its formation, and the token on both apps, staging first.
-- **Pilot:** use duct's summaries. Measure seconds per file, peak memory, bytes read, worker start time, the fingerprint backfill time, how long re-validating the largest Dandiset takes after a one-file change, and how long the largest Dandiset takes compared with Heroku's daily dyno restart. Then choose the dyno size and count.
-- **Shadow mode:** the first image's first claim sets the target, and existing drafts get it as their required versions.
-- **Sweep:** published versions are not validated: their results are frozen at publication. A sweep run elsewhere uses the same job API. Estimate the cost before choosing where to run it.
-  - **Capacity:** `files × seconds per file ÷ processes`. For example, 500k files at 30 seconds each is about 170 process-days, or about 11 days with 16 processes.
-  - **Regions:** Heroku's US region runs in AWS us-east-1, while the bucket is in us-east-2.
-- **Turn gating on:** after turning it on, set drafts to `PENDING` so they are stamped. The existing `revalidate --versions` management command cannot do this as is: `validate_version_metadata` returns early unless a version is `PENDING`, so the command must first set them `PENDING`.
+1. **dandi-schema:** besides `ValidatorType`, the two fields and the publication rule, the release bumps `DANDI_SCHEMA_VERSION`, adds the previous version to the allowed schemas, and makes `migrate()` drop both fields when downgrading (see [dandi-schema](#dandi-schema)).
+2. **datalad-fuse:** the release has to be on PyPI, because dandi-cli's streaming stack currently depends on datalad-fuse by git URL, which PyPI rejects (see [dandi-cli](#dandi-cli)).
+3. **dandi-cli:** the release carries the streaming stack, the `INTERNAL` classification, hdmf's version in records and the NWB Inspector fix (see [dandi-cli](#dandi-cli)).
+4. **dandi-archive:** upgrade dandischema and run `migrate_version_metadata --all`. Ship the table, the fingerprint state, fingerprint and required-code columns with their backfill, job API, reconciler, worker program and image build, stamping, publish-time copy, `/info/` fields, banner and daily check, plus the daily version scan, with gating off.
+5. **dandi-infrastructure:** add the worker app and its formation, and the token on both apps, staging first (see [dandi-infrastructure](#dandi-infrastructure)).
+6. **Pilot:** use duct's summaries. Measure seconds per file, peak memory, bytes read, worker start time, the fingerprint backfill time, how long re-validating the largest Dandiset takes after a one-file change, and how long the largest Dandiset takes compared with Heroku's daily dyno restart. Then choose the dyno size and count.
+7. **Shadow mode:** the first image's first claim sets the target, and existing drafts get it as their required versions.
+8. **Sweep:** published versions are not validated: their results are frozen at publication. A sweep run elsewhere uses the same job API. Estimate the cost before choosing where to run it.
+   - **Capacity:** `files × seconds per file ÷ processes`. For example, 500k files at 30 seconds each is about 170 process-days, or about 11 days with 16 processes.
+   - **Regions:** Heroku's US region runs in AWS us-east-1, while the bucket is in us-east-2.
+9. **Review:** from the summary table and the full records, count how many drafts gating would block and by which checks, and look for false positives caused by bugs in the worker; after a fix, `revalidate_content --force` re-runs the affected rows (see [Management commands](#management-commands)). Summarize run time and memory from duct's summaries.
+10. **Turn gating on:** after turning it on, set drafts to `PENDING` so they are stamped. The existing `revalidate --versions` management command cannot do this as is: `validate_version_metadata` returns early unless a version is `PENDING`, so the command must first set them `PENDING`.
