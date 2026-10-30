@@ -38,7 +38,7 @@ Status: proposal
   - [Publication latency (accepted trade-off)](#publication-latency-accepted-trade-off)
   - [Old files vs. new checks (accepted trade-off)](#old-files-vs-new-checks-accepted-trade-off)
 - [Lifecycles](#lifecycles)
-- [Rollout](#rollout)
+- [Proposed Rollout Order](#proposed-rollout-order)
 - [Alternatives to consider](#alternatives-to-consider)
 - [Open questions](#open-questions)
 
@@ -653,7 +653,7 @@ Metadata-only changes are not affected: a draft keeps the validator versions and
 
 Published versions keep their frozen validator versions.
 
-# Rollout
+# Proposed Rollout Order
 
 1. **dandi-schema:** add `ValidatorType`, the two fields and the publication rule, then bump the version and release.
 2. **datalad-fuse:** release with the remfile backend.
