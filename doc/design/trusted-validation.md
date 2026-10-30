@@ -271,7 +271,7 @@ The work is split between the archive and the worker app.
    - exclude results for `dandiset.yaml`, since the archive validates metadata itself;
    - retry, with backoff, files whose results are `INTERNAL`-origin, `DANDI.FILE_CONTENT_MISSING` or streamed-read failures. If they keep failing, report the job as failed: the row becomes `failed` with `success` left empty, and Sentry is notified;
    - a run is complete when every NWB and BIDS file has an outcome. Zarr-backed assets (NWB or BIDS stored as Zarr) are counted as "not checked" for now (see [Open questions](#open-questions)).
-5. **Report (worker).** Upload the JSONL and the provenance file to the presigned URLs, then call the complete endpoint with the counts, top issues, checked/not-checked counts, and duct's peak memory and wall time. The worker sends heartbeats throughout the run.
+5. **Report (worker).** Upload the JSONL and the provenance file to the presigned URLs, then call the complete endpoint with the counts, top issues, checked/not-checked counts, and duct's peak memory and wall time. The worker sends heartbeats throughout the run, and afterwards deletes the temporary dataset and dandi-cli's cache.
 6. **Store (archive).** For a complete run, set `success` to `counts.CRITICAL + counts.ERROR == 0`, so only `ERROR` and `CRITICAL` block publication. The archive applies this policy, not the worker. dandi-cli maps validator severities onto its own as follows:
    - NWB Inspector: `CRITICAL` → `ERROR`, best-practice violations → `WARNING`, suggestions → `HINT`.
    - BIDS validator: errors → `ERROR`, warnings → `HINT`.
