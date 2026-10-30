@@ -16,6 +16,7 @@ Status: proposal
   - [dandi-archive](#dandi-archive)
     - [Settings](#settings)
     - [Validator image](#validator-image)
+    - [Version updates](#version-updates)
     - [Triggering](#triggering)
     - [Content fingerprint](#content-fingerprint)
     - [Required versions](#required-versions)
@@ -93,7 +94,7 @@ The changes in each repository can be summarized as:
 
   </details>
 
-- **Validation target:** the latest validator versions, as a version code (see [Settings](#settings)).
+- **Validation target:** the version code of the newest released worker image, which tracks the latest validator releases on PyPI (see [Version updates](#version-updates)).
 - **Required versions:** the version code a draft must be validated with: the validation target at the draft's last file change (see [Required versions](#required-versions)).
 - **Content fingerprint:** a hash of the files a version contains (see [Content fingerprint](#content-fingerprint)).
 
@@ -201,14 +202,11 @@ The schema change also needs some housekeeping:
 
 ### Settings
 
-- **`DJANGO_DANDI_VALIDATION_TARGET`** holds the validation target as a version code.
-  - **Unset:** the feature is off. Nothing is validated or stamped, and stamping removes both fields from draft metadata.
-  - **Set:** jobs are queued, and drafts whose files change are moved to this target (see [Required versions](#required-versions)). It must equal the version code of the image the worker app runs; the archive alerts when a worker claims jobs with a different code.
-  - **Exposed** as `validation_target` on `/api/info/`.
+- **No hardcoded target.** The validation target is not a config var. The archive records the version code each worker reports when it claims jobs, and the target is the most recently first-seen code, i.e. the newest released worker image (see [Version updates](#version-updates)). Until a worker has reported a code, the feature is off: nothing is validated or stamped. The target is shown in Django admin, where staff can override it (e.g. after rolling back an image), and exposed as `validation_target` on `/api/info/`.
 - **`DJANGO_DANDI_VALIDATION_GATING`** (boolean, off by default). When on, both fields are stamped into draft metadata and publication is gated. When off, stamping removes them.
 - **`DJANGO_DANDI_VALIDATION_WORKER_TOKEN`** (secret) authenticates the worker app to the [job API](#job-api).
 
-With the target set and gating off, the archive runs in shadow mode: results and the banner appear, but publication is not gated.
+With a worker running and gating off, the archive runs in shadow mode: results and the banner appear, but publication is not gated.
 
 ### Validator image
 
@@ -244,9 +242,29 @@ With the target set and gating off, the archive runs in shadow mode: results and
 
 </details>
 
+### Version updates
+
+New validator versions are picked up automatically; nobody edits a version string by hand.
+
+1. **Daily scan.** A scheduled GitHub Actions workflow in dandi-archive runs once a day. It resolves the six validator packages unpinned against PyPI with pixi, which picks the newest plain releases that install together, and reads their versions from the resulting lock to compute the version code.
+2. **Pull request.** If `validators/<code>/` doesn't exist yet, the workflow creates it with those versions pinned exactly, locks it, and opens a pull request with auto-merge enabled.
+3. **Checks.** CI builds the image and runs a smoke test on a small fixture Dandiset. The pull request merges once they pass.
+4. **Release.** On merge, the release workflow pushes the image to GHCR and to the worker app's Heroku registry, and releases it.
+5. **Target.** The new image's first claim reports its code, and the archive makes it the target (see [Settings](#settings)).
+
+<details>
+<summary>Implementation</summary>
+
+- **Sources.** The six validator packages come from PyPI (pixi's `[pypi-dependencies]`), matching what the scan reads; Python, git and git-annex come from conda-forge.
+- **Plain releases only.** Pre-releases, dev releases and yanked releases are skipped, since version codes can only encode plain releases.
+- **Immutable directories.** A code's directory is created once and never edited. The other tools in the lock (git, git-annex, DataLad, datalad-container, con-duct) are only re-resolved when a new code is created, so one code always names one image.
+- **Incompatible releases.** If the newest releases can't be installed together, the resolver falls back to the newest set that can, so the scan never proposes a broken environment.
+
+</details>
+
 ### Triggering
 
-Validation jobs are rows of the summary table in the `queued` state (see [Summary table](#summary-table)). The archive creates them in two ways, both only while a target is set:
+Validation jobs are rows of the summary table in the `queued` state (see [Summary table](#summary-table)). The archive creates them in two ways, both only once a target exists:
 
 - **Manifest hook:** at the end of `write_manifest_files`, for drafts only. Publishing and some management commands also call it for published versions, so it checks `version.version == 'draft'`.
 - **Reconciler:** a beat task every few minutes. It is what guarantees coverage, because checksums arrive after the manifests are written and the draft is not re-pended then. The hook only cuts latency.
@@ -283,7 +301,7 @@ Each draft stores its required version code in a new `Version` column, next to i
 - **Moved on file changes.** Whenever an asset change updates the fingerprint (an asset was added, removed or replaced), the same update sets the required code to the current target. A draft therefore moves to newer validators only when its files change.
 - **Kept on metadata-only changes.** A metadata-only change leaves the fingerprint, and so the required code, unchanged. The draft keeps its result, needs no new run, and is never blocked by checks added later.
 - **Frozen at publication.** Published versions copy both columns from the draft and never change them. Publication requires `validatedBy: true`, so a published version's result is always a passing one.
-- **Unset.** Drafts without a required code get the current target the first time one is set.
+- **Unset.** Drafts without a required code get the current target as soon as one exists.
 - **Retired codes.** If a draft's required code is not the code of the deployed worker image and the draft has no complete row for it (for example, its run failed before a new image was released), the draft moves to the current target.
 
 ### No caching across jobs
@@ -514,24 +532,21 @@ A small API lets the worker app claim jobs and report results. It authenticates 
 ## dandi-infrastructure
 
 - **Worker app.** A new Heroku app (and a staging counterpart) on the container stack, sized from the pilot. Its config vars are only the archive's API URL, the worker token and a Sentry DSN.
-- **Archive config vars.** `DJANGO_DANDI_VALIDATION_TARGET`, `DJANGO_DANDI_VALIDATION_GATING`, and the worker token as a secret.
-- **Releases.** CI pushes each image to GHCR and to the worker app's Heroku registry, and releases it there.
+- **Archive config vars.** `DJANGO_DANDI_VALIDATION_GATING` and the worker token as a secret. There is no version string to maintain: the target comes from the released worker image (see [Version updates](#version-updates)).
+- **Releases.** CI pushes each image to GHCR and to the worker app's Heroku registry, and releases it there, using a Heroku API key stored as a GitHub Actions secret.
 - **No storage changes.** Records go in the existing bucket through presigned URLs the archive already knows how to sign.
 
 <details>
 <summary>Implementation</summary>
 
-- **Worker app:** a `heroku_app` resource with `stack = "container"`, and a `heroku_formation` for its `worker` process (`standard-2x` has only 1 GB of memory), quantity 0 until a target is set.
-- **Archive config vars:** add the target and gating variables under `# DANDI-specific variables` in `terraform/api.tf`, and in `staging.tf` if staging should validate too. Add `DJANGO_DANDI_VALIDATION_WORKER_TOKEN` to `sensitive_config_vars`, from the same Terraform variable as the worker app's token:
+- **Worker app:** a `heroku_app` resource with `stack = "container"`, and a `heroku_formation` for its `worker` process (`standard-2x` has only 1 GB of memory), quantity 0 until the pilot.
+- **Archive config vars:** add the gating variable under `# DANDI-specific variables` in `terraform/api.tf`, and in `staging.tf` if staging should validate too. Add `DJANGO_DANDI_VALIDATION_WORKER_TOKEN` to `sensitive_config_vars`, from the same Terraform variable as the worker app's token:
 
 ```hcl
-DJANGO_DANDI_VALIDATION_TARGET = "d0.75.0-s0.12.0-n0.7.1-p3.1.0-h4.1.0-b2.1.0"
 DJANGO_DANDI_VALIDATION_GATING = "true"
 ```
 
 </details>
-
-Bumping the target is a reviewed dandi-archive change that adds the new environment directory, followed by releasing its image and changing the config var.
 
 ## dandi-cli
 
@@ -589,8 +604,10 @@ Metadata-only changes are not affected: a draft keeps the validator versions and
 
 **New validator release.**
 
-1. Commit the next version code's directory (manifest and lock). CI builds its image and pushes it to GHCR.
-2. Release that image to the worker app and change `DJANGO_DANDI_VALIDATION_TARGET` together. Drafts keep their required versions until their files next change, so nothing is re-validated and publication is not interrupted. Drafts still waiting on a run under the old code move to the new target (see [Required versions](#required-versions)).
+1. A new release of one of the six packages appears on PyPI.
+2. The next daily scan opens a pull request adding the new code's directory, and it merges once its checks pass.
+3. The release workflow releases the new image to the worker app, and its first claim makes the new code the target.
+4. Drafts keep their required versions until their files next change, so nothing is re-validated and publication is not interrupted. Drafts still waiting on a run under the old code move to the new target (see [Required versions](#required-versions)).
 
 Published versions keep their frozen validator versions.
 
@@ -599,10 +616,10 @@ Published versions keep their frozen validator versions.
 1. **dandi-schema:** add `ValidatorType`, the two fields and the publication rule, then bump the version and release.
 2. **datalad-fuse:** release with the remfile backend.
 3. **dandi-cli:** release with the streaming stack, the `INTERNAL` classification, hdmf's version in records and the NWB Inspector fix.
-4. **dandi-archive:** upgrade dandischema and run `migrate_version_metadata --all`. Ship the table, the fingerprint state, fingerprint and required-code columns with their backfill, job API, reconciler, worker program and image build, stamping, publish-time copy, `/info/` fields, banner and daily check, with the target unset and gating off.
+4. **dandi-archive:** upgrade dandischema and run `migrate_version_metadata --all`. Ship the table, the fingerprint state, fingerprint and required-code columns with their backfill, job API, reconciler, worker program and image build, stamping, publish-time copy, `/info/` fields, banner and daily check, plus the daily version scan and the release workflow, with gating off.
 5. **dandi-infrastructure:** add the worker app and its formation, and the token on both apps, staging first.
 6. **Pilot** on a small, a BIDS and a large Dandiset, using duct's summaries. Measure seconds per file, peak memory, bytes read, worker start time, the fingerprint backfill time, how long re-validating the largest Dandiset takes after a one-file change, and how long the largest Dandiset takes compared with Heroku's daily dyno restart. Then choose the dyno size and count.
-7. **Shadow mode:** set the target with gating off. Existing drafts get it as their required versions. Results and the banner appear, but publication is not gated.
+7. **Shadow mode:** release the first image to the worker app with gating off. Its first claim sets the target, and existing drafts get it as their required versions. Results and the banner appear, but publication is not gated.
 8. **Sweep** every draft. Published versions are not validated: their results are frozen at publication. Either scale the worker app up temporarily, or run the same image elsewhere, for example with Apptainer on HPC near the bucket, against the same job API; estimate the cost first.
    - **Capacity:** `files × seconds per file ÷ processes`. For example, 500k files at 30 seconds each is about 170 process-days, or about 11 days with 16 processes.
    - **Regions:** Heroku's US region runs in AWS us-east-1, while the bucket is in us-east-2.
