@@ -66,9 +66,9 @@ The changes in each repository can be summarized as:
   - **Source:** all six are read from the validator image that produced the record (see [Validator image](#validator-image)). `dandischema` here is that image's dandischema, not the archive's own dandischema library or the metadata's `schemaVersion`.
   - **Sanity check:** every key also appears in the records. Five appear as a record's `origin.validator` with its `origin.validator_version`, and `hdmf` appears alongside `pynwb`, since pynwb validation runs on hdmf (see [dandi-cli](#dandi-cli)).
 - **Version code:** a short, readable string form of a validator-versions map. It names the validator environment's directory and container image tag, the archive's setting, and the record's path in the bucket.
-  - **Form:** each package's one-letter code (see `VALIDATOR_CODES` under [Validator image](#validator-image)) followed directly by its version, in the code table's order, with no separator between entries. For the map above: `d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0`.
-  - **Parsing:** each entry matches `([a-z])(\d+(?:\.\d+)*)`, and a whole code matches `(?:[a-z]\d+(?:\.\d+)*)+`.
-  - **Why this is unambiguous:** codes are single letters, and versions must be plain releases made only of digits and periods (e.g. `0.75.0`). A pre-release, post-release, dev or local version (e.g. `1.0rc1`, `0.75.0+12.gabc`) cannot be encoded. The fixed order means equal maps always give identical codes.
+  - **Form:** each package's one-letter code (see `VALIDATOR_CODES` under [Validator image](#validator-image)) followed directly by its version, in the code table's order, with entries joined by `-`. For the map above: `d0.75.0-s0.12.0-n0.7.1-p3.1.0-h4.1.0-b2.1.0`.
+  - **Parsing:** split on `-`; each entry matches `([a-z])(\d+(?:\.\d+)*)`, and a whole code matches `[a-z]\d+(?:\.\d+)*(?:-[a-z]\d+(?:\.\d+)*)*`.
+  - **Why this is unambiguous:** codes are single letters, and versions must be plain releases made only of digits and periods (e.g. `0.75.0`), so `-` never appears inside an entry. A pre-release, post-release, dev or local version (e.g. `1.0rc1`, `0.75.0+12.gabc`) cannot be encoded. The fixed order means equal maps always give identical codes.
 - **Validation target:** the latest validator versions, as a version code (see [Settings](#settings)).
 - **Required versions:** the version code a draft must be validated with: the validation target at the draft's last file change (see [Required versions](#required-versions)).
 - **Content fingerprint:** a hash of the files a version contains (see [Content fingerprint](#content-fingerprint)).
@@ -178,7 +178,7 @@ With the target set and gating off, the archive runs in shadow mode: results and
 
 ### Validator image
 
-- **One environment per version code.** Each version code has a directory in dandi-archive, e.g. `validators/d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0/`, holding a [pixi](https://pixi.sh) manifest (`pixi.toml`) and its lock file (`pixi.lock`).
+- **One environment per version code.** Each version code has a directory in dandi-archive, e.g. `validators/d0.75.0-s0.12.0-n0.7.1-p3.1.0-h4.1.0-b2.1.0/`, holding a [pixi](https://pixi.sh) manifest (`pixi.toml`) and its lock file (`pixi.lock`).
 - **What's pinned.** The lock pins conda-forge and PyPI packages with checksums: the six validator packages, plus git-annex, DataLad, datalad-container and con-duct (`duct`), which the worker uses to build the dataset and run validation (see [Validation job](#validation-job)). System tools are therefore pinned alongside the validators instead of coming from the base image.
 - **One shared Dockerfile.** `validators/Dockerfile` takes the code as a build argument (`--build-arg VERSION_CODE=<code>`), runs `pixi install --locked` in that directory, and copies the environment into a slim runtime image. The image also contains the worker's small program (see [Validation worker app](#validation-worker-app)), which doesn't import Django.
 - **Registries.** CI builds each image once and pushes it to GitHub Container Registry as `ghcr.io/dandi/dandi-validation:<version code>`, the canonical tagged copy. The same image is pushed to the worker app's Heroku registry to release it, and can be pulled anywhere else: Docker, Podman, or Apptainer on HPC (`apptainer pull docker://ghcr.io/dandi/dandi-validation:<version code>`). Heroku's registry doesn't keep version tags, so GHCR records which image produced each code.
@@ -407,7 +407,7 @@ A small API lets the worker app claim jobs and report results. It authenticates 
 - **Archive config vars.** Add `DJANGO_DANDI_VALIDATION_TARGET` and `DJANGO_DANDI_VALIDATION_GATING` under `# DANDI-specific variables` in `terraform/api.tf`, and in `staging.tf` if staging should validate too. Add `DJANGO_DANDI_VALIDATION_WORKER_TOKEN` to `sensitive_config_vars`, from the same Terraform variable as the worker app's token:
 
   ```hcl
-  DJANGO_DANDI_VALIDATION_TARGET = "d0.75.0s0.12.0n0.7.1p3.1.0h4.1.0b2.1.0"
+  DJANGO_DANDI_VALIDATION_TARGET = "d0.75.0-s0.12.0-n0.7.1-p3.1.0-h4.1.0-b2.1.0"
   DJANGO_DANDI_VALIDATION_GATING = "true"
   ```
 
