@@ -221,9 +221,13 @@ def remove_asset_from_version(*, user, asset: Asset, version: Version) -> Versio
     return version
 
 
-def bulk_remove_assets_from_version(*, user: User, version: Version, asset_ids: list[UUID]) -> int:
+def bulk_remove_assets_from_version(
+    *, user: User, version: Version, asset_ids: list[UUID]
+) -> list[UUID]:
     """
-    Remove many assets from a version, returning the number removed.
+    Remove many assets from a version, returning the IDs of the assets that were removed.
+
+    Any requested assets that aren't found in the version are ignored.
 
     The removal is performed synchronously, within a single transaction.
     """
@@ -239,7 +243,7 @@ def bulk_remove_assets_from_version(*, user: User, version: Version, asset_ids: 
             version.assets.filter(asset_id__in=asset_ids).select_for_update().order_by('id')
         )
         if not assets:
-            return 0
+            return []
 
         # Remove asset paths and the assets themselves from the version. Both of these are
         # performed for all assets at once, which is what makes this faster than deleting
@@ -256,4 +260,4 @@ def bulk_remove_assets_from_version(*, user: User, version: Version, asset_ids: 
         for asset in assets:
             audit.remove_asset(dandiset=version.dandiset, user=user, asset=asset)
 
-    return len(assets)
+    return [asset.asset_id for asset in assets]

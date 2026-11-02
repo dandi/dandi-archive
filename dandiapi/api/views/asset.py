@@ -417,8 +417,8 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         method='POST',
         request_body=AssetBulkDeleteRequestSerializer,
         responses={
-            204: 'If the assets were successfully removed',
-            404: 'If any of the given assets do not belong to this version',
+            200: 'The IDs of the removed assets. Requested assets not found in this version'
+            ' are ignored.',
         },
         manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
         operation_summary='Remove multiple assets from a version.',

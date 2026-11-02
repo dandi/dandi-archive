@@ -53,7 +53,7 @@ def test_asset_rest_bulk_delete(api_client, version_with_assets):
         format='json',
     )
     assert resp.status_code == 200
-    assert resp.data == len(assets)
+    assert resp.json() == [str(asset.asset_id) for asset in sorted(assets, key=lambda a: a.id)]
 
     # All assets are disassociated from the version, but not deleted
     assert version.assets.count() == 0
@@ -89,7 +89,7 @@ def test_asset_rest_bulk_delete_partial(api_client, version_with_assets):
         format='json',
     )
     assert resp.status_code == 200
-    assert resp.data == 2
+    assert sorted(resp.json()) == sorted([str(assets[0].asset_id), str(assets[1].asset_id)])
 
     # Ordering doesn't matter because it's just one asset
     assert list(version.assets.all()) == [assets[2]]
@@ -114,7 +114,7 @@ def test_asset_rest_bulk_delete_duplicate_ids(api_client, version_with_assets):
         bulk_delete_url(version), {'asset_ids': [asset_id, asset_id]}, format='json'
     )
     assert resp.status_code == 200
-    assert resp.data == 1
+    assert resp.json() == [asset_id]
     assert version.assets.count() == 2
     assert AuditRecord.objects.filter(record_type='remove_asset').count() == 1
 
@@ -131,7 +131,7 @@ def test_asset_rest_bulk_delete_nonexistent_asset(api_client, version_with_asset
         format='json',
     )
     assert resp.status_code == 200
-    assert resp.data == 1
+    assert resp.json() == [str(assets[0].asset_id)]
 
     # The matching asset was removed
     assert version.assets.count() == 2
@@ -153,7 +153,7 @@ def test_asset_rest_bulk_delete_asset_of_other_version(
         bulk_delete_url(version), {'asset_ids': [str(other_asset.asset_id)]}, format='json'
     )
     assert resp.status_code == 200
-    assert resp.data == 0
+    assert resp.json() == []
 
 
 @pytest.mark.django_db
