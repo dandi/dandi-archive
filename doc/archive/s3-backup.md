@@ -156,8 +156,8 @@ Any solutions not listed here have no known limitations, though this is likely b
 
 | Solution | Cost (TB/year) |
 | :-: | :-: |
-| Deep Glacier | $11.88 |
-| Deep Glacier + 1 Full Restoration per Year | $14.38 |
+| Deep Glacier | $11.06 |
+| Deep Glacier + 1 Full Restoration per Year | $13.28 |
 | NESE | $4.12 |
 | Granite (Internal)[^1] | $15.62 |
 | Granite (External) | $24.78 |
@@ -174,16 +174,18 @@ Any solutions not listed here have no known limitations, though this is likely b
 
 AWS pricing is very piece-meal depending on what specific actions we need.
 
-The basic storage has the advertised price of $0.00099/GB/month. Rescaling gives:
+Although AWS advertises its prices "per GB", it actually bills in binary units (1 "GB" = 1 GiB = $2^{30}$ bytes). Since 1 TB = $10^{12}$ bytes $\approx$ 931.32 GiB, the AWS prices must be converted accordingly to be expressed in terms of (decimal) TB.
+
+The basic storage has the advertised price of $0.00099/GB/month (i.e., per GiB). Rescaling gives:
 
 $$
-\frac{$0.00099}{\rm{GB} \cdot \rm{month}} = \frac{$0.00099}{1 \ \rm{GB} \ 1 \ \rm{month}} \cdot \frac{1,000 \ \rm{GB}}{1 \ \rm{TB}} \cdot \frac{12 \ \rm{month}}{1 \ \rm{year}} = $11.88/\rm{TB}/\rm{year}
+\frac{$0.00099}{\rm{GiB} \cdot \rm{month}} = \frac{$0.00099}{1 \ \rm{GiB} \ 1 \ \rm{month}} \cdot \frac{931.32 \ \rm{GiB}}{1 \ \rm{TB}} \cdot \frac{12 \ \rm{month}}{1 \ \rm{year}} = $11.06/\rm{TB}/\rm{year}
 $$
 
-The cost of full restoration is estimated to be about $2,500/PB, though this is largely guesswork. Amortizing this at a rate of once per year gives:
+The cost of full restoration is estimated to be about $2,500/PB in AWS units (i.e., per PiB, where 1 PiB $\approx$ 1,125.9 TB), though this is largely guesswork. Amortizing this at a rate of once per year gives:
 
 $$
-\frac{$2,500}{\rm{PB} \cdot \rm{year}} = \frac{$2,500}{\rm{PB} \cdot \rm{year}} \cdot \frac{1 \ \rm{PB}}{1,000 \ \rm{TB}} = $2.5/\rm{TB}/\rm{year}
+\frac{$2,500}{\rm{PiB} \cdot \rm{year}} = \frac{$2,500}{\rm{PiB} \cdot \rm{year}} \cdot \frac{1 \ \rm{PiB}}{1,125.9 \ \rm{TB}} = $2.22/\rm{TB}/\rm{year}
 $$
 
 
@@ -231,8 +233,8 @@ The following table shows the initial, final, intermediate, and cumulative costs
 | Design | Year 0<br>(1 PB) | Year 1<br>(2.5 PB)[^2] | Year 2<br>(3.5 PB) | Year 3<br>(4.5 PB) | Year 4<br>(5.5 PB) | Year 5<br>(6.5 PB) | Cumulative Total<br>Over All Years|
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | NESE  | $4,121 / year | $10,302.5 / year | $14,423.5 / year | $18,544.5 / year | $22,665.5 / year | $26,786.5 / year | $96,843.5 |
-| Deep<br>Glacier| $11,880 / year | $29,700 / year | $41,580 / year | $53,460 / year | $65,340 / year | $77,220 / year | $279,180 |
-| Deep Glacier<br>+<br>Full Restore | $14,380 / year | $35,950 / year | $50,330 / year | $64,710 / year | $79,090 / year | $93,470 / year  | max: $372,650 |
+| Deep<br>Glacier| $11,064 / year | $27,660 / year | $38,724 / year | $49,789 / year | $60,853 / year | $71,917 / year | $260,007 |
+| Deep Glacier<br>+<br>Full Restore | $13,285 / year | $33,211 / year | $46,496 / year | $59,781 / year | $73,065 / year | $86,350 / year  | max: $312,188 |
 | Granite (Internal) | $15,620 / year |	$39,050 / year | $54,670 / year | $70,290 / year | $85,910 / year | $101,530 / year | $367,070 |
 | Granite (External) | $24,780 / year |	$61,950 / year | $86,730 / year | $111,510 / year | $136,290 / year | $161,070 / year | $582,330 |
 | OSN | $12,850/ year |	$32,125 / year | $44975 / year | $57,825 / year | $70,675 / year | $83,525 / year | $301,975 |

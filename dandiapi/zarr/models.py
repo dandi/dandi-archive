@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
 from django.conf import settings
@@ -103,10 +102,7 @@ class ZarrArchive(TimeStampedModel):
 
     @property
     def s3_url(self):
-        signed_url = self.storage.url(self.s3_path(''))
-        # Strip off the query parameters from the presigning, as they are different every time
-        parsed = urlparse(signed_url)
-        return urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+        return self.storage.url(self.s3_path(''), signed=False)
 
     def s3_path(self, zarr_path: str) -> str:
         """Generate a full S3 object path from a path in this zarr_archive."""

@@ -16,6 +16,8 @@ from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
 from django.utils.html import format_html
 from guardian.admin import GuardedModelAdmin
+from oauth2_provider.admin import ApplicationAdmin as BaseApplicationAdmin
+from oauth2_provider.models import Application
 
 from dandiapi.api.models import (
     Asset,
@@ -37,6 +39,16 @@ if TYPE_CHECKING:
 
 admin.site.site_header = 'DANDI Admin'
 admin.site.site_title = 'DANDI Admin'
+
+
+# Importing oauth2_provider.admin above registers its admin, so it can be replaced here
+admin.site.unregister(Application)
+
+
+@admin.register(Application)
+class ApplicationAdmin(BaseApplicationAdmin):
+    # We intentionally remove the mounted URL that this link requires
+    view_on_site = False
 
 
 class UserMetadataInline(TabularInline):

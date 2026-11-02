@@ -179,33 +179,35 @@ def _delete_asset_paths(asset: Asset, version: Version):
     if leaf is None:
         return
 
-    # Fetch parents
-    parent_ids = (
+    # Fetch ancestors. Materialize the IDs now, as the relation rows backing this queryset are
+    # cascade-deleted below, and they're needed afterwards to scope the delete.
+    ancestor_ids = list(
         AssetPathRelation.objects.filter(child=leaf)
         .distinct('parent')
         .values_list('parent', flat=True)
     )
-    parent_paths = AssetPath.objects.filter(id__in=parent_ids)
 
     # Get the previously computed size of the leaf node, not the current asset size,
     # in case the size of the AssetBlob/ZarrArchive that it points to has changed
     leaf_size = leaf.aggregate_size
 
-    # Update parents
-    parent_paths.update(
+    # Update parents.
+    AssetPath.objects.filter(id__in=ancestor_ids).update(
         aggregate_size=F('aggregate_size') - leaf_size,
         aggregate_files=F('aggregate_files') - 1,
     )
 
-    # Ensure integrity
+    # An asset path always links to itself, so the above update should have
+    # decremented the size and file number of the leaf asset path to zero.
     leaf.refresh_from_db()
     if leaf.aggregate_size != 0:
         raise RuntimeError('Remaining non-zero aggregate_size')
     if leaf.aggregate_files != 0:
         raise RuntimeError('Remaining non-zero aggregate_files')
 
-    # Delete leaf node and any other paths with no contained files
-    AssetPath.objects.filter(aggregate_files=0).delete()
+    # Delete leaf node and any other now empty asset paths. Only the leaf and its
+    # ancestors can have reached zero, so restrict the delete to those rows.
+    AssetPath.objects.filter(id__in=ancestor_ids, aggregate_files=0).delete()
 
 
 @transaction.atomic

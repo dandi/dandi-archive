@@ -1,3 +1,348 @@
+# v1.1.1 (Thu Oct 29 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Add e2e tests for the table viewer [#2974](https://github.com/dandi/dandi-archive/pull/2974) ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Don't expose oauth application management URLs [#2978](https://github.com/dandi/dandi-archive/pull/2978) ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 3
+
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v1.1.0 (Tue Oct 20 2026)
+
+#### 🚀 Enhancement
+
+- Disable AI meditor on published versions [#2973](https://github.com/dandi/dandi-archive/pull/2973) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 1
+
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v1.0.19 (Wed Oct 14 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Do not bump draft `modified` when assetsSummary is unchanged [#2950](https://github.com/dandi/dandi-archive/pull/2950) ([@claude](https://github.com/claude) [@jjnesbitt](https://github.com/jjnesbitt) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Add table visualizer for .tsv assets [#2928](https://github.com/dandi/dandi-archive/pull/2928) ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Begin collecting internal knowledge through skills (Vuetify'ing components) [#2929](https://github.com/dandi/dandi-archive/pull/2929) ([@claude](https://github.com/claude) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🧪 Tests
+
+- Skip test workflows for changes only to doc/ [#2938](https://github.com/dandi/dandi-archive/pull/2938) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 5
+
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.18 (Tue Oct 06 2026)
+
+:tada: This release contains work from new contributors! :tada:
+
+Thanks for all your work!
+
+:heart: GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+:heart: Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🐛 Bug Fix
+
+- Use correct environment variable to configure Sentry [#2967](https://github.com/dandi/dandi-archive/pull/2967) ([@waxlamp](https://github.com/waxlamp))
+- Run local MinIO from `bitnamilegacy/minio`; Quay now requires a login [#2940](https://github.com/dandi/dandi-archive/pull/2940) ([@claude](https://github.com/claude) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Stable default order for asset listings; allow `?order=...,id` [#2945](https://github.com/dandi/dandi-archive/pull/2945) ([@claude](https://github.com/claude) [@yarikoptic](https://github.com/yarikoptic) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Account for AWS GiB billing in S3 backup cost estimates [#2935](https://github.com/dandi/dandi-archive/pull/2935) ([@claude](https://github.com/claude) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### Authors: 5
+
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v1.0.17 (Sun Oct 04 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Keep the Region out of unsigned S3 URLs [#2963](https://github.com/dandi/dandi-archive/pull/2963) ([@claude](https://github.com/claude) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### Authors: 2
+
+- Claude ([@claude](https://github.com/claude))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+---
+
+# v1.0.16 (Fri Oct 02 2026)
+
+#### 🐛 Bug Fix
+
+- Increase unembargo_dandiset_task soft time limit to 1 hour [#2960](https://github.com/dandi/dandi-archive/pull/2960) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.15 (Fri Oct 02 2026)
+
+#### 🐛 Bug Fix
+
+- Increase `write_manifest_files` soft time limit to 360s [#2948](https://github.com/dandi/dandi-archive/pull/2948) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.14 (Fri Oct 02 2026)
+
+#### 🐛 Bug Fix
+
+- Revert "Temporarily disable write_manifest_files task" [#2958](https://github.com/dandi/dandi-archive/pull/2958) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.13 (Thu Oct 01 2026)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger a release [#2955](https://github.com/dandi/dandi-archive/pull/2955) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix type of celery function arg [#2956](https://github.com/dandi/dandi-archive/pull/2956) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add `expires` for beat tasks [#2954](https://github.com/dandi/dandi-archive/pull/2954) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.12 (Thu Oct 01 2026)
+
+#### 🐛 Bug Fix
+
+- Temporarily disable write_manifest_files task [#2953](https://github.com/dandi/dandi-archive/pull/2953) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.11 (Thu Oct 01 2026)
+
+#### 🐛 Bug Fix
+
+- Avoid presigning URLs when computing asset S3 URLs [#2951](https://github.com/dandi/dandi-archive/pull/2951) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.10 (Wed Sep 30 2026)
+
+#### 🐛 Bug Fix
+
+- Disable scheduled materialized view refresh [#2949](https://github.com/dandi/dandi-archive/pull/2949) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.9 (Wed Sep 30 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Increase aggregate_assets_summary_task soft time limit to 5 minutes [#2947](https://github.com/dandi/dandi-archive/pull/2947) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Hide form control buttons for read-only user [#2941](https://github.com/dandi/dandi-archive/pull/2941) ([@naglepuff](https://github.com/naglepuff))
+- Add a variable: search operator over assetsSummary.variableMeasured [#2885](https://github.com/dandi/dandi-archive/pull/2885) ([@bendichter](https://github.com/bendichter))
+- Add standard: search operator; remove file_type: [#2884](https://github.com/dandi/dandi-archive/pull/2884) ([@bendichter](https://github.com/bendichter))
+- fix: pull MinIO from Quay in the dev stack [#2922](https://github.com/dandi/dandi-archive/pull/2922) (yaroslav.o.halchenko@dartmouth.edu [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### Authors: 5
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko (yaroslav.o.halchenko@dartmouth.edu)
+
+---
+
+# v1.0.8 (Fri Sep 18 2026)
+
+:tada: This release contains work from new contributors! :tada:
+
+Thanks for all your work!
+
+:heart: Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+:heart: GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### 🐛 Bug Fix
+
+- Make file browser rows real links [#2926](https://github.com/dandi/dandi-archive/pull/2926) ([@claude](https://github.com/claude) [@mvandenburgh](https://github.com/mvandenburgh) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Fix publish-time race between DOI minting and manifest writing [#2912](https://github.com/dandi/dandi-archive/pull/2912) ([@yarikoptic](https://github.com/yarikoptic) [@claude](https://github.com/claude) [@jjnesbitt](https://github.com/jjnesbitt) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### Authors: 6
+
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v1.0.7 (Thu Sep 17 2026)
+
+#### 🐛 Bug Fix
+
+- Fix zarr publishing validation [#2924](https://github.com/dandi/dandi-archive/pull/2924) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add in-browser zip download for small dandisets [#2855](https://github.com/dandi/dandi-archive/pull/2855) ([@bendichter](https://github.com/bendichter) [@naglepuff](https://github.com/naglepuff))
+- Add an Example Notebooks tab to the dandiset landing page [#2897](https://github.com/dandi/dandi-archive/pull/2897) ([@bendichter](https://github.com/bendichter) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.6 (Mon Sep 14 2026)
+
+#### 🐛 Bug Fix
+
+- Restrict asset path deletion to ancestors of deleted asset [#2919](https://github.com/dandi/dandi-archive/pull/2919) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v1.0.5 (Mon Sep 14 2026)
+
+#### 🐛 Bug Fix
+
+- Fix embargo funding and end date parameters on Dandiset creation [#2918](https://github.com/dandi/dandi-archive/pull/2918) ([@bendichter](https://github.com/bendichter))
+
+#### Authors: 1
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+
+---
+
+# v1.0.4 (Wed Sep 09 2026)
+
+#### 🐛 Bug Fix
+
+- Remove user-facing dandihub references following service sunset [#2905](https://github.com/dandi/dandi-archive/pull/2905) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
+# v1.0.3 (Tue Sep 08 2026)
+
+:tada: This release contains work from new contributors! :tada:
+
+Thanks for all your work!
+
+:heart: Claude ([@claude](https://github.com/claude))
+
+:heart: Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🐛 Bug Fix
+
+- Lock file maintenance [#2916](https://github.com/dandi/dandi-archive/pull/2916) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Merge pull request #2856 from dandi/anatomy-info-card [#2856](https://github.com/dandi/dandi-archive/pull/2856) ([@bendichter](https://github.com/bendichter))
+- e2e: reduce flakiness of playwright tests [#2893](https://github.com/dandi/dandi-archive/pull/2893) ([@naglepuff](https://github.com/naglepuff))
+- Use 'spike sorting' instead of 'patch clamp' in technique search example [#2909](https://github.com/dandi/dandi-archive/pull/2909) ([@claude](https://github.com/claude) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🔩 Dependency Updates
+
+- Update dev dependencies [#2910](https://github.com/dandi/dandi-archive/pull/2910) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update astral-sh/setup-uv action to v10 [#2911](https://github.com/dandi/dandi-archive/pull/2911) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 5
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+
+---
+
+# v1.0.2 (Mon Aug 31 2026)
+
+#### 🐛 Bug Fix
+
+- Add a DANDI Atlas entry to the Open with menu [#2873](https://github.com/dandi/dandi-archive/pull/2873) ([@bendichter](https://github.com/bendichter) [@mvandenburgh](https://github.com/mvandenburgh))
+- Add `.DS_Store` to `.gitignore` [#2906](https://github.com/dandi/dandi-archive/pull/2906) ([@kabilar](https://github.com/kabilar))
+
+#### 🏠 Internal
+
+- Centralize `/api/info` calls + cleaner production/sandbox identification [#2903](https://github.com/dandi/dandi-archive/pull/2903) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🔩 Dependency Updates
+
+- Lock file maintenance [#2860](https://github.com/dandi/dandi-archive/pull/2860) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 4
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v1.0.1 (Mon Aug 24 2026)
 
 #### 🐛 Bug Fix

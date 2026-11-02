@@ -14,11 +14,7 @@ import type {
   DandisetSearchResult,
   IncompleteUpload,
 } from '@/types';
-import type {
-  Dandiset as DandisetMetadata,
-  DandisetContributors,
-  Organization,
-} from '@/types/schema';
+import type { Dandiset as DandisetMetadata } from '@/types/schema';
 import { useDandisetStore } from '@/stores/dandiset';
 import qs from 'querystring';
 
@@ -233,34 +229,23 @@ const dandiRest = {
       embargoEndDate?: string;
     }
   ) {
+    // Parameter names match CreateDandisetQueryParameterSerializer on the
+    // server, which also adds the funding source as a Funder contributor.
     const params: { embargo: boolean; [key: string]: any } = { embargo: true };
 
-    // Add embargo-specific parameters
     if (embargoData.hasAward) {
       if (embargoData.fundingSource) {
-        params.fundingSource = embargoData.fundingSource;
+        params.funding_source = embargoData.fundingSource;
       }
       if (embargoData.awardNumber) {
-        params.awardNumber = embargoData.awardNumber;
+        params.award_number = embargoData.awardNumber;
       }
-    } else if (embargoData.embargoEndDate) {
-      params.embargoEndDate = embargoData.embargoEndDate;
+    }
+    if (embargoData.embargoEndDate) {
+      params.embargo_end_date = embargoData.embargoEndDate;
     }
 
-    // If we have award information, add it as a contributor in the metadata
-    let updatedMetadata = metadata;
-    if (embargoData.hasAward && embargoData.fundingSource) {
-      const award: Organization = {
-        name: embargoData.fundingSource,
-        schemaKey: 'Organization',
-        awardNumber: embargoData.awardNumber,
-        roleName: ['dcite:Funder'],
-      };
-      const contributor: DandisetContributors = [...(metadata.contributor || []), award];
-      updatedMetadata = { ...metadata, contributor };
-    }
-
-    return this.createDandiset(name, updatedMetadata, { params });
+    return this.createDandiset(name, metadata, { params });
   },
   async saveDandiset(
     identifier: string,

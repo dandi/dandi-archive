@@ -68,23 +68,23 @@ dev = [
   # so use this to install "development" extras by default too
   "dandiapi[development]",
   "pre-commit==4.6.2",
-  "tox==4.60.0",
+  "tox==4.61.1",
   "tox-uv==1.36.0",
 ]
 lint = [
-  "ruff==0.16.3",
+  "ruff==0.16.5",
 ]
 type = [
   "mypy==1.20.2",
-  "boto3-stubs[s3]==1.43.72",
+  "boto3-stubs[s3]==1.43.83",
   "celery-types==0.26.0",
   "django-stubs[compatible-mypy]==6.1.0",
-  "djangorestframework-stubs[compatible-mypy]==3.18.0",
+  "djangorestframework-stubs[compatible-mypy]==3.18.1",
   "types-requests==2.33.0.20260712",
 ]
 test = [
   "djangorestframework-yaml==2.0.0",
-  "Faker==40.36.0",
+  "Faker==40.37.0",
   "factory-boy==3.3.3",
   "freezegun==1.5.5",
   "pytest==9.1.1",

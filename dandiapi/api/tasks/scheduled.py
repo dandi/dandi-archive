@@ -55,7 +55,7 @@ def throttled_iterator(iterable: Iterable, max_per_second: int = 100) -> Iterabl
 
 
 @shared_task(
-    soft_time_limit=60,
+    soft_time_limit=300,
     autoretry_for=(VersionMetadataConcurrentlyModifiedError,),
     retry_backoff=True,
 )
@@ -167,18 +167,21 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     sender.add_periodic_task(
         timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
         validate_draft_version_metadata.s(),
+        expires=timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL).total_seconds(),
     )
     # Check for any assets that need validation every minute
     sender.add_periodic_task(
         timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
         validate_pending_asset_metadata.s(),
+        expires=timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL).total_seconds(),
     )
 
     # Send daily email to admins containing a list of users awaiting approval
     sender.add_periodic_task(crontab(hour=0, minute=0), send_pending_users_email.s())
 
     # Refresh the materialized view used by asset search every 10 mins.
-    sender.add_periodic_task(timedelta(minutes=10), refresh_materialized_view_search.s())
+    # TODO: temporarily disabled, re-enable by uncommenting
+    # sender.add_periodic_task(timedelta(minutes=10), refresh_materialized_view_search.s())
 
     # Refresh the application stats every 6 hours
     sender.add_periodic_task(timedelta(hours=6), compute_application_stats.s())

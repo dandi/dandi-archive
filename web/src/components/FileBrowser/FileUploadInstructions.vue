@@ -48,20 +48,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed } from 'vue';
 import { useDandisetStore } from '@/stores/dandiset';
+import { useInstanceStore } from '@/stores/instance';
 import { dandiDocumentationUrl } from '@/utils/constants';
-import { dandiRest } from '@/rest';
 
 const store = useDandisetStore();
 const dandisetIdentifier = computed(() => store.dandiset?.dandiset.identifier);
 
-const instanceName = ref<string>('');
-
-onMounted(async () => {
-  const info = await dandiRest.info();
-  instanceName.value = info.instance_config.instance_name.toLowerCase();
-});
+const instanceStore = useInstanceStore();
+instanceStore.load();
+const instanceName = computed(() => instanceStore.instanceName?.toLowerCase() ?? '');
 
 if (dandisetIdentifier.value === undefined) {
   throw new Error('store.dandiset must be defined');

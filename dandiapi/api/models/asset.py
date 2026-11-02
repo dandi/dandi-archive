@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 import re
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse, urlunparse
 import uuid
 
 from dandischema.digests.dandietag import DandiETag
@@ -97,10 +96,7 @@ class AssetBlob(TimeStampedModel):
 
     @property
     def s3_url(self) -> str:
-        signed_url = self.blob.url
-        # Strip off the query parameters from the presigning, as they are different every time
-        parsed = urlparse(signed_url)
-        return urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+        return self.blob.storage.url(self.blob.name, signed=False)
 
     def __str__(self) -> str:
         return self.blob.name
@@ -133,7 +129,9 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     Status = AssetStatus
 
     class Meta:
-        ordering = ['created']
+        # `id` breaks ties between assets created at the same instant, so that paginated
+        # listings (LIMIT/OFFSET) neither repeat nor skip assets at page boundaries.
+        ordering = ['created', 'id']
         indexes = [
             # Other statuses are likely too common to index, but pending assets are continually
             # polled and being moved through the pipeline.

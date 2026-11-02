@@ -123,17 +123,28 @@
             <span>Redo</span>
           </v-tooltip>
           <v-spacer />
-          <v-btn
-            :href="aiEditorURL"
-            target="_blank"
-            rel="noopener"
-            variant="tonal"
-            color="primary"
-            size="small"
-            prepend-icon="mdi-robot"
+          <v-tooltip
+            location="bottom"
+            :disabled="!readonly"
           >
-            Beta feature: try AI assisted metadata editing
-          </v-btn>
+            <template #activator="{ props }">
+              <div v-bind="props">
+                <v-btn
+                  :href="readonly ? undefined : aiEditorURL"
+                  :disabled="readonly"
+                  target="_blank"
+                  rel="noopener"
+                  variant="tonal"
+                  color="primary"
+                  size="small"
+                  prepend-icon="mdi-robot"
+                >
+                  Beta feature: try AI assisted metadata editing
+                </v-btn>
+              </div>
+            </template>
+            <span>{{ store.metadataReadonlyReason }}</span>
+          </v-tooltip>
           <v-tooltip location="bottom">
             <template #activator="{ props }">
               <v-btn

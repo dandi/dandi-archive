@@ -22,6 +22,7 @@ from dandiapi.api.services.metadata import (
 )
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
 from dandiapi.api.services.publish import _build_publishable_version_from_draft, publish_dandiset
+from dandiapi.api.tasks.scheduled import validate_pending_asset_metadata
 from dandiapi.api.tests.factories import (
     DandisetFactory,
     DraftAssetFactory,
@@ -371,6 +372,31 @@ def test_version_aggregate_assets_summary(draft_asset_factory):
     assert version.metadata['assetsSummary']['numberOfBytes'] == asset.blob.size
     assert version.metadata['assetsSummary']['numberOfFiles'] == 1
     assert version.metadata['assetsSummary']['schemaKey'] == 'AssetsSummary'
+
+
+@pytest.mark.django_db
+def test_version_aggregate_assets_summary_unchanged_keeps_modified(draft_asset_factory):
+    version = DraftVersionFactory.create(status=Version.Status.VALID)
+    asset = draft_asset_factory(status=Asset.Status.VALID)
+    version.assets.add(asset)
+
+    version_aggregate_assets_summary(version)
+    version.refresh_from_db()
+    modified = version.modified
+    metadata = version.metadata
+
+    # Re-aggregating with nothing changed must not touch the version.
+    version_aggregate_assets_summary(version)
+    version.refresh_from_db()
+    assert version.modified == modified
+    assert version.metadata == metadata
+
+    # ...but a real change still updates both.
+    version.assets.add(draft_asset_factory(status=Asset.Status.VALID))
+    version_aggregate_assets_summary(version)
+    version.refresh_from_db()
+    assert version.metadata['assetsSummary']['numberOfFiles'] == 2
+    assert version.modified > modified
 
 
 @pytest.mark.django_db
@@ -903,6 +929,70 @@ def test_version_rest_publish_zarr(
     )
     assert resp.status_code == 400
     assert resp.json() == 'Cannot publish dandisets which contain zarrs'
+
+
+@pytest.mark.django_db
+def test_version_rest_publish_zarr_not_in_draft(
+    api_client,
+    asset_blob,
+    zarr_archive_factory,
+    zarr_file_factory,
+):
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    api_client.force_authenticate(user=user)
+
+    # create and ingest zarr archive
+    zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset, status='Uploaded')
+    zarr_file_factory(zarr_archive=zarr_archive)
+    ingest_zarr_archive(zarr_archive.zarr_id)
+    zarr_archive.refresh_from_db()
+
+    assets_url = (
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/'
+    )
+
+    # The zarr asset is removed from the draft, but it and its zarr archive still exist
+    resp = api_client.post(
+        assets_url,
+        {
+            'metadata': {'path': 'foo.nwb.zarr', 'schemaVersion': DANDI_SCHEMA_VERSION},
+            'zarr_id': zarr_archive.zarr_id,
+        },
+    )
+    assert resp.status_code == 200
+    resp = api_client.delete(f'{assets_url}{resp.json()["asset_id"]}/')
+    assert resp.status_code == 204
+
+    resp = api_client.post(
+        assets_url,
+        {
+            'metadata': {
+                'path': 'foo.nwb',
+                'schemaVersion': DANDI_SCHEMA_VERSION,
+                'encodingFormat': 'application/x-nwb',
+                'schemaKey': 'Asset',
+            },
+            'blob_id': asset_blob.blob_id,
+        },
+    )
+    assert resp.status_code == 200
+
+    # Validate the metadata to mark the assets and version as `VALID`
+    validate_pending_asset_metadata()
+    tasks.validate_version_metadata_task(draft_version.id)
+    draft_version.refresh_from_db()
+    assert draft_version.publishable
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/publish/'
+    )
+    assert resp.status_code == 202
+
+    draft_version.refresh_from_db()
+    assert draft_version.status == Version.Status.PUBLISHING
 
 
 @pytest.mark.django_db
