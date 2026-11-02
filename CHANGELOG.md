@@ -1,3 +1,21 @@
+# v1.2.0 (Mon Nov 02 2026)
+
+#### 🚀 Enhancement
+
+- fix: allow Googlebot to fetch schemas and stats [#2988](https://github.com/dandi/dandi-archive/pull/2988) (bdichter@Benjamins-Mac-mini.local [@bendichter](https://github.com/bendichter))
+
+#### 🐛 Bug Fix
+
+- Update DOI rewrite script to include more cases [#2975](https://github.com/dandi/dandi-archive/pull/2975) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 3
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Benjamin Dichter (bdichter@Benjamins-Mac-mini.local)
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v1.1.1 (Thu Oct 29 2026)
 
 :tada: This release contains work from a new contributor! :tada:
