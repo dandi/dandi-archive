@@ -168,14 +168,10 @@ function formatValidationError(error: ValidationError): string {
 }
 
 function getValidationErrorIcon(errorField: string): string {
-  // Icons are keyed by top-level field, so only the head of the error path is matched
+  // Icons are keyed by top-level field, so only the head of the error path is looked up
   // ("contributor" in "contributor.0.Person.name").
   const topLevelField = errorField.split('.')[0];
-  const icons = Object.keys(VALIDATION_ICONS).filter((field) => topLevelField.includes(field));
-  if (icons.length > 0) {
-    return (VALIDATION_ICONS as any)[icons[0]];
-  }
-  return VALIDATION_ICONS.DEFAULT;
+  return (VALIDATION_ICONS as Record<string, string>)[topLevelField] ?? VALIDATION_ICONS.DEFAULT;
 }
 
 </script>

@@ -55,20 +55,18 @@ def _encode_error_value(value) -> str | None:
     return value
 
 
-def _encode_error(path, message: str, value) -> dict[str, str]:
-    error = {'field': _encode_error_path(path), 'message': message}
-    encoded_value = _encode_error_value(value)
-    if encoded_value is not None:
-        error['value'] = encoded_value
-    return error
-
-
 def _encode_pydantic_error(error) -> dict[str, str]:
-    return _encode_error(error['loc'], error['msg'], error.get('input'))
+    encoded = {'field': _encode_error_path(error['loc']), 'message': error['msg']}
+    value = _encode_error_value(error.get('input'))
+    if value is not None:
+        encoded['value'] = value
+    return encoded
 
 
 def _encode_jsonschema_error(error: jsonschema.exceptions.ValidationError) -> dict[str, str]:
-    return _encode_error(error.path, error.message, error.instance)
+    # No `value` here: jsonschema already quotes the failing instance in its message
+    # ("'foo' is not of type 'array'"), so repeating it would only add noise.
+    return {'field': _encode_error_path(error.path), 'message': error.message}
 
 
 def _collect_validation_errors(

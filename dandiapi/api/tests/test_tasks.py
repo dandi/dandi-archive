@@ -147,7 +147,7 @@ def test_validate_asset_metadata_malformed_keywords(draft_asset: Asset):
 
     assert draft_asset.status == Asset.Status.INVALID
     assert draft_asset.validation_errors == [
-        {'field': 'keywords', 'message': "'foo' is not of type 'array'", 'value': 'foo'}
+        {'field': 'keywords', 'message': "'foo' is not of type 'array'"}
     ]
 
 
@@ -283,7 +283,7 @@ def test_validate_version_metadata_malformed_license(asset: Asset):
 
     assert draft_version.status == Version.Status.INVALID
     assert draft_version.validation_errors == [
-        {'field': 'license', 'message': "'foo' is not of type 'array'", 'value': 'foo'}
+        {'field': 'license', 'message': "'foo' is not of type 'array'"}
     ]
 
 
