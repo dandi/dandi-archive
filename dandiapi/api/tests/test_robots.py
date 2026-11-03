@@ -16,6 +16,8 @@ Allow: /api/dandisets/search
 Allow: /api/dandisets/*/
 Allow: /api/dandisets/?
 Allow: /api/info/
+Allow: /api/schemas/
+Allow: /api/stats/
 Allow: /api/dandisets/*/versions/*/assets*page_size=1
 Disallow: /api/dandisets/*/versions/*/assets
 Disallow: /

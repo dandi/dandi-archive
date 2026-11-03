@@ -22,7 +22,7 @@ export function registerPlugins (app: App) {
 
   Sentry.init({
     app,
-    dsn: import.meta.env.VITE_SENTRY_DSN,
+    dsn: import.meta.env.VITE_APP_SENTRY_DSN,
     environment: import.meta.env.VITE_APP_SENTRY_ENVIRONMENT,
     integrations: [
       Sentry.browserTracingIntegration({ router }),

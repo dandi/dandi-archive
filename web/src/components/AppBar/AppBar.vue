@@ -151,7 +151,7 @@ import {
   user,
 } from '@/rest';
 import {
-  dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl, dandihubUrl,
+  dandiAboutUrl, dandiBlogUrl, dandiDocumentationUrl, dandiHelpUrl,
 } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
 import logo from '@/assets/logo.svg';
@@ -194,18 +194,18 @@ const navItems: NavigationItem[] = [
     external: true,
   },
   {
+    text: 'Blog',
+    to: dandiBlogUrl,
+    external: true,
+  },
+  {
     text: 'Documentation',
     to: dandiDocumentationUrl,
     external: true,
   },
   {
-    text: 'Help',
+    text: 'Support',
     to: dandiHelpUrl,
-    external: true,
-  },
-  {
-    text: 'DandiHub',
-    to: dandihubUrl,
     external: true,
   },
 ];

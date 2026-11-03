@@ -49,6 +49,14 @@ const EXTERNAL_SERVICES: ExternalService[] = [
 
   {
     name: "Neurosift",
+    regex: /\.nii(\.gz)?$/,
+    maxsize: Infinity,
+    endpoint:
+      "https://neurosift.app/dandiset/$dandiset_id$?tab=$asset_path$",
+  },
+
+  {
+    name: "Neurosift",
     regex: /\.nwb$/,
     maxsize: Infinity,
     endpoint:
@@ -144,6 +152,7 @@ interface ServiceUrlData {
   // zarr_id is extracted from contentUrl for zarr files
   // See: https://github.com/dandi/dandi-schema/issues/356 for potential future improvements
   zarr_id: string | null,
+  assetPath: string,
 }
 
 function serviceURL(endpoint: ExternalServiceEndpoint, data: ServiceUrlData): string | null {
@@ -167,7 +176,8 @@ function serviceURL(endpoint: ExternalServiceEndpoint, data: ServiceUrlData): st
     .replaceAll('$asset_dandi_url$', data.assetDandiUrl)
     .replaceAll('$asset_dandi_metadata_url$', data.assetDandiMetadataUrl)
     .replaceAll('$asset_s3_url$', data.assetS3Url)
-    .replaceAll('$zarr_id$', data.zarr_id || '');
+    .replaceAll('$zarr_id$', data.zarr_id || '')
+    .replaceAll('$asset_path$', data.assetPath);
 }
 
 export function getExternalServices(path: AssetPath, info: {dandisetId: string, dandisetVersion: string}) {
@@ -191,6 +201,7 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
   const assetDandiUrl = `${assetDandiMetadataUrl}download/`;
   const assetS3Url = trimEnd((path.asset as AssetFile).url, '/');
   const assetId = path.asset?.asset_id;
+  const assetPath = path.path;
 
   if (!assetId) {
     // This should never happen
@@ -217,6 +228,7 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
         assetDandiMetadataUrl,
         assetS3Url,
         zarr_id,
+        assetPath,
       });
       return url ? [{ name: service.name, url }] : [];
     });

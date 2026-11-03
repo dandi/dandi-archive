@@ -4,6 +4,7 @@ import axios from 'axios';
 import RefParser from '@apidevtools/json-schema-ref-parser';
 
 import { dandiRest, user } from '@/rest';
+import { useInstanceStore } from '@/stores/instance';
 import type { User, Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
 import { fixSchema } from '@/utils/schema';
@@ -36,17 +37,29 @@ export const useDandisetStore = defineStore('dandiset', {
     draftVersion: (state) => state.versions?.find((v) => v.version === draftVersion),
     publishedVersions: (state) => state.versions?.filter((v) => v.version !== draftVersion),
     schemaVersion: (state) => state.schema?.properties.schemaVersion.default,
-    userCanModifyDandiset: (state) => {
-      // published versions are never editable, and logged out users can never edit a dandiset
-      if (state.dandiset?.metadata?.version !== draftVersion || !user) {
-        return false;
+    // derived from metadataReadonlyReason so the permission rules live in one place
+    userCanModifyDandiset(): boolean {
+      return this.metadataReadonlyReason === undefined;
+    },
+    // a user-facing explanation of why the metadata can't be edited, or undefined if it can
+    metadataReadonlyReason: (state): string | undefined => {
+      // published versions are never editable
+      if (state.dandiset?.metadata?.version !== draftVersion) {
+        return 'Metadata can only be edited on the draft version of a Dandiset';
+      }
+      // logged out users can never edit a dandiset
+      if (!user.value) {
+        return 'Log in to edit this Dandiset\'s metadata';
       }
       // if they're an admin, they can edit any dandiset
-      if (user.value?.admin) {
-        return true;
+      if (user.value.admin) {
+        return undefined;
       }
       // otherwise check if they are an owner
-      return !!(state.owners?.find((owner) => owner.username === user.value?.username));
+      if (state.owners?.find((owner) => owner.username === user.value?.username)) {
+        return undefined;
+      }
+      return 'Only owners of this Dandiset can edit its metadata';
     },
   },
   actions: {
@@ -110,8 +123,13 @@ export const useDandisetStore = defineStore('dandiset', {
       }
     },
     async fetchSchema() {
-      const { schema_url: schemaUrl } = await dandiRest.info();
-      const res = await axios.get(schemaUrl);
+      const instanceStore = useInstanceStore();
+      await instanceStore.load();
+      if (instanceStore.info === null) {
+        throw new Error('Could not retrieve server info!');
+      }
+
+      const res = await axios.get(instanceStore.info.schema_url);
 
       if (res.status !== 200) {
         throw new Error('Could not retrieve Dandiset Schema!');

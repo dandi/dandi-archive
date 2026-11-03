@@ -157,6 +157,30 @@ def test_user_search_extra_data(api_client):
     assert api_client.get('/api/users/search/?', {'username': 'odysseus'}).data == []
 
 
+@pytest.mark.django_db
+def test_user_search_extra_data_no_name(api_client):
+    """Test that a `null` name field in extra_data doesn't result in a `null` in the output."""
+    user = UserFactory.create(social_account__extra_data__name=None)
+
+    api_client.force_authenticate(user=user)
+
+    resp = api_client.get('/api/users/search/?', {'username': user.username})
+    assert len(resp.data) == 1
+    assert resp.data[0]['name'] == user.get_full_name()
+
+
+@pytest.mark.django_db
+def test_user_search_extra_data_no_username(api_client):
+    """Test that a `null` username field in extra_data doesn't result in a `null` in the output."""
+    user = UserFactory.create(social_account__extra_data__login=None)
+
+    api_client.force_authenticate(user=user)
+
+    resp = api_client.get('/api/users/search/?', {'username': user.username})
+    assert len(resp.data) == 1
+    assert resp.data[0]['username'] == user.username
+
+
 @pytest.mark.parametrize(
     ('status', 'expected_status_code', 'expected_search_results_value'),
     [

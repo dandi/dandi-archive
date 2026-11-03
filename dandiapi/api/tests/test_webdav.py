@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.conf import settings
+from dandischema.consts import DANDI_SCHEMA_VERSION
 import pytest
 
 from dandiapi.api.models.dandiset import Dandiset
@@ -18,7 +18,7 @@ def test_asset_atpath_root_path(api_client, asset_blob):
         asset_blob=asset_blob,
         metadata={
             'path': 'a.txt',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
     add_asset_to_version(
@@ -27,7 +27,7 @@ def test_asset_atpath_root_path(api_client, asset_blob):
         asset_blob=asset_blob,
         metadata={
             'path': 'b.txt',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
 
@@ -73,7 +73,7 @@ def test_asset_atpath_asset(api_client, asset_blob):
         asset_blob=asset_blob,
         metadata={
             'path': path,
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
 
@@ -140,7 +140,7 @@ def test_asset_atpath_folder(api_client, asset_blob):
         asset_blob=asset_blob,
         metadata={
             'path': 'foo/bar.txt',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
     add_asset_to_version(
@@ -149,7 +149,7 @@ def test_asset_atpath_folder(api_client, asset_blob):
         asset_blob=asset_blob,
         metadata={
             'path': 'foo/baz.txt',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
 
@@ -209,7 +209,7 @@ def test_asset_atpath_trailing_slash(api_client, asset_blob):
         asset_blob=asset_blob,
         metadata={
             'path': 'foo',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
 
@@ -237,7 +237,7 @@ def test_asset_atpath_path_missing(api_client, asset_blob):
         asset_blob=asset_blob,
         metadata={
             'path': 'foo/bar.txt',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
 

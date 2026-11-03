@@ -49,6 +49,7 @@ export interface Version {
   asset_validation_errors: ValidationError[],
   version_validation_errors: ValidationError[],
   contact_person?: string,
+  release_notes?: string,
 }
 
 export interface Asset {
@@ -88,6 +89,8 @@ export interface Info {
   };
   schema_url: string;
   schema_version: string;
+  'cli-minimal-version': string;
+  'cli-requires-python': string;
 }
 
 export interface DandisetStats {

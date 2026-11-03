@@ -3,13 +3,14 @@ from __future__ import annotations
 from datetime import timedelta
 import logging
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, cast
 from urllib.parse import urlunparse
 
 from corsheaders.defaults import default_headers
-from dandischema.consts import DANDI_SCHEMA_VERSION as _DEFAULT_DANDI_SCHEMA_VERSION
 import django_stubs_ext
 from environ import Env
+
 from resonant_settings.allauth import *
 from resonant_settings.celery import *
 from resonant_settings.django import *
@@ -29,6 +30,8 @@ env = Env()
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 
 ROOT_URLCONF = 'dandiapi.urls'
+
+WSGI_APPLICATION = 'dandiapi.wsgi.application'
 
 INSTALLED_APPS = [
     # Install local apps first, to ensure any overridden resources are found first
@@ -79,6 +82,7 @@ MIDDLEWARE = [
     # Add username middleware after authentication to capture username for gunicorn access logs
     'dandiapi.api.middleware.GunicornUsernameMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.sites.middleware.CurrentSiteMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
 ]
@@ -90,7 +94,7 @@ DATABASES = {
     'default': {
         **env.db_url('DJANGO_DATABASE_URL', engine='django.db.backends.postgresql'),
         'CONN_MAX_AGE': timedelta(minutes=10).total_seconds(),
-    }
+    },
 }
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -102,7 +106,6 @@ STORAGES: dict[str, dict[str, Any]] = {
         'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },
 }
-DANDI_DANDISETS_BUCKET_NAME: str
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Django staticfiles auto-creates any intermediate directories, but do so here to prevent warnings.
@@ -148,6 +151,26 @@ REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] += ['dandiapi.api.permissions.IsApp
 REST_FRAMEWORK['DEFAULT_PAGINATION_CLASS'] = 'dandiapi.api.views.pagination.DandiPagination'
 REST_FRAMEWORK['EXCEPTION_HANDLER'] = 'dandiapi.drf_utils.rewrap_django_core_exceptions'
 
+# Throttling configuration
+# TODO: Uncomment once throttling is re-enabled
+# REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
+#     'rest_framework.throttling.AnonRateThrottle',
+# ]
+
+# By default, set request rate limit to a very high number, effectively disabling it.
+# This is done to preserve the rate limiting behavior between dev and prod,
+# without actually impeding developer experience.
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+    'anon': f'{sys.maxsize}/minute',
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'dandi_cache_table',
+    }
+}
+
 REST_FRAMEWORK_EXTENSIONS = {'DEFAULT_PARENT_LOOKUP_KWARG_NAME_PREFIX': ''}
 
 # Clearing out the stock `SWAGGER_SETTINGS` variable causes a Django login
@@ -164,17 +187,13 @@ SWAGGER_SETTINGS = {
 CELERY_BROKER_HEARTBEAT = 20
 # Allow this to be configurable, but keep the default as the number of CPU cores
 CELERY_WORKER_CONCURRENCY: int | None = env.int('DJANGO_CELERY_WORKER_CONCURRENCY', default=None)
+# Work around https://github.com/celery/kombu/issues/2237
+CELERY_WORKER_ENABLE_REMOTE_CONTROL = False
 
 _dandi_log_level: str = env.str('DJANGO_DANDI_LOG_LEVEL', default='INFO')
 # Configure the logging level on all DANDI loggers.
 logging.getLogger('dandiapi').setLevel(_dandi_log_level)
 
-# This is where the schema version should be set.
-# It can optionally be overwritten with the environment variable, but that should only be
-# considered a temporary fix.
-DANDI_SCHEMA_VERSION: str = env.str(
-    'DJANGO_DANDI_SCHEMA_VERSION', default=_DEFAULT_DANDI_SCHEMA_VERSION
-)
 DANDI_ZARR_PREFIX_NAME: str = env.str('DJANGO_DANDI_ZARR_PREFIX_NAME', default='zarr')
 
 # Required environment variables

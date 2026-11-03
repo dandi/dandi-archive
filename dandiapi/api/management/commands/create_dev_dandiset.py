@@ -3,7 +3,7 @@ from __future__ import annotations
 from uuid import uuid4
 
 from dandischema.conf import get_instance_config
-from django.conf import settings
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 import djclick as click
@@ -33,7 +33,7 @@ def create_dev_dandiset(*, name: str, email: str, num_extra_owners: int):
 
     version_metadata = {
         'description': 'An informative description',
-        'license': [sorted(x.value for x in get_instance_config().licenses)[0]],
+        'license': [min(x.value for x in get_instance_config().licenses)],
     }
     dandiset, draft_version = create_open_dandiset(
         user=owner, version_name=name, version_metadata=version_metadata
@@ -69,7 +69,7 @@ def create_dev_dandiset(*, name: str, email: str, num_extra_owners: int):
         calculate_sha256(blob_id=asset_blob.blob_id)
         asset_blob.refresh_from_db()
     asset_metadata = {
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'schemaVersion': DANDI_SCHEMA_VERSION,
         'encodingFormat': 'text/plain',
         'schemaKey': 'Asset',
         'path': 'foo/bar.txt',

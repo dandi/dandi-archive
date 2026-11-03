@@ -5,9 +5,10 @@ import hashlib
 
 from allauth.socialaccount.models import SocialAccount
 from dandischema.conf import get_instance_config
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from dandischema.models import AccessType
-from django.conf import settings
 from django.contrib.auth.models import User
+from django.utils import timezone
 import factory
 import faker
 
@@ -76,6 +77,15 @@ class DandisetFactory(factory.django.DjangoModelFactory):
         model = Dandiset
         skip_postgeneration_save = True
 
+    embargo_status = Dandiset.EmbargoStatus.OPEN
+    embargo_end_date = factory.LazyAttribute(
+        lambda self: (
+            timezone.now().date() + datetime.timedelta(days=365 * 2)
+            if self.embargo_status != Dandiset.EmbargoStatus.OPEN
+            else None
+        )
+    )
+
     @factory.post_generation
     def owners(self, create: bool, extracted: list[User] | None) -> None:  # noqa: FBT001
         if not create:
@@ -118,7 +128,7 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
 
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
             'schemaKey': 'Dandiset',
             'description': faker.Faker().sentence(),
             'access': [
@@ -165,9 +175,11 @@ class DraftVersionFactory(BaseVersionFactory):
 
 class PublishedVersionFactory(BaseVersionFactory):
     doi = factory.LazyAttribute(
-        lambda self: f'{get_instance_config().doi_prefix}/'
-        f'{get_instance_config().instance_name}.'
-        f'{self.dandiset.identifier}/{self.version}'
+        lambda self: (
+            f'{get_instance_config().doi_prefix}/'
+            f'{get_instance_config().instance_name}.'
+            f'{self.dandiset.identifier}/{self.version}'
+        )
     )
     status = Version.Status.PUBLISHED
 
@@ -234,7 +246,7 @@ class DraftAssetFactory(factory.django.DjangoModelFactory):
     def metadata(self) -> dict:
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
             'encodingFormat': 'application/x-nwb',
             'schemaKey': 'Asset',
         }

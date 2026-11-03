@@ -102,6 +102,26 @@ def test_upload_initialize(api_client, embargoed):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize('dandiset_id', ['DANDI:abc', 'DANDI:123456', '001'])
+def test_upload_initialize_invalid_dandiset(api_client, dandiset_id):
+    user = UserFactory.create()
+    DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING, owners=[user])
+    api_client.force_authenticate(user=user)
+
+    content_size = 123
+    resp = api_client.post(
+        '/api/uploads/initialize/',
+        {
+            'contentSize': content_size,
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
+            'dandiset': dandiset_id,
+        },
+    )
+
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db
 def test_upload_initialize_unembargo_in_progress(api_client):
     user = UserFactory.create()
     dandiset = DandisetFactory.create(

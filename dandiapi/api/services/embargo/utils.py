@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor
 import logging
 from typing import TYPE_CHECKING
 
-from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db.models import Q
 from more_itertools import chunked
@@ -32,7 +31,7 @@ def _delete_object_tags(blob: str):
 def _delete_zarr_object_tags(zarr: str):
     paginator = ZarrArchive.storage.s3_client.get_paginator('list_objects_v2')
     pages = paginator.paginate(
-        Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Prefix=zarr_s3_path(zarr_id=zarr)
+        Bucket=default_storage.bucket_name, Prefix=zarr_s3_path(zarr_id=zarr)
     )
 
     # Constant low thread number to limit memory usage, as each thread

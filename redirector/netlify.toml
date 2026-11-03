@@ -12,3 +12,8 @@ status = 301
 from = "https://api-staging.dandiarchive.org/*"
 to = "https://api.sandbox.dandiarchive.org/:splat"
 status = 308
+
+[[redirects]]
+from = "https://hub.dandiarchive.org/*"
+to = "https://docs.dandiarchive.org/user-guide-using/dandi-hub/"
+status = 302

@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 import re
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse, urlunparse
 import uuid
 
 from dandischema.digests.dandietag import DandiETag
@@ -13,13 +12,19 @@ from django.contrib.postgres.indexes import HashIndex
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import Q
+from django.db.models import Min, Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.metadata import PublishableMetadataMixin
 
 from .version import Version
+
+
+class EmbargoedAssetWithinOpenDandisetError(Exception):
+    """Raised when an embargoed asset exists in an open dandiset."""
+
 
 ASSET_CHARS_REGEX = r'[A-z0-9(),&\s#+~_=-]'
 ASSET_PATH_REGEX = rf'^({ASSET_CHARS_REGEX}?\/?\.?{ASSET_CHARS_REGEX})+$'
@@ -91,10 +96,7 @@ class AssetBlob(TimeStampedModel):
 
     @property
     def s3_url(self) -> str:
-        signed_url = self.blob.url
-        # Strip off the query parameters from the presigning, as they are different every time
-        parsed = urlparse(signed_url)
-        return urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+        return self.blob.storage.url(self.blob.name, signed=False)
 
     def __str__(self) -> str:
         return self.blob.name
@@ -104,7 +106,9 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
     asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
-    path = models.CharField(max_length=512, validators=[validate_asset_path], db_collation='C')
+    path = models.CharField(
+        max_length=512, validators=[validate_asset_path], db_collation='C', db_index=True
+    )
     blob = models.ForeignKey(
         AssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
     )
@@ -125,7 +129,9 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     Status = AssetStatus
 
     class Meta:
-        ordering = ['created']
+        # `id` breaks ties between assets created at the same instant, so that paginated
+        # listings (LIMIT/OFFSET) neither repeat nor skip assets at page boundaries.
+        ordering = ['created', 'id']
         indexes = [
             # Other statuses are likely too common to index, but pending assets are continually
             # polled and being moved through the pipeline.
@@ -234,23 +240,65 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     def dandi_asset_id(asset_id: str | uuid.UUID):
         return f'dandiasset:{asset_id}'
 
+    def access_metadata(self):
+        # Default to open access
+        embargoed = self.is_embargoed
+        access = {
+            'schemaKey': 'AccessRequirements',
+            'status': AccessType.EmbargoedAccess.value
+            if embargoed
+            else AccessType.OpenAccess.value,
+        }
+
+        # Nothing else to do if not embargoed
+        if not embargoed:
+            return access
+
+        # For zarr assets, is_embargoed is based on the dandiset directly, and a zarr can
+        # only be associated with one dandiset, so we know this dandiset is embargoed
+        if self.zarr is not None:
+            access['embargoedUntil'] = self.zarr.dandiset.embargo_end_date.isoformat()
+            return access
+
+        # In the blob case, we need to consider all dandisets this blob might be associated with,
+        # and take the minimum embargo end date
+
+        # This blob should only be associated with embargoed dandisets
+        open_dandisets = self.blob.assets.filter(
+            versions__dandiset__embargo_status=Dandiset.EmbargoStatus.OPEN
+        )
+        if open_dandisets.exists():
+            raise EmbargoedAssetWithinOpenDandisetError(
+                'Embargoed asset contained within OPEN dandiset'
+            )
+
+        # Retrieve the minimum embargo end date, across all dandisets
+        embargo_end_date: datetime.date | None = self.blob.assets.filter(
+            versions__isnull=False
+        ).aggregate(min_embargo_end_date=Min('versions__dandiset__embargo_end_date'))[
+            'min_embargo_end_date'
+        ]
+
+        # The only way embargo_end_date can be None here is if asset isn't associated with any
+        # versions (most likely due to being updated). Even so, sometimes these assets are accessed
+        # directly, so we need to handle that case.
+        # TODO: Update once https://github.com/dandi/dandi-archive/issues/2733 is addressed
+        if embargo_end_date is not None:
+            access['embargoedUntil'] = embargo_end_date.isoformat()
+
+        return access
+
     @property
     def full_metadata(self):
         download_url = settings.DANDI_API_URL + reverse(
             'asset-download',
             kwargs={'asset_id': str(self.asset_id)},
         )
+
         metadata = {
             **self.metadata,
             'id': self.dandi_asset_id(self.asset_id),
-            'access': [
-                {
-                    'schemaKey': 'AccessRequirements',
-                    'status': AccessType.EmbargoedAccess.value
-                    if self.is_embargoed
-                    else AccessType.OpenAccess.value,
-                }
-            ],
+            'access': [self.access_metadata()],
             'path': self.path,
             'identifier': str(self.asset_id),
             'contentUrl': [download_url, self.s3_url],

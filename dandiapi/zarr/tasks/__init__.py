@@ -2,20 +2,37 @@ from __future__ import annotations
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.db import transaction
+from django.db import OperationalError, transaction
 from django.utils import timezone
+import psycopg.errors
 from zarr_checksum import compute_zarr_checksum
 from zarr_checksum.generators import S3ClientOptions, yield_files_s3
 
 from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
+from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.version import Version
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
 
 
-@shared_task(queue='ingest_zarr_archive', time_limit=3600)
-def ingest_zarr_archive(zarr_id: str, *, force: bool = False):
+@shared_task(
+    bind=True,
+    queue='ingest_zarr_archive',
+    time_limit=3600,
+    max_retries=3,
+    retry_backoff=True,
+)
+def ingest_zarr_archive(self, zarr_id: str, *, force: bool = False):
+    try:
+        _ingest_zarr_archive(zarr_id, force=force)
+    except OperationalError as e:
+        if isinstance(e.__cause__, psycopg.errors.DeadlockDetected):
+            raise self.retry(exc=e) from e
+        raise
+
+
+def _ingest_zarr_archive(zarr_id: str, *, force: bool = False):
     # Ensure zarr is in pending state before proceeding
     with transaction.atomic():
         zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
@@ -51,7 +68,7 @@ def ingest_zarr_archive(zarr_id: str, *, force: bool = False):
     with transaction.atomic():
         zarr = (
             ZarrArchive.objects.select_related('dandiset')
-            .select_for_update()
+            .select_for_update(of=['self'])
             .get(zarr_id=zarr_id, status=ZarrArchiveStatus.INGESTING)
         )
 
@@ -72,6 +89,11 @@ def ingest_zarr_archive(zarr_id: str, *, force: bool = False):
         Version.objects.filter(id=zarr.dandiset.draft_version.id).update(
             status=Version.Status.PENDING, modified=timezone.now()
         )
+
+        # Set the asset status back to pending, and update modified
+        zarr_assets = Asset.objects.filter(zarr=zarr, published=False)
+        if zarr_assets.exists():
+            zarr_assets.update(status=Asset.Status.PENDING, modified=timezone.now())
 
 
 def ingest_dandiset_zarrs(dandiset_id: int, **kwargs):

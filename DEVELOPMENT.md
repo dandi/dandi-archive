@@ -19,6 +19,7 @@ This is the simplest configuration for developers to start with.
 
 1. From VSCode, use `Ctrl-Shift-p` and run the command `Dev Containers: Reopen in Container`.
 1. From the VSCode built-in terminal, run `./manage.py migrate`.
+1. Run `docker compose run --rm django ./manage.py createcachetable`
 1. From the VSCode built-in terminal, run `./manage.py createsuperuser --email $(git config user.email)` and follow the prompts.
 1. From the VSCode built-in terminal, run `./manage.py create_dev_dandiset --owner $(git config user.email)`
    to create a dummy dandiset to start working with.
@@ -26,7 +27,7 @@ This is the simplest configuration for developers to start with.
 ### Run Application
 1. Run the following commands in three separate VSCode built-in-terminals:
    1. `./manage.py runserver_plus 0.0.0.0:8000`
-   1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
+   1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-mingle --without-heartbeat --without-gossip --queues celery,calculate_sha256,ingest_zarr_archive,manifest-worker --beat`
    1. `cd web/ && npm install && npm run dev`
 1. Access the site, starting at http://localhost:8000/admin/
 1. When finished, use `Ctrl+C`
@@ -37,6 +38,7 @@ This configuration also uses containers, but with Docker Compose instead of VSco
 ### Initial Setup
 1. Install [Docker Compose](https://docs.docker.com/compose/install/)
 1. Run `docker compose run --rm django ./manage.py migrate`
+1. Run `docker compose run --rm django ./manage.py createcachetable`
 1. Run `docker compose run --rm django ./manage.py createsuperuser --email $(git config user.email)`
    and follow the prompts to create your own user.
    This sets your username to your git email to ensure parity with how GitHub logins work. You can also replace the command substitution expression with a literal email address, or omit the `--email` option entirely to run the command in interactive mode.
@@ -67,6 +69,7 @@ but allows developers to run Python code on their native system.
 1. [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/)
 1. Run `export UV_ENV_FILE=./dev/.env.docker-compose-native`
 1. Run `./manage.py migrate`
+1. Run `docker compose run --rm django ./manage.py createcachetable`
 1. Run `./manage.py createsuperuser --email $(git config user.email)` and follow the prompts.
 1. Run `./manage.py create_dev_dandiset --owner $(git config user.email)`
    to create a dummy dandiset to start working with.
@@ -79,7 +82,7 @@ but allows developers to run Python code on their native system.
 1. Run the Celery app
     1. Start a new terminal
     1. Run `export UV_ENV_FILE=./dev/.env.docker-compose-native`
-    1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
+    1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-mingle --without-heartbeat --without-gossip --queues celery,calculate_sha256,ingest_zarr_archive,manifest-worker --beat`
 1. When finished, run `docker compose stop`
 
 ## Testing
@@ -144,7 +147,7 @@ For frequent deployment administration tasks, `django-extensions` provides a con
 ### create_dev_dandiset
 
 ```
-python manage.py create_dev_dandiset --owner $(git config user.email) --name My Dummy Dandiset
+./manage.py create_dev_dandiset --owner $(git config user.email) --name My Dummy Dandiset
 ```
 
 This creates a dummy dandiset with valid metadata and a single dummy asset.

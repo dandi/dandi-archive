@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.conf import settings
+from dandischema.consts import DANDI_SCHEMA_VERSION
 import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
@@ -127,7 +127,7 @@ def test_ingest_zarr_archive_modified(zarr_archive_factory, zarr_file_factory):
         zarr_archive=zarr_archive,
         metadata={
             'path': 'sample.zarr',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaVersion': DANDI_SCHEMA_VERSION,
         },
     )
     assert asset.size == 100

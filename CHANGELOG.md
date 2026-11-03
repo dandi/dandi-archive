@@ -1,3 +1,779 @@
+# v1.2.0 (Mon Nov 02 2026)
+
+#### 🚀 Enhancement
+
+- fix: allow Googlebot to fetch schemas and stats [#2988](https://github.com/dandi/dandi-archive/pull/2988) (bdichter@Benjamins-Mac-mini.local [@bendichter](https://github.com/bendichter))
+
+#### 🐛 Bug Fix
+
+- Update DOI rewrite script to include more cases [#2975](https://github.com/dandi/dandi-archive/pull/2975) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 3
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Benjamin Dichter (bdichter@Benjamins-Mac-mini.local)
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v1.1.1 (Thu Oct 29 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Add e2e tests for the table viewer [#2974](https://github.com/dandi/dandi-archive/pull/2974) ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Don't expose oauth application management URLs [#2978](https://github.com/dandi/dandi-archive/pull/2978) ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 3
+
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v1.1.0 (Tue Oct 20 2026)
+
+#### 🚀 Enhancement
+
+- Disable AI meditor on published versions [#2973](https://github.com/dandi/dandi-archive/pull/2973) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 1
+
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v1.0.19 (Wed Oct 14 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Do not bump draft `modified` when assetsSummary is unchanged [#2950](https://github.com/dandi/dandi-archive/pull/2950) ([@claude](https://github.com/claude) [@jjnesbitt](https://github.com/jjnesbitt) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Add table visualizer for .tsv assets [#2928](https://github.com/dandi/dandi-archive/pull/2928) ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Begin collecting internal knowledge through skills (Vuetify'ing components) [#2929](https://github.com/dandi/dandi-archive/pull/2929) ([@claude](https://github.com/claude) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🧪 Tests
+
+- Skip test workflows for changes only to doc/ [#2938](https://github.com/dandi/dandi-archive/pull/2938) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 5
+
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.18 (Tue Oct 06 2026)
+
+:tada: This release contains work from new contributors! :tada:
+
+Thanks for all your work!
+
+:heart: GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+:heart: Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🐛 Bug Fix
+
+- Use correct environment variable to configure Sentry [#2967](https://github.com/dandi/dandi-archive/pull/2967) ([@waxlamp](https://github.com/waxlamp))
+- Run local MinIO from `bitnamilegacy/minio`; Quay now requires a login [#2940](https://github.com/dandi/dandi-archive/pull/2940) ([@claude](https://github.com/claude) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Stable default order for asset listings; allow `?order=...,id` [#2945](https://github.com/dandi/dandi-archive/pull/2945) ([@claude](https://github.com/claude) [@yarikoptic](https://github.com/yarikoptic) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Account for AWS GiB billing in S3 backup cost estimates [#2935](https://github.com/dandi/dandi-archive/pull/2935) ([@claude](https://github.com/claude) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### Authors: 5
+
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v1.0.17 (Sun Oct 04 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Keep the Region out of unsigned S3 URLs [#2963](https://github.com/dandi/dandi-archive/pull/2963) ([@claude](https://github.com/claude) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### Authors: 2
+
+- Claude ([@claude](https://github.com/claude))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+---
+
+# v1.0.16 (Fri Oct 02 2026)
+
+#### 🐛 Bug Fix
+
+- Increase unembargo_dandiset_task soft time limit to 1 hour [#2960](https://github.com/dandi/dandi-archive/pull/2960) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.15 (Fri Oct 02 2026)
+
+#### 🐛 Bug Fix
+
+- Increase `write_manifest_files` soft time limit to 360s [#2948](https://github.com/dandi/dandi-archive/pull/2948) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.14 (Fri Oct 02 2026)
+
+#### 🐛 Bug Fix
+
+- Revert "Temporarily disable write_manifest_files task" [#2958](https://github.com/dandi/dandi-archive/pull/2958) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.13 (Thu Oct 01 2026)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger a release [#2955](https://github.com/dandi/dandi-archive/pull/2955) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix type of celery function arg [#2956](https://github.com/dandi/dandi-archive/pull/2956) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add `expires` for beat tasks [#2954](https://github.com/dandi/dandi-archive/pull/2954) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.12 (Thu Oct 01 2026)
+
+#### 🐛 Bug Fix
+
+- Temporarily disable write_manifest_files task [#2953](https://github.com/dandi/dandi-archive/pull/2953) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.11 (Thu Oct 01 2026)
+
+#### 🐛 Bug Fix
+
+- Avoid presigning URLs when computing asset S3 URLs [#2951](https://github.com/dandi/dandi-archive/pull/2951) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.10 (Wed Sep 30 2026)
+
+#### 🐛 Bug Fix
+
+- Disable scheduled materialized view refresh [#2949](https://github.com/dandi/dandi-archive/pull/2949) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.9 (Wed Sep 30 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Increase aggregate_assets_summary_task soft time limit to 5 minutes [#2947](https://github.com/dandi/dandi-archive/pull/2947) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Hide form control buttons for read-only user [#2941](https://github.com/dandi/dandi-archive/pull/2941) ([@naglepuff](https://github.com/naglepuff))
+- Add a variable: search operator over assetsSummary.variableMeasured [#2885](https://github.com/dandi/dandi-archive/pull/2885) ([@bendichter](https://github.com/bendichter))
+- Add standard: search operator; remove file_type: [#2884](https://github.com/dandi/dandi-archive/pull/2884) ([@bendichter](https://github.com/bendichter))
+- fix: pull MinIO from Quay in the dev stack [#2922](https://github.com/dandi/dandi-archive/pull/2922) (yaroslav.o.halchenko@dartmouth.edu [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### Authors: 5
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko (yaroslav.o.halchenko@dartmouth.edu)
+
+---
+
+# v1.0.8 (Fri Sep 18 2026)
+
+:tada: This release contains work from new contributors! :tada:
+
+Thanks for all your work!
+
+:heart: Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+:heart: GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### 🐛 Bug Fix
+
+- Make file browser rows real links [#2926](https://github.com/dandi/dandi-archive/pull/2926) ([@claude](https://github.com/claude) [@mvandenburgh](https://github.com/mvandenburgh) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Fix publish-time race between DOI minting and manifest writing [#2912](https://github.com/dandi/dandi-archive/pull/2912) ([@yarikoptic](https://github.com/yarikoptic) [@claude](https://github.com/claude) [@jjnesbitt](https://github.com/jjnesbitt) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### Authors: 6
+
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- GitMate for @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v1.0.7 (Thu Sep 17 2026)
+
+#### 🐛 Bug Fix
+
+- Fix zarr publishing validation [#2924](https://github.com/dandi/dandi-archive/pull/2924) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add in-browser zip download for small dandisets [#2855](https://github.com/dandi/dandi-archive/pull/2855) ([@bendichter](https://github.com/bendichter) [@naglepuff](https://github.com/naglepuff))
+- Add an Example Notebooks tab to the dandiset landing page [#2897](https://github.com/dandi/dandi-archive/pull/2897) ([@bendichter](https://github.com/bendichter) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.6 (Mon Sep 14 2026)
+
+#### 🐛 Bug Fix
+
+- Restrict asset path deletion to ancestors of deleted asset [#2919](https://github.com/dandi/dandi-archive/pull/2919) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v1.0.5 (Mon Sep 14 2026)
+
+#### 🐛 Bug Fix
+
+- Fix embargo funding and end date parameters on Dandiset creation [#2918](https://github.com/dandi/dandi-archive/pull/2918) ([@bendichter](https://github.com/bendichter))
+
+#### Authors: 1
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+
+---
+
+# v1.0.4 (Wed Sep 09 2026)
+
+#### 🐛 Bug Fix
+
+- Remove user-facing dandihub references following service sunset [#2905](https://github.com/dandi/dandi-archive/pull/2905) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
+# v1.0.3 (Tue Sep 08 2026)
+
+:tada: This release contains work from new contributors! :tada:
+
+Thanks for all your work!
+
+:heart: Claude ([@claude](https://github.com/claude))
+
+:heart: Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🐛 Bug Fix
+
+- Lock file maintenance [#2916](https://github.com/dandi/dandi-archive/pull/2916) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Merge pull request #2856 from dandi/anatomy-info-card [#2856](https://github.com/dandi/dandi-archive/pull/2856) ([@bendichter](https://github.com/bendichter))
+- e2e: reduce flakiness of playwright tests [#2893](https://github.com/dandi/dandi-archive/pull/2893) ([@naglepuff](https://github.com/naglepuff))
+- Use 'spike sorting' instead of 'patch clamp' in technique search example [#2909](https://github.com/dandi/dandi-archive/pull/2909) ([@claude](https://github.com/claude) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 🔩 Dependency Updates
+
+- Update dev dependencies [#2910](https://github.com/dandi/dandi-archive/pull/2910) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update astral-sh/setup-uv action to v10 [#2911](https://github.com/dandi/dandi-archive/pull/2911) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 5
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+
+---
+
+# v1.0.2 (Mon Aug 31 2026)
+
+#### 🐛 Bug Fix
+
+- Add a DANDI Atlas entry to the Open with menu [#2873](https://github.com/dandi/dandi-archive/pull/2873) ([@bendichter](https://github.com/bendichter) [@mvandenburgh](https://github.com/mvandenburgh))
+- Add `.DS_Store` to `.gitignore` [#2906](https://github.com/dandi/dandi-archive/pull/2906) ([@kabilar](https://github.com/kabilar))
+
+#### 🏠 Internal
+
+- Centralize `/api/info` calls + cleaner production/sandbox identification [#2903](https://github.com/dandi/dandi-archive/pull/2903) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🔩 Dependency Updates
+
+- Lock file maintenance [#2860](https://github.com/dandi/dandi-archive/pull/2860) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 4
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v1.0.1 (Mon Aug 24 2026)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger a release [#2898](https://github.com/dandi/dandi-archive/pull/2898) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix frontend lint command [#2892](https://github.com/dandi/dandi-archive/pull/2892) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Update dev dependencies [#2823](https://github.com/dandi/dandi-archive/pull/2823) ([@renovate[bot]](https://github.com/renovate[bot]) [@jjnesbitt](https://github.com/jjnesbitt))
+- Match owner: against GitHub login instead of User.username [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Merge remote-tracking branch 'origin/master' into advanced-search-owner [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add a redirect directive for hub.dandiarchive.org [#2888](https://github.com/dandi/dandi-archive/pull/2888) ([@waxlamp](https://github.com/waxlamp))
+- fix: import `migrate` from `dandischema.metadata` [#2886](https://github.com/dandi/dandi-archive/pull/2886) ([@candleindark](https://github.com/candleindark))
+- Auto-approve users with an EPFL email [#2836](https://github.com/dandi/dandi-archive/pull/2836) ([@kabilar](https://github.com/kabilar))
+- Match species/approach/technique against assetsSummary instead of per-asset metadata [#2882](https://github.com/dandi/dandi-archive/pull/2882) ([@bendichter](https://github.com/bendichter))
+- Merge remote-tracking branch 'origin/master' into advanced-search-owner [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@bendichter](https://github.com/bendichter))
+- Drop owner:me magic alias (defer to a follow-up PR) [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@bendichter](https://github.com/bendichter))
+- owner: keep owner:me magic; add quoted-form escape; consolidate tests [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@bendichter](https://github.com/bendichter))
+- Apply ruff format to test_dandiset.py [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@bendichter](https://github.com/bendichter))
+- owner: also match by display name (first/last/full) [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@bendichter](https://github.com/bendichter))
+- Add owner: operator to advanced search [#2821](https://github.com/dandi/dandi-archive/pull/2821) ([@bendichter](https://github.com/bendichter))
+
+#### 🔩 Dependency Updates
+
+- Remove dependabot [#2880](https://github.com/dandi/dandi-archive/pull/2880) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 7
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v1.0.0 (Wed Aug 05 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD)), for all your work!
+
+### Release Notes
+
+#### Merge pull request #2783 from dandi/renovate/apidevtools-json-schema-ref-parser-15.x ([#2783](https://github.com/dandi/dandi-archive/pull/2783))
+
+<details>
+<summary>APIDevTools/json-schema-ref-parser (@&#8203;apidevtools/json-schema-ref-parser)</summary>
+
+#### Merge pull request #2781 from dandi/renovate/apidevtools-json-schema-ref-parser-13.x ([#2781](https://github.com/dandi/dandi-archive/pull/2781))
+
+<details>
+<summary>APIDevTools/json-schema-ref-parser (@&#8203;apidevtools/json-schema-ref-parser)</summary>
+
+---
+
+#### 💥 Breaking Change
+
+- [gh-actions](deps): Bump actions/add-to-project from 1.0.2 to 2.0.0 [#2813](https://github.com/dandi/dandi-archive/pull/2813) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### 🚀 Enhancement
+
+- Add support for zarr multi-part uploads [#2784](https://github.com/dandi/dandi-archive/pull/2784) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🐛 Bug Fix
+
+- Fix zarr path traversal bug [#2881](https://github.com/dandi/dandi-archive/pull/2881) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Revert "Add support for zarr multi-part uploads (#2784)" [#2878](https://github.com/dandi/dandi-archive/pull/2878) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Attach `dependencies` label to renovate PRs [#2879](https://github.com/dandi/dandi-archive/pull/2879) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add release notes functionality to dandiset publishing process [#2606](https://github.com/dandi/dandi-archive/pull/2606) ([@bendichter](https://github.com/bendichter) [@mvandenburgh](https://github.com/mvandenburgh))
+- Reduce zarr stuckness [#2872](https://github.com/dandi/dandi-archive/pull/2872) ([@danlamanna](https://github.com/danlamanna))
+- Guard against empty `loc` in `_encode_pydantic_error` [#2853](https://github.com/dandi/dandi-archive/pull/2853) ([@candleindark](https://github.com/candleindark))
+- Merge remote-tracking branch 'origin/master' into search-operators-autocomplete [#2843](https://github.com/dandi/dandi-archive/pull/2843) ([@bendichter](https://github.com/bendichter))
+- Fix search within "My Dandisets" to include owned/embargoed dandisets [#2841](https://github.com/dandi/dandi-archive/pull/2841) ([@bendichter](https://github.com/bendichter))
+- Fix empty-query Enter not navigating to search results page [#2843](https://github.com/dandi/dandi-archive/pull/2843) ([@bendichter](https://github.com/bendichter))
+- E2E: target search field by textbox role, not combobox [#2843](https://github.com/dandi/dandi-archive/pull/2843) ([@bendichter](https://github.com/bendichter))
+- E2E CI: bound runserver DB connections to avoid Postgres exhaustion [#2843](https://github.com/dandi/dandi-archive/pull/2843) ([@bendichter](https://github.com/bendichter))
+- Add E2E tests for search operator autocomplete [#2843](https://github.com/dandi/dandi-archive/pull/2843) ([@bendichter](https://github.com/bendichter))
+- Remove `standard:` search operator [#2844](https://github.com/dandi/dandi-archive/pull/2844) ([@bendichter](https://github.com/bendichter))
+- Show example/format hint next to each operator in the dropdown [#2843](https://github.com/dandi/dandi-archive/pull/2843) ([@bendichter](https://github.com/bendichter))
+- Merge pull request #2833 from dandi/display-embargoed-until-date [#2833](https://github.com/dandi/dandi-archive/pull/2833) ([@bendichter](https://github.com/bendichter))
+- Expand S3 doc with all options and archival note [#2830](https://github.com/dandi/dandi-archive/pull/2830) ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Update code snippet to show correct instance [#2689](https://github.com/dandi/dandi-archive/pull/2689) ([@NEStock](https://github.com/NEStock))
+- Display total data size on the homepage with one decimal place [#2802](https://github.com/dandi/dandi-archive/pull/2802) ([@kabilar](https://github.com/kabilar))
+- Update status for initial s3 backup doc [#2829](https://github.com/dandi/dandi-archive/pull/2829) ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Add support to open NIfTI assets in Neurosift [#2700](https://github.com/dandi/dandi-archive/pull/2700) ([@kabilar](https://github.com/kabilar))
+- Fix documentation link in email template [#2803](https://github.com/dandi/dandi-archive/pull/2803) ([@kabilar](https://github.com/kabilar))
+- [codex] Fix citation author filtering [#2794](https://github.com/dandi/dandi-archive/pull/2794) ([@bendichter](https://github.com/bendichter))
+- Wider, responsive advanced-search help popover (closes #2818) [#2820](https://github.com/dandi/dandi-archive/pull/2820) ([@bendichter](https://github.com/bendichter))
+- Gmail-style advanced search for dandiset listing [#2814](https://github.com/dandi/dandi-archive/pull/2814) ([@bendichter](https://github.com/bendichter))
+- Fix "This Version" header style on DLP [#2816](https://github.com/dandi/dandi-archive/pull/2816) ([@bendichter](https://github.com/bendichter))
+- fix: use datePublished for citation year on published versions [#2771](https://github.com/dandi/dandi-archive/pull/2771) ([@bendichter](https://github.com/bendichter))
+- Get `fsspec` from `dandi[extras]` [#2809](https://github.com/dandi/dandi-archive/pull/2809) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2792 from dandi/celery-fix [#2792](https://github.com/dandi/dandi-archive/pull/2792) ([@brianhelba](https://github.com/brianhelba))
+- Fix incompatibility with RabbitMQ 4.3 [#2792](https://github.com/dandi/dandi-archive/pull/2792) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2807 from dandi/renovate/fsspec-2026.x [#2807](https://github.com/dandi/dandi-archive/pull/2807) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2808 from dandi/renovate/marked-18.x [#2808](https://github.com/dandi/dandi-archive/pull/2808) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2795 from dandi/renovate/all-minor-patch [#2795](https://github.com/dandi/dandi-archive/pull/2795) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2804 from dandi/renovate/pytest-9.x [#2804](https://github.com/dandi/dandi-archive/pull/2804) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2589 from dandi/drf-upgrade [#2589](https://github.com/dandi/dandi-archive/pull/2589) ([@brianhelba](https://github.com/brianhelba))
+- Merge remote-tracking branch 'origin/master' into drf-upgrade [#2589](https://github.com/dandi/dandi-archive/pull/2589) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2796 from dandi/renovate/dev-deps [#2796](https://github.com/dandi/dandi-archive/pull/2796) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2801 from dandi/type-packages [#2801](https://github.com/dandi/dandi-archive/pull/2801) ([@brianhelba](https://github.com/brianhelba))
+- Update dependency more_itertools to v11 [#2791](https://github.com/dandi/dandi-archive/pull/2791) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency rich to v15 [#2788](https://github.com/dandi/dandi-archive/pull/2788) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency faker to v40 - autoclosed [#2790](https://github.com/dandi/dandi-archive/pull/2790) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update astral-sh/setup-uv action to v8 [#2786](https://github.com/dandi/dandi-archive/pull/2786) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency gunicorn to v25 [#2787](https://github.com/dandi/dandi-archive/pull/2787) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Merge pull request #2783 from dandi/renovate/apidevtools-json-schema-ref-parser-15.x [#2783](https://github.com/dandi/dandi-archive/pull/2783) ([@brianhelba](https://github.com/brianhelba))
+- Update dependency @apidevtools/json-schema-ref-parser to v15 [#2783](https://github.com/dandi/dandi-archive/pull/2783) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Truncate long filenames in file browser [#2726](https://github.com/dandi/dandi-archive/pull/2726) ([@bendichter](https://github.com/bendichter))
+- Merge pull request #2747 from dandi/renovate/tsconfig-node22-replacement [#2747](https://github.com/dandi/dandi-archive/pull/2747) ([@brianhelba](https://github.com/brianhelba))
+- Replace dependency @tsconfig/node22 with @tsconfig/node24 [#2747](https://github.com/dandi/dandi-archive/pull/2747) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Merge pull request #2781 from dandi/renovate/apidevtools-json-schema-ref-parser-13.x [#2781](https://github.com/dandi/dandi-archive/pull/2781) ([@brianhelba](https://github.com/brianhelba))
+- Update dependency @apidevtools/json-schema-ref-parser to v13 [#2781](https://github.com/dandi/dandi-archive/pull/2781) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Merge pull request #2785 from dandi/vue-router [#2785](https://github.com/dandi/dandi-archive/pull/2785) ([@brianhelba](https://github.com/brianhelba))
+- Use `DandisetIdentifierField` in appropriate Serializers [#2589](https://github.com/dandi/dandi-archive/pull/2589) ([@brianhelba](https://github.com/brianhelba))
+- Move validation logic into `ZarrArchiveSerializer` [#2589](https://github.com/dandi/dandi-archive/pull/2589) ([@brianhelba](https://github.com/brianhelba))
+- Move `vue-router` to runtime dependencies [#2785](https://github.com/dandi/dandi-archive/pull/2785) ([@brianhelba](https://github.com/brianhelba))
+- Rename the `NestedAssetViewSet` URL basename to avoid a conflict [#2589](https://github.com/dandi/dandi-archive/pull/2589) ([@brianhelba](https://github.com/brianhelba))
+- Upgrade `djangorestframework` [#2589](https://github.com/dandi/dandi-archive/pull/2589) ([@brianhelba](https://github.com/brianhelba))
+
+#### 📝 Documentation
+
+- Fix native Celery instructions for RabbitMQ 4.3 [#2815](https://github.com/dandi/dandi-archive/pull/2815) ([@candleindark](https://github.com/candleindark))
+
+#### 🔩 Dependency Updates
+
+- Update dependency @faker-js/faker to v10 [#2839](https://github.com/dandi/dandi-archive/pull/2839) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update actions/checkout action to v7 [#2858](https://github.com/dandi/dandi-archive/pull/2858) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update actions/setup-node action to v7 [#2874](https://github.com/dandi/dandi-archive/pull/2874) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update astral-sh/setup-uv action to v9 [#2875](https://github.com/dandi/dandi-archive/pull/2875) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 11
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Nicole Tregoning ([@NEStock](https://github.com/NEStock))
+
+---
+
+# v0.23.0 (Thu Apr 09 2026)
+
+#### 🚀 Enhancement
+
+- Add `embargo_end_date` field to Dandiset model [#2731](https://github.com/dandi/dandi-archive/pull/2731) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🐛 Bug Fix
+
+- Merge pull request #2775 from dandi/renovate/major-7-github-artifact-actions [#2775](https://github.com/dandi/dandi-archive/pull/2775) ([@brianhelba](https://github.com/brianhelba))
+- Merge pull request #2774 from dandi/renovate/major-8-github-artifact-actions [#2774](https://github.com/dandi/dandi-archive/pull/2774) ([@brianhelba](https://github.com/brianhelba))
+- Apply text wrapping to publish checklist items [#2751](https://github.com/dandi/dandi-archive/pull/2751) ([@bendichter](https://github.com/bendichter))
+- Display data sizes on the front-end using the decimal system [#2755](https://github.com/dandi/dandi-archive/pull/2755) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 4
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
+# v0.22.0 (Tue Mar 24 2026)
+
+#### 🚀 Enhancement
+
+- Add AI assisted metadata editor button to meditor and Open With menu [#2718](https://github.com/dandi/dandi-archive/pull/2718) ([@satra](https://github.com/satra))
+
+#### Authors: 1
+
+- Satrajit Ghosh ([@satra](https://github.com/satra))
+
+---
+
+# v0.21.11 (Tue Mar 24 2026)
+
+#### 🐛 Bug Fix
+
+- Update dashboard permissions [#2752](https://github.com/dandi/dandi-archive/pull/2752) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Fix heroku build [#2741](https://github.com/dandi/dandi-archive/pull/2741) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Update dependency ubuntu to v24 [#2738](https://github.com/dandi/dandi-archive/pull/2738) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 2
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.21.10 (Wed Mar 18 2026)
+
+#### 🐛 Bug Fix
+
+- Add Blog link to AppBar navigation [#2739](https://github.com/dandi/dandi-archive/pull/2739) ([@yarikoptic](https://github.com/yarikoptic))
+- Update dependency @sentry/vue to v10 [#2736](https://github.com/dandi/dandi-archive/pull/2736) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency node to v24 [#2737](https://github.com/dandi/dandi-archive/pull/2737) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Upgrade to Resonant v0.48.1 [#2734](https://github.com/dandi/dandi-archive/pull/2734) ([@brianhelba](https://github.com/brianhelba))
+- Add required pytest marks for test_info tests [#2727](https://github.com/dandi/dandi-archive/pull/2727) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 4
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.21.9 (Wed Mar 11 2026)
+
+#### 🐛 Bug Fix
+
+- Display the correct CLI and required python version in the GUI [#2714](https://github.com/dandi/dandi-archive/pull/2714) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Remove CLI as core dependency [#2715](https://github.com/dandi/dandi-archive/pull/2715) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Set asset to pending when its zarr is ingested [#2720](https://github.com/dandi/dandi-archive/pull/2720) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.21.8 (Fri Mar 06 2026)
+
+#### 🐛 Bug Fix
+
+- Upgrade to Resonant v0.47 [#2692](https://github.com/dandi/dandi-archive/pull/2692) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 1
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+
+---
+
+# v0.21.7 (Fri Mar 06 2026)
+
+#### 🐛 Bug Fix
+
+- Add scrollbar to meditor component for overflowing content [#2724](https://github.com/dandi/dandi-archive/pull/2724) ([@kabilar](https://github.com/kabilar))
+- Don't return `null` names or usernames from user search endpoint [#2681](https://github.com/dandi/dandi-archive/pull/2681) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
+# v0.21.6 (Wed Feb 18 2026)
+
+#### 🐛 Bug Fix
+
+- Properly unembargo blobs when asset is updated [#2713](https://github.com/dandi/dandi-archive/pull/2713) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.21.5 (Tue Feb 17 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Heberto Mayorquin ([@h-mayorquin](https://github.com/h-mayorquin)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Fix propagation of embargoed date from dandisets to assets [#2698](https://github.com/dandi/dandi-archive/pull/2698) ([@h-mayorquin](https://github.com/h-mayorquin) [@jjnesbitt](https://github.com/jjnesbitt))
+- bf: fix GarbageCollectionEvent.__str__ referencing nonexistent field [#2710](https://github.com/dandi/dandi-archive/pull/2710) ([@yarikoptic](https://github.com/yarikoptic) [@jjnesbitt](https://github.com/jjnesbitt))
+- Add "How to Cite" Tab to Dandiset Landing Page [#2671](https://github.com/dandi/dandi-archive/pull/2671) ([@bendichter](https://github.com/bendichter) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 📝 Documentation
+
+- Fixes of minor inconsistencies in docs claude identified [#2709](https://github.com/dandi/dandi-archive/pull/2709) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 🧪 Tests
+
+- Revert "bf(test): test_nwb2asset_remote_asset which might be stalling here" [#2708](https://github.com/dandi/dandi-archive/pull/2708) ([@yarikoptic](https://github.com/yarikoptic))
+- ci(tests): pass -s to pytest  and skip hanging test_nwb2asset_remote_asset [#2662](https://github.com/dandi/dandi-archive/pull/2662) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 4
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Heberto Mayorquin ([@h-mayorquin](https://github.com/h-mayorquin))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.21.4 (Thu Feb 05 2026)
+
+#### 🐛 Bug Fix
+
+- Update copyright year in footer [#2701](https://github.com/dandi/dandi-archive/pull/2701) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
+# v0.21.3 (Mon Feb 02 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, William Allen ([@williamjallen](https://github.com/williamjallen)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Update URL for user support [#2688](https://github.com/dandi/dandi-archive/pull/2688) ([@kabilar](https://github.com/kabilar))
+- Fix dandiset ID parsing during upload initialization [#2696](https://github.com/dandi/dandi-archive/pull/2696) ([@williamjallen](https://github.com/williamjallen))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- William Allen ([@williamjallen](https://github.com/williamjallen))
+
+---
+
+# v0.21.2 (Tue Jan 13 2026)
+
+#### 🐛 Bug Fix
+
+- Disable throttling of unauthenticated users [#2694](https://github.com/dandi/dandi-archive/pull/2694) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.21.1 (Tue Jan 13 2026)
+
+#### 🐛 Bug Fix
+
+- Improve performance of asset list endpoint when exact path is provided [#2691](https://github.com/dandi/dandi-archive/pull/2691) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.21.0 (Thu Jan 08 2026)
+
+#### 🚀 Enhancement
+
+- Add basic rate limit implementation [#2665](https://github.com/dandi/dandi-archive/pull/2665) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🐛 Bug Fix
+
+- Remove user_migration scripts [#2595](https://github.com/dandi/dandi-archive/pull/2595) ([@brianhelba](https://github.com/brianhelba))
+
+#### 🔩 Dependency Updates
+
+- [gh-actions](deps): Bump actions/upload-artifact from 5 to 6 [#2674](https://github.com/dandi/dandi-archive/pull/2674) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- [gh-actions](deps): Bump actions/download-artifact from 6 to 7 [#2675](https://github.com/dandi/dandi-archive/pull/2675) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- [gh-actions](deps): Bump actions/checkout from 5 to 6 [#2651](https://github.com/dandi/dandi-archive/pull/2651) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 3
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.20.0 (Wed Dec 17 2025)
+
+### Release Notes
+
+#### Add vendorization support ([#2584](https://github.com/dandi/dandi-archive/pull/2584))
+
+This PR makes the instance config as defined in `dandischema.conf`, per https://github.com/dandi/dandi-schema/pull/294, available through the `api/info/` endpoint and replaces the hardcoded `DAND:`, the hardcoded RRID, and the supported licenses with the corresponding attributes in schema instance config defined in `dandischema.conf`.
+
+---
+
+#### 🚀 Enhancement
+
+- Add vendorization support [#2584](https://github.com/dandi/dandi-archive/pull/2584) ([@candleindark](https://github.com/candleindark) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🐛 Bug Fix
+
+- Empty commit for release [#2680](https://github.com/dandi/dandi-archive/pull/2680) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Update management command for schema migration [#2650](https://github.com/dandi/dandi-archive/pull/2650) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Remove `DANDI_SCHEMA_VERSION` as a setting [#2644](https://github.com/dandi/dandi-archive/pull/2644) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Auto approve users from McGill University [#2657](https://github.com/dandi/dandi-archive/pull/2657) ([@kabilar](https://github.com/kabilar))
+- Don't use django setting to store allowed schema versions [#2643](https://github.com/dandi/dandi-archive/pull/2643) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Add create_test_user management command [#2642](https://github.com/dandi/dandi-archive/pull/2642) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Add docker volume for pre-commit cache [#2640](https://github.com/dandi/dandi-archive/pull/2640) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 4
+
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.19.0 (Thu Nov 13 2025)
 
 ### Release Notes

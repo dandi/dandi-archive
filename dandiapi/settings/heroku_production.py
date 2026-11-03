@@ -8,8 +8,11 @@ os.environ['DJANGO_CELERY_BROKER_URL'] = os.environ['CLOUDAMQP_URL']
 # Provided by https://github.com/ianpurvis/heroku-buildpack-version
 os.environ['DJANGO_SENTRY_RELEASE'] = os.environ['SOURCE_VERSION']
 
-from .production import *  # isort: skip
+from .production import *
 
 # This needs to be set by the HTTPS terminating reverse proxy.
 # Heroku and Render automatically set this.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Inform rate limiting that "X-Forwarded-For" should be trusted, as it's appended by Heroku.
+ALLAUTH_TRUSTED_PROXY_COUNT = 1

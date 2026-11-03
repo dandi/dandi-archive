@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, cast
 
-from django.conf import settings
+from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect
 from django_filters import rest_framework as filters
@@ -54,7 +54,9 @@ if TYPE_CHECKING:
 
 class AssetFilter(filters.FilterSet):
     path = filters.CharFilter(lookup_expr='istartswith')
-    order = filters.OrderingFilter(fields=['created', 'modified', 'path'])
+    # `fields` are the values `?order=` accepts, not an ordering; see the caveat on ties in
+    # `NestedAssetViewSet.list()`.
+    order = filters.OrderingFilter(fields=['created', 'modified', 'path', 'id'])
 
     class Meta:
         model = Asset
@@ -62,7 +64,7 @@ class AssetFilter(filters.FilterSet):
 
 
 class AssetViewSet(DetailSerializerMixin, GenericViewSet):
-    queryset = Asset.objects.all().select_related('zarr').order_by('created')
+    queryset = Asset.objects.all().select_related('zarr').order_by('created', 'id')
 
     serializer_class = AssetSerializer
     serializer_detail_class = AssetDetailSerializer
@@ -220,7 +222,7 @@ class AssetRequestSerializer(serializers.Serializer):
         # will be caught further up the stack and be converted to a DRF ValidationError
         validate_asset_path(data['metadata']['path'])
 
-        data['metadata'].setdefault('schemaVersion', settings.DANDI_SCHEMA_VERSION)
+        data['metadata'].setdefault('schemaVersion', DANDI_SCHEMA_VERSION)
         return data
 
 
@@ -411,6 +413,14 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
     @swagger_auto_schema(query_serializer=AssetListSerializer, responses={200: AssetSerializer})
     def list(self, request, *args, **kwargs):
+        """
+        List the assets of a version with pagination.
+
+        By default assets are ordered by `created`, with ties broken by `id`.
+        `?order=` accepts a comma-separated list of terms from `created`,
+        `modified`, `path`, and `id` (each optionally prefixed with `-`) and
+        replaces that default.
+        """
         # Manually call this to ensure user is authorized
         self.raise_if_unauthorized()
 
@@ -423,8 +433,19 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             version=self.kwargs['versions__version'],
         )
 
+        # Use custom pagination class to reduce unnecessary counts of assets
+        paginator = LazyPagination()
+
         # Apply filtering from included filter class first
         asset_queryset = self.filter_queryset(version.assets.all())
+
+        # Check if the path query arg is pointing at a direct path.
+        # If that's the case, just retrieve the single asset.
+        path = self.request.query_params.get('path')
+        if path:
+            assets = Asset.objects.filter(path=path, versions=version)
+            if assets.exists():
+                asset_queryset = assets
 
         # Filter query to only zarr assets, if requested
         zarr_only = serializer.validated_data['zarr']
@@ -442,8 +463,6 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             asset_queryset = asset_queryset.filter(path__iregex=glob_pattern.replace('\\*', '.*'))
 
         # Retrieve just the first N asset IDs, and use them for pagination
-        # Use custom pagination class to reduce unnecessary counts of assets
-        paginator = LazyPagination()
         qs = asset_queryset.values_list('id', flat=True)
         page_of_asset_ids = paginator.paginate_queryset(qs, request=self.request, view=self)
 

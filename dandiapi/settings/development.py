@@ -5,14 +5,14 @@ from django_extensions.utils import InternalIPS
 from .base import *
 
 # Import these afterwards, to override
-from resonant_settings.development.celery import *  # isort: skip
-from resonant_settings.development.debug_toolbar import *  # isort: skip
+from resonant_settings.development.celery import *
+from resonant_settings.development.debug_toolbar import *
 
 INSTALLED_APPS += [
     'debug_toolbar',
     'django_browser_reload',
 ]
-# Force WhiteNoice to serve static files, even when using 'manage.py runserver_plus'
+# Force WhiteNoise to serve static files, even when using "manage.py runserver_plus"
 staticfiles_index = INSTALLED_APPS.index('django.contrib.staticfiles')
 INSTALLED_APPS.insert(staticfiles_index, 'whitenoise.runserver_nostatic')
 
@@ -33,7 +33,7 @@ MIDDLEWARE += [
 # to add new settings as individual feature flags.
 DEBUG = True
 
-SECRET_KEY = 'insecure-secret'  # noqa: S105
+SECRET_KEY = 'insecure-secret'
 
 # This is typically only overridden when running from Docker.
 INTERNAL_IPS = InternalIPS(env.list('DJANGO_INTERNAL_IPS', cast=str, default=['127.0.0.1']))
@@ -56,7 +56,6 @@ STORAGES['default'] = {
         'media_url': _storage_media_url,
     },
 }
-DANDI_DANDISETS_BUCKET_NAME = STORAGES['default']['OPTIONS']['bucket_name']  # TODO: remove
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -76,3 +75,14 @@ DANDI_AUTO_APPROVE_USERS = True
 
 DANDI_DEV_EMAIL = 'test-dev@example.com'
 DANDI_ADMIN_EMAIL = 'test-admin@example.com'
+
+# `manage.py runserver` spawns a thread per request and, with a long-lived
+# CONN_MAX_AGE (inherited from base settings), holds one Postgres connection per
+# thread for the lifetime of the process. Under parallel load — notably the
+# Playwright E2E suite running with multiple workers — the connection count can
+# climb past Postgres's default `max_connections` ("sorry, too many clients
+# already"). Allow that environment to force per-request connection closing
+# (`DJANGO_CONN_MAX_AGE=0`) so the count stays bounded regardless of test count.
+DATABASES['default']['CONN_MAX_AGE'] = env.float(
+    'DJANGO_CONN_MAX_AGE', default=DATABASES['default']['CONN_MAX_AGE']
+)

@@ -1,4 +1,4 @@
-import { type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { faker } from "@faker-js/faker";
 
 const TEST_USER_INITIALS = "AA";
@@ -27,15 +27,21 @@ async function registerNewUser(page: Page) {
   await page.getByPlaceholder("Password (again)").click();
   await page.getByPlaceholder("Password (again)").fill(password);
   await page.getByRole("button", { name: "Sign Up" }).click();
+  // The next page's submit button is enabled by a plain keyup listener registered
+  // on DOMContentLoaded (see questionnaire_form.html), not a framework-bound
+  // model. click({ force: true }) skips Playwright's normal readiness checks, so
+  // without this wait we can start typing before that listener is even attached,
+  // and the button never enables.
+  await page.waitForLoadState("domcontentloaded");
+  // locator.fill() doesn't dispatch keyup either, so type the names out with
+  // pressSequentially() instead.
   await page.getByLabel("First Name").click({ force: true });
-  await page.getByLabel("First Name").fill(firstname);
+  await page.getByLabel("First Name").pressSequentially(firstname);
   await page.getByLabel("Last Name").click({ force: true });
-  await page.getByLabel("Last Name").fill(lastname);
-  await page.keyboard.press(" ");  // Using locator.fill does not enable to button for some reason
-  await page.waitForTimeout(1000);
-  await page.keyboard.press("Backspace");
-  await page.waitForTimeout(1000);
-  await page.getByRole("button").click();
+  await page.getByLabel("Last Name").pressSequentially(lastname);
+  const submitButton = page.getByRole("button");
+  await expect(submitButton).toBeEnabled();
+  await submitButton.click();
 
   return { email, firstname, lastname, password };
 }
@@ -54,10 +60,14 @@ async function registerDandiset(page: Page, name: string, description: string) {
   await page.getByLabel("Title").fill(name);
   await page.getByLabel("Description").click();
   await page.getByLabel("Description").fill(description);
-  await page.locator('div:nth-child(3) > .v-input__control > .v-field > .v-field__field > .v-field__input').click()
+  // Vuetify's v-select sets aria-label="Open" on its input, which overrides the
+  // associated <label> in accessible-name computation, so getByLabel can't find it.
+  await page.locator(".v-select").filter({ hasText: "License" }).click();
   await page.getByRole("option", { name: "spdx:CC0-" }).click();
   await page.getByRole("button", { name: "Register Dandiset" }).click();
-  await page.waitForTimeout(1000);
+  // Wait for the post-submit redirect to land on the new dandiset's page before
+  // reading the id out of the URL, instead of racing a fixed timeout.
+  await page.waitForURL(/\/dandiset\/\d+$/);
   const dandisetId = await page.url().split("/").pop();
   return dandisetId;
 }

@@ -6,6 +6,7 @@ from django.urls import include, path, re_path, register_converter, reverse_lazy
 from django.views.generic import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
+from oauth2_provider import urls as oauth2_urls
 from rest_framework import permissions
 from rest_framework_extensions.routers import ExtendedSimpleRouter
 
@@ -45,13 +46,13 @@ router = ExtendedSimpleRouter()
     .register(
         r'versions',
         VersionViewSet,
-        basename='version',
+        basename='dandiset-version',
         parents_query_lookups=[f'dandiset__{DandisetViewSet.lookup_field}'],
     )
     .register(
         r'assets',
         NestedAssetViewSet,
-        basename='asset',
+        basename='dandiset-version-asset',
         parents_query_lookups=[
             f'versions__dandiset__{DandisetViewSet.lookup_field}',
             f'versions__{VersionViewSet.lookup_field}',
@@ -115,6 +116,14 @@ webdav_schema_view = get_schema_view(
 )
 
 
+# The toolkit's routes, minus its self-service application management views (under
+# "applications/"), which let any logged-in user register an OAuth2 application.
+# Applications are managed through the Django admin instead.
+oauth2_urlpatterns = [
+    url for url in oauth2_urls.urlpatterns if not str(url.pattern).startswith('applications/')
+]
+
+
 class DandisetIDConverter:
     regex = r'\d{6}'
 
@@ -140,7 +149,10 @@ urlpatterns = [
     # this url overrides the authorize url in oauth2_provider.urls to
     # support our user signup workflow
     path('oauth/authorize/', authorize_view, name='authorize'),
-    path('oauth/', include('oauth2_provider.urls')),
+    path(
+        'oauth/',
+        include((oauth2_urlpatterns, 'oauth2_provider'), namespace='oauth2_provider'),
+    ),
     # Doc page views
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
