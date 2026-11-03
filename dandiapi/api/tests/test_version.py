@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import datetime
 from time import sleep
 from typing import TYPE_CHECKING
@@ -1082,6 +1083,102 @@ def test_version_rest_update_no_changed_metadata(api_client: APIClient):
     draft_version.refresh_from_db()
 
     assert draft_version.modified == old_modified_time
+
+
+@pytest.mark.django_db
+def test_version_rest_update_strips_empty_records(api_client: APIClient):
+    """Test that records with nothing but a schemaKey are not saved."""
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    api_client.force_authenticate(user=user)
+
+    contact_person = draft_version.metadata['contributor'][0]
+    # As sent by the Meditor for an ethics approval and an organization whose
+    # contact point forms were left blank
+    new_metadata = {
+        **draft_version.metadata,
+        'ethicsApproval': [
+            {
+                'schemaKey': 'EthicsApproval',
+                'identifier': 'IRB-2026-001',
+                'contactPoint': {'schemaKey': 'ContactPoint'},
+            }
+        ],
+        'contributor': [
+            contact_person,
+            {
+                'schemaKey': 'Organization',
+                'name': 'Example Funding Org',
+                'contactPoint': [{'schemaKey': 'ContactPoint'}],
+            },
+        ],
+        'access': [
+            {
+                'schemaKey': 'AccessRequirements',
+                'status': AccessType.OpenAccess.value,
+                'contactPoint': {'schemaKey': 'ContactPoint'},
+            }
+        ],
+    }
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {'metadata': new_metadata, 'name': draft_version.name},
+    )
+    assert resp.status_code == 200
+    draft_version.refresh_from_db()
+
+    assert draft_version.metadata['ethicsApproval'] == [
+        {'schemaKey': 'EthicsApproval', 'identifier': 'IRB-2026-001'}
+    ]
+    assert draft_version.metadata['contributor'] == [
+        contact_person,
+        {'schemaKey': 'Organization', 'name': 'Example Funding Org', 'contactPoint': []},
+    ]
+    assert draft_version.metadata['access'] == [
+        {'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}
+    ]
+    assert resp.data['metadata'] == draft_version.metadata
+
+
+@pytest.mark.django_db
+def test_version_rest_update_only_empty_records_added(api_client: APIClient):
+    """Test that adding nothing but empty records doesn't modify the version."""
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    draft_version.metadata['ethicsApproval'] = [
+        {'schemaKey': 'EthicsApproval', 'identifier': 'IRB-2026-001'}
+    ]
+    draft_version.metadata['about'] = []
+    draft_version.save()
+    api_client.force_authenticate(user=user)
+
+    old_metadata = deepcopy(draft_version.metadata)
+    old_modified_time = draft_version.modified
+
+    sleep(0.1)
+
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {
+            'metadata': {
+                **draft_version.metadata,
+                'ethicsApproval': [
+                    {
+                        **draft_version.metadata['ethicsApproval'][0],
+                        'contactPoint': {'schemaKey': 'ContactPoint'},
+                    },
+                    {'schemaKey': 'EthicsApproval'},
+                ],
+                'about': [{'schemaKey': 'GenericType', 'name': ''}],
+            },
+            'name': draft_version.name,
+        },
+    )
+    assert resp.status_code == 200
+    draft_version.refresh_from_db()
+
+    assert draft_version.modified == old_modified_time
+    assert draft_version.metadata == old_metadata
 
 
 @pytest.mark.django_db

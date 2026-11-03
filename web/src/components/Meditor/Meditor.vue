@@ -264,7 +264,7 @@ import { useDandisetStore } from '@/stores/dandiset';
 import type { DandiModel } from './types';
 import { isJSONSchema } from './types';
 import { EditorInterface } from './editor';
-import { validateDandisetMetadata, VJSFVuetifyDefaultProps } from './utils';
+import { stripEmptyRecords, validateDandisetMetadata, VJSFVuetifyDefaultProps } from './utils';
 
 import {
   clearLocalStorage,
@@ -407,7 +407,10 @@ async function save() {
   if (!id.value || !model.value || !currentDandiset.value?.version) {
     return;
   }
-  const dandiset = editorInterface.value?.getModel();
+  const dandiset = getModelToSave();
+  if (!dandiset) {
+    return;
+  }
 
   try {
     const { status, data } = await dandiRest.saveDandiset(
@@ -434,11 +437,18 @@ async function save() {
   }
 }
 
+// The model without the records the forms created but the user left blank,
+// e.g. {"schemaKey": "ContactPoint"} (https://github.com/dandi/dandi-archive/issues/2944)
+function getModelToSave() {
+  const currentModel = editorInterface.value?.getModel();
+  return currentModel && stripEmptyRecords(currentModel);
+}
+
 // TODO: Add back UI to toggle YAML vs JSON
 const yamlOutput = ref(false);
 const contentType = computed(() => (yamlOutput.value ? 'text/yaml' : 'application/json'));
 const output = computed(() => {
-  const currentModel = editorInterface.value?.getModel();
+  const currentModel = getModelToSave();
   return yamlOutput.value ? jsYaml.dump(currentModel) : JSON.stringify(currentModel, null, 2);
 });
 
