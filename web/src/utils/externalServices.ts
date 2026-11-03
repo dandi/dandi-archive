@@ -15,8 +15,11 @@ interface ExternalService {
 
 // Constants for zarr ID and S3 URL parsing
 const UUID_REGEX_PATTERN = /[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}/;
-const ZARR_ID_REGEX = new RegExp(`/zarr/(${UUID_REGEX_PATTERN.source})`);
-const DEFAULT_S3_BUCKET = 'dandiarchive';
+// Require the id to be a full path component, so e.g. `/zarr/<uuid>-copy` does not yield a truncated id
+const ZARR_ID_REGEX = new RegExp(`/zarr/(${UUID_REGEX_PATTERN.source})(?:/|$)`);
+// Hostname of an AWS S3 endpoint, optionally prefixed by a bucket name (virtual-hosted-style), e.g.
+// s3.amazonaws.com, s3.us-east-2.amazonaws.com, s3-us-west-2.amazonaws.com, <bucket>.s3.amazonaws.com
+const S3_HOSTNAME_REGEX = /^(?:(.+)\.)?s3(?:[.-][a-z0-9-]+)?\.amazonaws\.com$/;
 
 const EXTERNAL_SERVICES: ExternalService[] = [
   {
@@ -99,10 +102,21 @@ const EXTERNAL_SERVICES: ExternalService[] = [
     regex: /\.zarr$/,
     maxsize: Infinity,
     endpoint: (item: ServiceUrlData) => {
+      // Objects of embargoed (or still unembargoing) dandisets are not publicly readable,
+      // so do not offer a public S3 browser for them. Fail closed while the dandiset
+      // metadata is not loaded yet.
+      const store = useDandisetStore();
+      if (store.dandiset?.dandiset.embargo_status !== 'OPEN') {
+        return null;
+      }
       if (!item.zarr_id) {
         return null;
       }
       const bucket = extractS3Bucket(item.assetS3Url);
+      if (!bucket) {
+        // Not an AWS S3 URL we understand (e.g. MinIO in local development)
+        return null;
+      }
       return `https://open.quiltdata.com/b/${bucket}/tree/zarr/${item.zarr_id}/`;
     },
   }
@@ -120,25 +134,32 @@ function extractZarrId(contentUrl: string): string | null {
 }
 
 /**
- * Extract S3 bucket name from S3 URL.
- * Handles both path-style and virtual-hosted-style S3 URLs:
+ * Extract the bucket name from an AWS S3 URL, or return null if it cannot be determined
+ * (e.g. MinIO in local development, or any other non-AWS endpoint).
+ * Handles both virtual-hosted-style and path-style S3 URLs:
+ * - Virtual-hosted-style: https://bucket.s3.amazonaws.com/... (what dandi-archive emits)
  * - Path-style: https://s3.amazonaws.com/bucket/...
- * - Virtual-hosted-style: https://bucket.s3.amazonaws.com/...
  */
-function extractS3Bucket(s3Url: string): string {
-  // Try path-style: https://s3.amazonaws.com/bucket/...
-  const pathStyleMatch = s3Url.match(/https?:\/\/s3[^/]*\.amazonaws\.com\/([^/]+)/);
-  if (pathStyleMatch) {
-    return pathStyleMatch[1];
+function extractS3Bucket(s3Url: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(s3Url);
+  } catch {
+    return null;
   }
-  
-  // Try virtual-hosted-style: https://bucket.s3.amazonaws.com/...
-  const virtualHostedMatch = s3Url.match(/https?:\/\/([^.]+)\.s3[^/]*\.amazonaws\.com/);
-  if (virtualHostedMatch) {
-    return virtualHostedMatch[1];
+
+  const hostnameMatch = url.hostname.match(S3_HOSTNAME_REGEX);
+  if (!hostnameMatch) {
+    return null;
   }
-  
-  return DEFAULT_S3_BUCKET;
+
+  // Virtual-hosted-style: the bucket is the hostname prefix (bucket names may contain dots)
+  if (hostnameMatch[1]) {
+    return hostnameMatch[1];
+  }
+
+  // Path-style: the bucket is the first path component
+  return url.pathname.split('/')[1] || null;
 }
 
 interface ServiceUrlData {
@@ -176,7 +197,6 @@ function serviceURL(endpoint: ExternalServiceEndpoint, data: ServiceUrlData): st
     .replaceAll('$asset_dandi_url$', data.assetDandiUrl)
     .replaceAll('$asset_dandi_metadata_url$', data.assetDandiMetadataUrl)
     .replaceAll('$asset_s3_url$', data.assetS3Url)
-    .replaceAll('$zarr_id$', data.zarr_id || '')
     .replaceAll('$asset_path$', data.assetPath);
 }
 
