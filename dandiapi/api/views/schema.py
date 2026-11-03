@@ -13,14 +13,16 @@ if TYPE_CHECKING:
     from rest_framework.request import Request
 
 
+# The names are spelled out explicitly (rather than derived from `__name__`), since as of
+# dandischema 0.13.0 (schema 0.8.0) `PublishedDandiset` and `PublishedAsset` are merely
+# deprecated aliases of `Dandiset` and `Asset` (a record is "published" iff its `datePublished`
+# is set). Keep accepting the `Published*` names so that existing API clients do not break.
+# TODO: drop the `Published*` names once dandischema removes those aliases.
 _model_name_mapping = {
-    m.__name__: m
-    for m in [
-        Dandiset,
-        Asset,
-        PublishedDandiset,
-        PublishedAsset,
-    ]
+    'Dandiset': Dandiset,
+    'Asset': Asset,
+    'PublishedDandiset': PublishedDandiset,
+    'PublishedAsset': PublishedAsset,
 }
 
 
