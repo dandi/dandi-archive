@@ -53,6 +53,14 @@ pytestmark = pytest.mark.ai_generated
         # Owner operator
         ('owner:jdoe', [], [Operator('owner', 'jdoe')]),
         ('owner:user@example.com', [], [Operator('owner', 'user@example.com')]),
+        # A key with no value is free text, not an operator
+        ('species: mouse', ['species:', 'mouse'], []),
+        # Keys are lowercase; anything else is free text
+        ('Species:mouse', ['Species:mouse'], []),
+        # Only the first colon separates key from value
+        ('owner:a:b', [], [Operator('owner', 'a:b')]),
+        # Tabs and repeated spaces separate terms like a single space
+        ('mouse\t  species:rat', ['mouse'], [Operator('species', 'rat')]),
     ],
     ids=[
         'empty',
@@ -69,6 +77,10 @@ pytestmark = pytest.mark.ai_generated
         'quoted-operator-like-token-is-free-text',
         'owner-username',
         'owner-email',
+        'key-without-value-is-free-text',
+        'uppercase-key-is-free-text',
+        'value-keeps-later-colons',
+        'mixed-whitespace',
     ],
 )
 def test_parse_search(query, expected_free_text, expected_operators):

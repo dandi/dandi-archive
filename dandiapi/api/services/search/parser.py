@@ -1,6 +1,8 @@
 """Gmail-style search query parser for the Dandiset listing endpoint.
 
-Recognizes ``key:value`` operators interleaved with free-text terms.
+Recognizes ``key:value`` operators interleaved with free-text terms. The
+query syntax is defined by a Lark grammar (``_GRAMMAR``), and the parse tree
+is turned into a :class:`ParsedSearch` by ``_SearchTransformer``.
 Quoted phrases (``"like this"``) are kept together — they can be used as
 operator values (``technique:"spike sorting"``) or to escape a token
 that looks like an operator (``"foo:bar"`` is treated as free text).
@@ -16,7 +18,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from difflib import get_close_matches
-import re
+
+from lark import Lark, Transformer, v_args
+from lark.exceptions import UnexpectedInput
 
 OPERATOR_KEYS: frozenset[str] = frozenset(
     {
@@ -35,20 +39,37 @@ OPERATOR_KEYS: frozenset[str] = frozenset(
     }
 )
 
-# A token in the input is one of:
-#   key:"quoted value"       — operator with quoted value
-#   "quoted text"            — quoted free text (escapes operator-like content)
-#   key:value                — operator (key validated against OPERATOR_KEYS)
-#   bare_token               — free text
+# The query grammar. A query is a whitespace-separated sequence of terms, and
+# each term is one of:
 #
-# We deliberately match `key:"value"` and `"value"` *before* the bare-token
-# alternative so quoted segments stay together.
-_TOKEN_RE = re.compile(
-    r'(?P<op_key>[a-z_]+):"(?P<op_qval>[^"]*)"'
-    r'|"(?P<free_quoted>[^"]*)"'
-    r'|(?P<bare>\S+)'
-)
-_BARE_OP_RE = re.compile(r'^([a-z_]+):(.+)$')
+#   key:"quoted value"   operator with a quoted value
+#   key:value            operator with a bare value
+#   "quoted text"        quoted free text (escapes operator-like content)
+#   word                 free text
+#
+# The lexer tries terminals in priority order (higher first), so a quoted
+# operator wins over a bare operator, and an operator wins over a plain word.
+# Operator keys are not enumerated here: any lowercase key is accepted by the
+# grammar, and `_SearchTransformer` validates it against OPERATOR_KEYS so that
+# unknown keys get a "did you mean?" message instead of a generic parse error.
+_GRAMMAR = r"""
+    start: term*
+
+    ?term: QUOTED_OPERATOR -> quoted_operator
+         | BARE_OPERATOR   -> bare_operator
+         | PHRASE          -> phrase
+         | WORD            -> word
+
+    _KEY: /[a-z_]+/
+    _QUOTED: /"[^"]*"/
+
+    QUOTED_OPERATOR.4: _KEY ":" _QUOTED
+    PHRASE.3: _QUOTED
+    BARE_OPERATOR.2: _KEY ":" /\S+/
+    WORD.1: /\S+/
+
+    %ignore /\s+/
+"""
 
 
 # Defense-in-depth: cap search-term length so an unauthenticated caller can't
@@ -102,10 +123,45 @@ def _validate_operator_key(key: str) -> None:
     )
 
 
-def parse_search(query: str) -> ParsedSearch:
-    parsed = ParsedSearch()
-    if not query:
+@v_args(inline=True)
+class _SearchTransformer(Transformer):
+    """Turn the parse tree into a :class:`ParsedSearch`."""
+
+    def quoted_operator(self, token):
+        key, _, quoted_value = token.partition(':')
+        _validate_operator_key(key)
+        return Operator(key, quoted_value[1:-1])
+
+    def bare_operator(self, token):
+        key, _, value = token.partition(':')
+        _validate_operator_key(key)
+        return Operator(key, value)
+
+    def phrase(self, token):
+        return str(token[1:-1])
+
+    def word(self, token):
+        return str(token)
+
+    @v_args(inline=False)
+    def start(self, terms):
+        parsed = ParsedSearch()
+        for term in terms:
+            if isinstance(term, Operator):
+                parsed.operators.append(term)
+            else:
+                parsed.free_text.append(term)
         return parsed
+
+
+# The transformer runs inline while LALR parses, so a SearchSyntaxError raised
+# from it (e.g. an unknown operator key) propagates directly to the caller.
+_parser = Lark(_GRAMMAR, parser='lalr', lexer='basic', transformer=_SearchTransformer())
+
+
+def parse_search(query: str) -> ParsedSearch:
+    if not query:
+        return ParsedSearch()
     if len(query) > _MAX_SEARCH_LENGTH:
         raise SearchSyntaxError(
             f'Search query is too long ({len(query)} characters; max {_MAX_SEARCH_LENGTH}).'
@@ -113,18 +169,7 @@ def parse_search(query: str) -> ParsedSearch:
 
     _check_balanced_quotes(query)
 
-    for match in _TOKEN_RE.finditer(query):
-        if (key := match.group('op_key')) is not None:
-            _validate_operator_key(key)
-            parsed.operators.append(Operator(key, match.group('op_qval')))
-        elif (free := match.group('free_quoted')) is not None:
-            parsed.free_text.append(free)
-        else:
-            bare = match.group('bare')
-            if op_match := _BARE_OP_RE.match(bare):
-                key = op_match.group(1)
-                _validate_operator_key(key)
-                parsed.operators.append(Operator(key, op_match.group(2)))
-            else:
-                parsed.free_text.append(bare)
-    return parsed
+    try:
+        return _parser.parse(query)
+    except UnexpectedInput as exc:
+        raise SearchSyntaxError(f'Could not parse search query: {exc}') from exc
