@@ -18,22 +18,7 @@ from dataclasses import dataclass, field
 from difflib import get_close_matches
 import re
 
-OPERATOR_KEYS: frozenset[str] = frozenset(
-    {
-        'created_before',
-        'created_after',
-        'modified_before',
-        'modified_after',
-        'published_before',
-        'published_after',
-        'species',
-        'approach',
-        'technique',
-        'standard',
-        'variable',
-        'owner',
-    }
-)
+from dandiapi.api.services.search.operators import OPERATOR_KEYS
 
 # A token in the input is one of:
 #   key:"quoted value"       — operator with quoted value
@@ -43,12 +28,17 @@ OPERATOR_KEYS: frozenset[str] = frozenset(
 #
 # We deliberately match `key:"value"` and `"value"` *before* the bare-token
 # alternative so quoted segments stay together.
+# Operator keys are matched case-insensitively (`AUTHOR:doe` works the same
+# as `author:doe`) — we lowercase the captured key before validation/dispatch.
+# A prefix with any uppercase letter that isn't a known operator stays free
+# text, so identifiers like `DANDI:000123`, `RRID:...` and `ORCID:...` search
+# as they did before operators were case-insensitive.
 _TOKEN_RE = re.compile(
-    r'(?P<op_key>[a-z_]+):"(?P<op_qval>[^"]*)"'
+    r'(?P<op_key>[A-Za-z_]+):"(?P<op_qval>[^"]*)"'
     r'|"(?P<free_quoted>[^"]*)"'
     r'|(?P<bare>\S+)'
 )
-_BARE_OP_RE = re.compile(r'^([a-z_]+):(.+)$')
+_BARE_OP_RE = re.compile(r'^([A-Za-z_]+):(.+)$')
 
 
 # Defense-in-depth: cap search-term length so an unauthenticated caller can't
@@ -102,6 +92,15 @@ def _validate_operator_key(key: str) -> None:
     )
 
 
+def _operator_key(raw_key: str) -> str | None:
+    """Return the normalized operator key, or None if the token is free text."""
+    key = raw_key.lower()
+    if key not in OPERATOR_KEYS and raw_key != key:
+        return None
+    _validate_operator_key(key)
+    return key
+
+
 def parse_search(query: str) -> ParsedSearch:
     parsed = ParsedSearch()
     if not query:
@@ -114,16 +113,17 @@ def parse_search(query: str) -> ParsedSearch:
     _check_balanced_quotes(query)
 
     for match in _TOKEN_RE.finditer(query):
-        if (key := match.group('op_key')) is not None:
-            _validate_operator_key(key)
-            parsed.operators.append(Operator(key, match.group('op_qval')))
+        if (raw_key := match.group('op_key')) is not None:
+            if (key := _operator_key(raw_key)) is None:
+                parsed.free_text.append(f'{raw_key}:{match.group("op_qval")}')
+            else:
+                parsed.operators.append(Operator(key, match.group('op_qval')))
         elif (free := match.group('free_quoted')) is not None:
             parsed.free_text.append(free)
         else:
             bare = match.group('bare')
-            if op_match := _BARE_OP_RE.match(bare):
-                key = op_match.group(1)
-                _validate_operator_key(key)
+            op_match = _BARE_OP_RE.match(bare)
+            if op_match and (key := _operator_key(op_match.group(1))) is not None:
                 parsed.operators.append(Operator(key, op_match.group(2)))
             else:
                 parsed.free_text.append(bare)
