@@ -15,7 +15,7 @@
           :key="i"
           variant="outlined"
         >
-          {{ contributor.name }}
+          {{ contributor.name || `Unnamed Contributor` }}
           <a
             v-if="contributor.identifier && contributor.schemaKey === 'Person'"
             :href="`https://orcid.org/${contributor.identifier}`"
@@ -43,6 +43,7 @@
       :items="fundingInformation"
       name="Funding information"
       icon="mdi-currency-usd"
+      :display-unnamed-items="store.version === draftVersion"
     >
       <template #content="slotProps">
         <div
@@ -70,7 +71,10 @@
       </template>
     </MetadataCard>
 
-    <AnatomyCard :about="meta.about" />
+    <AnatomyCard
+      :about="meta.about"
+      :display-unnamed-items="store.version === draftVersion"
+    />
 
     <MetadataCard
       v-if="protocols && protocols.length"
@@ -257,6 +261,7 @@ import { useDisplay, useTheme } from 'vuetify';
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
 import AnatomyCard from '@/components/DLP/AnatomyCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
+import { draftVersion } from '@/utils/constants';
 
 import type { ComputedRef, PropType } from 'vue';
 import type { AssociatedProjects, DandisetMetadata, RelatedResource, Protocol } from '@/types';
@@ -299,11 +304,19 @@ const display = useDisplay();
 const store = useDandisetStore();
 const currentDandiset = computed(() => store.dandiset);
 
-const contributors = computed(
-  () => props.meta.contributor?.filter(
-    (contributor) => !!(contributor.includeInCitation),
-  ),
-);
+const contributors = computed(() => {
+  if (store.version === draftVersion) {
+    return props.meta.contributor?.filter(
+      (contributor) => !!(contributor.includeInCitation),
+    );
+  } else {
+    // For a published version, filter out contributors with no
+    // identifying information. See https://github.com/dandi/dandi-schema/issues/442
+    return props.meta.contributor?.filter(
+      (contributor) => !!(contributor.includeInCitation) && (contributor.name || contributor.identifier),
+    );
+  }
+});
 const fundingInformation = computed(
   () => props.meta.contributor?.filter(
     (contributor) => !!(contributor.schemaKey === 'Organization')
