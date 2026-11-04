@@ -1,4 +1,4 @@
-"""Gmail-style search query parser for the Dandiset listing endpoint.
+"""GitHub-style search query parser for the Dandiset listing endpoint.
 
 Recognizes ``key:value`` operators interleaved with free-text terms. The
 query syntax is defined by a Lark grammar (``_GRAMMAR``), and
