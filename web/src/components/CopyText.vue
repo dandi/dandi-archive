@@ -14,12 +14,13 @@
         <template #activator="{ props: tooltipProps }">
           <v-icon
             v-bind="tooltipProps"
+            :color="copied ? 'success' : undefined"
             @click="copyToClipboard"
           >
-            mdi-content-copy
+            {{ copied ? 'mdi-check' : 'mdi-content-copy' }}
           </v-icon>
         </template>
-        {{ iconHoverText }}
+        {{ copied ? 'Copied!' : iconHoverText }}
       </v-tooltip>
     </template>
   </v-textarea>
@@ -41,12 +42,13 @@
         <template #activator="{ props: tooltipProps }">
           <v-icon
             v-bind="tooltipProps"
+            :color="copied ? 'success' : undefined"
             @click="copyToClipboard"
           >
-            mdi-content-copy
+            {{ copied ? 'mdi-check' : 'mdi-content-copy' }}
           </v-icon>
         </template>
-        {{ iconHoverText }}
+        {{ copied ? 'Copied!' : iconHoverText }}
       </v-tooltip>
     </template>
   </v-text-field>
@@ -77,11 +79,16 @@ const props = defineProps({
 });
 
 const textField = ref<HTMLElement | null>(null);
+const copied = ref(false);
+let copiedTimeout: ReturnType<typeof setTimeout> | undefined;
 
 async function copyToClipboard() {
   try {
     await navigator.clipboard.writeText(props.text);
-    console.log('Copied to clipboard');
+    // Briefly show a checkmark and "Copied!" so the user knows it worked
+    copied.value = true;
+    clearTimeout(copiedTimeout);
+    copiedTimeout = setTimeout(() => { copied.value = false; }, 2000);
   } catch (err) {
     console.error('Failed to copy:', err);
   }
