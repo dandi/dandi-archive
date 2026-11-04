@@ -204,7 +204,7 @@ const navItems: NavigationItem[] = [
     external: true,
   },
   {
-    text: 'Statistics',
+    text: 'Stats',
     to: dandiStatsUrl,
     external: true,
   },
