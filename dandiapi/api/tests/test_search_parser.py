@@ -129,3 +129,42 @@ def test_parse_search(query, expected_free_text, expected_operators):
 def test_parse_search_raises_on_invalid_query(query, expected_message_fragment):
     with pytest.raises(SearchSyntaxError, match=expected_message_fragment):
         parse_search(query)
+
+
+@pytest.mark.parametrize(
+    'query',
+    [
+        'http://purl.obolibrary.org/obo/UBERON_0002421',
+        'https://dandiarchive.org/dandiset/000003',
+    ],
+)
+def test_bare_url_is_free_text(query):
+    parsed = parse_search(query)
+    assert parsed.free_text == [query]
+    assert parsed.operators == []
+
+
+def test_url_scheme_inside_an_operator_value_is_kept():
+    parsed = parse_search('owner:"https://github.com/jdoe" hippocampus')
+    assert parsed.operators == [Operator('owner', 'https://github.com/jdoe')]
+    assert parsed.free_text == ['hippocampus']
+
+
+def test_anatomy_exact_value_keeps_its_colons():
+    parsed = parse_search('anatomy_exact:UBERON:0002421 species:mouse')
+    assert parsed.operators == [
+        Operator('anatomy_exact', 'UBERON:0002421'),
+        Operator('species', 'mouse'),
+    ]
+
+
+@pytest.mark.parametrize(
+    ('query', 'suggestion'),
+    [
+        ('uberon:0002421', 'anatomy_exact:UBERON:0002421'),
+        ('mba:1089', 'anatomy_exact:MBA:1089'),
+    ],
+)
+def test_bare_lowercase_curie_suggests_the_anatomy_operator(query, suggestion):
+    with pytest.raises(SearchSyntaxError, match=suggestion):
+        parse_search(query)

@@ -27,6 +27,8 @@ from difflib import get_close_matches
 from lark import Lark, Token, Transformer, v_args
 from lark.exceptions import UnexpectedInput, VisitError
 
+from dandiapi.api.services.search.anatomy import ANATOMY_ONTOLOGIES
+
 OPERATOR_KEYS: frozenset[str] = frozenset(
     {
         'created_before',
@@ -41,8 +43,13 @@ OPERATOR_KEYS: frozenset[str] = frozenset(
         'standard',
         'variable',
         'owner',
+        'anatomy_exact',
     }
 )
+
+# URL schemes look like operator keys to the lexer. A pasted URL is far more
+# likely to be something to search for than a mistyped operator.
+_URL_SCHEMES: frozenset[str] = frozenset({'http', 'https'})
 
 # The query grammar. A query is a whitespace-separated sequence of terms, and
 # each term is one of:
@@ -109,9 +116,14 @@ def _check_balanced_quotes(query: str) -> None:
         )
 
 
-def _validate_operator_key(key: str) -> None:
+def _validate_operator_key(key: str, value: str) -> None:
     if key in OPERATOR_KEYS:
         return
+    if key.upper() in ANATOMY_ONTOLOGIES:
+        # A bare lowercase CURIE such as `uberon:0002421`.
+        raise SearchSyntaxError(
+            f'Unknown search operator "{key}". Did you mean "anatomy_exact:{key.upper()}:{value}"?'
+        )
     if key == 'file_type':
         # Removed operator; there is no close-enough key for the generic
         # suggestion below to fire, so point at the replacements explicitly.
@@ -142,11 +154,13 @@ def parse_date(operator: str, value: str) -> datetime:
 class _SearchTransformer(Transformer):
     """Turn the parse tree into a :class:`ParsedSearch`, validating each term."""
 
-    def quoted_operator(self, token: Token) -> Operator:
+    def quoted_operator(self, token: Token) -> Operator | str:
         key, _, value = str(token).partition(':')
-        _validate_operator_key(key)
+        if token.type == 'BARE_OPERATOR' and key in _URL_SCHEMES:
+            return str(token)  # a pasted URL is free text
         if token.type == 'QUOTED_OPERATOR':
             value = value[1:-1]
+        _validate_operator_key(key, value)
         value = value.strip()
         if not value:
             raise SearchSyntaxError(f'Operator "{key}" requires a value (e.g. {key}:something).')

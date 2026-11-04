@@ -11,9 +11,11 @@ into one SQL predicate:
   ``assetsSummary``
 - ``created_*`` / ``modified_*`` / ``published_*``: a comparison on the
   dandiset's creation time or on its latest (published) version
+- ``anatomy_exact:``: an Anatomy entry in the version's ``about`` with the
+  given identifier (in any spelling) or exactly the given name
 - ``owner:``: membership in the set of dandisets owned by matching users
 
-Version-level predicates (free text and summary operators) are AND'd and must
+Version-level predicates (free text, summary and anatomy operators) are AND'd and must
 all hold on a single Version row; that row's dandiset is then AND'd with the
 dandiset-level predicates. The result is one ``Q`` the view applies with
 ``queryset.filter``.
@@ -28,11 +30,13 @@ from typing import TYPE_CHECKING
 from django.contrib.auth.models import User
 from django.contrib.postgres.lookups import Unaccent
 from django.db.models import BooleanField, F, Func, OuterRef, Q, Subquery, TextField, Value
+from django.db.models.expressions import RawSQL
 from django.db.models.functions import Cast, Concat
 from django.db.models.lookups import GreaterThanOrEqual, IContains, LessThan
 
 from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
+from dandiapi.api.services.search.anatomy import CURIE_SQL_TEMPLATE, normalize_curie
 from dandiapi.api.services.search.parser import parse_date, parse_search
 
 if TYPE_CHECKING:
@@ -93,6 +97,42 @@ def _text_predicate(text: str) -> IContains:
     return IContains(Unaccent(Cast('metadata', TextField())), text)
 
 
+# A Version whose `about` holds an Anatomy entry satisfying `{condition}`, a
+# condition on the entry `a`. `metadata` is left unqualified because Django
+# may alias the Version table in subqueries.
+_ANATOMY_SQL = """
+EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(
+        CASE WHEN jsonb_typeof(metadata->'about') = 'array'
+             THEN metadata->'about' ELSE '[]'::jsonb END
+    ) AS a
+    WHERE a->>'schemaKey' = 'Anatomy' AND {condition}
+)
+"""
+# The interpolated pieces are trusted constants; the value is a bound param.
+_ANATOMY_BY_CURIE = _ANATOMY_SQL.format(
+    condition=CURIE_SQL_TEMPLATE.format(expr="a->>'identifier'") + ' = %s'
+)
+_ANATOMY_BY_NAME = _ANATOMY_SQL.format(condition="a->>'name' ~* %s")
+
+
+def _anatomy_predicate(value: str) -> RawSQL:
+    """Match an ``anatomy_exact:`` value against the Anatomy entries in ``about``.
+
+    An identifier (CURIE, underscore form, or IRI) matches entries with that
+    identifier in any spelling. Any other value matches entries whose recorded
+    name is the whole value, case-insensitively.
+    """
+    curie = normalize_curie(value)
+    if curie is not None:
+        sql, param = _ANATOMY_BY_CURIE, curie
+    else:
+        sql, param = _ANATOMY_BY_NAME, f'^{re.escape(value)}$'
+    # `sql` is one of the two constant templates; the value is bound.
+    return RawSQL(sql, [param], output_field=BooleanField())  # noqa: S611
+
+
 def _owner_predicate(value: str) -> Q:
     """Match dandisets owned by the given user identifier.
 
@@ -145,6 +185,8 @@ def build_search_filter(query: str) -> Q:
     for op in parsed.operators:
         if op.key in _SUMMARY_PATH_OPS:
             version_predicates.append(_summary_predicate(op.key, op.value))
+        elif op.key == 'anatomy_exact':
+            version_predicates.append(_anatomy_predicate(op.value))
         elif op.key in _DATE_OPS:
             lhs, lookup = _DATE_OPS[op.key]
             dandiset_predicates.append(lookup(lhs, parse_date(op.key, op.value)))
