@@ -2,7 +2,8 @@
 
 Recognizes ``key:value`` operators interleaved with free-text terms. The
 query syntax is defined by a Lark grammar (``_GRAMMAR``), and the parse tree
-is turned into a :class:`ParsedSearch` by ``_SearchTransformer``.
+is turned into a :class:`ParsedSearch` by ``_SearchTransformer``, or compiled
+straight into a Postgres query by ``filters.build_search_filter``.
 Quoted phrases (``"like this"``) are kept together — they can be used as
 operator values (``technique:"spike sorting"``) or to escape a token
 that looks like an operator (``"foo:bar"`` is treated as free text).
@@ -19,8 +20,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from difflib import get_close_matches
 
-from lark import Lark, Transformer, v_args
-from lark.exceptions import UnexpectedInput
+from lark import Lark, Token, Transformer, Tree, v_args
+from lark.exceptions import UnexpectedInput, VisitError
 
 OPERATOR_KEYS: frozenset[str] = frozenset(
     {
@@ -123,25 +124,34 @@ def _validate_operator_key(key: str) -> None:
     )
 
 
+def operator_from_token(token: Token) -> Operator:
+    """Build a validated :class:`Operator` from a ``*_OPERATOR`` token."""
+    key, _, value = str(token).partition(':')
+    _validate_operator_key(key)
+    if token.type == 'QUOTED_OPERATOR':
+        value = value[1:-1]
+    return Operator(key, value)
+
+
+def text_from_token(token: Token) -> str:
+    """Return the free text carried by a ``PHRASE`` or ``WORD`` token."""
+    text = str(token)
+    return text[1:-1] if token.type == 'PHRASE' else text
+
+
 @v_args(inline=True)
 class _SearchTransformer(Transformer):
     """Turn the parse tree into a :class:`ParsedSearch`."""
 
     def quoted_operator(self, token):
-        key, _, quoted_value = token.partition(':')
-        _validate_operator_key(key)
-        return Operator(key, quoted_value[1:-1])
+        return operator_from_token(token)
 
-    def bare_operator(self, token):
-        key, _, value = token.partition(':')
-        _validate_operator_key(key)
-        return Operator(key, value)
+    bare_operator = quoted_operator
 
     def phrase(self, token):
-        return str(token[1:-1])
+        return text_from_token(token)
 
-    def word(self, token):
-        return str(token)
+    word = phrase
 
     @v_args(inline=False)
     def start(self, terms):
@@ -154,14 +164,16 @@ class _SearchTransformer(Transformer):
         return parsed
 
 
-# The transformer runs inline while LALR parses, so a SearchSyntaxError raised
-# from it (e.g. an unknown operator key) propagates directly to the caller.
-_parser = Lark(_GRAMMAR, parser='lalr', lexer='basic', transformer=_SearchTransformer())
+_parser = Lark(_GRAMMAR, parser='lalr', lexer='basic')
 
 
-def parse_search(query: str) -> ParsedSearch:
-    if not query:
-        return ParsedSearch()
+def parse_tree(query: str) -> Tree:
+    """Parse ``query`` into a Lark tree, after the length and quote checks.
+
+    Each child of the returned ``start`` tree is one term, labelled
+    ``quoted_operator``, ``bare_operator``, ``phrase`` or ``word``. Operator
+    keys are not validated here; that happens when the tree is transformed.
+    """
     if len(query) > _MAX_SEARCH_LENGTH:
         raise SearchSyntaxError(
             f'Search query is too long ({len(query)} characters; max {_MAX_SEARCH_LENGTH}).'
@@ -173,3 +185,23 @@ def parse_search(query: str) -> ParsedSearch:
         return _parser.parse(query)
     except UnexpectedInput as exc:
         raise SearchSyntaxError(f'Could not parse search query: {exc}') from exc
+
+
+def transform_tree(transformer: Transformer, tree: Tree):
+    """Run ``transformer`` over ``tree``, surfacing SearchSyntaxError unwrapped.
+
+    Lark wraps exceptions raised inside transformer callbacks in a VisitError;
+    callers expect the original :class:`SearchSyntaxError`.
+    """
+    try:
+        return transformer.transform(tree)
+    except VisitError as exc:
+        if isinstance(exc.orig_exc, SearchSyntaxError):
+            raise exc.orig_exc from None
+        raise
+
+
+def parse_search(query: str) -> ParsedSearch:
+    if not query:
+        return ParsedSearch()
+    return transform_tree(_SearchTransformer(), parse_tree(query))

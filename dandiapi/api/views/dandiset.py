@@ -6,10 +6,9 @@ from typing import TYPE_CHECKING
 from allauth.socialaccount.models import SocialAccount
 from dandischema.conf import get_instance_config
 from django.contrib.auth.models import User
-from django.contrib.postgres.lookups import Unaccent
 from django.db import transaction
-from django.db.models import Count, Max, OuterRef, QuerySet, Subquery, Sum, TextField
-from django.db.models.functions import Cast, Coalesce
+from django.db.models import Count, Max, OuterRef, QuerySet, Subquery, Sum
+from django.db.models.functions import Coalesce
 from django.db.models.query_utils import Q
 from django.http import Http404
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -49,7 +48,7 @@ from dandiapi.api.services.permissions.dandiset import (
     replace_dandiset_owners,
     require_dandiset_owner_or_403,
 )
-from dandiapi.api.services.search import SearchSyntaxError, parse_search
+from dandiapi.api.services.search import SearchSyntaxError
 from dandiapi.api.services.search.filters import apply_search_filters
 from dandiapi.api.views.common import DANDISET_PK_PARAM
 from dandiapi.api.views.pagination import DandiPagination
@@ -147,34 +146,13 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
         if not search_term:
             return queryset
 
-        # Parse Gmail-style operators (e.g. species:mouse, created_after:2024-01-01)
-        # out of the search string, and apply them as structured filters. Anything
-        # left over (free text, including quoted phrases) flows through the existing
-        # full-text path unchanged. Surface any parse / validation problems as 400.
+        # Compile the query (free text plus Gmail-style operators such as
+        # species:mouse or created_after:2024-01-01) into a single Postgres
+        # filter. Surface any parse / validation problems as 400.
         try:
-            parsed = parse_search(search_term)
-            queryset = apply_search_filters(queryset, parsed)
+            return apply_search_filters(queryset, search_term)
         except SearchSyntaxError as exc:
             raise ValidationError({'search': str(exc)}) from exc
-
-        if not parsed.free_text:
-            return queryset
-
-        # Build a Q object that requires all free-text words to be present
-        q_filter = Q()
-        for word in parsed.free_text:
-            q_filter &= Q(search_field__icontains=word)
-
-        # We must formulate the filter using a separate query first, as otherwise
-        # the generated SQL is incompatible with previously generated clauses
-        matching_dandiset_ids = (
-            Version.objects.alias(search_field=Unaccent(Cast('metadata', TextField())))
-            .filter(q_filter)
-            .values_list('dandiset_id', flat=True)
-            .distinct()
-        )
-
-        return queryset.filter(id__in=matching_dandiset_ids)
 
 
 class DandisetViewSet(ReadOnlyModelViewSet):
