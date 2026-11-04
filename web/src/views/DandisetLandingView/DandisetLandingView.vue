@@ -128,7 +128,8 @@ import Meditor from '@/components/Meditor/Meditor.vue';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { Dandiset, Version } from '@/types';
 import { draftVersion, sortingOptions } from '@/utils/constants';
-import { editorInterface } from '@/components/Meditor/state';
+import { editorInterface, open as meditorOpen } from '@/components/Meditor/state';
+import { useRouteQuery } from '@/composables/useRouteQuery';
 import { dandiRest } from '@/rest';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
@@ -164,6 +165,16 @@ const store = useDandisetStore();
 const display = useDisplay();
 
 const isSmDisplay = computed(() => display.smAndDown.value);
+
+// Whether the meditor is open is kept in the URL (?overlay=meditor) so that it can be linked to.
+const overlay = useRouteQuery('overlay', '', ['meditor']);
+watch(overlay, (value) => {
+  meditorOpen.value = value === 'meditor';
+}, { immediate: true });
+watch(meditorOpen, (isOpen) => {
+  overlay.value = isOpen ? 'meditor' : '';
+});
+
 const currentDandiset = computed(() => store.dandiset);
 const loading = ref(false);
 

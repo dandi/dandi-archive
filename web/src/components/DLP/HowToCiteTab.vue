@@ -236,8 +236,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type PropType, ref } from 'vue';
+import { computed, type PropType } from 'vue';
 
+import { useRouteQuery } from '@/composables/useRouteQuery';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { DandisetMetadata } from '@/types';
 import { dandisetToCFF, cffToBibTeX, cffToAPA, cffToMLA, cffToChicago, cffToHarvard, cffToVancouver, cffToIEEE, cffToRIS, cffToYAML } from '@/utils/cff';
@@ -276,10 +277,12 @@ const latestPublishedVersionLink = computed(() => {
 });
 
 // Define citation format types
-type CitationFormat = 'apa' | 'mla' | 'chicago' | 'harvard' | 'vancouver' | 'ieee' | 'bibtex' | 'ris' | 'cff';
+const citationFormatValues = ['apa', 'mla', 'chicago', 'harvard', 'vancouver', 'ieee', 'bibtex', 'ris', 'cff'] as const;
+type CitationFormat = typeof citationFormatValues[number];
 
-// Citation format state
-const selectedCitationFormat = ref<CitationFormat>('apa'); // For the dropdown in Full Citation section
+// Citation format state, for the dropdown in Full Citation section.
+// Kept in the URL (e.g. ?format=bibtex) so that it can be linked to.
+const selectedCitationFormat = useRouteQuery('format', 'apa', citationFormatValues);
 
 // Generate CFF object from metadata
 const cffObject = computed(() => {

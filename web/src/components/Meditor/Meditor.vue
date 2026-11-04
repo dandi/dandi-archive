@@ -169,7 +169,7 @@
         align-tabs="title"
       >
         <v-tab
-          value="tab-0"
+          value="general"
           class="font-weight-medium text-caption ml-2"
         >
           <v-badge
@@ -183,7 +183,7 @@
         <v-tab
           v-for="(propKey, i) in fieldsToRender"
           :key="`tab-${i+1}`"
-          :value="`tab-${i+1}`"
+          :value="propKey"
           class="font-weight-medium text-caption"
         >
           <v-badge
@@ -200,7 +200,7 @@
       >
         <v-tabs-window-item
           eager
-          value="tab-0"
+          value="general"
         >
           <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
             <v-form
@@ -228,7 +228,7 @@
       >
         <v-tabs-window-item
           eager
-          :value="`tab-${i+1}`"
+          :value="propKey"
         >
           <v-card class="pa-2 px-1">
             <v-form
@@ -252,13 +252,14 @@
 import type { JSONSchema7 } from 'json-schema';
 
 import type { ComputedRef } from 'vue';
-import { ref, computed, watchEffect } from 'vue';
+import { ref, computed, watch, watchEffect } from 'vue';
 
 import jsYaml from 'js-yaml';
 import axios from 'axios';
 
 import VJsf from '@koumoul/vjsf';
 
+import { useRouteQuery } from '@/composables/useRouteQuery';
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { DandiModel } from './types';
@@ -305,7 +306,6 @@ const readonly = computed(() => !store.userCanModifyDandiset);
 // );
 
 const invalidPermissionSnackbar = ref(false);
-const tab = ref(null);
 // const loadFromLocalStoragePrompt = ref(false);
 
 editorInterface.value = new EditorInterface(schema.value, model.value as DandiModel);
@@ -463,6 +463,15 @@ function getSchemaTitle(propKey: string) {
 const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
   (p) => renderField((complexSchema as any).properties[p]),
 );
+
+// The selected tab is kept in the URL (e.g. ?meditorTab=contributor) so that it can be linked
+// to. Closing the meditor goes back to the first tab, so the parameter doesn't outlive it.
+const tab = useRouteQuery('meditorTab', 'general', fieldsToRender);
+watch(open, (isOpen) => {
+  if (!isOpen) {
+    tab.value = 'general';
+  }
+});
 
 // TODO: fix and re-enable this
 // function loadDataFromLocalStorage() {
