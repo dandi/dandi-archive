@@ -1,10 +1,13 @@
 <template>
   <v-list-item>
-    <v-list-item-action class="mr-2">
-      <!-- ".stop" prevents closing the parent v-menu when this is clicked -->
+    <!-- ".stop" prevents closing the parent v-menu when the refresh or copy buttons are clicked -->
+    <v-list-item-action
+      class="mr-2"
+      @click.stop
+    >
       <v-btn
         variant="text"
-        @click.stop="refreshApiKey"
+        @click="refreshApiKey"
       >
         <v-icon>mdi-reload</v-icon>
       </v-btn>
