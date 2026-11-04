@@ -76,10 +76,10 @@
                 Sort by
               </v-list-subheader>
               <v-item
-                v-for="(option, i) in sortingOptions"
+                v-for="option in visibleSortingOptions"
                 :key="option.name"
                 v-slot="{ isSelected, toggle }"
-                :value="i"
+                :value="option.index"
               >
                 <v-list-item
                   class="pl-8"
@@ -198,7 +198,7 @@ import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
 import type { Dandiset, Paginated, Version } from '@/types';
-import { sortingOptions, DANDISETS_PER_PAGE } from '@/utils/constants';
+import { sortingOptions, RELEVANCE_SORT_OPTION, DANDISETS_PER_PAGE } from '@/utils/constants';
 import router from '@/router';
 
 const props = defineProps({
@@ -225,17 +225,30 @@ const props = defineProps({
 
 const route = useRoute();
 
+// A search is active either on the dedicated search page, or whenever a search
+// query is present on another listing page (e.g. "My Dandisets").
+const searchActive = computed(() => props.search || !!route.query.search);
+
 const showDrafts = ref(true);
 const showEmpty = ref(props.search);
-const sortOption = ref(Number(route.query.sortOption) || 0);
+// Searches default to relevance; other listings to most recently modified.
+const sortOption = ref(
+  route.query.sortOption !== undefined
+    ? Number(route.query.sortOption) || 0
+    : (searchActive.value ? RELEVANCE_SORT_OPTION : 0),
+);
 const sortDir = ref(Number(route.query.sortDir || -1));
 const page = ref(Number(route.query.page) || 1);
 
 const pageTitle = computed(() => ((props.search) ? route.query.search as string : props.title));
-// A search is active either on the dedicated search page, or whenever a search
-// query is present on another listing page (e.g. "My Dandisets").
-const searchActive = computed(() => props.search || !!route.query.search);
-const sortField = computed(() => sortingOptions[sortOption.value].djangoField);
+const visibleSortingOptions = computed(() => sortingOptions
+  .map((option, index) => ({ ...option, index }))
+  .filter((option) => !option.searchOnly || searchActive.value));
+const sortField = computed(() => {
+  const option = sortingOptions[sortOption.value];
+  // Relevance means nothing outside a search; fall back to modified.
+  return (option.searchOnly && !searchActive.value) ? 'modified' : option.djangoField;
+});
 
 // Django dandiset listing
 
