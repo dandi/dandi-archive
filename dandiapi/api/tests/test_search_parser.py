@@ -103,6 +103,14 @@ def test_parse_search(query, expected_free_text, expected_operators):
         ('foo "bar', 'Remove the stray quote'),
         # Length cap (DoS hardening)
         ('a' * 5000, 'too long'),
+        # Empty or whitespace-only operator value
+        ('species:""', 'requires a value'),
+        ('species:"  "', 'requires a value'),
+        # Malformed date
+        ('created_after:yesterday', 'Invalid date for "created_after"'),
+        # Terms are validated in order: the first bad term is reported
+        ('created_after:yesterday specie:mouse', 'Invalid date'),
+        ('specie:mouse created_after:yesterday', 'Did you mean "species"'),
     ],
     ids=[
         'unknown-operator-no-suggestion',
@@ -111,6 +119,11 @@ def test_parse_search(query, expected_free_text, expected_operators):
         'unbalanced-quote-mid-string',
         'unbalanced-quote-trailing',
         'over-length-cap',
+        'empty-operator-value',
+        'blank-operator-value',
+        'malformed-date',
+        'first-bad-term-wins-date',
+        'first-bad-term-wins-key',
     ],
 )
 def test_parse_search_raises_on_invalid_query(query, expected_message_fragment):

@@ -1,9 +1,9 @@
 """Gmail-style search query parser for the Dandiset listing endpoint.
 
 Recognizes ``key:value`` operators interleaved with free-text terms. The
-query syntax is defined by a Lark grammar (``_GRAMMAR``), and the parse tree
-is turned into a :class:`ParsedSearch` by ``_SearchTransformer``, or compiled
-straight into a Postgres query by ``filters.build_search_filter``.
+query syntax is defined by a Lark grammar (``_GRAMMAR``), and
+``_SearchTransformer`` turns the parse tree into a :class:`ParsedSearch`,
+which ``filters.build_search_filter`` compiles into a Postgres query.
 Quoted phrases (``"like this"``) are kept together — they can be used as
 operator values (``technique:"spike sorting"``) or to escape a token
 that looks like an operator (``"foo:bar"`` is treated as free text).
@@ -11,6 +11,9 @@ that looks like an operator (``"foo:bar"`` is treated as free text).
 Errors are raised explicitly via :class:`SearchSyntaxError`:
 - unbalanced quotes
 - unknown operator key (with a "did you mean?" suggestion when close)
+- operator with an empty value, or a date operator with a malformed date
+
+Terms are validated in order, so the error reported is the first bad term's.
 
 The view layer translates :class:`SearchSyntaxError` into a 400 response.
 """
@@ -18,9 +21,10 @@ The view layer translates :class:`SearchSyntaxError` into a 400 response.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from difflib import get_close_matches
 
-from lark import Lark, Token, Transformer, Tree, v_args
+from lark import Lark, Token, Transformer, v_args
 from lark.exceptions import UnexpectedInput, VisitError
 
 OPERATOR_KEYS: frozenset[str] = frozenset(
@@ -124,32 +128,37 @@ def _validate_operator_key(key: str) -> None:
     )
 
 
-def operator_from_token(token: Token) -> Operator:
-    """Build a validated :class:`Operator` from a ``*_OPERATOR`` token."""
-    key, _, value = str(token).partition(':')
-    _validate_operator_key(key)
-    if token.type == 'QUOTED_OPERATOR':
-        value = value[1:-1]
-    return Operator(key, value)
-
-
-def text_from_token(token: Token) -> str:
-    """Return the free text carried by a ``PHRASE`` or ``WORD`` token."""
-    text = str(token)
-    return text[1:-1] if token.type == 'PHRASE' else text
+def parse_date(operator: str, value: str) -> datetime:
+    """Parse a date operator's ``YYYY-MM-DD`` value as midnight UTC."""
+    try:
+        return datetime.strptime(value, '%Y-%m-%d').replace(tzinfo=UTC)
+    except ValueError as exc:
+        raise SearchSyntaxError(
+            f'Invalid date for "{operator}": {value!r}. Use YYYY-MM-DD.'
+        ) from exc
 
 
 @v_args(inline=True)
 class _SearchTransformer(Transformer):
-    """Turn the parse tree into a :class:`ParsedSearch`."""
+    """Turn the parse tree into a :class:`ParsedSearch`, validating each term."""
 
-    def quoted_operator(self, token):
-        return operator_from_token(token)
+    def quoted_operator(self, token: Token) -> Operator:
+        key, _, value = str(token).partition(':')
+        _validate_operator_key(key)
+        if token.type == 'QUOTED_OPERATOR':
+            value = value[1:-1]
+        value = value.strip()
+        if not value:
+            raise SearchSyntaxError(f'Operator "{key}" requires a value (e.g. {key}:something).')
+        if key.endswith(('_before', '_after')):
+            parse_date(key, value)
+        return Operator(key, value)
 
     bare_operator = quoted_operator
 
-    def phrase(self, token):
-        return text_from_token(token)
+    def phrase(self, token: Token) -> str:
+        text = str(token)
+        return text[1:-1] if token.type == 'PHRASE' else text
 
     word = phrase
 
@@ -167,13 +176,10 @@ class _SearchTransformer(Transformer):
 _parser = Lark(_GRAMMAR, parser='lalr', lexer='basic')
 
 
-def parse_tree(query: str) -> Tree:
-    """Parse ``query`` into a Lark tree, after the length and quote checks.
-
-    Each child of the returned ``start`` tree is one term, labelled
-    ``quoted_operator``, ``bare_operator``, ``phrase`` or ``word``. Operator
-    keys are not validated here; that happens when the tree is transformed.
-    """
+def parse_search(query: str) -> ParsedSearch:
+    """Parse and validate ``query``, raising :class:`SearchSyntaxError` if it's bad."""
+    if not query:
+        return ParsedSearch()
     if len(query) > _MAX_SEARCH_LENGTH:
         raise SearchSyntaxError(
             f'Search query is too long ({len(query)} characters; max {_MAX_SEARCH_LENGTH}).'
@@ -182,26 +188,14 @@ def parse_tree(query: str) -> Tree:
     _check_balanced_quotes(query)
 
     try:
-        return _parser.parse(query)
+        tree = _parser.parse(query)
     except UnexpectedInput as exc:
         raise SearchSyntaxError(f'Could not parse search query: {exc}') from exc
 
-
-def transform_tree(transformer: Transformer, tree: Tree):
-    """Run ``transformer`` over ``tree``, surfacing SearchSyntaxError unwrapped.
-
-    Lark wraps exceptions raised inside transformer callbacks in a VisitError;
-    callers expect the original :class:`SearchSyntaxError`.
-    """
     try:
-        return transformer.transform(tree)
+        return _SearchTransformer().transform(tree)
     except VisitError as exc:
+        # Lark wraps errors raised inside transformer callbacks; surface ours as-is.
         if isinstance(exc.orig_exc, SearchSyntaxError):
             raise exc.orig_exc from None
         raise
-
-
-def parse_search(query: str) -> ParsedSearch:
-    if not query:
-        return ParsedSearch()
-    return transform_tree(_SearchTransformer(), parse_tree(query))

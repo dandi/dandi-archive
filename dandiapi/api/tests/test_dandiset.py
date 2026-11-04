@@ -1317,15 +1317,26 @@ def test_dandiset_rest_search_accented_characters(api_client):
     draft_version = DraftVersionFactory.create()
     draft_version.metadata['contributor'][0]['name'] = 'Buzsáki, György'
     draft_version.save()
+    DraftVersionFactory.create()  # a non-matching dandiset
 
-    assert (
-        api_client.get('/api/dandisets/', {'search': 'György'}).data['results']
-        == api_client.get('/api/dandisets/', {'search': 'Gyorgy'}).data['results']
-    )
-    assert (
-        api_client.get('/api/dandisets/', {'search': 'Buzsáki'}).data['results']
-        == api_client.get('/api/dandisets/', {'search': 'Buzsaki'}).data['results']
-    )
+    # Accents are ignored on both sides: the accented and plain spellings
+    # (in any case) all find the dandiset.
+    expected = {draft_version.dandiset.identifier}
+    for query in ['György', 'Gyorgy', 'GYÖRGY', 'Buzsáki', 'buzsaki', '"Buzsáki, György"']:
+        assert _search_ids(api_client, query) == expected, query
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_search_like_wildcards_match_literally(api_client):
+    draft_version = DraftVersionFactory.create()
+    draft_version.metadata['description'] = 'recorded at 100% contrast in snake_case'
+    draft_version.save()
+
+    expected = {draft_version.dandiset.identifier}
+    assert _search_ids(api_client, '100%') == expected
+    assert _search_ids(api_client, 'snake_case') == expected
+    assert _search_ids(api_client, '"at 1%"') == set()
+    assert _search_ids(api_client, 'snake_xase') == set()
 
 
 @pytest.mark.django_db

@@ -48,8 +48,7 @@ from dandiapi.api.services.permissions.dandiset import (
     replace_dandiset_owners,
     require_dandiset_owner_or_403,
 )
-from dandiapi.api.services.search import SearchSyntaxError
-from dandiapi.api.services.search.filters import apply_search_filters
+from dandiapi.api.services.search import SearchSyntaxError, apply_search_filters
 from dandiapi.api.views.common import DANDISET_PK_PARAM
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (

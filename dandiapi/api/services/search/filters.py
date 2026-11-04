@@ -1,11 +1,11 @@
 """Compile a parsed search query into a Postgres filter on the Dandiset queryset.
 
-``build_search_filter`` walks the Lark parse tree from
-:func:`~dandiapi.api.services.search.parser.parse_tree` with
-``_QueryCompiler``, which turns every term into one SQL predicate:
+``build_search_filter`` parses the query with
+:func:`~dandiapi.api.services.search.parser.parse_search` and turns every term
+into one SQL predicate:
 
-- free text (``word`` / ``"phrase"``): case-insensitive substring match on the
-  unaccented text of a version's metadata
+- free text (``word`` / ``"phrase"``): case-insensitive, accent-insensitive
+  substring match on the text of a version's metadata
 - ``species:`` / ``approach:`` / ``technique:`` / ``standard:`` /
   ``variable:``: a ``jsonb_path_exists`` regex match on the version's
   ``assetsSummary``
@@ -21,8 +21,6 @@ dandiset-level predicates. The result is one ``Q`` the view applies with
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
 import json
 import re
 from typing import TYPE_CHECKING
@@ -32,37 +30,25 @@ from django.contrib.postgres.lookups import Unaccent
 from django.db.models import BooleanField, F, Func, OuterRef, Q, Subquery, TextField, Value
 from django.db.models.functions import Cast, Concat
 from django.db.models.lookups import GreaterThanOrEqual, IContains, LessThan
-from lark import Transformer, v_args
 
 from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
-from dandiapi.api.services.search.parser import (
-    SearchSyntaxError,
-    operator_from_token,
-    parse_tree,
-    text_from_token,
-    transform_tree,
-)
+from dandiapi.api.services.search.parser import parse_date, parse_search
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
 
     from dandiapi.api.models import Dandiset
-    from dandiapi.api.services.search.parser import Operator
 
-
-def _latest_version_modified() -> Subquery:
-    latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[:1]
-    return Subquery(latest_version.values('modified'))
-
-
-def _latest_published_created() -> Subquery:
-    latest_published = (
-        Version.objects.filter(dandiset=OuterRef('pk'))
-        .exclude(version='draft')
-        .order_by('-created')[:1]
-    )
-    return Subquery(latest_published.values('created'))
+_LATEST_VERSION_MODIFIED = Subquery(
+    Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created').values('modified')[:1]
+)
+_LATEST_PUBLISHED_CREATED = Subquery(
+    Version.objects.filter(dandiset=OuterRef('pk'))
+    .exclude(version='draft')
+    .order_by('-created')
+    .values('created')[:1]
+)
 
 
 # Maps each operator to a Postgres jsonpath into the version-level
@@ -99,7 +85,11 @@ def _summary_predicate(operator: str, value: str) -> _JsonbPathExists:
 
 
 def _text_predicate(text: str) -> IContains:
-    """Case-insensitive substring match on the unaccented metadata text."""
+    """Case- and accent-insensitive substring match on the metadata text.
+
+    ``Unaccent`` is a bilateral transform, so Django unaccents ``text`` as
+    well: ``Mäuse``, ``Mause`` and ``MAUSE`` all match each other.
+    """
     return IContains(Unaccent(Cast('metadata', TextField())), text)
 
 
@@ -131,83 +121,16 @@ def _owner_predicate(value: str) -> Q:
     return Q(pk__in=owned_pks)
 
 
-def _parse_date(operator: str, value: str) -> datetime:
-    try:
-        return datetime.strptime(value, '%Y-%m-%d').replace(tzinfo=UTC)
-    except ValueError as exc:
-        raise SearchSyntaxError(
-            f'Invalid date for "{operator}": {value!r}. Use YYYY-MM-DD.'
-        ) from exc
-
-
 # Date operator -> (what is compared, comparison). `*_before` is exclusive and
 # `*_after` inclusive of the given day's midnight UTC.
 _DATE_OPS = {
-    'created_before': (lambda: F('created'), LessThan),
-    'created_after': (lambda: F('created'), GreaterThanOrEqual),
-    'modified_before': (_latest_version_modified, LessThan),
-    'modified_after': (_latest_version_modified, GreaterThanOrEqual),
-    'published_before': (_latest_published_created, LessThan),
-    'published_after': (_latest_published_created, GreaterThanOrEqual),
+    'created_before': (F('created'), LessThan),
+    'created_after': (F('created'), GreaterThanOrEqual),
+    'modified_before': (_LATEST_VERSION_MODIFIED, LessThan),
+    'modified_after': (_LATEST_VERSION_MODIFIED, GreaterThanOrEqual),
+    'published_before': (_LATEST_PUBLISHED_CREATED, LessThan),
+    'published_after': (_LATEST_PUBLISHED_CREATED, GreaterThanOrEqual),
 }
-
-
-def _date_predicate(operator: str, value: str):
-    lhs, lookup = _DATE_OPS[operator]
-    return lookup(lhs(), _parse_date(operator, value))
-
-
-@dataclass
-class _Clause:
-    """The SQL for one or more terms, split by the table it constrains.
-
-    ``version`` predicates are evaluated against a single Version row;
-    ``dandiset`` predicates against the Dandiset row.
-    """
-
-    version: list = field(default_factory=list)
-    dandiset: list = field(default_factory=list)
-
-
-def _compile_operator(op: Operator) -> _Clause:
-    value = op.value.strip()
-    if not value:
-        raise SearchSyntaxError(f'Operator "{op.key}" requires a value (e.g. {op.key}:something).')
-    if op.key in _SUMMARY_PATH_OPS:
-        return _Clause(version=[_summary_predicate(op.key, value)])
-    if op.key in _DATE_OPS:
-        return _Clause(dandiset=[_date_predicate(op.key, value)])
-    if op.key == 'owner':
-        return _Clause(dandiset=[_owner_predicate(value)])
-    raise ValueError(f'no query for operator: {op.key}')  # pragma: no cover
-
-
-@v_args(inline=True)
-class _QueryCompiler(Transformer):
-    """Compile the search parse tree into a ``Q`` on the Dandiset queryset."""
-
-    def quoted_operator(self, token):
-        return _compile_operator(operator_from_token(token))
-
-    bare_operator = quoted_operator
-
-    def phrase(self, token):
-        return _Clause(version=[_text_predicate(text_from_token(token))])
-
-    word = phrase
-
-    @v_args(inline=False)
-    def start(self, clauses: list[_Clause]) -> Q:
-        version_predicates = [p for c in clauses for p in c.version]
-        dandiset_predicates = [p for c in clauses for p in c.dandiset]
-
-        q = Q(*dandiset_predicates)
-        if version_predicates:
-            # Filter Version in its own subquery: the unaccented-text alias
-            # and jsonpath calls don't compose with the outer queryset's joins.
-            matching = Version.objects.filter(*version_predicates).values('dandiset_id')
-            q &= Q(id__in=matching)
-        return q
 
 
 def build_search_filter(query: str) -> Q:
@@ -216,9 +139,27 @@ def build_search_filter(query: str) -> Q:
     Raises :class:`SearchSyntaxError` for queries that don't parse or that use
     an unknown operator, an empty operator value, or a malformed date.
     """
-    if not query:
-        return Q()
-    return transform_tree(_QueryCompiler(), parse_tree(query))
+    parsed = parse_search(query)
+    version_predicates = [_text_predicate(text) for text in parsed.free_text]
+    dandiset_predicates = []
+    for op in parsed.operators:
+        if op.key in _SUMMARY_PATH_OPS:
+            version_predicates.append(_summary_predicate(op.key, op.value))
+        elif op.key in _DATE_OPS:
+            lhs, lookup = _DATE_OPS[op.key]
+            dandiset_predicates.append(lookup(lhs, parse_date(op.key, op.value)))
+        elif op.key == 'owner':
+            dandiset_predicates.append(_owner_predicate(op.value))
+        else:  # pragma: no cover
+            raise ValueError(f'no query for operator: {op.key}')
+
+    q = Q(*dandiset_predicates)
+    if version_predicates:
+        # Filter Version in its own subquery: the unaccented-text cast and
+        # jsonpath calls don't compose with the outer queryset's joins.
+        matching = Version.objects.filter(*version_predicates).values('dandiset_id')
+        q &= Q(id__in=matching)
+    return q
 
 
 def apply_search_filters(queryset: QuerySet[Dandiset], query: str) -> QuerySet[Dandiset]:
