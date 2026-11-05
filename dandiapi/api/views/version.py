@@ -111,10 +111,8 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         name = serializer.validated_data['name']
         new_metadata = serializer.validated_data['metadata']
 
-        # Strip away any computed fields from current and new metadata. From the new
-        # metadata, also strip records which carry no information, e.g. the
-        # {"schemaKey": "ContactPoint"} which the Meditor creates for an untouched
-        # nested form (https://github.com/dandi/dandi-archive/issues/2944).
+        # Strip away any computed fields from current and new metadata,
+        # and empty records (#2944) from the new one
         new_metadata = strip_empty_records(Version.strip_metadata(new_metadata))
 
         with transaction.atomic():

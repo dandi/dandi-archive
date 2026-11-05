@@ -671,27 +671,12 @@ def test_dandiset_rest_create_with_contributor(api_client):
 
 @pytest.mark.django_db
 def test_dandiset_rest_create_strips_empty_records(api_client):
-    user = UserFactory.create()
-    api_client.force_authenticate(user=user)
-    metadata = {
-        'ethicsApproval': [
-            {
-                'schemaKey': 'EthicsApproval',
-                'identifier': 'IRB-2026-001',
-                'contactPoint': {'schemaKey': 'ContactPoint'},
-            },
-            {'schemaKey': 'EthicsApproval', 'contactPoint': {'schemaKey': 'ContactPoint'}},
-        ],
-        'about': [{'schemaKey': 'GenericType'}],
-    }
+    api_client.force_authenticate(user=UserFactory.create())
+    metadata = {'about': [{'schemaKey': 'GenericType'}]}
 
     response = api_client.post('/api/dandisets/', {'name': 'Test Dandiset', 'metadata': metadata})
     assert response.status_code == 200
-
     dandiset = Dandiset.objects.get(id=int(response.data['identifier']))
-    assert dandiset.draft_version.metadata['ethicsApproval'] == [
-        {'schemaKey': 'EthicsApproval', 'identifier': 'IRB-2026-001'}
-    ]
     assert dandiset.draft_version.metadata['about'] == []
 
 

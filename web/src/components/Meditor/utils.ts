@@ -96,50 +96,6 @@ export function writeSubModelToMaster(
 
 }
 
-function isBlank(value: unknown): boolean {
-  if (value === null || value === undefined || value === '') { return true; }
-  if (Array.isArray(value)) { return value.length === 0; }
-  return typeof value === 'object' && Object.keys(value).length === 0;
-}
-
-/**
- * Whether `data` is a metadata record (an object with a `schemaKey`) which carries
- * no information, i.e. all its other fields are blank.
- */
-function isEmptyRecord(data: unknown): boolean {
-  return data !== null && typeof data === 'object' && !Array.isArray(data)
-    && 'schemaKey' in data
-    && Object.entries(data).every(([key, value]) => key === 'schemaKey' || isBlank(value));
-}
-
-function stripEmptyRecordsFrom(data: unknown): unknown {
-  if (Array.isArray(data)) {
-    return data.map(stripEmptyRecordsFrom).filter((item) => !isEmptyRecord(item));
-  }
-  if (data !== null && typeof data === 'object') {
-    return Object.fromEntries(
-      Object.entries(data)
-        .map(([key, value]) => [key, stripEmptyRecordsFrom(value)])
-        .filter(([, value]) => !isEmptyRecord(value)),
-    );
-  }
-  return data;
-}
-
-/**
- * Returns a copy of `model` without the empty records nested within it.
- *
- * VJSF fills in the constant `schemaKey` of every nested object whose form it renders,
- * so e.g. adding an ethics approval also creates `"contactPoint": {"schemaKey": "ContactPoint"}`
- * even if the user leaves the contact point blank. Such records are removed (bottom-up)
- * before the metadata leaves the editor. The API strips them as well, with the same rules
- * (`strip_empty_records` in dandiapi/api/services/version/metadata.py), see
- * https://github.com/dandi/dandi-archive/issues/2944
- */
-export function stripEmptyRecords(model: DandiModel): DandiModel {
-  return stripEmptyRecordsFrom(model) as DandiModel;
-}
-
 export const VJSFVuetifyDefaultProps: VuetifyOptions['defaults'] = {
   global: {
     variant: 'outlined',

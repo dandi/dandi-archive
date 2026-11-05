@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import typing
+import difflib
 
 from django.db import transaction
 import djclick as click
+import yaml
 
 from dandiapi.api.manifests import write_dandiset_jsonld, write_dandiset_yaml
 from dandiapi.api.models import Version
@@ -12,75 +13,59 @@ from dandiapi.api.services.version.metadata import strip_empty_records
 
 
 @click.command(
-    help='Remove nested metadata records which carry no information, such as '
-    '{"schemaKey": "ContactPoint"}, from draft versions. If `--all` is provided, '
-    'clean all draft versions. Otherwise, provide the Dandiset to clean. '
-    'Published versions are never modified. '
-    'See https://github.com/dandi/dandi-archive/issues/2944'
+    help='Remove empty metadata records, such as {"schemaKey": "ContactPoint"}, from the '
+    'draft versions of all Dandisets (`--all`) or of the given one, showing the changes as '
+    'a diff. See https://github.com/dandi/dandi-archive/issues/2944'
 )
 @click.argument('dandiset', required=False)
-@click.option(
-    '--all',
-    'apply_to_all',
-    is_flag=True,
-    default=False,
-    help='Clean all draft versions (cannot be combined with dandiset argument).',
-)
-@click.option(
-    '--check',
-    is_flag=True,
-    help="Don't perform any changes, just list the draft versions which would be changed.",
-)
+@click.option('--all', 'apply_to_all', is_flag=True, help='Clean all draft versions.')
+@click.option('--check', is_flag=True, help="Only show the changes, don't apply them.")
 def strip_empty_metadata_records(*, dandiset: str | None, apply_to_all: bool, check: bool):
-    if apply_to_all:
-        if dandiset is not None:
-            raise click.UsageError('Cannot specify `--all` together with `dandiset` argument.')
-    elif dandiset is None:
-        raise click.UsageError('Either `--all` or `dandiset` argument must be provided.')
+    if apply_to_all == (dandiset is not None):
+        raise click.UsageError('Provide either `--all` or a `dandiset`.')
 
     vers = Version.objects.filter(version='draft').select_related('dandiset')
-    if not apply_to_all:
-        dandiset = typing.cast('str', dandiset)
+    if dandiset is not None:
         vers = vers.filter(dandiset=int(dandiset))
 
-    affected = [
-        (ver.id, str(ver))
-        for ver in vers.iterator()
-        if strip_empty_records(ver.metadata) != ver.metadata
-    ]
+    affected = []
+    for ver in vers.iterator():
+        new_metadata = strip_empty_records(ver.metadata)
+        if new_metadata != ver.metadata:
+            affected.append(ver.id)
+            click.echo(_yaml_diff(ver.metadata, new_metadata, str(ver)), nl=False)
     click.echo(f'Found {len(affected)} draft version(s) with empty metadata records')
-    if check:
-        for _, name in affected:
-            click.echo(f'\t{name}')
-        return
 
-    for version_id, _ in affected:
-        _strip_version(version_id)
+    if not check:
+        for version_id in affected:
+            _strip_version(version_id)
+
+
+def _yaml_diff(old: dict, new: dict, name: str) -> str:
+    old_lines, new_lines = (
+        yaml.safe_dump(m, sort_keys=False, allow_unicode=True).splitlines(keepends=True)
+        for m in (old, new)
+    )
+    return ''.join(difflib.unified_diff(old_lines, new_lines, f'a/{name}', f'b/{name}'))
 
 
 def _strip_version(version_id: int) -> None:
-    # Clean each version in its own transaction, locking it to not race with
-    # concurrent metadata updates or validation.
     with transaction.atomic():
         ver = Version.objects.select_for_update().select_related('dandiset').get(id=version_id)
         if ver.status == Version.Status.PUBLISHING:
             click.echo(f'Skipping {ver}, which is being published')
             return
-
-        new_meta = strip_empty_records(ver.metadata)
-        if new_meta == ver.metadata:
+        new_metadata = strip_empty_records(ver.metadata)
+        if new_metadata == ver.metadata:
             return
 
-        ver.metadata = new_meta
-        # A draft which is PUBLISHED is identical to its latest published version, and
-        # removing empty records does not change that, so we keep the status to not make
-        # it publishable again. Any other draft gets revalidated, which also writes its
-        # manifests out again.
+        ver.metadata = new_metadata
+        # A PUBLISHED draft stays identical to its published version, so keep its status
+        # to not make it publishable again. Revalidate others, which rewrites manifests.
         published = ver.status == Version.Status.PUBLISHED
         if not published:
             ver.status = Version.Status.PENDING
         ver.save()
-
         audit.update_metadata(
             dandiset=ver.dandiset,
             metadata=ver.metadata,
@@ -93,4 +78,3 @@ def _strip_version(version_id: int) -> None:
     if published:
         write_dandiset_yaml(ver)
         write_dandiset_jsonld(ver)
-    click.echo(f'Removed empty metadata records from {ver}')

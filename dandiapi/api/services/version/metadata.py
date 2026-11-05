@@ -7,57 +7,23 @@ from dandischema.consts import DANDI_SCHEMA_VERSION
 from dandiapi.api.models.version import Version
 
 
-def _is_blank(value: Any) -> bool:
-    return value is None or (isinstance(value, str | list | dict) and not value)
+def _is_empty_record(data: Any) -> bool:
+    return isinstance(data, dict) and data.keys() == {'schemaKey'}
 
 
-def _strip_empty_records(data: Any) -> Any:
-    """Return a copy of ``data`` with the empty records within it removed."""
+def strip_empty_records(data: Any) -> Any:
+    """
+    Return a copy of ``data`` without records holding only a ``schemaKey``.
+
+    See https://github.com/dandi/dandi-archive/issues/2944
+    """
     if isinstance(data, list):
-        items = [_strip_empty_records(item) for item in data]
-        return [item for item in items if not is_empty_record(item)]
+        items = (strip_empty_records(item) for item in data)
+        return [item for item in items if not _is_empty_record(item)]
     if isinstance(data, dict):
-        stripped = {}
-        for key, value in data.items():
-            new_value = _strip_empty_records(value)
-            if not is_empty_record(new_value):
-                stripped[key] = new_value
-        return stripped
+        pairs = ((key, strip_empty_records(value)) for key, value in data.items())
+        return {key: value for key, value in pairs if not _is_empty_record(value)}
     return data
-
-
-def is_empty_record(data: Any) -> bool:
-    """
-    Whether ``data`` is a metadata record which carries no information.
-
-    A record is a JSON object with a ``schemaKey``. It is empty if every other
-    field is ``null``, an empty string, an empty list or an empty object,
-    e.g. ``{"schemaKey": "ContactPoint"}``.
-    """
-    return (
-        isinstance(data, dict)
-        and 'schemaKey' in data
-        and all(_is_blank(value) for key, value in data.items() if key != 'schemaKey')
-    )
-
-
-def strip_empty_records(metadata: dict) -> dict:
-    """
-    Return a copy of ``metadata`` without the empty records nested within it.
-
-    Empty records (see `is_empty_record`) are dropped from lists, and removed
-    together with their key from objects. Records are cleaned bottom-up, so a
-    record which only contained empty records becomes empty itself and is
-    removed as well. Lists which end up empty are kept, as ``[]``.
-
-    The web metadata editor (Meditor) produces such records whenever it renders
-    the form of an optional nested object, e.g. the ``contactPoint`` of an
-    ``EthicsApproval``, as it fills in the constant ``schemaKey`` even if the
-    user enters nothing. They carry no information, so we remove them from all
-    the metadata submitted to the API, whichever client sent it. See
-    https://github.com/dandi/dandi-archive/issues/2944
-    """
-    return _strip_empty_records(metadata)
 
 
 def _normalize_version_metadata(raw_version_metadata: dict, name: str, email: str) -> dict:
@@ -66,7 +32,7 @@ def _normalize_version_metadata(raw_version_metadata: dict, name: str, email: st
 
     This could overwrite fields in the raw version metadata.
     """
-    # Strip away any computed fields, and records which carry no information
+    # Strip away any computed fields and empty records
     version_metadata = strip_empty_records(Version.strip_metadata(raw_version_metadata))
 
     # Only inject a schemaVersion and default contributor field if they are
