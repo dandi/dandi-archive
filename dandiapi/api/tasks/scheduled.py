@@ -100,11 +100,14 @@ def validate_draft_version_metadata():
         logger.info('Found %s versions to validate', pending_draft_versions_count)
         for draft_version_id in pending_draft_versions.iterator():
             validate_version_metadata_task.delay(draft_version_id)
-            aggregate_assets_summary_task.delay(draft_version_id)
 
             # Revalidation should be triggered every time a version is modified,
             # so now is a good time to write out the manifests as well.
-            write_manifest_files.delay(draft_version_id)
+            # They embed the assetsSummary, so write them once it's aggregated (or fails to be).
+            write_manifests = write_manifest_files.si(draft_version_id)
+            aggregate_assets_summary_task.apply_async(
+                (draft_version_id,), link=write_manifests, link_error=write_manifests
+            )
     else:
         logger.debug('Found no versions to validate')
 
