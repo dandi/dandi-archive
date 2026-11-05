@@ -14,6 +14,8 @@ from dandiapi.api.management.commands.audit_manifests_and_dois import (
     audit_version,
     missing_manifest_dois,
     missing_manifest_paths,
+    out_of_sync_manifests,
+    rewrite_manifests,
 )
 from dandiapi.api.manifests import (
     _assets_jsonld_path,
@@ -23,7 +25,8 @@ from dandiapi.api.manifests import (
     _dandiset_yaml_path,
     all_manifest_filepaths,
 )
-from dandiapi.api.models import Version
+from dandiapi.api.models import Asset, Version
+from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.tasks import write_manifest_files
 from dandiapi.api.tests.factories import PublishedVersionFactory
 
@@ -73,6 +76,17 @@ def version_with_doi_less_manifests():
     return version
 
 
+@pytest.fixture
+def draft_with_stale_assets_summary(draft_version: Version, draft_asset_factory) -> Version:
+    """Write a draft's manifests before its assetsSummary is aggregated (dandi-archive#2998)."""
+    draft_version.assets.add(draft_asset_factory(status=Asset.Status.VALID))
+    write_manifest_files(draft_version.id)
+    version_aggregate_assets_summary(draft_version)
+    draft_version.refresh_from_db()
+
+    return draft_version
+
+
 # Case 1: missing manifests.
 
 
@@ -82,6 +96,9 @@ def test_missing_manifest_paths_detects_every_manifest():
 
     # No manifests have been written at all.
     assert missing_manifest_paths(version) == all_manifest_filepaths(version)
+    assert out_of_sync_manifests(version) == dict.fromkeys(
+        [_dandiset_jsonld_path(version), _dandiset_yaml_path(version)], 'missing'
+    )
 
 
 @pytest.mark.django_db
@@ -124,6 +141,7 @@ def test_missing_manifest_dois_ignores_current_manifests():
     write_manifest_files(version.id)
 
     assert missing_manifest_dois(version) == {}
+    assert out_of_sync_manifests(version) == {}
 
 
 @pytest.mark.django_db
@@ -144,6 +162,7 @@ def test_missing_manifest_dois_reports_unreadable_manifest():
     [(path, found)] = missing_manifest_dois(version).items()
     assert path == _dandiset_jsonld_path(version)
     assert found.startswith('unreadable')
+    assert out_of_sync_manifests(version) == {path: found}
 
 
 @pytest.mark.django_db
@@ -203,16 +222,32 @@ def test_audit_version_reports_a_clean_version():
     assert not audit_version(version).has_problems
 
 
+# Drafts: manifests out of sync with their metadata.
+
+
+@pytest.mark.django_db
+def test_out_of_sync_manifests_detects_stale_assets_summary(draft_with_stale_assets_summary):
+    version = draft_with_stale_assets_summary
+
+    assert out_of_sync_manifests(version) == {
+        _dandiset_jsonld_path(version): 'differs in assetsSummary',
+        _dandiset_yaml_path(version): 'differs in assetsSummary',
+    }
+
+
 # The commands, which report what the checks above find and optionally rewrite it.
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize('subcommand', ['report', 'missing-manifest-dois'])
-def test_reporting_writes_nothing(version_with_doi_less_manifests, subcommand: str):
+@pytest.mark.parametrize('subcommand', ['report', 'missing-manifest-dois', 'out-of-sync-manifests'])
+def test_reporting_writes_nothing(
+    version_with_doi_less_manifests, draft_with_stale_assets_summary, subcommand: str
+):
     """Reporting is read-only, so a run without --rewrite-manifests is a dry run of it."""
     audit_manifests_and_dois(subcommand, '--all')
 
     assert missing_manifest_dois(version_with_doi_less_manifests) != {}
+    assert out_of_sync_manifests(draft_with_stale_assets_summary) != {}
 
 
 @pytest.mark.django_db
@@ -256,6 +291,34 @@ def test_missing_manifest_dois_rewrites_only_the_dandiset_manifests(
 
 
 @pytest.mark.django_db
+def test_out_of_sync_manifests_rewrites_only_the_dandiset_manifests(
+    draft_with_stale_assets_summary,
+):
+    """The draft's two manifests written from its metadata are rewritten, and nothing else."""
+    version = draft_with_stale_assets_summary
+    default_storage.save(_assets_jsonld_path(version), ContentFile(b'sentinel'))
+
+    audit_manifests_and_dois('out-of-sync-manifests', '--all', '--rewrite-manifests')
+
+    assert out_of_sync_manifests(version) == {}
+    with default_storage.open(_assets_jsonld_path(version)) as f:
+        assert f.read() == b'sentinel'
+
+
+@pytest.mark.django_db
+def test_rewrite_manifests_writes_the_current_metadata(draft_version: Version):
+    """A draft modified since it was audited isn't rewritten from its stale copy."""
+    metadata = {**draft_version.metadata, 'description': 'modified'}
+    Version.objects.filter(id=draft_version.id).update(metadata=metadata)
+
+    rewrite_manifests(
+        draft_version, [_dandiset_jsonld_path(draft_version), _dandiset_yaml_path(draft_version)]
+    )
+
+    assert _written_manifests(draft_version) == (metadata, metadata)
+
+
+@pytest.mark.django_db
 def test_rewriting_leaves_the_published_version_untouched(version_with_doi_less_manifests):
     """Published versions are immutable; only the manifest files may be rewritten."""
     version = version_with_doi_less_manifests
@@ -289,6 +352,9 @@ def test_rewriting_cannot_repair_a_metadata_missing_its_doi():
 
 
 @pytest.mark.django_db
-def test_drafts_are_never_audited(draft_version: Version):
-    """Drafts never have a DOI, and their manifests are rewritten whenever they're modified."""
+def test_drafts_are_only_audited_for_out_of_sync_manifests(
+    draft_version: Version, published_version: Version
+):
+    """Drafts never have a DOI, but their manifests can miss their aggregated assetsSummary."""
     assert draft_version not in _version_queryset((), include_all=True)
+    assert list(_version_queryset((), include_all=True, drafts=True)) == [draft_version]
