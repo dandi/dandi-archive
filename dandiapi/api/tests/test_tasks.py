@@ -381,6 +381,9 @@ def test_publish_task(
 
     draft_version.refresh_from_db()
     assert draft_version.status == Version.Status.PUBLISHED
+    # Publishing updated the draft's assetsSummary, so its manifests must have followed.
+    with default_storage.open(_dandiset_jsonld_path(draft_version)) as f:
+        assert json.load(f) == draft_version.metadata
 
     published_version = draft_version.dandiset.versions.latest('created')
 

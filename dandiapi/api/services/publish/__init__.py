@@ -206,6 +206,8 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         # existing behavior.
         transaction.on_commit(lambda: _create_doi(new_version.id), robust=True)
         transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
+        # The draft's assetsSummary changed too, but it isn't PENDING, so rewrite its manifests.
+        transaction.on_commit(lambda: write_manifest_files.delay(old_version.id))
 
         user = User.objects.get(id=user_id)
         audit.publish_dandiset(
