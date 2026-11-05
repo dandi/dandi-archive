@@ -1,6 +1,6 @@
 <template>
   <v-list-item>
-    <v-list-item-action class="mr-2">
+    <v-list-item-action class="mr-2 pt-2">
       <!-- ".stop" prevents closing the parent v-menu when this is clicked -->
       <v-btn
         variant="text"
