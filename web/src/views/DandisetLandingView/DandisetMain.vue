@@ -26,7 +26,7 @@
           <v-chip
             v-if="currentDandiset.version != 'draft'"
             variant="outlined"
-            class="mx-2 pl-1"
+            class="mx-2 pl-2"
           >
             <v-tooltip location="top">
               <template #activator="{ props }">
