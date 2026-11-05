@@ -11,6 +11,7 @@ from zarr_checksum.generators import S3ClientOptions, yield_files_s3
 from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.version import Version
+from dandiapi.api.services.exceptions import DandiError
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
@@ -36,6 +37,14 @@ def _ingest_zarr_archive(zarr_id: str, *, force: bool = False):
     # Ensure zarr is in pending state before proceeding
     with transaction.atomic():
         zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
+
+        # Published zarrs are immutable, and must never be re-ingested (even if forced)
+        try:
+            zarr.ensure_modifiable()
+        except DandiError as e:
+            logger.info('Cannot ingest zarr %s: %s Exiting...', zarr_id, e.message)
+            return
+
         if not force and zarr.status != ZarrArchiveStatus.UPLOADED:
             logger.info('Zarrs must be in an UPLOADED state to begin ingestion. Exiting...')
             return
