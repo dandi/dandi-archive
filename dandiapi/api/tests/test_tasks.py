@@ -49,7 +49,7 @@ def test_calculate_checksum_task(asset_blob_factory):
 
 
 @pytest.mark.django_db
-def test_write_manifest_files(version: Version, asset_factory):
+def test_write_manifest_files(version: Version, asset_factory, mocker):
     # Create a new asset in the version so there is information to write
     version.assets.add(asset_factory())
 
@@ -64,6 +64,7 @@ def test_write_manifest_files(version: Version, asset_factory):
         f'dandisets/{version.dandiset.identifier}/{version.version}/collection.jsonld'
     )
 
+    save = mocker.spy(default_storage, 'save')
     tasks.write_manifest_files(version.id)
 
     assert default_storage.exists(assets_yaml_path)
@@ -71,6 +72,10 @@ def test_write_manifest_files(version: Version, asset_factory):
     assert default_storage.exists(assets_jsonld_path)
     assert default_storage.exists(dandiset_jsonld_path)
     assert default_storage.exists(collection_jsonld_path)
+
+    # The quick dandiset manifests come first, so the slow asset manifests can't hold them back.
+    saved = [call.args[0] for call in save.call_args_list]
+    assert set(saved[:2]) == {dandiset_yaml_path, dandiset_jsonld_path}
 
 
 @pytest.mark.django_db
