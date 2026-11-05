@@ -10,7 +10,7 @@
       :to="{
         name: 'dandisetLanding',
         params: { identifier: item.dandiset.identifier },
-        query: { ...$route.query, pos: getPos(index) },
+        state: { listing: { query: { ...$route.query }, pos: getPos(index) } },
       }"
       exact
     >
@@ -102,7 +102,9 @@ const instanceStore = useInstanceStore();
 instanceStore.load();
 const archiveName = computed(() => instanceStore.instanceName ?? '');
 
-// current position in search result set = items on prev pages + position on current page
+// current position in search result set = items on prev pages + position on current page.
+// It is passed to the DLP, along with this listing's query, in history.state rather than
+// in the URL, so that the DLP can page through these results while its URL stays clean.
 function getPos(index: number) {
   return (Number(route.query.page || 1) - 1) * DANDISETS_PER_PAGE + (index + 1);
 }

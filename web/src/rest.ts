@@ -49,7 +49,14 @@ const dandiRest = {
     if (!oauthClient) {
       return;
     }
+    // maybeRestoreLogin() wipes history.state (along with the OAuth params in the URL) on
+    // every page load. Put back what was there, so that state kept in it by vue-router and
+    // by the app (e.g. the listing a DLP was opened from) survives a reload.
+    const { state } = window.history;
     await oauthClient.maybeRestoreLogin();
+    if (state) {
+      window.history.replaceState({ ...state, ...window.history.state }, '');
+    }
     if (!oauthClient.isLoggedIn) {
       return;
     }
