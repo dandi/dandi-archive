@@ -23,15 +23,6 @@ ANATOMY_ONTOLOGIES: tuple[str, ...] = ('UBERON', 'MBA', 'HBA', 'DHBA', 'DMBA')
 _PREFIX_ALTERNATION = '|'.join(ANATOMY_ONTOLOGIES)
 _CURIE_RE = re.compile(rf'(?:^|[^A-Za-z])({_PREFIX_ALTERNATION})[_:](\d+)$', re.IGNORECASE)
 
-# The same normalization as `normalize_curie`, as a Postgres expression over a
-# text expression `{expr}`. When the identifier is not an anatomy CURIE the
-# input comes back unchanged, which can never equal a canonical CURIE.
-# `_PREFIX_ALTERNATION` is a trusted constant.
-CURIE_SQL_TEMPLATE = (
-    "upper(regexp_replace({expr}, '^.*?(" + _PREFIX_ALTERNATION + ")[_:]([0-9]+)$', "
-    "'\\1:\\2', 'i'))"
-)
-
 
 def normalize_curie(identifier: str | None) -> str | None:
     """Return the canonical CURIE for an anatomy identifier, or None if it isn't one."""

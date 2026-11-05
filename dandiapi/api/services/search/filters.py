@@ -30,13 +30,12 @@ from typing import TYPE_CHECKING
 from django.contrib.auth.models import User
 from django.contrib.postgres.lookups import Unaccent
 from django.db.models import BooleanField, F, Func, OuterRef, Q, Subquery, TextField, Value
-from django.db.models.expressions import RawSQL
 from django.db.models.functions import Cast, Concat
 from django.db.models.lookups import GreaterThanOrEqual, IContains, LessThan
 
 from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
-from dandiapi.api.services.search.anatomy import CURIE_SQL_TEMPLATE, normalize_curie
+from dandiapi.api.services.search.anatomy import normalize_curie
 from dandiapi.api.services.search.parser import parse_date, parse_search
 
 if TYPE_CHECKING:
@@ -75,16 +74,23 @@ class _JsonbPathExists(Func):
     output_field = BooleanField()
 
 
+def _like_regex(pattern: str) -> str:
+    """Render a case-insensitive jsonpath ``like_regex`` filter on ``pattern``.
+
+    ``pattern`` is written as a JSON string literal, whose escaping rules
+    jsonpath shares.
+    """
+    return f'like_regex {json.dumps(pattern, ensure_ascii=False)} flag "i"'
+
+
 def _summary_predicate(operator: str, value: str) -> _JsonbPathExists:
     """Match ``value`` case-insensitively against the operator's summary entries.
 
     The whole jsonpath is sent as a bound parameter, so nothing user-supplied
-    is interpolated into the SQL. Inside the jsonpath, ``value`` is
-    regex-escaped (so it matches literally) and then written as a JSON string
-    literal, whose escaping rules jsonpath shares.
+    is interpolated into the SQL. ``value`` is regex-escaped, so it matches
+    literally.
     """
-    pattern = json.dumps(re.escape(value), ensure_ascii=False)
-    path = f'{_SUMMARY_PATH_OPS[operator]} ? (@ like_regex {pattern} flag "i")'
+    path = f'{_SUMMARY_PATH_OPS[operator]} ? (@ {_like_regex(re.escape(value))})'
     return _JsonbPathExists(F('metadata'), Value(path))
 
 
@@ -97,40 +103,24 @@ def _text_predicate(text: str) -> IContains:
     return IContains(Unaccent(Cast('metadata', TextField())), text)
 
 
-# A Version whose `about` holds an Anatomy entry satisfying `{condition}`, a
-# condition on the entry `a`. `metadata` is left unqualified because Django
-# may alias the Version table in subqueries.
-_ANATOMY_SQL = """
-EXISTS (
-    SELECT 1
-    FROM jsonb_array_elements(
-        CASE WHEN jsonb_typeof(metadata->'about') = 'array'
-             THEN metadata->'about' ELSE '[]'::jsonb END
-    ) AS a
-    WHERE a->>'schemaKey' = 'Anatomy' AND {condition}
-)
-"""
-# The interpolated pieces are trusted constants; the value is a bound param.
-_ANATOMY_BY_CURIE = _ANATOMY_SQL.format(
-    condition=CURIE_SQL_TEMPLATE.format(expr="a->>'identifier'") + ' = %s'
-)
-_ANATOMY_BY_NAME = _ANATOMY_SQL.format(condition="a->>'name' ~* %s")
-
-
-def _anatomy_predicate(value: str) -> RawSQL:
+def _anatomy_predicate(value: str) -> _JsonbPathExists:
     """Match an ``anatomy_exact:`` value against the Anatomy entries in ``about``.
 
     An identifier (CURIE, underscore form, or IRI) matches entries with that
-    identifier in any spelling. Any other value matches entries whose recorded
-    name is the whole value, case-insensitively.
+    identifier in any spelling: the stored identifier must end in
+    ``PREFIX:digits`` or ``PREFIX_digits``, after a non-letter or a
+    percent-encoded slash, so ``MBA:1089`` doesn't match ``DMBA_1089``. Any
+    other value matches entries whose recorded name is the whole value. Both
+    are case-insensitive, and the jsonpath is bound as one parameter.
     """
     curie = normalize_curie(value)
     if curie is not None:
-        sql, param = _ANATOMY_BY_CURIE, curie
+        prefix, digits = curie.split(':')
+        field, pattern = '@.identifier', f'(^|[^a-z]|%2f){prefix}[_:]{digits}$'
     else:
-        sql, param = _ANATOMY_BY_NAME, f'^{re.escape(value)}$'
-    # `sql` is one of the two constant templates; the value is bound.
-    return RawSQL(sql, [param], output_field=BooleanField())  # noqa: S611
+        field, pattern = '@.name', f'^{re.escape(value)}$'
+    path = f'$.about[*] ? (@.schemaKey == "Anatomy" && {field} {_like_regex(pattern)})'
+    return _JsonbPathExists(F('metadata'), Value(path))
 
 
 def _owner_predicate(value: str) -> Q:

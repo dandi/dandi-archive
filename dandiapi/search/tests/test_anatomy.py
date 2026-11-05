@@ -98,6 +98,36 @@ def test_anatomy_exact_atlas_identifier(api_client, anatomy_dandisets):
 
 
 @pytest.mark.django_db
+def test_anatomy_exact_identifier_prefix_boundaries(api_client):
+    # One ontology prefix ends with another (DMBA / MBA), so a match must
+    # start the prefix at a boundary. A percent-encoded IRI still matches.
+    dmba = _seed({'name': 'Hippocampal formation', 'identifier': 'DMBA:1089'})
+    encoded = _seed(
+        {
+            'name': 'Hippocampus',
+            'identifier': 'https://example.org/term/http%3A%2F%2Fpurl.obolibrary.org%2Fobo%2FUBERON_0002421',
+        }
+    )
+    assert _search_ids(api_client, 'anatomy_exact:MBA:1089') == set()
+    assert _search_ids(api_client, 'anatomy_exact:DMBA:1089') == {dmba.identifier}
+    assert _search_ids(api_client, 'anatomy_exact:UBERON:0002421') == {encoded.identifier}
+    # A longer number that ends in the same digits is a different term.
+    assert _search_ids(api_client, 'anatomy_exact:UBERON:002421') == set()
+
+
+@pytest.mark.django_db
+def test_anatomy_exact_tolerates_about_that_is_not_a_list(api_client):
+    version = DraftVersionFactory.create()
+    version.metadata = {**version.metadata, 'about': {'schemaKey': 'Anatomy', 'name': 'cortex'}}
+    version.save()
+    other = DraftVersionFactory.create()
+    other.metadata = {**other.metadata, 'about': 'cortex'}
+    other.save()
+    # Lax jsonpath treats a lone object as a one-element list and skips a string.
+    assert _search_ids(api_client, 'anatomy_exact:cortex') == {version.dandiset.identifier}
+
+
+@pytest.mark.django_db
 def test_anatomy_exact_name_matches_the_whole_recorded_name(api_client, anatomy_dandisets):
     assert _search_ids(api_client, 'anatomy_exact:hippocampus') == _ids(
         anatomy_dandisets, 'hpf_iri'

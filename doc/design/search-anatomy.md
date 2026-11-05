@@ -32,10 +32,12 @@ operator covers every ontology and new atlases do not add new operators.
 | `anatomy_exact:hippocampus` | whose recorded name is "hippocampus", ignoring case |
 | `anatomy_exact:"dorsal hippocampus (dHPC)"` | multi-word names are quoted |
 
-Identifiers are compared after normalizing both sides to a canonical CURIE,
-`PREFIX:digits` with an uppercase prefix, for the UBERON, MBA, DMBA, HBA, and
-DHBA ontologies. The normalization runs in SQL on the stored identifier, so the
-archive's mix of PURLs and CURIEs needs no migration.
+The query value is normalized to a canonical CURIE, `PREFIX:digits` with an
+uppercase prefix, for the UBERON, MBA, DMBA, HBA, and DHBA ontologies. A stored
+identifier matches when it ends in that CURIE or its underscore form, ignoring
+case, after a non-letter or a percent-encoded slash, so every spelling matches,
+the archive's mix of PURLs and CURIEs needs no migration, and `MBA:1089` does
+not match `DMBA_1089`.
 
 A name has to match the whole recorded name, so `anatomy_exact:hippocampus`
 does not return an entry named "CA1 field of hippocampus".
@@ -50,9 +52,10 @@ Like every other operator, this one combines with AND:
 
 ## Query
 
-The filter is a single `EXISTS` over `jsonb_array_elements(metadata->'about')`
-on `api_version`. A Dandiset matches when one of its versions has an Anatomy
-entry that satisfies every anatomy clause.
+Each clause is one `jsonb_path_exists` call on the version's metadata, with a
+filter on `$.about[*]` for an Anatomy entry whose identifier or name matches. The
+whole jsonpath is a bound parameter. A Dandiset matches when one of its versions
+satisfies every anatomy clause, each through any of its Anatomy entries.
 
 ## Next Step
 
