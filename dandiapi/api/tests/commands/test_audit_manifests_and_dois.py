@@ -264,8 +264,13 @@ def test_missing_manifests_rewrites_only_the_missing_manifests(version_with_doi_
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    'subcommand',
+    [['missing-manifest-dois'], ['out-of-sync-manifests', '--versions', 'published']],
+    ids=['missing-manifest-dois', 'out-of-sync-manifests'],
+)
 def test_missing_manifest_dois_rewrites_only_the_dandiset_manifests(
-    version_with_doi_less_manifests,
+    version_with_doi_less_manifests, subcommand: list[str]
 ):
     """Case 2 writes the two manifests which embed the DOI, and nothing else."""
     version = version_with_doi_less_manifests
@@ -279,7 +284,7 @@ def test_missing_manifest_dois_rewrites_only_the_dandiset_manifests(
     for path in untouchable:
         default_storage.save(path, ContentFile(b'sentinel'))
 
-    audit_manifests_and_dois('missing-manifest-dois', '--all', '--rewrite-manifests')
+    audit_manifests_and_dois(*subcommand, '--all', '--rewrite-manifests')
 
     dandiset_jsonld, dandiset_yaml = _written_manifests(version)
     assert dandiset_jsonld['doi'] == version.doi
@@ -292,9 +297,9 @@ def test_missing_manifest_dois_rewrites_only_the_dandiset_manifests(
 
 @pytest.mark.django_db
 def test_out_of_sync_manifests_rewrites_only_the_dandiset_manifests(
-    draft_with_stale_assets_summary,
+    draft_with_stale_assets_summary, version_with_doi_less_manifests
 ):
-    """The draft's two manifests written from its metadata are rewritten, and nothing else."""
+    """By default, only drafts' two manifests written from their metadata are rewritten."""
     version = draft_with_stale_assets_summary
     default_storage.save(_assets_jsonld_path(version), ContentFile(b'sentinel'))
 
@@ -303,6 +308,7 @@ def test_out_of_sync_manifests_rewrites_only_the_dandiset_manifests(
     assert out_of_sync_manifests(version) == {}
     with default_storage.open(_assets_jsonld_path(version)) as f:
         assert f.read() == b'sentinel'
+    assert missing_manifest_dois(version_with_doi_less_manifests) != {}
 
 
 @pytest.mark.django_db
@@ -333,7 +339,12 @@ def test_rewriting_leaves_the_published_version_untouched(version_with_doi_less_
 
 
 @pytest.mark.django_db
-def test_rewriting_cannot_repair_a_metadata_missing_its_doi():
+@pytest.mark.parametrize(
+    'subcommand',
+    [['missing-manifest-dois'], ['out-of-sync-manifests', '--versions', 'published']],
+    ids=['missing-manifest-dois', 'out-of-sync-manifests'],
+)
+def test_rewriting_cannot_repair_a_metadata_missing_its_doi(subcommand: list[str]):
     """A DOI absent from the metadata can't be written into a manifest, so none is rewritten.
 
     Rewriting from DOI-less metadata would strip the DOI the manifests already carry.
@@ -342,7 +353,7 @@ def test_rewriting_cannot_repair_a_metadata_missing_its_doi():
     write_manifest_files(version.id)
     _strip_metadata_doi(version)
 
-    audit_manifests_and_dois('missing-manifest-dois', '--all', '--rewrite-manifests')
+    audit_manifests_and_dois(*subcommand, '--all', '--rewrite-manifests')
 
     version.refresh_from_db()
     assert 'doi' not in version.metadata
@@ -352,9 +363,11 @@ def test_rewriting_cannot_repair_a_metadata_missing_its_doi():
 
 
 @pytest.mark.django_db
-def test_drafts_are_only_audited_for_out_of_sync_manifests(
-    draft_version: Version, published_version: Version
-):
-    """Drafts never have a DOI, but their manifests can miss their aggregated assetsSummary."""
-    assert draft_version not in _version_queryset((), include_all=True)
-    assert list(_version_queryset((), include_all=True, drafts=True)) == [draft_version]
+def test_version_queryset_selects_versions(draft_version: Version, published_version: Version):
+    """Only published versions by default: drafts never have a DOI."""
+    assert list(_version_queryset((), include_all=True)) == [published_version]
+    assert list(_version_queryset((), include_all=True, versions='draft')) == [draft_version]
+    assert set(_version_queryset((), include_all=True, versions='all')) == {
+        draft_version,
+        published_version,
+    }

@@ -103,7 +103,8 @@ def validate_draft_version_metadata():
 
             # Revalidation should be triggered every time a version is modified,
             # so now is a good time to write out the manifests as well.
-            # They embed the assetsSummary, so write them once it's aggregated (or fails to be).
+            # They embed the assetsSummary, so write them once it's aggregated: `link` fires on
+            # success and `link_error` on final failure (retries fire neither).
             write_manifests = write_manifest_files.si(draft_version_id)
             aggregate_assets_summary_task.apply_async(
                 (draft_version_id,), link=write_manifests, link_error=write_manifests
