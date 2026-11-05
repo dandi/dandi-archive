@@ -83,6 +83,10 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  #
         raise NotAllowedError('Operation only allowed on OPEN dandisets', 400)
 
     with transaction.atomic():
+        # The zarrs MUST be locked before the draft version. Zarr ingestion locks a zarr and then
+        # updates (and therefore locks) the draft version, so acquiring these locks in the
+        # opposite order here could deadlock with a concurrent ingestion.
+        draft_zarrs = _lock_unpublished_draft_zarrs(dandiset.id)
         draft_version: Version = dandiset.versions.select_for_update().get(version='draft')
 
         if not draft_version.publishable:
@@ -109,7 +113,6 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  #
         # are locked, and the zarr endpoints refuse modifications while the draft version is
         # PUBLISHING, they cannot change between here and when they're marked as published.
         # Ingestion also verifies that no outstanding upload URL can change a COMPLETE zarr.
-        draft_zarrs = _lock_unpublished_draft_zarrs(dandiset.id)
         if any(zarr.status != ZarrArchiveStatus.COMPLETE for zarr in draft_zarrs):
             raise DandisetZarrsNotCompleteError
 
