@@ -13,8 +13,6 @@ We want to maintain the same look and feel as before, so this file is used to gl
 some styles that were changed from Vuetify 2 to Vuetify 3 that are not easy to/impossible to
 change without manual CSS styling.
   */
-// Excludes .v-field: outlined text fields draw their own notched outline, and a
-// full border here would run straight through their floating label.
 .v-theme--DandiLightTheme[class*="variant-outlined"]:not(.v-field) {
   border: thin solid #E0E0E0 !important;
   color: #424242 !important;

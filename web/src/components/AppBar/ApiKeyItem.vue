@@ -1,7 +1,5 @@
 <template>
   <v-list-item>
-    <!-- "pt-2" leaves room for the text field's floating label, which would
-         otherwise be clipped by the list item's overflow: hidden -->
     <v-list-item-action class="mr-2 pt-2">
       <!-- ".stop" prevents closing the parent v-menu when this is clicked -->
       <v-btn
