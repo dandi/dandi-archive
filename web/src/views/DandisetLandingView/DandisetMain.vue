@@ -28,25 +28,24 @@
             variant="outlined"
             class="mx-2 pl-1"
           >
-            <v-tooltip location="top">
-              <template #activator="{ props }">
-                <v-btn
-                  v-if="currentDandiset !== null"
-                  icon
-                  size="small"
-
-                  v-bind="props"
-                  @click="copy('DOI')"
-                >
-                  <v-icon
-                    size="small"
-                  >
-                    mdi-content-copy
-                  </v-icon>
-                </v-btn>
-              </template>
-              <span>Copy DOI URL to clipboard</span>
-            </v-tooltip>
+            <v-btn
+              icon
+              size="small"
+              density="compact"
+              variant="text"
+              class="mr-1"
+              @click="copy('DOI')"
+            >
+              <v-icon size="small">
+                {{ copied === 'DOI' ? 'mdi-check' : 'mdi-content-copy' }}
+              </v-icon>
+              <v-tooltip
+                activator="parent"
+                location="top"
+              >
+                {{ copied === 'DOI' ? 'Copied!' : 'Copy DOI URL to clipboard' }}
+              </v-tooltip>
+            </v-btn>
             <span>
               DOI:
             </span>
@@ -65,27 +64,24 @@
             style="text-align: center;"
             variant="outlined"
           >
-            <v-tooltip
-              location="top"
+            <v-btn
+              icon
+              size="small"
+              density="compact"
+              variant="text"
+              class="mr-1"
+              @click="copy('dandiID')"
             >
-              <template #activator="{ props }">
-                <v-btn
-                  v-if="currentDandiset !== null"
-                  icon
-                  size="small"
-                  variant="plain"
-                  v-bind="props"
-                  @click="copy('dandiID')"
-                >
-                  <v-icon
-                    size="small"
-                  >
-                    mdi-content-copy
-                  </v-icon>
-                </v-btn>
-              </template>
-              <span>Copy ID to clipboard</span>
-            </v-tooltip>
+              <v-icon size="small">
+                {{ copied === 'dandiID' ? 'mdi-check' : 'mdi-content-copy' }}
+              </v-icon>
+              <v-tooltip
+                activator="parent"
+                location="top"
+              >
+                {{ copied === 'dandiID' ? 'Copied!' : 'Copy ID to clipboard' }}
+              </v-tooltip>
+            </v-btn>
             <span>
               ID: <span class="font-weight-bold">{{ currentDandiset.dandiset.identifier }}</span>
             </span>
@@ -394,12 +390,25 @@ watch(
 function formatDate(date: string): string {
   return moment(date).format('LL');
 }
-function copy(value:string) {
+// Which copy button (if any) just copied successfully, so it can show a
+// check icon and a "Copied!" tooltip for a moment.
+const copied = ref<'DOI' | 'dandiID' | null>(null);
+async function copy(value: 'DOI' | 'dandiID') {
   if (!meta.value) {
     throw new Error('metadata is undefined!');
   }
   const version = meta.value?.version === 'draft' ? meta.value?.identifier as string : meta.value?.id as string;
-  navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/${meta.value?.doi}`);
+  try {
+    await navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/${meta.value?.doi}`);
+    copied.value = value;
+    window.setTimeout(() => {
+      if (copied.value === value) {
+        copied.value = null;
+      }
+    }, 2000);
+  } catch (err) {
+    console.error('Failed to copy:', err);
+  }
 }
 
 watchEffect(async () => {
