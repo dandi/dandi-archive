@@ -15,7 +15,8 @@ def rename_ngff(*, dandiset_id: int | None):
     If DANDISET_ID is provided, only ZarrArchives in that dandiset will be modified.
     Otherwise, every ZarrArchive in the DB is modified.
     """
-    qs = ZarrArchive.objects.filter(name__endswith='.ngff')
+    # Published zarrs (and therefore their assets) are immutable, so must not be renamed
+    qs = ZarrArchive.objects.filter(name__endswith='.ngff', published=False)
 
     # If a dandiset id was provided, filter by that.
     if dandiset_id is not None:

@@ -10,7 +10,8 @@ from dandiapi.zarr.tasks import ingest_zarr_archive
 @admin.register(ZarrArchive)
 class ZarrArchiveAdmin(admin.ModelAdmin):
     search_fields = ['zarr_id', 'name']
-    list_display = ['id', 'zarr_id', 'name', 'dandiset', 'public']
+    list_display = ['id', 'zarr_id', 'name', 'dandiset', 'status', 'published', 'public']
+    list_filter = ['status', 'published']
     list_display_links = ['id', 'zarr_id', 'name']
     actions = ('ingest_zarr_archive',)
 

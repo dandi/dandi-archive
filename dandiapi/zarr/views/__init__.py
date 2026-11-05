@@ -58,6 +58,7 @@ class ZarrArchiveSerializer(serializers.ModelSerializer):
             'checksum',
             'file_count',
             'size',
+            'published',
             'ingestion_deferred_until',
         ]
         fields = ['name', 'dandiset', *read_only_fields]
@@ -102,6 +103,7 @@ class ZarrListSerializer(serializers.ModelSerializer):
             'checksum',
             'file_count',
             'size',
+            'published',
             'ingestion_deferred_until',
         ]
         fields = ['name', 'dandiset', *read_only_fields]
@@ -203,6 +205,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             # Note: Having proper None results in no documentation in /swagger
             204: 'None - expected normal return without any content',
             400: ZarrArchive.INGEST_ERROR_MSG,
+            423: 'The dandiset containing this zarr archive is currently being published',
         },
         operation_summary='Finalize a zarr archive, dispatching async checksum computation.',
         operation_description='',
@@ -216,6 +219,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
+
+            zarr_archive.ensure_modifiable()
 
             # Don't ingest if already ingested/ingesting
             if zarr_archive.status != ZarrArchiveStatus.PENDING:
@@ -326,6 +331,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 raise PermissionDenied
 
+            zarr_archive.ensure_modifiable()
+
             serializer = ZarrFileCreationSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
             paths = serializer.validated_data
@@ -387,7 +394,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     @files.mapping.delete
     def delete_files(self, request, zarr_id):
         """Delete files from a zarr archive."""
-        queryset = self.get_queryset().select_for_update()
+        queryset = self.get_queryset().select_for_update(of=['self'])
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
             # Changes are permitted while UPLOADED (e.g. if ingestion was deferred due to unused
@@ -398,6 +405,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
+
+            zarr_archive.ensure_modifiable()
+
             serializer = ZarrDeleteFileRequestSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
             paths = [file['path'] for file in serializer.validated_data]
