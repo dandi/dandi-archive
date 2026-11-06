@@ -11,19 +11,22 @@ test.describe("dandiset landing page", async () => {
       const version = await response.json();
       // Report a published version with a long title, as in the issue
       version.version = "0.240101.0000";
-      version.name = Array.from({ length: 12 }, () => "Electrophysiological characterization").join(" ");
-      version.metadata = { ...version.metadata, doi };
+      // The landing page renders the title and DOI from `metadata`
+      const name = Array.from({ length: 12 }, () => "Electrophysiological characterization").join(" ");
+      version.metadata = { ...version.metadata, name, doi };
       return route.fulfill({ response, json: version });
     });
 
     await page.setViewportSize({ width: 1280, height: 800 });
+    // The draft URL is used because the test server has no published version; the stub above
+    // makes the page treat it as a published one.
     await page.goto(`${clientUrl}/dandiset/000003/draft`);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Electrophysiological characterization");
 
     const chip = page.locator(".v-chip").filter({ hasText: "DOI:" });
     await expect(chip).toContainText(doi);
     // The chip must be wide enough to show all of its content
-    const clipped = await chip.evaluate((el) => el.scrollWidth - el.clientWidth);
-    expect(clipped).toBeLessThanOrEqual(1);
+    await expect.poll(() => chip.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
   });
 
   test("add an owner to the dandiset", async ({ page, browser }) => {
