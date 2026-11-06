@@ -1889,6 +1889,20 @@ def test_asset_direct_orphaned(api_client, asset):
     assert api_client.get(f'/api/assets/{asset.asset_id}/download/').status_code == 404
 
 
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_asset_direct_multiple_versions(api_client, published_asset):
+    # Unchanged assets are shared by the draft and any published versions
+    draft_version = DraftVersionFactory.create()
+    published_version = PublishedVersionFactory.create(dandiset=draft_version.dandiset)
+    draft_version.assets.add(published_asset)
+    published_version.assets.add(published_asset)
+
+    assert api_client.get(f'/api/assets/{published_asset.asset_id}/').status_code == 200
+    assert api_client.get(f'/api/assets/{published_asset.asset_id}/info/').status_code == 200
+    assert api_client.get(f'/api/assets/{published_asset.asset_id}/download/').status_code == 302
+
+
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     ('glob_pattern', 'expected_paths'),

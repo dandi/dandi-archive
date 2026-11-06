@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, cast
 
 from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.db import transaction
+from django.db.models import Exists, OuterRef
 from django.http import HttpResponse, HttpResponseRedirect
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
@@ -83,8 +84,13 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
             return
 
         asset = get_object_or_404(
-            # Filter out assets that don't have any versions (orphaned assets)
-            Asset.objects.filter(versions__isnull=False).select_related('blob', 'zarr'),
+            # Filter out assets that don't have any versions (orphaned assets).
+            # NOTE: Use a subquery rather than `versions__isnull=False`, as the latter joins the
+            # many-to-many table and yields one row per version, causing `get()` to raise
+            # MultipleObjectsReturned for any asset in multiple versions (e.g. draft + published).
+            Asset.objects.filter(
+                Exists(Version.objects.filter(assets=OuterRef('id')))
+            ).select_related('blob', 'zarr'),
             asset_id=asset_id,
         )
         if not asset.is_embargoed:
