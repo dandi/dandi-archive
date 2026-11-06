@@ -3,6 +3,29 @@ import { clientUrl, registerNewUser, LOGOUT_BUTTON_TEXT, registerDandiset } from
 import { faker } from "@faker-js/faker";
 
 test.describe("dandiset landing page", async () => {
+  test("the DOI chip is not squashed by a long title", async ({ page }) => {
+    // Regression test for https://github.com/dandi/dandi-archive/issues/2989
+    const doi = "10.80507/dandi.000003/0.240101.0000";
+    await page.route(/\/versions\/[^/]+\/info\/$/, async (route) => {
+      const response = await route.fetch();
+      const version = await response.json();
+      // Report a published version with a long title, as in the issue
+      version.version = "0.240101.0000";
+      version.name = Array.from({ length: 12 }, () => "Electrophysiological characterization").join(" ");
+      version.metadata = { ...version.metadata, doi };
+      return route.fulfill({ response, json: version });
+    });
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(`${clientUrl}/dandiset/000003/draft`);
+
+    const chip = page.locator(".v-chip").filter({ hasText: "DOI:" });
+    await expect(chip).toContainText(doi);
+    // The chip must be wide enough to show all of its content
+    const clipped = await chip.evaluate((el) => el.scrollWidth - el.clientWidth);
+    expect(clipped).toBeLessThanOrEqual(1);
+  });
+
   test("add an owner to the dandiset", async ({ page, browser }) => {
     // This test does 2 full user signups, a dandiset registration, and a dialog
     // interaction; under concurrent workers the default 30s budget is too tight.
