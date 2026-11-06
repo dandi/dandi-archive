@@ -33,6 +33,7 @@ from dandiapi.api.tasks import (
     write_manifest_files,
 )
 from dandiapi.zarr.models import ZarrArchiveStatus
+from dandiapi.zarr.tasks import delete_expired_zarr_upload_urls, ingest_deferred_zarr_archives
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -175,6 +176,15 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
         validate_pending_asset_metadata.s(),
         expires=timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL).total_seconds(),
     )
+
+    # Ingest any zarrs whose ingestion was deferred due to outstanding upload URLs
+    sender.add_periodic_task(
+        timedelta(minutes=5),
+        ingest_deferred_zarr_archives.s(),
+        expires=timedelta(minutes=5).total_seconds(),
+    )
+    # Delete records of zarr upload URLs which have expired
+    sender.add_periodic_task(timedelta(hours=1), delete_expired_zarr_upload_urls.s())
 
     # Send daily email to admins containing a list of users awaiting approval
     sender.add_periodic_task(crontab(hour=0, minute=0), send_pending_users_email.s())
