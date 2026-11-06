@@ -66,7 +66,7 @@
                 class="ml-2 mr-3"
               />
               <router-link
-                :to="{ name: 'fileBrowser', query: { location: rootDirectory } }"
+                :to="{ name: 'fileBrowser', params: { identifier, version }, query: { location: rootDirectory } }"
                 exact
                 style="text-decoration: none;"
                 class="mx-2"
@@ -79,7 +79,7 @@
                   /
                   <router-link
                     :key="part"
-                    :to="{ name: 'fileBrowser', query: { location: locationSlice(i) } }"
+                    :to="{ name: 'fileBrowser', params: { identifier, version }, query: { location: locationSlice(i) } }"
                     exact
                     style="text-decoration: none;"
                     class="mx-2"
@@ -131,8 +131,8 @@
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
-                :href="item.asset && !tableViewerRoute(item, route) ? inlineURI(item.asset.asset_id) : undefined"
-                :to="tableViewerRoute(item, route) || (item.asset ? undefined : locationRoute(item.path))"
+                :href="item.asset && !tableViewerRoute(item, route, { identifier, version }) ? inlineURI(item.asset.asset_id) : undefined"
+                :to="tableViewerRoute(item, route, { identifier, version }) || (item.asset ? undefined : locationRoute(item.path))"
                 :active="false"
               >
                 <template #prepend>
@@ -172,8 +172,8 @@
                         <v-btn
                           icon
                           variant="text"
-                          :href="tableViewerRoute(item, route) ? undefined : inlineURI(item.asset.asset_id)"
-                          :to="tableViewerRoute(item, route)"
+                          :href="tableViewerRoute(item, route, { identifier, version }) ? undefined : inlineURI(item.asset.asset_id)"
+                          :to="tableViewerRoute(item, route, { identifier, version })"
                           v-bind="openInBtnProps"
                           @click.stop
                         >
@@ -395,6 +395,7 @@ function locationSlice(index: number) {
 function locationRoute(newLocation: string): RouteLocationRaw {
   return {
     name: 'fileBrowser',
+    params: { identifier: props.identifier, version: props.version },
     query: { location: newLocation, page: '1' },
   } as RouteLocationRaw;
 }
@@ -484,6 +485,9 @@ async function deleteAsset() {
 
 // Update URL if location changes
 watch(location, () => {
+  // This component lingers while navigating away (e.g. browser "back" to the
+  // landing page); don't push the file browser route in that case.
+  if (route.name !== 'fileBrowser') { return; }
   const { location: existingLocation } = route.query;
 
   // Reset page to 1 when location changes
@@ -499,6 +503,7 @@ watch(location, () => {
 
 // go to the directory specified in the URL if it changes
 watch(() => route.query, (newRouteQuery) => {
+  if (route.name !== 'fileBrowser') { return; }
   location.value = (
     Array.isArray(newRouteQuery.location)
       ? newRouteQuery.location[0]
