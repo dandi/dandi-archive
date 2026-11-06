@@ -21,12 +21,12 @@
             :identifier="currentDandiset.dandiset.identifier"
             :initial-star-count="currentDandiset.dandiset.star_count"
             :initial-is-starred="currentDandiset.dandiset.is_starred"
-            class="ml-2"
+            class="ml-2 flex-shrink-0"
           />
           <v-chip
             v-if="currentDandiset.version != 'draft'"
             variant="outlined"
-            class="mx-2 pl-2"
+            class="mx-2 pl-2 flex-shrink-0"
           >
             <v-tooltip location="top">
               <template #activator="{ props }">
