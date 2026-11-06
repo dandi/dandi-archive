@@ -9,9 +9,9 @@
     >
       <v-row>
         <v-col
-          :class="['d-flex align-start justify-space-between py-0', { 'flex-wrap': isXsDisplay }]"
+          :class="['d-flex align-start justify-space-between py-0', { 'flex-wrap': wrapHeaderOnXs }]"
         >
-          <div :class="['title-container d-flex align-center', { 'w-100': isXsDisplay }]">
+          <div :class="['title-container d-flex align-center', { 'w-100': wrapHeaderOnXs }]">
             <h1 :class="`font-weight-light ${isXsDisplay ? 'text-h6' : ''}`">
               <ShareDialog />
               {{ meta.name }}
@@ -324,6 +324,7 @@ const display = useDisplay();
 
 const currentDandiset = computed(() => store.dandiset);
 const isXsDisplay = computed(() => display.xs.value);
+const wrapHeaderOnXs = computed(() => isXsDisplay.value && currentDandiset.value?.version !== 'draft');
 
 const transformFilesize = (size: number) => filesize(size, { round: 1, base: 10, standard: 'si' });
 
