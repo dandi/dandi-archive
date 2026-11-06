@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from datetime import timedelta
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
@@ -99,6 +100,19 @@ class DandiS3MultipartManager(S3MultipartManager):
             },
             ExpiresIn=int(self._url_expiration.total_seconds()),
         )
+
+    def abort_upload(self, object_key: str, upload_id: str) -> None:
+        """
+        Abort an in-progress multipart upload, discarding any parts already uploaded.
+
+        This has no effect on an upload that has already been completed, since completion
+        consumes the upload ID. In that case the object itself is left untouched.
+        """
+        # If this exception is raised, the upload was already completed or aborted
+        with contextlib.suppress(self._client.exceptions.NoSuchUpload):
+            self._client.abort_multipart_upload(
+                Bucket=self._bucket_name, Key=object_key, UploadId=upload_id
+            )
 
     # Forked to accept a "tags" parameter
     def initialize_upload(

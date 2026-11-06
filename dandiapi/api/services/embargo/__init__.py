@@ -41,7 +41,7 @@ def unembargo_dandiset(ds: Dandiset, user: User):
             message=f'Expected dandiset state {Dandiset.EmbargoStatus.UNEMBARGOING}, found {ds.embargo_status}',  # noqa: E501
             http_status_code=500,
         )
-    if ds.uploads.all().exists():
+    if ds.num_active_uploads():
         raise DandisetActiveUploadsError(http_status_code=500)
 
     # Remove tags in S3
@@ -102,7 +102,7 @@ def kickoff_dandiset_unembargo(*, user: User, dandiset: Dandiset):
     if not is_dandiset_owner(dandiset, user):
         raise DandisetOwnerRequiredError
 
-    if dandiset.uploads.count():
+    if dandiset.num_active_uploads():
         raise DandisetActiveUploadsError
 
     with transaction.atomic():

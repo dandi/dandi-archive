@@ -69,8 +69,17 @@ def _ingest_zarr_archive(zarr_id: str, *, force: bool = False):
         zarr = (
             ZarrArchive.objects.select_related('dandiset')
             .select_for_update(of=['self'])
-            .get(zarr_id=zarr_id, status=ZarrArchiveStatus.INGESTING)
+            .get(zarr_id=zarr_id)
         )
+
+        # The zarr may have been marked pending while the checksum was being computed, in which
+        # case that checksum no longer describes the zarr's contents. Discard it and exit; the
+        # zarr must be finalized again to be ingested.
+        if zarr.status != ZarrArchiveStatus.INGESTING:
+            logger.info(
+                'Zarr %s left the INGESTING state during checksum computation. Exiting...', zarr_id
+            )
+            return
 
         # Remove all asset paths associated with this zarr before ingest
         delete_zarr_paths(zarr)

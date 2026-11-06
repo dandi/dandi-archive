@@ -20,14 +20,26 @@ from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import DandisetIdentifierField
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, validate_zarr_path
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadType, validate_zarr_path
 from dandiapi.zarr.tasks import ingest_zarr_archive
+from dandiapi.zarr.views.upload import (
+    zarr_upload_complete_view,
+    zarr_upload_initialize_view,
+    zarr_upload_validate_view,
+)
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AnonymousUser, User
     from django.db.models.query import QuerySet
 
 logger = logging.getLogger(__name__)
+
+__all__ = [
+    'ZarrViewSet',
+    'zarr_upload_complete_view',
+    'zarr_upload_initialize_view',
+    'zarr_upload_validate_view',
+]
 
 
 class ZarrFileCreationSerializer(serializers.Serializer):
@@ -49,7 +61,13 @@ class ZarrArchiveSerializer(serializers.ModelSerializer):
             'file_count',
             'size',
         ]
-        fields = ['name', 'dandiset', *read_only_fields]
+        fields = ['name', 'dandiset', 'upload_type', *read_only_fields]
+
+    # `upload_type` is settable at creation (default singlepart) but fixed thereafter, since the
+    # zarr's upload scheme cannot change without a full re-upload.
+    upload_type = serializers.ChoiceField(
+        choices=ZarrUploadType.choices, default=ZarrUploadType.SINGLEPART
+    )
 
     dandiset = serializers.PrimaryKeyRelatedField(
         queryset=Dandiset.objects.all(),
@@ -91,6 +109,7 @@ class ZarrListSerializer(serializers.ModelSerializer):
             'checksum',
             'file_count',
             'size',
+            'upload_type',
         ]
         fields = ['name', 'dandiset', *read_only_fields]
 
@@ -190,7 +209,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         responses={
             # Note: Having proper None results in no documentation in /swagger
             204: 'None - expected normal return without any content',
-            400: ZarrArchive.INGEST_ERROR_MSG,
+            400: f'{ZarrArchive.INGEST_ERROR_MSG}, or {ZarrArchive.ACTIVE_UPLOADS_ERROR_MSG}',
         },
         operation_summary='Finalize a zarr archive, dispatching async checksum computation.',
         operation_description='',
@@ -209,6 +228,12 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if zarr_archive.status != ZarrArchiveStatus.PENDING:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
+            # Don't ingest while uploads are still outstanding.
+            if zarr_archive.uploads.exists():
+                return Response(
+                    ZarrArchive.ACTIVE_UPLOADS_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST
+                )
+
             zarr_archive.status = ZarrArchiveStatus.UPLOADED
             zarr_archive.save()
 
@@ -218,6 +243,40 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
         # Dispatch task
         ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id)
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        method='DELETE',
+        request_body=no_body,
+        responses={
+            204: 'None - expected normal return without any content',
+        },
+        operation_summary='Abort all multipart uploads to a zarr archive.',
+        operation_description='',
+    )
+    @action(methods=['DELETE'], url_path='uploads', detail=True)
+    def delete_uploads(self, request, zarr_id):
+        """
+        Abort all multipart uploads to a zarr archive.
+
+        This discards any parts that have been uploaded and releases the uploads' claim on the
+        zarr, so that the zarr can be finalized without waiting for them to be garbage collected.
+        """
+        zarr_archive: ZarrArchive = get_object_or_404(self.get_queryset(), zarr_id=zarr_id)
+        if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
+            raise PermissionDenied
+
+        # The zarr row is deliberately not locked, so that it doesn't remain locked during the
+        # network calls below. An upload initialized concurrently with this request may survive
+        # it, which is no different than one initialized just after.
+        uploads = list(zarr_archive.uploads.all())
+        for upload in uploads:
+            # Abort before deleting the record, so that if it fails the DB record still exists.
+            upload.abort()
+            upload.delete()
+
+        logger.info('Aborted %d uploads for zarr %s', len(uploads), zarr_archive.zarr_id)
+
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
@@ -307,6 +366,14 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
             if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+
+            # This endpoint uploads chunks via single-part PUT. A multipart zarr's chunks must
+            # be uploaded through the multipart flow, or its checksum cannot be reconciled.
+            if zarr_archive.upload_type != ZarrUploadType.SINGLEPART:
+                return Response(
+                    'This zarr archive requires multipart upload.',
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             # Deny if the user doesn't have ownership permission
             if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
