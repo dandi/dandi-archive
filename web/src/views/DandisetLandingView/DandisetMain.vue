@@ -9,9 +9,9 @@
     >
       <v-row>
         <v-col
-          class="d-flex align-start justify-space-between py-0"
+          :class="['d-flex align-start justify-space-between py-0', { 'flex-wrap': wrapHeaderOnXs }]"
         >
-          <div class="title-container d-flex align-center">
+          <div :class="['title-container d-flex align-center', { 'w-100': wrapHeaderOnXs }]">
             <h1 :class="`font-weight-light ${isXsDisplay ? 'text-h6' : ''}`">
               <ShareDialog />
               {{ meta.name }}
@@ -21,12 +21,13 @@
             :identifier="currentDandiset.dandiset.identifier"
             :initial-star-count="currentDandiset.dandiset.star_count"
             :initial-is-starred="currentDandiset.dandiset.is_starred"
-            class="ml-2"
+            class="ml-2 flex-shrink-0"
           />
           <v-chip
             v-if="currentDandiset.version != 'draft'"
             variant="outlined"
-            class="mx-2 pl-2"
+            :size="isXsDisplay ? 'small' : undefined"
+            :class="['pl-2 flex-shrink-0', isXsDisplay ? 'ml-0 mr-2 mt-2' : 'mx-2']"
           >
             <v-tooltip location="top">
               <template #activator="{ props }">
@@ -323,6 +324,7 @@ const display = useDisplay();
 
 const currentDandiset = computed(() => store.dandiset);
 const isXsDisplay = computed(() => display.xs.value);
+const wrapHeaderOnXs = computed(() => isXsDisplay.value && currentDandiset.value?.version !== 'draft');
 
 const transformFilesize = (size: number) => filesize(size, { round: 1, base: 10, standard: 'si' });
 
