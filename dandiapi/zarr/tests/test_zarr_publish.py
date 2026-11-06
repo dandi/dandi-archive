@@ -275,3 +275,22 @@ def test_zarr_create_same_name_as_published(api_client: APIClient):
     # Only one unpublished zarr with a given name may exist
     resp = api_client.post('/api/zarr/', payload)
     assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_zarr_list_filter_published(api_client: APIClient):
+    published_zarr = _published_zarr()
+    unpublished_zarr = ZarrArchiveFactory.create(
+        dandiset=published_zarr.dandiset, name=published_zarr.name
+    )
+    params = {'dandiset': published_zarr.dandiset.identifier, 'name': published_zarr.name}
+
+    def list_zarr_ids(**extra_params) -> list[str]:
+        resp = api_client.get('/api/zarr/', {**params, **extra_params})
+        assert resp.status_code == 200
+        return [zarr['zarr_id'] for zarr in resp.json()['results']]
+
+    # Without the filter, both zarrs with this name are returned
+    assert list_zarr_ids() == [str(published_zarr.zarr_id), str(unpublished_zarr.zarr_id)]
+    assert list_zarr_ids(published='false') == [str(unpublished_zarr.zarr_id)]
+    assert list_zarr_ids(published='true') == [str(published_zarr.zarr_id)]

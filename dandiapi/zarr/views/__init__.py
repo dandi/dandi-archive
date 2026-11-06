@@ -24,6 +24,8 @@ from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import DandisetIdentifierField
 from dandiapi.zarr.models import (
     ZarrArchive,
+    ZarrArchiveDandisetPublishingError,
+    ZarrArchivePublishedError,
     ZarrArchiveStatus,
     ZarrUploadURL,
     validate_base64_md5,
@@ -135,6 +137,10 @@ class ZarrExploreOutputSerializer(serializers.Serializer):
 class ZarrListQuerySerializer(serializers.Serializer):
     dandiset = DandisetIdentifierField(required=False)
     name = serializers.CharField(required=False)
+    # Since multiple published zarrs may share a name, this allows finding the single unpublished
+    # zarr with a given name. The default is necessary, as an omitted boolean query parameter
+    # would otherwise be treated as false.
+    published = serializers.BooleanField(required=False, allow_null=True, default=None)
 
 
 class ZarrViewSet(ReadOnlyModelViewSet):
@@ -167,6 +173,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             queryset = queryset.filter(dandiset=data['dandiset'])
         if 'name' in data:
             queryset = queryset.filter(name=data['name'])
+        if data['published'] is not None:
+            queryset = queryset.filter(published=data['published'])
 
         # Final response
         queryset = self.paginate_queryset(queryset)
@@ -204,8 +212,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         responses={
             # Note: Having proper None results in no documentation in /swagger
             204: 'None - expected normal return without any content',
-            400: ZarrArchive.INGEST_ERROR_MSG,
-            423: 'The dandiset containing this zarr archive is currently being published',
+            400: f'{ZarrArchive.INGEST_ERROR_MSG}, or {ZarrArchivePublishedError.message}',
+            423: ZarrArchiveDandisetPublishingError.message,
         },
         operation_summary='Finalize a zarr archive, dispatching async checksum computation.',
         operation_description='',
@@ -311,7 +319,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         request_body=ZarrFileCreationSerializer(),
         responses={
             200: ZarrFileCreationSerializer,
-            400: ZarrArchive.INGEST_ERROR_MSG,
+            400: f'{ZarrArchive.INGEST_ERROR_MSG}, or {ZarrArchivePublishedError.message}',
+            423: ZarrArchiveDandisetPublishingError.message,
         },
         operation_summary='Request to upload files to a zarr archive.',
         operation_description='',
@@ -387,7 +396,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         request_body=ZarrDeleteFileRequestSerializer(many=True),
         responses={
             200: ZarrArchiveSerializer(many=True),
-            400: ZarrArchive.INGEST_ERROR_MSG,
+            400: f'{ZarrArchive.INGEST_ERROR_MSG}, or {ZarrArchivePublishedError.message}',
+            423: ZarrArchiveDandisetPublishingError.message,
         },
         operation_summary='Delete files from a zarr archive.',
     )
