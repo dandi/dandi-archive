@@ -116,18 +116,20 @@ def _ingest_zarr_archive(zarr_id: str, *, force: bool = False):
         # Defer ingestion until these URLs have expired, at which point the zarr will be picked
         # up by `ingest_deferred_zarr_archives`. A zarr which was force ingested while PENDING is
         # returned to that state, so that the upload may continue.
+        deferred_until = max(unsafe_url_expirations)
         logger.info(
             'Zarr %s has %d unused or superseded upload URLs. Deferring ingestion until %s.',
             zarr_id,
             len(unsafe_url_expirations),
-            max(unsafe_url_expirations).isoformat(),
+            deferred_until.isoformat(),
+        )
+        deferred_fields: dict = (
+            {'status': ZarrArchiveStatus.PENDING}
+            if previous_status == ZarrArchiveStatus.PENDING
+            else {'status': ZarrArchiveStatus.UPLOADED, 'ingestion_deferred_until': deferred_until}
         )
         ZarrArchive.objects.filter(zarr_id=zarr_id, status=ZarrArchiveStatus.INGESTING).update(
-            status=(
-                ZarrArchiveStatus.PENDING
-                if previous_status == ZarrArchiveStatus.PENDING
-                else ZarrArchiveStatus.UPLOADED
-            )
+            **deferred_fields
         )
         return
 
@@ -147,6 +149,7 @@ def _ingest_zarr_archive(zarr_id: str, *, force: bool = False):
         zarr.file_count = checksum.count
         zarr.size = checksum.size
         zarr.status = ZarrArchiveStatus.COMPLETE
+        zarr.ingestion_deferred_until = None
         zarr.save()
 
         # Add asset paths after ingest is finished

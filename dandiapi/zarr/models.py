@@ -135,6 +135,10 @@ class ZarrArchive(TimeStampedModel):
     )
     # Once set (during dandiset publish), the contents of this zarr archive may never change.
     published = models.BooleanField(default=False)
+    # If ingestion was deferred due to upload URLs which could still modify this zarr, the time at
+    # which they expire, and ingestion will be retried. Uploading the content those URLs were
+    # issued for allows ingestion to proceed immediately instead.
+    ingestion_deferred_until = models.DateTimeField(null=True, blank=True, default=None)
 
     @property
     def embargoed(self):
@@ -184,6 +188,7 @@ class ZarrArchive(TimeStampedModel):
             raise ZarrArchivePublishedError
         self.checksum = None
         self.status = ZarrArchiveStatus.PENDING
+        self.ingestion_deferred_until = None
         self.file_count = 0
         self.size = 0
 

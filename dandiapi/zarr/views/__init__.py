@@ -59,6 +59,7 @@ class ZarrArchiveSerializer(serializers.ModelSerializer):
             'file_count',
             'size',
             'published',
+            'ingestion_deferred_until',
         ]
         fields = ['name', 'dandiset', *read_only_fields]
 
@@ -103,6 +104,7 @@ class ZarrListSerializer(serializers.ModelSerializer):
             'file_count',
             'size',
             'published',
+            'ingestion_deferred_until',
         ]
         fields = ['name', 'dandiset', *read_only_fields]
 
@@ -320,7 +322,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update(of=['self'])
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
+            # Changes are permitted while UPLOADED (e.g. if ingestion was deferred due to unused
+            # upload URLs). Returning the zarr to PENDING causes any queued ingestion to exit.
+            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             # Deny if the user doesn't have ownership permission
@@ -393,7 +397,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update(of=['self'])
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
+            # Changes are permitted while UPLOADED (e.g. if ingestion was deferred due to unused
+            # upload URLs). Returning the zarr to PENDING causes any queued ingestion to exit.
+            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
