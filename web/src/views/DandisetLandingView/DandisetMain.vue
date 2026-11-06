@@ -9,9 +9,9 @@
     >
       <v-row>
         <v-col
-          class="d-flex align-start justify-space-between py-0"
+          :class="['d-flex align-start justify-space-between py-0', { 'flex-wrap': isXsDisplay }]"
         >
-          <div class="title-container d-flex align-center">
+          <div :class="['title-container d-flex align-center', { 'w-100': isXsDisplay }]">
             <h1 :class="`font-weight-light ${isXsDisplay ? 'text-h6' : ''}`">
               <ShareDialog />
               {{ meta.name }}
@@ -26,7 +26,8 @@
           <v-chip
             v-if="currentDandiset.version != 'draft'"
             variant="outlined"
-            class="mx-2 pl-2 flex-shrink-0"
+            :size="isXsDisplay ? 'small' : undefined"
+            :class="['pl-2 flex-shrink-0', isXsDisplay ? 'ml-0 mr-2 mt-2' : 'mx-2']"
           >
             <v-tooltip location="top">
               <template #activator="{ props }">
