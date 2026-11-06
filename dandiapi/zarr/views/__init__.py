@@ -3,8 +3,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.http import HttpResponseRedirect
+from django.utils import timezone
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
 from rest_framework.decorators import action
@@ -20,10 +22,20 @@ from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import DandisetIdentifierField
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, validate_zarr_path
+from dandiapi.zarr.models import (
+    ZarrArchive,
+    ZarrArchiveDandisetPublishingError,
+    ZarrArchivePublishedError,
+    ZarrArchiveStatus,
+    ZarrUploadURL,
+    validate_base64_md5,
+    validate_zarr_path,
+)
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 if TYPE_CHECKING:
+    from datetime import timedelta
+
     from django.contrib.auth.models import AnonymousUser, User
     from django.db.models.query import QuerySet
 
@@ -32,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 class ZarrFileCreationSerializer(serializers.Serializer):
     path = serializers.CharField(validators=[validate_zarr_path])
-    base64md5 = serializers.CharField()
+    base64md5 = serializers.CharField(validators=[validate_base64_md5])
 
 
 class ZarrDeleteFileRequestSerializer(serializers.Serializer):
@@ -48,6 +60,8 @@ class ZarrArchiveSerializer(serializers.ModelSerializer):
             'checksum',
             'file_count',
             'size',
+            'published',
+            'ingestion_deferred_until',
         ]
         fields = ['name', 'dandiset', *read_only_fields]
 
@@ -91,6 +105,8 @@ class ZarrListSerializer(serializers.ModelSerializer):
             'checksum',
             'file_count',
             'size',
+            'published',
+            'ingestion_deferred_until',
         ]
         fields = ['name', 'dandiset', *read_only_fields]
 
@@ -121,6 +137,10 @@ class ZarrExploreOutputSerializer(serializers.Serializer):
 class ZarrListQuerySerializer(serializers.Serializer):
     dandiset = DandisetIdentifierField(required=False)
     name = serializers.CharField(required=False)
+    # Since multiple published zarrs may share a name, this allows finding the single unpublished
+    # zarr with a given name. The default is necessary, as an omitted boolean query parameter
+    # would otherwise be treated as false.
+    published = serializers.BooleanField(required=False, allow_null=True, default=None)
 
 
 class ZarrViewSet(ReadOnlyModelViewSet):
@@ -153,6 +173,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             queryset = queryset.filter(dandiset=data['dandiset'])
         if 'name' in data:
             queryset = queryset.filter(name=data['name'])
+        if data['published'] is not None:
+            queryset = queryset.filter(published=data['published'])
 
         # Final response
         queryset = self.paginate_queryset(queryset)
@@ -190,7 +212,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         responses={
             # Note: Having proper None results in no documentation in /swagger
             204: 'None - expected normal return without any content',
-            400: ZarrArchive.INGEST_ERROR_MSG,
+            400: f'{ZarrArchive.INGEST_ERROR_MSG}, or {ZarrArchivePublishedError.message}',
+            423: ZarrArchiveDandisetPublishingError.message,
         },
         operation_summary='Finalize a zarr archive, dispatching async checksum computation.',
         operation_description='',
@@ -204,6 +227,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
+
+            zarr_archive.ensure_modifiable()
 
             # Don't ingest if already ingested/ingesting
             if zarr_archive.status != ZarrArchiveStatus.PENDING:
@@ -294,7 +319,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         request_body=ZarrFileCreationSerializer(),
         responses={
             200: ZarrFileCreationSerializer,
-            400: ZarrArchive.INGEST_ERROR_MSG,
+            400: f'{ZarrArchive.INGEST_ERROR_MSG}, or {ZarrArchivePublishedError.message}',
+            423: ZarrArchiveDandisetPublishingError.message,
         },
         operation_summary='Request to upload files to a zarr archive.',
         operation_description='',
@@ -305,12 +331,16 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update(of=['self'])
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
+            # Changes are permitted while UPLOADED (e.g. if ingestion was deferred due to unused
+            # upload URLs). Returning the zarr to PENDING causes any queued ingestion to exit.
+            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             # Deny if the user doesn't have ownership permission
             if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 raise PermissionDenied
+
+            zarr_archive.ensure_modifiable()
 
             serializer = ZarrFileCreationSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
@@ -318,9 +348,11 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
             # Generate presigned urls
             logger.info('Beginning upload to zarr archive %s', zarr_archive.zarr_id)
+            expiration: timedelta = settings.DANDI_ZARR_UPLOAD_URL_EXPIRATION
             urls = [
                 zarr_archive.storage.generate_presigned_put_object_url(
                     zarr_archive.s3_path(o['path']),
+                    expire=int(expiration.total_seconds()),
                     content_md5=o['base64md5'],
                     tags={'embargoed': 'true'} if zarr_archive.embargoed else None,
                 )
@@ -330,6 +362,22 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             # Set status back to pending, since with these URLs the zarr could have been changed
             zarr_archive.mark_pending()
             zarr_archive.save()
+
+            # Record the issued URLs, so that ingestion can verify none of them can still change
+            # the zarr. The expiration is computed after signing, so that it's never earlier than
+            # the actual expiration of any URL.
+            expires_at = timezone.now() + expiration
+            ZarrUploadURL.objects.bulk_create(
+                [
+                    ZarrUploadURL(
+                        zarr_archive=zarr_archive,
+                        path=zarr_archive.relative_s3_path(o['path']),
+                        md5=ZarrUploadURL.base64_md5_to_hex(o['base64md5']),
+                        expires_at=expires_at,
+                    )
+                    for o in paths
+                ]
+            )
 
             audit.upload_zarr_chunks(
                 dandiset=zarr_archive.dandiset,
@@ -348,22 +396,28 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         request_body=ZarrDeleteFileRequestSerializer(many=True),
         responses={
             200: ZarrArchiveSerializer(many=True),
-            400: ZarrArchive.INGEST_ERROR_MSG,
+            400: f'{ZarrArchive.INGEST_ERROR_MSG}, or {ZarrArchivePublishedError.message}',
+            423: ZarrArchiveDandisetPublishingError.message,
         },
         operation_summary='Delete files from a zarr archive.',
     )
     @files.mapping.delete
     def delete_files(self, request, zarr_id):
         """Delete files from a zarr archive."""
-        queryset = self.get_queryset().select_for_update()
+        queryset = self.get_queryset().select_for_update(of=['self'])
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
+            # Changes are permitted while UPLOADED (e.g. if ingestion was deferred due to unused
+            # upload URLs). Returning the zarr to PENDING causes any queued ingestion to exit.
+            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
+
+            zarr_archive.ensure_modifiable()
+
             serializer = ZarrDeleteFileRequestSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
             paths = [file['path'] for file in serializer.validated_data]

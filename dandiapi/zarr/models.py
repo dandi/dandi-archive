@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import base64
+import binascii
 import logging
+from pathlib import PurePosixPath
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -8,9 +11,12 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
+from rest_framework import status
 from rest_framework.exceptions import ValidationError
+from storages.utils import clean_name
 
-from dandiapi.api.models import Dandiset
+from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.services.exceptions import DandiError
 
 if TYPE_CHECKING:
     from dandiapi.storage import DandiS3Storage
@@ -45,6 +51,33 @@ def validate_zarr_path(path: str) -> str:
     return path
 
 
+def validate_base64_md5(value: str) -> str:
+    """Ensure a value is a base64 encoded MD5 digest, as used in a Content-MD5 header."""
+    try:
+        digest = base64.b64decode(value, validate=True)
+    except binascii.Error as e:
+        raise ValidationError('Not a valid base64 encoded MD5 digest.') from e
+    if len(digest) != 16:
+        raise ValidationError('Not a valid base64 encoded MD5 digest.')
+    return value
+
+
+class ZarrArchivePublishedError(DandiError):
+    http_status_code = status.HTTP_400_BAD_REQUEST
+    message = (
+        'This zarr archive has been published and can no longer be modified. '
+        'To make changes, re-upload the data as a new zarr archive.'
+    )
+
+
+class ZarrArchiveDandisetPublishingError(DandiError):
+    http_status_code = status.HTTP_423_LOCKED
+    message = (
+        'The dandiset containing this zarr archive is currently being published. '
+        'Please try again once publishing has completed.'
+    )
+
+
 # The status of the zarr ingestion (checksums, size, file count)
 class ZarrArchiveStatus(models.TextChoices):
     PENDING = 'Pending'
@@ -62,9 +95,18 @@ class ZarrArchive(TimeStampedModel):
         ordering = ['created']
         get_latest_by = 'modified'
         constraints = [
+            # With this constraint in place, each version is guaranteed to contain uniquely named
+            # zarrs, but the same name can exist across multiple versions. This makes sense in the
+            # case where a zarr needs to be modified after publish, and thus must be re-uploaded to
+            # the same dandiset again, since published zarrs are immutable.
             models.UniqueConstraint(
-                name='%(app_label)s-%(class)s-unique-name',
+                name='%(app_label)s-%(class)s-unique-unpublished-name',
                 fields=['dandiset', 'name'],
+                condition=models.Q(published=False),
+            ),
+            models.CheckConstraint(
+                name='%(app_label)s-%(class)s-published-is-complete',
+                condition=models.Q(published=False) | models.Q(status=ZarrArchiveStatus.COMPLETE),
             ),
             models.CheckConstraint(
                 name='%(app_label)s-%(class)s-consistent-checksum-status',
@@ -91,6 +133,12 @@ class ZarrArchive(TimeStampedModel):
         choices=ZarrArchiveStatus,
         default=ZarrArchiveStatus.PENDING,
     )
+    # Once set (during dandiset publish), the contents of this zarr archive may never change.
+    published = models.BooleanField(default=False)
+    # If ingestion was deferred due to upload URLs which could still modify this zarr, the time at
+    # which they expire, and ingestion will be retried. Uploading the content those URLs were
+    # issued for allows ingestion to proceed immediately instead.
+    ingestion_deferred_until = models.DateTimeField(null=True, blank=True, default=None)
 
     @property
     def embargoed(self):
@@ -108,9 +156,39 @@ class ZarrArchive(TimeStampedModel):
         """Generate a full S3 object path from a path in this zarr_archive."""
         return zarr_s3_path(str(self.zarr_id), zarr_path)
 
+    def relative_s3_path(self, zarr_path: str) -> str:
+        """
+        Return the path of a file in this zarr archive, exactly as it will be listed from S3.
+
+        User-supplied paths are normalized when converted to an S3 key, so this mirrors that
+        normalization, as well as the conversion back to a relative path performed by
+        ``zarr_checksum.generators.yield_files_s3``.
+        """
+        return str(PurePosixPath(clean_name(self.s3_path(zarr_path))).relative_to(self.s3_path('')))
+
+    def ensure_modifiable(self) -> None:
+        """
+        Raise an error if this zarr archive may not be modified.
+
+        The caller should hold a row lock on this zarr archive (``select_for_update``), so that
+        the check can't race with the dandiset publish process, which locks zarr archives
+        before checking or changing the draft version status.
+        """
+        if self.published:
+            raise ZarrArchivePublishedError
+        if Version.objects.filter(
+            dandiset_id=self.dandiset_id,
+            version='draft',
+            status=Version.Status.PUBLISHING,
+        ).exists():
+            raise ZarrArchiveDandisetPublishingError
+
     def mark_pending(self):
+        if self.published:
+            raise ZarrArchivePublishedError
         self.checksum = None
         self.status = ZarrArchiveStatus.PENDING
+        self.ingestion_deferred_until = None
         self.file_count = 0
         self.size = 0
 
@@ -124,3 +202,35 @@ class ZarrArchive(TimeStampedModel):
         # Files deleted, mark pending
         self.mark_pending()
         self.save()
+
+
+class ZarrUploadURL(models.Model):
+    """
+    A presigned upload URL issued for a file in a zarr archive.
+
+    Presigned URLs can't be revoked, so they remain usable until they expire, even after the
+    zarr archive has been ingested or published. However, each URL is signed with the MD5 of the
+    file's content, and can therefore only ever write that exact content to that exact path. A URL
+    is harmless as long as the file at its path already has that content, as using it again would
+    not change anything. Tracking issued URLs allows ingestion to verify this, ensuring that a
+    zarr archive's contents can't change once it's marked as COMPLETE.
+    """
+
+    zarr_archive = models.ForeignKey(
+        ZarrArchive, related_name='upload_urls', on_delete=models.CASCADE
+    )
+    # The path of the file, relative to the zarr root, as returned by `relative_s3_path`
+    path = models.TextField()
+    # The hex encoded MD5 of the content this URL permits uploading, comparable to an S3 ETag
+    md5 = models.CharField(max_length=32)
+    expires_at = models.DateTimeField(db_index=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['zarr_archive', 'expires_at'])]
+
+    def __str__(self) -> str:
+        return f'{self.zarr_archive.zarr_id}/{self.path}'
+
+    @staticmethod
+    def base64_md5_to_hex(base64md5: str) -> str:
+        return base64.b64decode(base64md5).hex()
