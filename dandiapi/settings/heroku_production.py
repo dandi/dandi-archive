@@ -12,7 +12,11 @@ from .production import *
 
 # This needs to be set by the HTTPS terminating reverse proxy.
 # Heroku and Render automatically set this.
+<<<<<<< before updating
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+=======
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+>>>>>>> after updating
 
 # Inform rate limiting that "X-Forwarded-For" should be trusted, as it's appended by Heroku.
 ALLAUTH_TRUSTED_PROXY_COUNT = 1
