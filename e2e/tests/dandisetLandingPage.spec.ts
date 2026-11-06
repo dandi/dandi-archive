@@ -26,7 +26,11 @@ test.describe("dandiset landing page", async () => {
     const chip = page.locator(".v-chip").filter({ hasText: "DOI:" });
     await expect(chip).toContainText(doi);
     // The chip must be wide enough to show all of its content
-    await expect.poll(() => chip.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+    // (Vuetify clips inside `.v-chip__content`, so check both it and the chip itself.)
+    await expect.poll(() => chip.evaluate((el) => {
+      const content = el.querySelector(".v-chip__content") ?? el;
+      return Math.max(el.scrollWidth - el.clientWidth, content.scrollWidth - content.clientWidth);
+    })).toBeLessThanOrEqual(1);
   });
 
   test("add an owner to the dandiset", async ({ page, browser }) => {
