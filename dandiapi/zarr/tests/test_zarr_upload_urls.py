@@ -229,3 +229,73 @@ def test_delete_expired_zarr_upload_urls():
     delete_expired_zarr_upload_urls()
 
     assert list(ZarrUploadURL.objects.all()) == [active]
+
+
+@pytest.mark.django_db
+def test_zarr_ingest_deferred_until(owner_client: APIClient, zarr_archive: ZarrArchive):
+    _request_upload_urls(owner_client, zarr_archive, {'unused': b'a'})
+    expires_at = zarr_archive.upload_urls.get().expires_at
+
+    _finalize(owner_client, zarr_archive)
+    assert zarr_archive.status == ZarrArchiveStatus.UPLOADED
+    assert zarr_archive.ingestion_deferred_until == expires_at
+
+    resp = owner_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
+    assert resp.json()['ingestion_deferred_until'] == expires_at.isoformat().replace('+00:00', 'Z')
+
+    # Once ingestion completes, the deferral is cleared
+    _expire_upload_urls(zarr_archive)
+    ingest_deferred_zarr_archives()
+    zarr_archive.refresh_from_db()
+    assert zarr_archive.status == ZarrArchiveStatus.COMPLETE
+    assert zarr_archive.ingestion_deferred_until is None
+
+
+@pytest.mark.django_db
+def test_zarr_deferred_upload_resumed(owner_client: APIClient, zarr_archive: ZarrArchive):
+    """An incomplete upload can be resumed, after which ingestion proceeds immediately."""
+    files = {'used': b'a', 'unused': b'b'}
+    urls = _request_upload_urls(owner_client, zarr_archive, files)
+    _upload(urls['used'], files['used'])
+    _finalize(owner_client, zarr_archive)
+    assert zarr_archive.status == ZarrArchiveStatus.UPLOADED
+
+    # Resuming the upload returns the zarr to PENDING
+    new_url = _request_upload_urls(owner_client, zarr_archive, {'unused': files['unused']})
+    zarr_archive.refresh_from_db()
+    assert zarr_archive.status == ZarrArchiveStatus.PENDING
+    assert zarr_archive.ingestion_deferred_until is None
+
+    # Uploading the missing content makes the original URL harmless, without waiting for it
+    _upload(new_url['unused'], files['unused'])
+    _finalize(owner_client, zarr_archive)
+    assert zarr_archive.status == ZarrArchiveStatus.COMPLETE
+    assert zarr_archive.file_count == 2
+
+
+@pytest.mark.django_db
+def test_zarr_deferred_delete_files(owner_client: APIClient, zarr_archive: ZarrArchive):
+    urls = _request_upload_urls(owner_client, zarr_archive, {'used': b'a', 'unused': b'b'})
+    _upload(urls['used'], b'a')
+    _finalize(owner_client, zarr_archive)
+    assert zarr_archive.status == ZarrArchiveStatus.UPLOADED
+
+    resp = owner_client.delete(f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': 'used'}])
+    assert resp.status_code == 204
+    zarr_archive.refresh_from_db()
+    assert zarr_archive.status == ZarrArchiveStatus.PENDING
+
+
+@pytest.mark.django_db
+def test_zarr_upload_rejected_while_ingesting(owner_client: APIClient, owner):
+    zarr_archive = ZarrArchiveFactory.create(
+        dandiset__owners=[owner], status=ZarrArchiveStatus.INGESTING
+    )
+
+    resp = owner_client.post(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
+        [{'path': 'foo', 'base64md5': _base64md5(b'a')}],
+    )
+    assert resp.status_code == 400
+    resp = owner_client.delete(f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': 'foo'}])
+    assert resp.status_code == 400
