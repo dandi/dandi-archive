@@ -6,7 +6,7 @@ const devDandisetId = "000003";
 test.describe("File browser page", async () => {
   test("there is a file browser", async ({ page }) => {
     await page.goto(`${clientUrl}/#/dandiset/${devDandisetId}`);
-    await page.getByRole("link", { name: "Files" }).click()
+    await page.getByRole("link", { name: "Files", exact: true }).click()
 
     // Ensure the page has loaded with a folder
     await expect(page.getByText("foo")).toHaveCount(1);
@@ -23,14 +23,14 @@ test.describe("File browser page", async () => {
     const landingUrl = `${clientUrl}/dandiset/${devDandisetId}`;
     await page.goto(landingUrl);
     await expect(page).toHaveURL(landingUrl); // must stay versionless for this regression
-    await page.getByRole("link", { name: "Files" }).click();
+    await page.getByRole("link", { name: "Files", exact: true }).click();
     await expect(page).toHaveURL(/\/files/);
     await expect(page.getByText("foo")).toHaveCount(1);
 
     await page.goBack();
     await expect(page).toHaveURL(landingUrl);
-    await expect(page.getByText("foo")).toHaveCount(0); // file browser is gone
-    await expect(page.getByRole("link", { name: "Files" })).toBeVisible();
+    await expect(page.getByText("foo", { exact: true })).toHaveCount(0); // file browser is gone
+    await expect(page.getByRole("link", { name: "Files", exact: true })).toBeVisible();
     await page.waitForTimeout(250); // let any post-flush error surface
 
     expect(errors.filter((m) => m.includes("Missing required param"))).toEqual([]);
