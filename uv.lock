@@ -641,14 +641,11 @@ wheels = [
 
 [[package]]
 name = "click"
-version = "8.1.8"
+version = "8.5.0"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b9/2e/0090cbf739cee7d23781ad4b89a9894a41538e4fcf4c31dcdd705b78eb8b/click-8.1.8.tar.gz", hash = "sha256:ed53c9d8990d83c2a27deae68e4ee337473f6330c040a31d4225c9574d16096a", size = 226593, upload-time = "2024-12-21T18:38:44.339Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/0e/7fa0ef50764b67090eca4114772a2abf8b6148198475e54c660b97caeee6/click-8.5.0.tar.gz", hash = "sha256:ba0d2089de75ea0310e2dde03160e6ca10009947fb95a182f9b54021bb272e34", size = 382235, upload-time = "2026-08-26T13:33:14.56Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7e/d4/7ebdbd03970677812aac39c869717059dbb71a4cfc033ca6e5221787892c/click-8.1.8-py3-none-any.whl", hash = "sha256:63c132bbbed01578a06712a2d1f497bb62d9c1c0d329b7903a866228027263b2", size = 98188, upload-time = "2024-12-21T18:38:41.666Z" },
+    { url = "https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl", hash = "sha256:255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360", size = 125251, upload-time = "2026-08-26T13:33:12.928Z" },
 ]
 
 [[package]]
@@ -842,7 +839,7 @@ wheels = [
 
 [[package]]
 name = "dandi"
-version = "0.74.3"
+version = "0.81.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bids-validator-deno" },
@@ -878,9 +875,9 @@ dependencies = [
     { name = "zarr" },
     { name = "zarr-checksum" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/63/058c64e3e9402d5da145be8dcaacf1803df735d72a5e1db63d63dc0249af/dandi-0.74.3.tar.gz", hash = "sha256:675a8ff978f044ed5532cb55b18ab40e5f0c291ea73d57d5d31930315cba4ebf", size = 369716, upload-time = "2026-02-14T03:30:56.29Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/f4/7153d6c019eed5e41a918d42ae14b2283527e37e8223e0160cba513b8533/dandi-0.81.0.tar.gz", hash = "sha256:75c294880a226df0e7bf3daf3ad6e9030d7fd9df0f82c5b72f234e28c6af45c7", size = 431050, upload-time = "2026-09-30T20:52:40.809Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ef/e9/b2803835dad7f13c5ab01896c95d868bf8eafc014b633af64bb3e3cd845c/dandi-0.74.3-py3-none-any.whl", hash = "sha256:2b1d5e1038d8e775a3ce6c5864c4519cfb2ee96727bc73f4902851548cba0540", size = 370877, upload-time = "2026-02-14T03:30:54.274Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/11/a78c38c463d86bd30c8d741cccc3187b977bc8eb1795b2623bdcd3c93e66/dandi-0.81.0-py3-none-any.whl", hash = "sha256:650b67b0dd391cf3a9949f8272a49dc276b8bc0d1ac8d48f5bda67ed072945f5", size = 431516, upload-time = "2026-09-30T20:52:39.364Z" },
 ]
 
 [package.optional-dependencies]
@@ -976,8 +973,8 @@ type = [
 requires-dist = [
     { name = "boto3", specifier = "==1.42.97" },
     { name = "celery", specifier = "==5.6.3" },
-    { name = "dandi", extras = ["extras"], marker = "extra == 'cli'", specifier = "==0.74.3" },
-    { name = "dandischema", specifier = "==0.12.1" },
+    { name = "dandi", extras = ["extras"], marker = "extra == 'cli'", specifier = "==0.81.0" },
+    { name = "dandischema", specifier = "==0.14.0" },
     { name = "django", extras = ["argon2"], specifier = "==5.2.13" },
     { name = "django-allauth", specifier = "==65.16.1" },
     { name = "django-auth-style", specifier = "==0.15.0" },
@@ -1048,7 +1045,7 @@ type = [
 
 [[package]]
 name = "dandischema"
-version = "0.12.1"
+version = "0.14.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jsonschema", extra = ["format"] },
@@ -1058,9 +1055,9 @@ dependencies = [
     { name = "requests" },
     { name = "zarr-checksum" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/23/b7/b44244184c16c1b1cc69070b53325965285b81843ad7755c429e1ffaa341/dandischema-0.12.1.tar.gz", hash = "sha256:481ed1da9481090d8000b3b2373a0d4876043f48d4cddc3364c18e0a97bd0c22", size = 98659, upload-time = "2025-11-26T20:16:58.672Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d9/e6/55c462074cb9106b553c53bc83b66b98a487ee32e154acbbe34b98c1fd9a/dandischema-0.14.0.tar.gz", hash = "sha256:963af71311c356bce99c4e056754f3a2bd1a4f33836f13d9197c399c7732176f", size = 102428, upload-time = "2026-08-05T19:32:26.784Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/16/959ccdc06e45781d3c41cd552baeaaf563ffb5fe240fbd24efd26b8b2b12/dandischema-0.12.1-py3-none-any.whl", hash = "sha256:88f84cefd7883ce15d5c2f6b92411b1d00fd76468b77950fff25381e17eaab44", size = 118561, upload-time = "2025-11-26T20:16:57.121Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/b5/0f0828a19e023ccf5535b69d434611a7cfd17fed88bc1eca7c836339c908/dandischema-0.14.0-py3-none-any.whl", hash = "sha256:fce0c6c9df5b9504a230ba44d623656f4a798507f47fc3c9b0777cda016fbb73", size = 121953, upload-time = "2026-08-05T19:32:25.634Z" },
 ]
 
 [[package]]

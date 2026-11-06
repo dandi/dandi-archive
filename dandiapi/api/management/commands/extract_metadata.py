@@ -61,6 +61,10 @@ def extract_asset_metadata(asset: Asset, draft_version: Version):
     new_metadata = nwb2asset(
         readable_asset, digest=get_asset_digest(asset), schema_version=get_schema_version()
     ).model_dump(mode='json', exclude_none=True)
+    # As of dandischema 0.13.0, `nwb2asset` produces a `BareAsset` whose `schemaKey` is
+    # "BareAsset", while the archive stores (and validates) asset metadata as an `Asset`.
+    # This mirrors what dandi-cli (>= 0.77.0) does before uploading asset metadata.
+    new_metadata['schemaKey'] = 'Asset'
 
     # Use dandiset owner, default to some admin user
     user = (
