@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import base64
+import binascii
 import logging
+from pathlib import PurePosixPath
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -10,6 +13,7 @@ from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
+from storages.utils import clean_name
 
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services.exceptions import DandiError
@@ -45,6 +49,17 @@ def validate_zarr_path(path: str) -> str:
     if any(segment == '..' for segment in path.replace('\\', '/').split('/')):
         raise ValidationError('Zarr path cannot contain ".." components.')
     return path
+
+
+def validate_base64_md5(value: str) -> str:
+    """Ensure a value is a base64 encoded MD5 digest, as used in a Content-MD5 header."""
+    try:
+        digest = base64.b64decode(value, validate=True)
+    except binascii.Error as e:
+        raise ValidationError('Not a valid base64 encoded MD5 digest.') from e
+    if len(digest) != 16:
+        raise ValidationError('Not a valid base64 encoded MD5 digest.')
+    return value
 
 
 class ZarrArchivePublishedError(DandiError):
@@ -137,6 +152,16 @@ class ZarrArchive(TimeStampedModel):
         """Generate a full S3 object path from a path in this zarr_archive."""
         return zarr_s3_path(str(self.zarr_id), zarr_path)
 
+    def relative_s3_path(self, zarr_path: str) -> str:
+        """
+        Return the path of a file in this zarr archive, exactly as it will be listed from S3.
+
+        User-supplied paths are normalized when converted to an S3 key, so this mirrors that
+        normalization, as well as the conversion back to a relative path performed by
+        ``zarr_checksum.generators.yield_files_s3``.
+        """
+        return str(PurePosixPath(clean_name(self.s3_path(zarr_path))).relative_to(self.s3_path('')))
+
     def ensure_modifiable(self) -> None:
         """
         Raise an error if this zarr archive may not be modified.
@@ -172,3 +197,35 @@ class ZarrArchive(TimeStampedModel):
         # Files deleted, mark pending
         self.mark_pending()
         self.save()
+
+
+class ZarrUploadURL(models.Model):
+    """
+    A presigned upload URL issued for a file in a zarr archive.
+
+    Presigned URLs can't be revoked, so they remain usable until they expire, even after the
+    zarr archive has been ingested or published. However, each URL is signed with the MD5 of the
+    file's content, and can therefore only ever write that exact content to that exact path. A URL
+    is harmless as long as the file at its path already has that content, as using it again would
+    not change anything. Tracking issued URLs allows ingestion to verify this, ensuring that a
+    zarr archive's contents can't change once it's marked as COMPLETE.
+    """
+
+    zarr_archive = models.ForeignKey(
+        ZarrArchive, related_name='upload_urls', on_delete=models.CASCADE
+    )
+    # The path of the file, relative to the zarr root, as returned by `relative_s3_path`
+    path = models.TextField()
+    # The hex encoded MD5 of the content this URL permits uploading, comparable to an S3 ETag
+    md5 = models.CharField(max_length=32)
+    expires_at = models.DateTimeField(db_index=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['zarr_archive', 'expires_at'])]
+
+    def __str__(self) -> str:
+        return f'{self.zarr_archive.zarr_id}/{self.path}'
+
+    @staticmethod
+    def base64_md5_to_hex(base64md5: str) -> str:
+        return base64.b64decode(base64md5).hex()

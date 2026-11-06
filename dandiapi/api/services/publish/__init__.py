@@ -112,6 +112,7 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  #
         # Any zarr archives which are to be published must be fully ingested. Since these zarrs
         # are locked, and the zarr endpoints refuse modifications while the draft version is
         # PUBLISHING, they cannot change between here and when they're marked as published.
+        # Ingestion also verifies that no outstanding upload URL can change a COMPLETE zarr.
         if any(zarr.status != ZarrArchiveStatus.COMPLETE for zarr in draft_zarrs):
             raise DandisetZarrsNotCompleteError
 
