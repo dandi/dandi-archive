@@ -1,3 +1,20 @@
+# v1.2.1 (Fri Nov 06 2026)
+
+#### 🐛 Bug Fix
+
+- Add bulk asset deletion endpoint [#2920](https://github.com/dandi/dandi-archive/pull/2920) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Fix `API Key` label in the user menu [#3007](https://github.com/dandi/dandi-archive/pull/3007) ([@claude](https://github.com/claude) [@kabilar](https://github.com/kabilar))
+- Fix DOI copy button alignment [#3005](https://github.com/dandi/dandi-archive/pull/3005) ([@claude](https://github.com/claude) [@kabilar](https://github.com/kabilar))
+- Show "Copied!" feedback after copying to clipboard [#2999](https://github.com/dandi/dandi-archive/pull/2999) ([@claude](https://github.com/claude) [@kabilar](https://github.com/kabilar))
+
+#### Authors: 3
+
+- Claude ([@claude](https://github.com/claude))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v1.2.0 (Mon Nov 02 2026)
 
 #### 🚀 Enhancement

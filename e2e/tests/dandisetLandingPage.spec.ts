@@ -3,6 +3,36 @@ import { clientUrl, registerNewUser, LOGOUT_BUTTON_TEXT, registerDandiset } from
 import { faker } from "@faker-js/faker";
 
 test.describe("dandiset landing page", async () => {
+  test("the DOI chip is not squashed by a long title", async ({ page }) => {
+    // Regression test for https://github.com/dandi/dandi-archive/issues/2989
+    const doi = "10.80507/dandi.000003/0.240101.0000";
+    await page.route(/\/versions\/[^/]+\/info\/$/, async (route) => {
+      const response = await route.fetch();
+      const version = await response.json();
+      // Report a published version with a long title, as in the issue
+      version.version = "0.240101.0000";
+      // The landing page renders the title and DOI from `metadata`
+      const name = Array.from({ length: 12 }, () => "Electrophysiological characterization").join(" ");
+      version.metadata = { ...version.metadata, name, doi };
+      return route.fulfill({ response, json: version });
+    });
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    // The draft URL is used because the test server has no published version; the stub above
+    // makes the page treat it as a published one.
+    await page.goto(`${clientUrl}/dandiset/000003/draft`);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Electrophysiological characterization");
+
+    const chip = page.locator(".v-chip").filter({ hasText: "DOI:" });
+    await expect(chip).toContainText(doi);
+    // The chip must be wide enough to show all of its content
+    // (Vuetify clips inside `.v-chip__content`, so check both it and the chip itself.)
+    await expect.poll(() => chip.evaluate((el) => {
+      const content = el.querySelector(".v-chip__content") ?? el;
+      return Math.max(el.scrollWidth - el.clientWidth, content.scrollWidth - content.clientWidth);
+    })).toBeLessThanOrEqual(1);
+  });
+
   test("add an owner to the dandiset", async ({ page, browser }) => {
     // This test does 2 full user signups, a dandiset registration, and a dialog
     // interaction; under concurrent workers the default 30s budget is too tight.

@@ -13,7 +13,7 @@ We want to maintain the same look and feel as before, so this file is used to gl
 some styles that were changed from Vuetify 2 to Vuetify 3 that are not easy to/impossible to
 change without manual CSS styling.
   */
-.v-theme--DandiLightTheme[class*="variant-outlined"] {
+.v-theme--DandiLightTheme[class*="variant-outlined"]:not(.v-field) {
   border: thin solid #E0E0E0 !important;
   color: #424242 !important;
   font-weight: 400 !important;

@@ -2,7 +2,7 @@
   <v-list-item>
     <!-- ".stop" prevents closing the parent v-menu when the refresh or copy buttons are clicked -->
     <v-list-item-action
-      class="mr-2"
+      class="mr-2 pt-2"
       @click.stop
     >
       <v-btn
