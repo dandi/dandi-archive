@@ -401,8 +401,8 @@ function formatDate(date: string): string {
   return moment(date).format('LL');
 }
 
-// Which copy button was most recently clicked, so it can briefly show a
-// checkmark and "Copied!" to let the user know it worked
+// The copy button ('DOI' or 'dandiID') that was just clicked. While set, that
+// button shows a checkmark and a "Copied!" tooltip. It resets after 2 seconds.
 const copied = ref<string | null>(null);
 let copiedTimeout: ReturnType<typeof setTimeout> | undefined;
 
