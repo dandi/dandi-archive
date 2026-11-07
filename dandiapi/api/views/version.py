@@ -19,7 +19,6 @@ from dandiapi.api.services.permissions.dandiset import (
     require_dandiset_owner_or_403,
 )
 from dandiapi.api.services.publish import publish_dandiset
-from dandiapi.api.tasks import delete_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
@@ -156,30 +155,3 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
             user=request.user, dandiset=self.get_object().dandiset, release_notes=release_notes
         )
         return Response(None, status=status.HTTP_202_ACCEPTED)
-
-    @swagger_auto_schema(
-        manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
-    )
-    def destroy(self, request, **kwargs):
-        """
-        Delete a version.
-
-        Deletes a version. Only published versions can be deleted, and only by
-        admin users.
-        """
-        version: Version = self.get_object()
-        if version.version == 'draft':
-            return Response(
-                'Cannot delete draft versions',
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        if not request.user.is_superuser:
-            return Response(
-                'Cannot delete published versions',
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        doi = version.doi
-        version.delete()
-        if doi is not None:
-            delete_doi_task.delay(doi)
-        return Response(None, status=status.HTTP_204_NO_CONTENT)
