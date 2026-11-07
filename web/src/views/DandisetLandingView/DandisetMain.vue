@@ -401,26 +401,20 @@ function formatDate(date: string): string {
   return moment(date).format('LL');
 }
 
-type CopyTarget = 'DOI' | 'dandiID';
-
 // Which copy button was most recently clicked, so it can briefly show a
 // checkmark and "Copied!" to let the user know it worked
-const copied = ref<CopyTarget | null>(null);
+const copied = ref<string | null>(null);
 let copiedTimeout: ReturnType<typeof setTimeout> | undefined;
 
-async function copy(value: CopyTarget) {
+async function copy(value:string) {
   if (!meta.value) {
     throw new Error('metadata is undefined!');
   }
   const version = meta.value?.version === 'draft' ? meta.value?.identifier as string : meta.value?.id as string;
-  try {
-    await navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/${meta.value?.doi}`);
-    copied.value = value;
-    clearTimeout(copiedTimeout);
-    copiedTimeout = setTimeout(() => { copied.value = null; }, 2000);
-  } catch (err) {
-    console.error('Failed to copy:', err);
-  }
+  await navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/${meta.value?.doi}`);
+  copied.value = value;
+  clearTimeout(copiedTimeout);
+  copiedTimeout = setTimeout(() => { copied.value = null; }, 2000);
 }
 
 watchEffect(async () => {
