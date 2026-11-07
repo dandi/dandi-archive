@@ -43,12 +43,13 @@
                 >
                   <v-icon
                     size="small"
+                    :color="copied === 'DOI' ? 'success' : undefined"
                   >
-                    mdi-content-copy
+                    {{ copied === 'DOI' ? 'mdi-check' : 'mdi-content-copy' }}
                   </v-icon>
                 </v-btn>
               </template>
-              <span>Copy DOI URL to clipboard</span>
+              <span>{{ copied === 'DOI' ? 'Copied!' : 'Copy DOI URL to clipboard' }}</span>
             </v-tooltip>
             <span>
               DOI:
@@ -82,12 +83,13 @@
                 >
                   <v-icon
                     size="small"
+                    :color="copied === 'dandiID' ? 'success' : undefined"
                   >
-                    mdi-content-copy
+                    {{ copied === 'dandiID' ? 'mdi-check' : 'mdi-content-copy' }}
                   </v-icon>
                 </v-btn>
               </template>
-              <span>Copy ID to clipboard</span>
+              <span>{{ copied === 'dandiID' ? 'Copied!' : 'Copy ID to clipboard' }}</span>
             </v-tooltip>
             <span>
               ID: <span class="font-weight-bold">{{ currentDandiset.dandiset.identifier }}</span>
@@ -398,12 +400,27 @@ watch(
 function formatDate(date: string): string {
   return moment(date).format('LL');
 }
-function copy(value:string) {
+
+type CopyTarget = 'DOI' | 'dandiID';
+
+// Which copy button was most recently clicked, so it can briefly show a
+// checkmark and "Copied!" to let the user know it worked
+const copied = ref<CopyTarget | null>(null);
+let copiedTimeout: ReturnType<typeof setTimeout> | undefined;
+
+async function copy(value: CopyTarget) {
   if (!meta.value) {
     throw new Error('metadata is undefined!');
   }
   const version = meta.value?.version === 'draft' ? meta.value?.identifier as string : meta.value?.id as string;
-  navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/${meta.value?.doi}`);
+  try {
+    await navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/${meta.value?.doi}`);
+    copied.value = value;
+    clearTimeout(copiedTimeout);
+    copiedTimeout = setTimeout(() => { copied.value = null; }, 2000);
+  } catch (err) {
+    console.error('Failed to copy:', err);
+  }
 }
 
 watchEffect(async () => {
