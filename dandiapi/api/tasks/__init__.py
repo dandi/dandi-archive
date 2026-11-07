@@ -55,9 +55,11 @@ def write_manifest_files(version_id: int) -> None:
     version: Version = Version.objects.get(id=version_id)
     logger.info('Writing manifests for version %s:%s', version.dandiset.identifier, version.version)
 
+    # Write the quick dandiset manifests right after reading the metadata, so that neither an
+    # overlapping run nor a timeout in the slow asset manifests can leave them stale.
     write_dandiset_yaml(version)
-    write_assets_yaml(version)
     write_dandiset_jsonld(version)
+    write_assets_yaml(version)
     write_assets_jsonld(version)
     write_collection_jsonld(version)
 

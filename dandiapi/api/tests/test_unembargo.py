@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 import dandischema
@@ -7,7 +8,7 @@ from django.core.files.storage import default_storage
 from django.utils import timezone
 import pytest
 
-from dandiapi.api.manifests import all_manifest_filepaths
+from dandiapi.api.manifests import _dandiset_jsonld_path, all_manifest_filepaths
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
@@ -231,6 +232,7 @@ def test_unembargo_dandiset(
     embargoed_zarr_archive_factory,
     zarr_file_factory,
     mailoutbox,
+    django_capture_on_commit_callbacks,
 ):
     owners = [UserFactory.create() for _ in range(5)]
     draft_version: Version = DraftVersionFactory.create(
@@ -259,7 +261,8 @@ def test_unembargo_dandiset(
     assert all(asset.is_embargoed for asset in draft_version.assets.all())
     assert all(asset.status == Asset.Status.VALID for asset in draft_version.assets.all())
 
-    unembargo_dandiset(dandiset, owners[0])
+    with django_capture_on_commit_callbacks(execute=True):
+        unembargo_dandiset(dandiset, owners[0])
 
     for zarr_file in zarr_files:
         zarr_file_s3_path = zarr_archive.s3_path(str(zarr_file.path))
@@ -284,6 +287,8 @@ def test_unembargo_dandiset(
         draft_version.metadata['access'][0]['status']
         == dandischema.models.AccessType.OpenAccess.value
     )
+    with default_storage.open(_dandiset_jsonld_path(draft_version)) as f:
+        assert json.load(f) == draft_version.metadata
 
     # Check that a correct email exists
     assert mailoutbox
