@@ -65,6 +65,12 @@ def _add_asset_to_version(
     zarr_archive: ZarrArchive | None,
     metadata: dict,
 ) -> Asset:
+    # A zarr archive may only be referenced by assets within its own dandiset. Many checks (e.g.
+    # whether the zarr may be modified) only consider the zarr's own dandiset, so allowing it to
+    # be added to another dandiset would bypass them.
+    if zarr_archive is not None and zarr_archive.dandiset_id != version.dandiset_id:
+        raise ZarrArchiveBelongsToDifferentDandisetError
+
     # Creating an asset in an OPEN dandiset that points to an
     # embargoed blob results in that blob being unembargoed.
     # NOTE: This only applies to asset blobs, as zarrs cannot belong to
@@ -191,10 +197,6 @@ def add_asset_to_version(
     conflicts = get_conflicting_paths(path, version)
     if conflicts:
         raise AssetPathConflictError(new_path=path, existing_paths=conflicts)
-
-    # Ensure zarr archive doesn't already belong to a dandiset
-    if zarr_archive and zarr_archive.dandiset != version.dandiset:
-        raise ZarrArchiveBelongsToDifferentDandisetError
 
     with transaction.atomic():
         asset = _add_asset_to_version(
