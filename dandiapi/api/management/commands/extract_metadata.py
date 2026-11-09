@@ -68,10 +68,11 @@ def extract_asset_metadata(asset: Asset, draft_version: Version):
         or User.objects.filter(is_superuser=True, is_staff=True).first()
     )
 
-    # Lock asset and version to ensure they don't change while performing this operation
+    # Lock version and asset to ensure they don't change while performing this operation. The
+    # version must be locked first, to match the lock order used when publishing.
     with transaction.atomic():
-        locked_asset = Asset.objects.select_for_update().get(id=asset.id)
         locked_version = Version.objects.select_for_update().get(id=draft_version.id)
+        locked_asset = Asset.objects.select_for_update().get(id=asset.id)
 
         # Ensure asset hasn't already been removed from the version
         if not locked_version.assets.filter(id=locked_asset.id).exists():

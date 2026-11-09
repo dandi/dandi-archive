@@ -22,6 +22,7 @@ from dandiapi.api.services.metadata import (
 )
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
 from dandiapi.api.services.publish import _build_publishable_version_from_draft, publish_dandiset
+from dandiapi.api.services.version.exceptions import DraftVersionPublishingError
 from dandiapi.api.tasks.scheduled import validate_pending_asset_metadata
 from dandiapi.api.tests.factories import (
     DandisetFactory,
@@ -692,6 +693,37 @@ def test_version_rest_update_unembargo_in_progress(api_client):
         {'metadata': new_metadata, 'name': new_name},
     )
     assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_version_rest_update_while_publishing(api_client):
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(
+        dandiset__owners=[user], status=Version.Status.PUBLISHING
+    )
+    api_client.force_authenticate(user=user)
+    old_name = draft_version.name
+    old_metadata = draft_version.metadata
+    url = f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/'
+
+    # Changing the metadata is refused
+    resp = api_client.put(
+        url, {'metadata': {**old_metadata, 'num': 123}, 'name': 'A new name'}, format='json'
+    )
+    assert resp.status_code == 423
+    assert resp.json() == DraftVersionPublishingError.message
+
+    draft_version.refresh_from_db()
+    assert draft_version.status == Version.Status.PUBLISHING
+    assert draft_version.name == old_name
+    assert draft_version.metadata == old_metadata
+
+    # Submitting unchanged metadata is a no-op, so it's still permitted
+    resp = api_client.put(url, {'metadata': old_metadata, 'name': old_name}, format='json')
+    assert resp.status_code == 200
+
+    draft_version.refresh_from_db()
+    assert draft_version.status == Version.Status.PUBLISHING
 
 
 @pytest.mark.django_db

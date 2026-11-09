@@ -23,6 +23,7 @@ from dandiapi.api.services.asset.exceptions import (
     ZarrArchiveBelongsToDifferentDandisetError,
 )
 from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
+from dandiapi.api.services.version import lock_draft_version_for_modification
 from dandiapi.api.tasks import remove_asset_blob_embargoed_tag_task
 
 if TYPE_CHECKING:
@@ -148,6 +149,7 @@ def change_asset(  # noqa: PLR0913
         raise AssetAlreadyExistsError
 
     with transaction.atomic():
+        lock_draft_version_for_modification(version)
         _remove_asset_from_version(asset=asset, version=version)
         new_asset = _add_asset_to_version(
             version=version,
@@ -197,6 +199,7 @@ def add_asset_to_version(
         raise ZarrArchiveBelongsToDifferentDandisetError
 
     with transaction.atomic():
+        lock_draft_version_for_modification(version)
         asset = _add_asset_to_version(
             version=version,
             asset_blob=asset_blob,
@@ -215,6 +218,7 @@ def remove_asset_from_version(*, user, asset: Asset, version: Version) -> Versio
         raise DraftDandisetNotModifiableError
 
     with transaction.atomic():
+        lock_draft_version_for_modification(version)
         _remove_asset_from_version(asset=asset, version=version)
         audit.remove_asset(dandiset=version.dandiset, user=user, asset=asset)
 
@@ -237,6 +241,8 @@ def bulk_remove_assets_from_version(
         raise DraftDandisetNotModifiableError
 
     with transaction.atomic():
+        lock_draft_version_for_modification(version)
+
         # Lock the assets for the duration of the transaction. The ordering is required to
         # ensure a consistent lock acquisition order between concurrent deletions.
         assets = list(

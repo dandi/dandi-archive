@@ -9,6 +9,7 @@ from dandiapi.api.asset_paths import add_asset_paths
 from dandiapi.api.models import AuditRecord, Version
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.services.version.exceptions import DraftVersionPublishingError
 from dandiapi.api.tests.factories import (
     DraftVersionFactory,
     PublishedVersionFactory,
@@ -229,3 +230,23 @@ def test_asset_rest_bulk_delete_failure_rolls_back(api_client, version_with_asse
     # No assets were removed, and their paths are intact
     assert version.assets.count() == 3
     assert AssetPath.objects.filter(version=version, asset__isnull=False).count() == 3
+
+
+@pytest.mark.django_db
+def test_asset_rest_bulk_delete_while_publishing(api_client, version_with_assets):
+    user, version, assets = version_with_assets
+    Version.objects.filter(id=version.id).update(status=Version.Status.PUBLISHING)
+    api_client.force_authenticate(user=user)
+
+    resp = api_client.post(
+        bulk_delete_url(version),
+        {'asset_ids': [str(asset.asset_id) for asset in assets]},
+        format='json',
+    )
+    assert resp.status_code == 423
+    assert resp.json() == DraftVersionPublishingError.message
+
+    # Neither the version's assets nor its status should have changed
+    version.refresh_from_db()
+    assert version.status == Version.Status.PUBLISHING
+    assert version.assets.count() == len(assets)

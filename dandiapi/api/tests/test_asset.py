@@ -18,6 +18,7 @@ from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.asset.exceptions import AssetPathConflictError
 from dandiapi.api.services.publish import publish_asset
+from dandiapi.api.services.version.exceptions import DraftVersionPublishingError
 from dandiapi.api.tasks.scheduled import validate_pending_asset_metadata
 from dandiapi.api.tests.factories import (
     DandisetFactory,
@@ -1502,6 +1503,45 @@ def test_asset_rest_update_zarr(
 
     # Updating an Asset should trigger a revalidation
     assert draft_version.status == Version.Status.PENDING
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('method', ['post', 'put', 'delete'])
+def test_asset_rest_modify_while_publishing(api_client, draft_asset_factory, asset_blob, method):
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(
+        dandiset__owners=[user], status=Version.Status.PUBLISHING
+    )
+    api_client.force_authenticate(user=user)
+    asset = draft_asset_factory()
+    draft_version.assets.add(asset)
+    add_asset_paths(asset=asset, version=draft_version)
+
+    assets_url = (
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/'
+    )
+    match method:
+        case 'post':
+            resp = api_client.post(
+                assets_url,
+                {'metadata': {'path': 'new/asset.txt'}, 'blob_id': asset_blob.blob_id},
+            )
+        case 'put':
+            resp = api_client.put(
+                f'{assets_url}{asset.asset_id}/',
+                {'metadata': {'path': 'renamed/asset.txt'}, 'blob_id': asset_blob.blob_id},
+            )
+        case 'delete':
+            resp = api_client.delete(f'{assets_url}{asset.asset_id}/')
+
+    assert resp.status_code == 423
+    assert resp.json() == DraftVersionPublishingError.message
+
+    # Neither the version's assets nor its status should have changed
+    draft_version.refresh_from_db()
+    assert draft_version.status == Version.Status.PUBLISHING
+    assert list(draft_version.assets.all()) == [asset]
 
 
 @pytest.mark.django_db

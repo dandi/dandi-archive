@@ -32,6 +32,7 @@ from dandiapi.api.services.permissions.dandiset import (
     is_owned_asset,
     require_dandiset_owner_or_403,
 )
+from dandiapi.api.services.version import lock_draft_version_for_modification
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
@@ -371,8 +372,10 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         serializer = AssetRequestSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Lock asset for update
+        # Lock the version and then the asset for update. The version must be locked first, to
+        # match the lock order used when publishing.
         with transaction.atomic():
+            lock_draft_version_for_modification(version)
             locked_asset = get_object_or_404(
                 version.assets.select_for_update(), id=self.get_object().id
             )
@@ -404,8 +407,10 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         if version.dandiset.unembargo_in_progress:
             raise DandisetUnembargoInProgressError
 
-        # Lock asset for delete
+        # Lock the version and then the asset for delete. The version must be locked first, to
+        # match the lock order used when publishing.
         with transaction.atomic():
+            lock_draft_version_for_modification(version)
             locked_asset = get_object_or_404(
                 version.assets.select_for_update(), id=self.get_object().id
             )

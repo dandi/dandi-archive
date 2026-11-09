@@ -19,6 +19,7 @@ from dandiapi.api.services.permissions.dandiset import (
     require_dandiset_owner_or_403,
 )
 from dandiapi.api.services.publish import publish_dandiset
+from dandiapi.api.services.version.exceptions import DraftVersionPublishingError
 from dandiapi.api.tasks import delete_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
 from dandiapi.api.views.pagination import DandiPagination
@@ -121,6 +122,10 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
             # Only save version if metadata has actually changed
             if (name, new_metadata) != (locked_version.name, old_metadata):
+                # Modifying the version would interrupt an in progress publish
+                if locked_version.status == Version.Status.PUBLISHING:
+                    raise DraftVersionPublishingError
+
                 locked_version.name = name
                 locked_version.metadata = new_metadata
                 locked_version.status = Version.Status.PENDING
