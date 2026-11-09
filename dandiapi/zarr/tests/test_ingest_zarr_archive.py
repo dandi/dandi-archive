@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest import mock
+
 from dandischema.consts import DANDI_SCHEMA_VERSION
 import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM
@@ -148,8 +150,10 @@ def test_ingest_zarr_archive_modified(zarr_archive_factory, zarr_file_factory):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_sets_version_pending(zarr_archive_factory, zarr_file_factory):
-    """Ensure that when a zarr is ingested, it sets the version back to PENDING."""
+def test_ingest_zarr_archive_sets_version_pending(
+    zarr_archive_factory, zarr_file_factory, draft_asset_factory
+):
+    """Ensure that when a zarr is ingested, it sets the version containing it back to PENDING."""
     draft_version = DraftVersionFactory.create(status=Version.Status.VALID)
     assert draft_version.status == Version.Status.VALID
 
@@ -158,6 +162,7 @@ def test_ingest_zarr_archive_sets_version_pending(zarr_archive_factory, zarr_fil
         dandiset=draft_version.dandiset, status=ZarrArchiveStatus.UPLOADED
     )
     zarr_file_factory(zarr_archive=zarr_archive, size=100)
+    draft_version.assets.add(draft_asset_factory(zarr=zarr_archive, blob=None))
 
     # Kick off ingest
     ingest_zarr_archive(zarr_archive.zarr_id)
@@ -166,6 +171,31 @@ def test_ingest_zarr_archive_sets_version_pending(zarr_archive_factory, zarr_fil
 
     # Check that version is now `PENDING`, instead of VALID
     assert draft_version.status == Version.Status.PENDING
+
+
+@pytest.mark.django_db(transaction=True)
+def test_ingest_zarr_archive_not_in_version_publishing(zarr_archive_factory, zarr_file_factory):
+    """
+    Ensure ingesting a zarr which isn't in the draft version doesn't modify that version.
+
+    The draft version may begin publishing while such a zarr is being ingested, as the zarr isn't
+    part of what's being published. Ingestion must not interrupt that publish.
+    """
+    draft_version = DraftVersionFactory.create(status=Version.Status.PUBLISHING)
+    zarr_archive = zarr_archive_factory(
+        dandiset=draft_version.dandiset, status=ZarrArchiveStatus.UPLOADED
+    )
+    zarr_file_factory(zarr_archive=zarr_archive, size=100)
+
+    # Simulate the draft version beginning to publish after ingestion has started, by bypassing the
+    # check performed when ingestion begins
+    with mock.patch.object(ZarrArchive, 'ensure_modifiable'):
+        ingest_zarr_archive(zarr_archive.zarr_id)
+
+    zarr_archive.refresh_from_db()
+    draft_version.refresh_from_db()
+    assert zarr_archive.status == ZarrArchiveStatus.COMPLETE
+    assert draft_version.status == Version.Status.PUBLISHING
 
 
 @pytest.mark.django_db(transaction=True)
