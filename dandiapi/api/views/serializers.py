@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
 import re
 from typing import TYPE_CHECKING, Any
 
@@ -20,7 +19,16 @@ MAX_BULK_DELETE_ASSETS = 1000
 
 if TYPE_CHECKING:
     from collections import OrderedDict
+    from datetime import date
     from uuid import UUID
+
+
+def _add_years(d: date, years: int) -> date:
+    """Add calendar years to a date, mapping Feb 29 to Feb 28 in non-leap years."""
+    try:
+        return d.replace(year=d.year + years)
+    except ValueError:
+        return d.replace(year=d.year + years, day=28)
 
 
 def extract_contact_person(version: Version) -> str:
@@ -107,9 +115,7 @@ class CreateDandisetQueryParameterSerializer(serializers.Serializer):
     embargo = serializers.BooleanField(required=False, default=False)
     funding_source = serializers.CharField(required=False, allow_blank=True)
     award_number = serializers.CharField(required=False, allow_blank=True)
-    embargo_end_date = serializers.DateField(
-        default=lambda: timezone.now().date() + timedelta(days=365 * 2)
-    )
+    embargo_end_date = serializers.DateField(default=lambda: _add_years(timezone.now().date(), 2))
 
     def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         """
@@ -149,9 +155,9 @@ class CreateDandisetQueryParameterSerializer(serializers.Serializer):
         # If the dandiset has no funding source, the embargo end date must be within 2 years.
         # Otherwise, it must be within 5 years.
         if funding_source is None:
-            max_end_date = timezone.now().date() + timedelta(days=365 * 2)
+            max_end_date = _add_years(timezone.now().date(), 2)
         else:
-            max_end_date = timezone.now().date() + timedelta(days=365 * 5)
+            max_end_date = _add_years(timezone.now().date(), 5)
 
         if embargo_end_date > max_end_date:
             raise ValidationError('Invalid embargo end date')
