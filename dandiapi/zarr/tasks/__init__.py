@@ -155,10 +155,13 @@ def _ingest_zarr_archive(zarr_id: str, *, force: bool = False):
         # Add asset paths after ingest is finished
         add_zarr_paths(zarr)
 
-        # Set version status back to PENDING, and update modified.
-        Version.objects.filter(id=zarr.dandiset.draft_version.id).update(
-            status=Version.Status.PENDING, modified=timezone.now()
-        )
+        # Set version status back to PENDING, and update modified. Filter the version to exclude
+        # publishing versions, and go through the assets relation. This way, if this zarr isn't
+        # associated with any assets, or if the version is actively being published, no update
+        # happens.
+        Version.objects.exclude(status=Version.Status.PUBLISHING).filter(
+            version='draft', assets__zarr=zarr
+        ).update(status=Version.Status.PENDING, modified=timezone.now())
 
         # Set the asset status back to pending, and update modified
         zarr_assets = Asset.objects.filter(zarr=zarr, published=False)
