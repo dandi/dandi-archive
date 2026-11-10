@@ -6,6 +6,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from django.core.files.storage import default_storage
+from django.db.models import Q
 import djclick as click
 from tqdm import tqdm
 import yaml
@@ -88,6 +89,37 @@ def missing_manifest_dois(version: Version, skip: Collection[str] = ()) -> dict[
     return discrepancies
 
 
+def out_of_sync_manifests(version: Version) -> dict[str, str]:
+    """Map `version`'s manifests which don't match its metadata to how they differ.
+
+    Unlike `missing_manifest_dois`, this compares the whole metadata, assetsSummary included.
+    """
+    expected = version.metadata
+
+    discrepancies: dict[str, str] = {}
+    for path, load in _manifests_embedding_metadata(version):
+        try:
+            with default_storage.open(path) as manifest_file:
+                metadata = load(manifest_file)
+            differing = sorted(
+                key
+                for key in metadata.keys() | expected.keys()
+                if key not in metadata or key not in expected or metadata[key] != expected[key]
+            )
+        except FileNotFoundError:
+            discrepancies[path] = 'missing'
+            continue
+        except Exception as e:  # noqa: BLE001
+            logger.info('Could not read manifest %s: %s', path, e)
+            discrepancies[path] = f'unreadable ({e})'
+            continue
+
+        if differing:
+            discrepancies[path] = f'differs in {", ".join(differing)}'
+
+    return discrepancies
+
+
 @dataclass
 class VersionAudit:
     """What was found wrong with a single published version.
@@ -163,6 +195,9 @@ def rewrite_manifests(version: Version, paths: Collection[str]) -> None:
     only: a version whose DOI never made it into its metadata (case 3), or which has no DOI
     at all (case 4), can't be repaired this way.
     """
+    # Write from the current metadata: a draft may have been modified since it was audited.
+    version.refresh_from_db()
+
     writers = _manifest_writers(version)
     for path in all_manifest_filepaths(version):
         if path in paths:
@@ -171,13 +206,18 @@ def rewrite_manifests(version: Version, paths: Collection[str]) -> None:
             writers[path](version)
 
 
-def _version_queryset(dandisets: tuple[int, ...], *, include_all: bool) -> QuerySet[Version]:
-    """Return the published versions a subcommand's dandiset selection asks for."""
+_VERSIONS = {'draft': Q(version='draft'), 'published': ~Q(version='draft'), 'all': Q()}
+
+
+def _version_queryset(
+    dandisets: tuple[int, ...], *, include_all: bool, versions: str = 'published'
+) -> QuerySet[Version]:
+    """Return the `versions` (a key of `_VERSIONS`) a subcommand's dandiset selection asks for."""
     if bool(dandisets) == include_all:
         raise click.ClickException("Must specify exactly one of 'dandisets' or --all")
 
     version_qs = (
-        Version.objects.exclude(version='draft')
+        Version.objects.filter(_VERSIONS[versions])
         .select_related('dandiset')
         .order_by('dandiset_id', 'version')
     )
@@ -327,7 +367,9 @@ def audit_manifests_and_dois():
     unless it's passed, so a plain run is a dry run of it.
 
     Only published versions are considered: drafts never have a DOI, and their manifests are
-    rewritten whenever the draft is modified.
+    rewritten whenever the draft is modified. The exception is `out-of-sync-manifests`, which
+    audits drafts by default, since theirs used to be written before their assetsSummary was
+    aggregated. See https://github.com/dandi/dandi-archive/issues/2998.
     """
 
 
@@ -398,5 +440,49 @@ def missing_manifest_dois_command(dandisets: tuple[int, ...], *, include_all: bo
                 (audit.version, list(audit.manifests_missing_doi))
                 for audit in audits
                 if audit.manifests_missing_doi
+            ]
+        )
+
+
+@audit_manifests_and_dois.command('out-of-sync-manifests')
+@_target_arguments
+@_rewrite_option
+@click.option(
+    '--versions',
+    type=click.Choice(list(_VERSIONS)),
+    default='draft',
+    show_default=True,
+    help='Which versions to audit.',
+)
+def out_of_sync_manifests_command(
+    dandisets: tuple[int, ...], *, include_all: bool, rewrite: bool, versions: str
+):
+    """
+    Enumerate versions whose `dandiset.jsonld` or `dandiset.yaml` don't match their metadata.
+
+    --rewrite-manifests writes those manifests from the version's current metadata, except for
+    a published version whose metadata lacks a DOI (cases 3 and 4), which would lose it.
+    """
+    version_qs = _version_queryset(dandisets, include_all=include_all, versions=versions)
+    total_versions = version_qs.count()
+    click.echo(f'Scanning {total_versions} versions...')
+
+    out_of_sync = {}
+    for version in tqdm(version_qs.iterator(), total=total_versions):
+        if discrepancies := out_of_sync_manifests(version):
+            out_of_sync[version] = discrepancies
+
+    click.echo(f'\nVersions with manifests out of sync with their metadata: {len(out_of_sync)}')
+    for version, discrepancies in out_of_sync.items():
+        click.echo(f'  {version}')
+        for path, found in discrepancies.items():
+            click.echo(f'    {path}: {found}')
+
+    if rewrite:
+        _repair(
+            [
+                (version, list(discrepancies))
+                for version, discrepancies in out_of_sync.items()
+                if version.version == 'draft' or version.metadata.get('doi')
             ]
         )

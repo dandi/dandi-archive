@@ -24,7 +24,9 @@ from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.asset import _add_asset_to_version
 from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
 from dandiapi.api.services.publish import _lock_dandiset_for_publishing
+from dandiapi.api.tasks import scheduled
 from dandiapi.api.tests.factories import AssetBlobFactory, DraftVersionFactory, UserFactory
+from dandiapi.celery import app as celery_app
 from dandiapi.zarr.models import ZarrArchiveStatus
 
 from .fuzzy import DEFAULT_WAS_ASSOCIATED_WITH, HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
@@ -47,7 +49,7 @@ def test_calculate_checksum_task(asset_blob_factory):
 
 
 @pytest.mark.django_db
-def test_write_manifest_files(version: Version, asset_factory):
+def test_write_manifest_files(version: Version, asset_factory, mocker):
     # Create a new asset in the version so there is information to write
     version.assets.add(asset_factory())
 
@@ -62,6 +64,7 @@ def test_write_manifest_files(version: Version, asset_factory):
         f'dandisets/{version.dandiset.identifier}/{version.version}/collection.jsonld'
     )
 
+    save = mocker.spy(default_storage, 'save')
     tasks.write_manifest_files(version.id)
 
     assert default_storage.exists(assets_yaml_path)
@@ -69,6 +72,10 @@ def test_write_manifest_files(version: Version, asset_factory):
     assert default_storage.exists(assets_jsonld_path)
     assert default_storage.exists(dandiset_jsonld_path)
     assert default_storage.exists(collection_jsonld_path)
+
+    # The quick dandiset manifests come first, so the slow asset manifests can't hold them back.
+    saved = [call.args[0] for call in save.call_args_list]
+    assert set(saved[:2]) == {dandiset_yaml_path, dandiset_jsonld_path}
 
 
 @pytest.mark.django_db
@@ -379,6 +386,9 @@ def test_publish_task(
 
     draft_version.refresh_from_db()
     assert draft_version.status == Version.Status.PUBLISHED
+    # Publishing updated the draft's assetsSummary, so its manifests must have followed.
+    with default_storage.open(_dandiset_jsonld_path(draft_version)) as f:
+        assert json.load(f) == draft_version.metadata
 
     published_version = draft_version.dandiset.versions.latest('created')
 
@@ -538,3 +548,27 @@ def test_publish_task_writes_manifest_without_doi_when_minting_fails(
 
     draft_version.refresh_from_db()
     assert draft_version.status == Version.Status.PUBLISHED
+
+
+@pytest.mark.django_db
+def test_validate_draft_version_metadata_writes_manifests_after_assets_summary(
+    draft_version: Version, mocker, settings
+):
+    """The manifests embed the assetsSummary, so write them once it's aggregated (or fails to be).
+
+    Eager tasks run in dispatch order, which hides the race, so check what's sent to the broker.
+    See https://github.com/dandi/dandi-archive/issues/2998.
+    """
+    settings.CELERY_TASK_ALWAYS_EAGER = False
+    send_task = mocker.patch.object(celery_app, 'send_task')
+
+    scheduled.validate_draft_version_metadata()
+
+    write_manifests = tasks.write_manifest_files.si(draft_version.id)
+    assert {
+        call.args[0]: (call.kwargs['link'], call.kwargs['link_error'])
+        for call in send_task.call_args_list
+    } == {
+        tasks.validate_version_metadata_task.name: (None, None),
+        scheduled.aggregate_assets_summary_task.name: (write_manifests, write_manifests),
+    }
