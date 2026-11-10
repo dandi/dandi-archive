@@ -9,6 +9,7 @@ from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
+from freezegun import freeze_time
 import pytest
 
 from dandiapi.api.asset_paths import add_asset_paths, add_version_asset_paths
@@ -929,6 +930,42 @@ def test_dandiset_rest_create_embargoed_embargo_end_date(api_client: APIClient):
 
     dandiset = Dandiset.objects.get(id=int(response.json()['identifier']))
     assert dandiset.embargo_end_date == end_date
+
+
+@pytest.mark.django_db
+@freeze_time('2026-11-09')
+@pytest.mark.parametrize(
+    ('award', 'end_date', 'status_code'),
+    [
+        # Two calendar years ahead spans Feb 29, 2028 (731 days)
+        (False, '2028-11-09', 200),
+        (False, '2028-11-10', 400),
+        # Five calendar years ahead also spans Feb 29, 2028 (1826 days)
+        (True, '2031-11-09', 200),
+        (True, '2031-11-10', 400),
+    ],
+)
+def test_dandiset_rest_create_embargoed_embargo_end_date_calendar_years(
+    api_client: APIClient, *, award: bool, end_date: str, status_code: int
+):
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+
+    params = {'embargo': 'true', 'embargo_end_date': end_date}
+    if award:
+        params |= {'funding_source': 'NIH', 'award_number': '123'}
+    response = api_client.post(
+        f'/api/dandisets/?{urlencode(params)}',
+        {
+            'name': 'Test',
+            'metadata': {
+                'name': 'Test',
+                'description': 'Test embargoed dandiset',
+                'license': [get_first_allowed_license()],
+            },
+        },
+    )
+    assert response.status_code == status_code, response.data
 
 
 @pytest.mark.django_db
