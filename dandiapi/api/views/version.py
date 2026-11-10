@@ -19,6 +19,7 @@ from dandiapi.api.services.permissions.dandiset import (
     require_dandiset_owner_or_403,
 )
 from dandiapi.api.services.publish import publish_dandiset
+from dandiapi.api.services.version.metadata import strip_empty_records
 from dandiapi.api.tasks import delete_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
 from dandiapi.api.views.pagination import DandiPagination
@@ -110,8 +111,9 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         name = serializer.validated_data['name']
         new_metadata = serializer.validated_data['metadata']
 
-        # Strip away any computed fields from current and new metadata
-        new_metadata = Version.strip_metadata(new_metadata)
+        # Strip away any computed fields from current and new metadata,
+        # and empty records (#2944) from the new one
+        new_metadata = strip_empty_records(Version.strip_metadata(new_metadata))
 
         with transaction.atomic():
             # Re-query for the version, this time using a SELECT FOR UPDATE to
