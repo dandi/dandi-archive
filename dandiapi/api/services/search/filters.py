@@ -1,59 +1,61 @@
-"""Translate a ParsedSearch into Django ORM filters against the Dandiset queryset."""
+"""Compile a parsed search query into a Postgres filter on the Dandiset queryset.
+
+``build_search_filter`` parses the query with
+:func:`~dandiapi.api.services.search.parser.parse_search` and turns every term
+into one SQL predicate:
+
+- free text (``word`` / ``"phrase"``): case-insensitive, accent-insensitive
+  substring match on the text of a version's metadata
+- ``species:`` / ``approach:`` / ``technique:`` / ``standard:`` /
+  ``variable:``: a ``jsonb_path_exists`` regex match on the version's
+  ``assetsSummary``
+- ``created_*`` / ``modified_*`` / ``published_*``: a comparison on the
+  dandiset's creation time or on its latest (published) version
+- ``anatomy_exact:``: an Anatomy entry in the version's ``about`` with the
+  given identifier (in any spelling) or exactly the given name
+- ``owner:``: membership in the set of dandisets owned by matching users
+
+Version-level predicates (free text, summary and anatomy operators) are AND'd and must
+all hold on a single Version row; that row's dandiset is then AND'd with the
+dandiset-level predicates. The result is one ``Q`` the view applies with
+``queryset.filter``.
+"""
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+import json
 import re
 from typing import TYPE_CHECKING
 
 from django.contrib.auth.models import User
-from django.db.models import OuterRef, Q, Subquery, Value
-from django.db.models.functions import Concat
+from django.contrib.postgres.lookups import Unaccent
+from django.db.models import BooleanField, F, Func, OuterRef, Q, Subquery, TextField, Value
+from django.db.models.functions import Cast, Concat
+from django.db.models.lookups import GreaterThanOrEqual, IContains, LessThan
 
 from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
-from dandiapi.api.services.search.parser import SearchSyntaxError
+from dandiapi.api.services.search.anatomy import normalize_curie
+from dandiapi.api.services.search.parser import parse_date, parse_search
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
 
     from dandiapi.api.models import Dandiset
-    from dandiapi.api.services.search.parser import ParsedSearch
 
-_DATE_OPS = frozenset(
-    {
-        'created_before',
-        'created_after',
-        'modified_before',
-        'modified_after',
-        'published_before',
-        'published_after',
-    }
+_LATEST_VERSION_MODIFIED = Subquery(
+    Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created').values('modified')[:1]
 )
-_OWNER_OPS = frozenset({'owner'})
-
-
-def _annotate_latest_version_modified(queryset):
-    latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[:1]
-    return queryset.annotate(
-        _search_latest_version_modified=Subquery(latest_version.values('modified'))
-    )
-
-
-def _annotate_latest_published_created(queryset):
-    latest_published = (
-        Version.objects.filter(dandiset=OuterRef('pk'))
-        .exclude(version='draft')
-        .order_by('-created')[:1]
-    )
-    return queryset.annotate(
-        _search_latest_published_created=Subquery(latest_published.values('created'))
-    )
+_LATEST_PUBLISHED_CREATED = Subquery(
+    Version.objects.filter(dandiset=OuterRef('pk'))
+    .exclude(version='draft')
+    .order_by('-created')
+    .values('created')[:1]
+)
 
 
 # Maps each operator to a Postgres jsonpath into the version-level
-# `assetsSummary` aggregation. Paths MUST be trusted constants: they're
-# interpolated into the SQL. `variableMeasured` holds bare strings rather
+# `assetsSummary` aggregation. `variableMeasured` holds bare strings rather
 # than objects with a `name`, so its path selects the elements themselves.
 _SUMMARY_PATH_OPS = {
     'species': '$.assetsSummary.species[*].name',
@@ -64,41 +66,65 @@ _SUMMARY_PATH_OPS = {
 }
 
 
-def _jsonpath_match(path: str, value: str) -> tuple[str, list[str]]:
-    """Build a parameterized `jsonb_path_exists` predicate on `metadata`.
+class _JsonbPathExists(Func):
+    """``jsonb_path_exists(<expression>, <path>::jsonpath)``, usable as a filter."""
 
-    `path` MUST come from a trusted allowlist; `value` is parameterized and
-    regex-escaped.
+    template = '%(function)s(%(expressions)s::jsonpath)'
+    function = 'jsonb_path_exists'
+    output_field = BooleanField()
+
+
+def _like_regex(pattern: str) -> str:
+    """Render a case-insensitive jsonpath ``like_regex`` filter on ``pattern``.
+
+    ``pattern`` is written as a JSON string literal, whose escaping rules
+    jsonpath shares.
     """
-    # `metadata` is left unqualified because Django may alias the Version
-    # table in subqueries.
-    where = (
-        'jsonb_path_exists(metadata, '
-        f"('{path} ? (@ like_regex ' "
-        '|| to_jsonb(%s::text)::text || '
-        '\' flag "i")\')::jsonpath)'
-    )
-    return where, [re.escape(value)]
+    return f'like_regex {json.dumps(pattern, ensure_ascii=False)} flag "i"'
 
 
-def _apply_summary_filters(
-    queryset: QuerySet[Dandiset], clauses: list[tuple[str, str]]
-) -> QuerySet[Dandiset]:
-    """Restrict dandisets to those with a version whose assetsSummary matches every clause.
+def _summary_predicate(operator: str, value: str) -> _JsonbPathExists:
+    """Match ``value`` case-insensitively against the operator's summary entries.
 
-    Clauses are AND'd on a single Version row.
+    The whole jsonpath is sent as a bound parameter, so nothing user-supplied
+    is interpolated into the SQL. ``value`` is regex-escaped, so it matches
+    literally.
     """
-    version_qs = Version.objects.all()
-    for operator, value in clauses:
-        where, params = _jsonpath_match(_SUMMARY_PATH_OPS[operator], value)
-        # `where` interpolates only an allowlisted jsonpath; the user value
-        # is bound via params (and regex-escaped).
-        version_qs = version_qs.extra(where=[where], params=params)  # noqa: S610
-    return queryset.filter(id__in=version_qs.values_list('dandiset_id', flat=True).distinct())
+    path = f'{_SUMMARY_PATH_OPS[operator]} ? (@ {_like_regex(re.escape(value))})'
+    return _JsonbPathExists(F('metadata'), Value(path))
 
 
-def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Dandiset]:
-    """Filter dandisets to those owned by the given user identifier.
+def _text_predicate(text: str) -> IContains:
+    """Case- and accent-insensitive substring match on the metadata text.
+
+    ``Unaccent`` is a bilateral transform, so Django unaccents ``text`` as
+    well: ``Mäuse``, ``Mause`` and ``MAUSE`` all match each other.
+    """
+    return IContains(Unaccent(Cast('metadata', TextField())), text)
+
+
+def _anatomy_predicate(value: str) -> _JsonbPathExists:
+    """Match an ``anatomy_exact:`` value against the Anatomy entries in ``about``.
+
+    An identifier (CURIE, underscore form, or IRI) matches entries with that
+    identifier in any spelling: the stored identifier must end in
+    ``PREFIX:digits`` or ``PREFIX_digits``, after a non-letter or a
+    percent-encoded slash, so ``MBA:1089`` doesn't match ``DMBA_1089``. Any
+    other value matches entries whose recorded name is the whole value. Both
+    are case-insensitive, and the jsonpath is bound as one parameter.
+    """
+    curie = normalize_curie(value)
+    if curie is not None:
+        prefix, digits = curie.split(':')
+        field, pattern = '@.identifier', f'(^|[^a-z]|%2f){prefix}[_:]{digits}$'
+    else:
+        field, pattern = '@.name', f'^{re.escape(value)}$'
+    path = f'$.about[*] ? (@.schemaKey == "Anatomy" && {field} {_like_regex(pattern)})'
+    return _JsonbPathExists(F('metadata'), Value(path))
+
+
+def _owner_predicate(value: str) -> Q:
+    """Match dandisets owned by the given user identifier.
 
     `value` is matched case-insensitively against the user's GitHub login
     (`SocialAccount.extra_data['login']` — the "username" the API and UI
@@ -122,77 +148,53 @@ def _apply_owner_filter(queryset: QuerySet[Dandiset], value: str) -> QuerySet[Da
     owned_pks = DandisetUserObjectPermission.objects.filter(
         user__in=matched_user_pks, permission__codename='owner'
     ).values('content_object')
-    return queryset.filter(pk__in=owned_pks)
+    return Q(pk__in=owned_pks)
 
 
-_MODIFIED_ALIAS = '_search_latest_version_modified'
-_PUBLISHED_ALIAS = '_search_latest_published_created'
+# Date operator -> (what is compared, comparison). `*_before` is exclusive and
+# `*_after` inclusive of the given day's midnight UTC.
+_DATE_OPS = {
+    'created_before': (F('created'), LessThan),
+    'created_after': (F('created'), GreaterThanOrEqual),
+    'modified_before': (_LATEST_VERSION_MODIFIED, LessThan),
+    'modified_after': (_LATEST_VERSION_MODIFIED, GreaterThanOrEqual),
+    'published_before': (_LATEST_PUBLISHED_CREATED, LessThan),
+    'published_after': (_LATEST_PUBLISHED_CREATED, GreaterThanOrEqual),
+}
 
 
-def _parse_date(operator: str, value: str) -> datetime:
-    try:
-        return datetime.strptime(value, '%Y-%m-%d').replace(tzinfo=UTC)
-    except ValueError as exc:
-        raise SearchSyntaxError(
-            f'Invalid date for "{operator}": {value!r}. Use YYYY-MM-DD.'
-        ) from exc
+def build_search_filter(query: str) -> Q:
+    """Compile a search query into a ``Q`` for ``Dandiset.objects.filter``.
 
-
-def _apply_date_filter(queryset, operator: str, ts: datetime, annotated: set[str]):
-    """Apply a single parsed date operator to the queryset, annotating as needed.
-
-    ``annotated`` is mutated to track which annotation aliases have been added,
-    so repeated date operators (e.g. modified_before AND modified_after) don't
-    re-annotate the queryset and conflict.
+    Raises :class:`SearchSyntaxError` for queries that don't parse or that use
+    an unknown operator, an empty operator value, or a malformed date.
     """
-    if operator == 'created_before':
-        return queryset.filter(created__lt=ts)
-    if operator == 'created_after':
-        return queryset.filter(created__gte=ts)
-    if operator in {'modified_before', 'modified_after'}:
-        if _MODIFIED_ALIAS not in annotated:
-            queryset = _annotate_latest_version_modified(queryset)
-            annotated.add(_MODIFIED_ALIAS)
-        suffix = '__lt' if operator == 'modified_before' else '__gte'
-        return queryset.filter(**{_MODIFIED_ALIAS + suffix: ts})
-    if operator in {'published_before', 'published_after'}:
-        if _PUBLISHED_ALIAS not in annotated:
-            queryset = _annotate_latest_published_created(queryset)
-            annotated.add(_PUBLISHED_ALIAS)
-        suffix = '__lt' if operator == 'published_before' else '__gte'
-        return queryset.filter(**{_PUBLISHED_ALIAS + suffix: ts})
-    raise ValueError(f'unknown date operator: {operator}')  # pragma: no cover
-
-
-def apply_search_filters(
-    queryset: QuerySet[Dandiset],
-    parsed: ParsedSearch,
-) -> QuerySet[Dandiset]:
-    """Apply structured operator filters onto a Dandiset queryset.
-
-    Free text in ``parsed`` is *not* applied here — that stays in the existing
-    full-text filter so the two paths can be tested independently.
-    """
-    if not parsed.operators:
-        return queryset
-
-    summary_clauses: list[tuple[str, str]] = []
-    annotated: set[str] = set()
-
+    parsed = parse_search(query)
+    version_predicates = [_text_predicate(text) for text in parsed.free_text]
+    dandiset_predicates = []
     for op in parsed.operators:
-        key = op.key
-        value = op.value.strip()
-        if not value:
-            raise SearchSyntaxError(f'Operator "{key}" requires a value (e.g. {key}:something).')
+        if op.key in _SUMMARY_PATH_OPS:
+            version_predicates.append(_summary_predicate(op.key, op.value))
+        elif op.key == 'anatomy_exact':
+            version_predicates.append(_anatomy_predicate(op.value))
+        elif op.key in _DATE_OPS:
+            lhs, lookup = _DATE_OPS[op.key]
+            dandiset_predicates.append(lookup(lhs, parse_date(op.key, op.value)))
+        elif op.key == 'owner':
+            dandiset_predicates.append(_owner_predicate(op.value))
+        else:  # pragma: no cover
+            raise ValueError(f'no query for operator: {op.key}')
 
-        if key in _DATE_OPS:
-            queryset = _apply_date_filter(queryset, key, _parse_date(key, value), annotated)
-        elif key in _SUMMARY_PATH_OPS:
-            summary_clauses.append((key, value))
-        elif key in _OWNER_OPS:
-            queryset = _apply_owner_filter(queryset, value)
+    q = Q(*dandiset_predicates)
+    if version_predicates:
+        # Filter Version in its own subquery: the unaccented-text cast and
+        # jsonpath calls don't compose with the outer queryset's joins.
+        matching = Version.objects.filter(*version_predicates).values('dandiset_id')
+        q &= Q(id__in=matching)
+    return q
 
-    if summary_clauses:
-        queryset = _apply_summary_filters(queryset, summary_clauses)
 
-    return queryset
+def apply_search_filters(queryset: QuerySet[Dandiset], query: str) -> QuerySet[Dandiset]:
+    """Restrict ``queryset`` to the dandisets matching the search query."""
+    q = build_search_filter(query)
+    return queryset.filter(q) if q else queryset

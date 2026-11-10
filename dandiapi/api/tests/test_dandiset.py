@@ -14,6 +14,7 @@ import pytest
 from dandiapi.api.asset_paths import add_asset_paths, add_version_asset_paths
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services.permissions.dandiset import (
+    add_dandiset_owner,
     get_dandiset_owners,
     get_visible_dandisets,
 )
@@ -1316,15 +1317,26 @@ def test_dandiset_rest_search_accented_characters(api_client):
     draft_version = DraftVersionFactory.create()
     draft_version.metadata['contributor'][0]['name'] = 'Buzsáki, György'
     draft_version.save()
+    DraftVersionFactory.create()  # a non-matching dandiset
 
-    assert (
-        api_client.get('/api/dandisets/', {'search': 'György'}).data['results']
-        == api_client.get('/api/dandisets/', {'search': 'Gyorgy'}).data['results']
-    )
-    assert (
-        api_client.get('/api/dandisets/', {'search': 'Buzsáki'}).data['results']
-        == api_client.get('/api/dandisets/', {'search': 'Buzsaki'}).data['results']
-    )
+    # Accents are ignored on both sides: the accented and plain spellings
+    # (in any case) all find the dandiset.
+    expected = {draft_version.dandiset.identifier}
+    for query in ['György', 'Gyorgy', 'GYÖRGY', 'Buzsáki', 'buzsaki', '"Buzsáki, György"']:
+        assert _search_ids(api_client, query) == expected, query
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_search_like_wildcards_match_literally(api_client):
+    draft_version = DraftVersionFactory.create()
+    draft_version.metadata['description'] = 'recorded at 100% contrast in snake_case'
+    draft_version.save()
+
+    expected = {draft_version.dandiset.identifier}
+    assert _search_ids(api_client, '100%') == expected
+    assert _search_ids(api_client, 'snake_case') == expected
+    assert _search_ids(api_client, '"at 1%"') == set()
+    assert _search_ids(api_client, 'snake_xase') == set()
 
 
 @pytest.mark.django_db
@@ -2179,3 +2191,53 @@ def test_advanced_search_owner_does_not_inflate_to_superuser_archive(api_client)
     DraftVersionFactory.create(dandiset=admin_owned)
 
     assert _search_ids(api_client, 'owner:admin-gh') == {admin_owned.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'name',
+    [
+        r'back\slash',
+        "O'Brien's mouse",
+        'Mäuse 😀',
+        'Cre/lox {x}|y',
+    ],
+    ids=['backslash', 'apostrophe', 'unicode', 'slash-braces-pipe'],
+)
+def test_advanced_search_summary_value_escaping(api_client, name):
+    # The summary jsonpath is built in Python and bound as one parameter. The
+    # value must survive both the regex escaping and the JSON-string escaping
+    # inside the jsonpath, and still match itself literally.
+    seeded = _seed_dandiset_with_summary(assets_summary={'species': [{'name': name}]})
+    _seed_dandiset_with_summary(assets_summary={'species': [{'name': 'Norway rat'}]})
+
+    assert _search_ids(api_client, f'species:"{name}"') == {seeded.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_advanced_search_combines_every_kind_of_term(api_client):
+    # Free text, a quoted phrase, a summary operator, a date operator, and
+    # owner: all AND'd in one compiled query.
+    owner = UserFactory.create(social_account__extra_data__login='ephys-lab')
+    match = _seed_dandiset_with_summary(
+        assets_summary={'species': [{'name': 'House mouse'}]},
+    )
+    add_dandiset_owner(match, owner)
+    version = match.draft_version
+    version.metadata['description'] = 'Place cells in hippocampal CA1'
+    version.save()
+
+    # Same metadata, wrong owner.
+    other = _seed_dandiset_with_summary(
+        assets_summary={'species': [{'name': 'House mouse'}]},
+    )
+    other_version = other.draft_version
+    other_version.metadata['description'] = 'Place cells in hippocampal CA1'
+    other_version.save()
+
+    query = 'hippocampal "place cells" species:mouse created_after:2000-01-01 owner:ephys-lab'
+    assert _search_ids(api_client, query) == {match.identifier}
+    assert _search_ids(api_client, query.replace('2000', '2999')) == set()
+    assert _search_ids(api_client, query.replace('hippocampal', 'striatal')) == set()
