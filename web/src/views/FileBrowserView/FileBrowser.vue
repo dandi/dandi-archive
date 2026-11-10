@@ -131,8 +131,8 @@
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
-                :href="item.asset && !tableViewerRoute(item, route) ? inlineURI(item.asset.asset_id) : undefined"
-                :to="tableViewerRoute(item, route) || (item.asset ? undefined : locationRoute(item.path))"
+                :href="item.asset && !tableViewerRoute(item, route, { identifier, version }) ? inlineURI(item.asset.asset_id) : undefined"
+                :to="tableViewerRoute(item, route, { identifier, version }) || (item.asset ? undefined : locationRoute(item.path))"
                 :active="false"
               >
                 <template #prepend>
@@ -172,8 +172,8 @@
                         <v-btn
                           icon
                           variant="text"
-                          :href="tableViewerRoute(item, route) ? undefined : inlineURI(item.asset.asset_id)"
-                          :to="tableViewerRoute(item, route)"
+                          :href="tableViewerRoute(item, route, { identifier, version }) ? undefined : inlineURI(item.asset.asset_id)"
+                          :to="tableViewerRoute(item, route, { identifier, version })"
                           v-bind="openInBtnProps"
                           @click.stop
                         >
@@ -392,9 +392,12 @@ function locationSlice(index: number) {
 }
 
 // The route for a directory, so that directory rows can be rendered as links.
+// Params are explicit because Vuetify re-resolves `:to` on every route change, including
+// after Back to a versionless landing URL, when the current route has no `version`.
 function locationRoute(newLocation: string): RouteLocationRaw {
   return {
     name: 'fileBrowser',
+    params: { identifier: props.identifier, version: props.version },
     query: { location: newLocation, page: '1' },
   } as RouteLocationRaw;
 }

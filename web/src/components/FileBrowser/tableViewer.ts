@@ -35,12 +35,14 @@ export function viewableAsTable(item: AssetPath): boolean {
 export function tableViewerRoute(
   item: AssetPath,
   route: RouteLocationNormalizedLoaded,
+  params: { identifier: string, version: string },
 ): RouteLocationRaw | undefined {
   if (!viewableAsTable(item)) {
     return undefined;
   }
   return {
     name: 'fileBrowser',
+    params,
     query: { ...route.query, [TABLE_QUERY_PARAM]: item.path },
   } as RouteLocationRaw;
 }
