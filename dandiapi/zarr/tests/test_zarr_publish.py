@@ -294,3 +294,60 @@ def test_zarr_list_filter_published(api_client: APIClient):
     assert list_zarr_ids() == [str(published_zarr.zarr_id), str(unpublished_zarr.zarr_id)]
     assert list_zarr_ids(published='false') == [str(unpublished_zarr.zarr_id)]
     assert list_zarr_ids(published='true') == [str(published_zarr.zarr_id)]
+
+
+@pytest.mark.django_db
+def test_replace_published_zarr_and_republish(
+    api_client: APIClient,
+    draft_asset_factory,
+    zarr_archive_factory,
+    zarr_file_factory,
+    django_capture_on_commit_callbacks,
+):
+    """
+    Exercise the workflow a client must follow to change a zarr which has been published.
+
+    The client creates a new zarr with the same name, uploads to it, and points the existing asset
+    at it. Publishing again must leave the first published version referencing the original zarr.
+    """
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
+    draft_version, old_zarr, old_asset = _publishable_zarr_version(
+        user, draft_asset_factory, zarr_archive_factory, zarr_file_factory
+    )
+    dandiset = draft_version.dandiset
+    publish_url = f'/api/dandisets/{dandiset.identifier}/versions/draft/publish/'
+
+    with django_capture_on_commit_callbacks(execute=True):
+        assert api_client.post(publish_url).status_code == 202
+
+    # Create a new zarr with the same name but different content
+    new_zarr = zarr_archive_factory(
+        dandiset=dandiset, name=old_zarr.name, status=ZarrArchiveStatus.UPLOADED
+    )
+    zarr_file_factory(zarr_archive=new_zarr, path='foo/baz')
+    ingest_zarr_archive(new_zarr.zarr_id)
+
+    # Point the existing asset at the new zarr
+    resp = api_client.put(
+        f'/api/dandisets/{dandiset.identifier}/versions/draft/assets/{old_asset.asset_id}/',
+        {'metadata': old_asset.full_metadata, 'zarr_id': new_zarr.zarr_id},
+    )
+    assert resp.status_code == 200, resp.json()
+    new_asset = Asset.objects.get(asset_id=resp.json()['asset_id'])
+
+    tasks.validate_asset_metadata_task(new_asset.id)
+    tasks.validate_version_metadata_task(draft_version.id)
+    with django_capture_on_commit_callbacks(execute=True):
+        assert api_client.post(publish_url).status_code == 202
+
+    # Both zarrs are now published, each in its own version, at the same path
+    old_zarr.refresh_from_db()
+    new_zarr.refresh_from_db()
+    assert old_zarr.published
+    assert new_zarr.published
+    assert new_zarr.checksum != old_zarr.checksum
+    first_version, second_version = dandiset.versions.exclude(version='draft').order_by('created')
+    assert first_version.assets.get().zarr == old_zarr
+    assert second_version.assets.get().zarr == new_zarr
+    assert first_version.assets.get().path == second_version.assets.get().path
