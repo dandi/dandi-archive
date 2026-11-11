@@ -195,10 +195,14 @@ _dandi_log_level: str = env.str('DJANGO_DANDI_LOG_LEVEL', default='INFO')
 logging.getLogger('dandiapi').setLevel(_dandi_log_level)
 
 DANDI_ZARR_PREFIX_NAME: str = env.str('DJANGO_DANDI_ZARR_PREFIX_NAME', default='zarr')
+
 # How long presigned zarr upload URLs remain valid. A zarr with unused (or superseded) upload URLs
 # can't finish ingestion until they expire, so this is deliberately shorter than other presigned
 # URLs, to bound that delay.
-DANDI_ZARR_UPLOAD_URL_EXPIRATION: timedelta = timedelta(hours=1)
+DANDI_ZARR_UPLOAD_URL_EXPIRATION: timedelta = timedelta(
+    seconds=env.int('DJANGO_DANDI_ZARR_UPLOAD_URL_EXPIRATION', default=3600)
+)
+
 
 # Required environment variables
 DANDI_WEB_APP_URL = urlunparse(cast('ParseResult', env.url('DJANGO_DANDI_WEB_APP_URL')))
