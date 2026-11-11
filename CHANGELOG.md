@@ -1,3 +1,25 @@
+# v1.2.2 (Wed Nov 11 2026)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, AI-driven contributions from @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate)), for all your work!
+
+#### 🐛 Bug Fix
+
+- End API session on web app logout (fixes silent re-login) [#3017](https://github.com/dandi/dandi-archive/pull/3017) ([@claude](https://github.com/claude) [@jjnesbitt](https://github.com/jjnesbitt) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Fix "Missing required param version" when going Back from the file browser to the landing page [#3008](https://github.com/dandi/dandi-archive/pull/3008) ([@claude](https://github.com/claude) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Add `stats.dandiarchive.org` link to External Resources menu [#3002](https://github.com/dandi/dandi-archive/pull/3002) ([@claude](https://github.com/claude) [@kabilar](https://github.com/kabilar))
+- Keep the DOI chip from being squashed by long titles on the Dandiset landing page [#3009](https://github.com/dandi/dandi-archive/pull/3009) ([@claude](https://github.com/claude) [@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+
+#### Authors: 4
+
+- AI-driven contributions from @yarikoptic ([@yarikoptic-gitmate](https://github.com/yarikoptic-gitmate))
+- Claude ([@claude](https://github.com/claude))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v1.2.1 (Fri Nov 06 2026)
 
 #### 🐛 Bug Fix
