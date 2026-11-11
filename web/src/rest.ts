@@ -74,14 +74,18 @@ const dandiRest = {
   },
   async logout() {
     if (oauthClient) {
-      await oauthClient.logout();
-      user.value = null;
-      localStorage.clear();
-      // oauthClient.logout() only discards the OAuth tokens held by the web app. The API server
-      // also keeps a session cookie (set when logging in via GitHub) which would silently log the
-      // user back in on the next "Login with GitHub". End that session too; the API redirects
-      // back to the web app afterwards.
-      window.location.assign(new URL('../accounts/logout/', dandiApiRoot).href);
+      try {
+        await oauthClient.logout();
+      } finally {
+        // Even if revoking the token fails, finish logging out locally and on the API server.
+        user.value = null;
+        localStorage.clear();
+        // oauthClient.logout() only discards the OAuth tokens held by the web app. The API server
+        // also keeps a session cookie (set when logging in via GitHub) which would silently log
+        // the user back in on the next "Login with GitHub". End that session too; the API
+        // redirects back to the web app afterwards.
+        window.location.assign(new URL('../accounts/logout/', dandiApiRoot).href);
+      }
     }
   },
   async me(): Promise<User> {
