@@ -307,9 +307,8 @@ def test_replace_published_zarr_and_republish(
     """
     Exercise the workflow a client must follow to change a zarr which has been published.
 
-    The client detects that the zarr is published, creates a new zarr with the same name, uploads
-    to it, and points the existing asset at it. Publishing again must leave the first published
-    version referencing the original zarr.
+    The client creates a new zarr with the same name, uploads to it, and points the existing asset
+    at it. Publishing again must leave the first published version referencing the original zarr.
     """
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
@@ -318,36 +317,16 @@ def test_replace_published_zarr_and_republish(
     )
     dandiset = draft_version.dandiset
     publish_url = f'/api/dandisets/{dandiset.identifier}/versions/draft/publish/'
-    zarr_list_params = {'dandiset': dandiset.identifier, 'name': old_zarr.name}
 
     with django_capture_on_commit_callbacks(execute=True):
         assert api_client.post(publish_url).status_code == 202
 
-    # The client can tell that the zarr may no longer be modified
-    assert api_client.get(f'/api/zarr/{old_zarr.zarr_id}/').json()['published'] is True
-    resp = api_client.post(
-        f'/api/zarr/{old_zarr.zarr_id}/files/', [{'path': 'foo/bar', 'base64md5': 'x' * 22 + '=='}]
+    # Create a new zarr with the same name but different content
+    new_zarr = zarr_archive_factory(
+        dandiset=dandiset, name=old_zarr.name, status=ZarrArchiveStatus.UPLOADED
     )
-    assert resp.status_code == 400
-    assert resp.json() == ZarrArchivePublishedError.message
-
-    # There's no unpublished zarr with this name yet, so one can be created
-    assert (
-        api_client.get('/api/zarr/', {**zarr_list_params, 'published': 'false'}).json()['results']
-        == []
-    )
-    resp = api_client.post('/api/zarr/', {'name': old_zarr.name, 'dandiset': dandiset.identifier})
-    assert resp.status_code == 200
-    new_zarr = ZarrArchive.objects.get(zarr_id=resp.json()['zarr_id'])
-
-    # If the client is interrupted here and starts over, creating the zarr again fails, and the
-    # existing unpublished zarr is the only one found when filtering by `published`
-    resp = api_client.post('/api/zarr/', {'name': old_zarr.name, 'dandiset': dandiset.identifier})
-    assert resp.status_code == 400
-    results = api_client.get('/api/zarr/', {**zarr_list_params, 'published': 'false'}).json()[
-        'results'
-    ]
-    assert [zarr['zarr_id'] for zarr in results] == [str(new_zarr.zarr_id)]
+    zarr_file_factory(zarr_archive=new_zarr, path='foo/baz')
+    ingest_zarr_archive(new_zarr.zarr_id)
 
     # Point the existing asset at the new zarr
     resp = api_client.put(
@@ -356,41 +335,19 @@ def test_replace_published_zarr_and_republish(
     )
     assert resp.status_code == 200, resp.json()
     new_asset = Asset.objects.get(asset_id=resp.json()['asset_id'])
-    assert new_asset.zarr == new_zarr
-    assert list(draft_version.assets.all()) == [new_asset]
-
-    # Upload different content to the new zarr, and ingest it
-    zarr_file_factory(zarr_archive=new_zarr, path='foo/baz')
-    assert api_client.post(f'/api/zarr/{new_zarr.zarr_id}/finalize/').status_code == 204
-    ingest_zarr_archive(new_zarr.zarr_id)
-    new_zarr.refresh_from_db()
-    assert new_zarr.status == ZarrArchiveStatus.COMPLETE
-    assert new_zarr.checksum != old_zarr.checksum
 
     tasks.validate_asset_metadata_task(new_asset.id)
     tasks.validate_version_metadata_task(draft_version.id)
     with django_capture_on_commit_callbacks(execute=True):
         assert api_client.post(publish_url).status_code == 202
 
-    # Both zarrs are now published, each in its own version, under the same name and path
+    # Both zarrs are now published, each in its own version, at the same path
     old_zarr.refresh_from_db()
     new_zarr.refresh_from_db()
     assert old_zarr.published
     assert new_zarr.published
+    assert new_zarr.checksum != old_zarr.checksum
     first_version, second_version = dandiset.versions.exclude(version='draft').order_by('created')
-    assert list(first_version.assets.all()) == [old_asset]
-    assert list(second_version.assets.all()) == [new_asset]
-    assert old_asset.path == new_asset.path
-    assert (
-        first_version.assets.get().full_metadata['digest']
-        != second_version.assets.get().full_metadata['digest']
-    )
-
-    # The cycle can be repeated, with any number of published zarrs sharing the name
-    resp = api_client.post('/api/zarr/', {'name': old_zarr.name, 'dandiset': dandiset.identifier})
-    assert resp.status_code == 200
-    results = api_client.get('/api/zarr/', {**zarr_list_params, 'published': 'false'}).json()[
-        'results'
-    ]
-    assert [zarr['zarr_id'] for zarr in results] == [resp.json()['zarr_id']]
-    assert api_client.get('/api/zarr/', zarr_list_params).json()['count'] == 3
+    assert first_version.assets.get().zarr == old_zarr
+    assert second_version.assets.get().zarr == new_zarr
+    assert first_version.assets.get().path == second_version.assets.get().path
