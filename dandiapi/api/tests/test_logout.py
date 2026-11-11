@@ -18,3 +18,12 @@ def test_logout_clears_session_and_redirects_to_web_app(client, user_factory):
     assert response.status_code == 302
     assert response['Location'] == settings.DANDI_WEB_APP_URL
     assert '_auth_user_id' not in client.session
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_logout_when_already_logged_out_redirects_to_web_app(client):
+    response = client.get(reverse('account_logout'))
+
+    assert response.status_code == 302
+    assert response['Location'] == settings.DANDI_WEB_APP_URL
