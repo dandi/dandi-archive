@@ -115,10 +115,6 @@ STATIC_ROOT.mkdir(exist_ok=True)
 # for convenience serving a site on a subpath.
 STATIC_URL = 'static/'
 
-# Make Django and Allauth redirects consistent, but both may be changed.
-LOGIN_REDIRECT_URL = '/'
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'
-
 CORS_ALLOWED_ORIGINS: list[str] = env.list('DJANGO_CORS_ALLOWED_ORIGINS', cast=str, default=[])
 CORS_ALLOWED_ORIGIN_REGEXES: list[str] = env.list(
     'DJANGO_CORS_ALLOWED_ORIGIN_REGEXES', cast=str, default=[]
@@ -200,6 +196,15 @@ DANDI_ZARR_PREFIX_NAME: str = env.str('DJANGO_DANDI_ZARR_PREFIX_NAME', default='
 DANDI_WEB_APP_URL = urlunparse(cast('ParseResult', env.url('DJANGO_DANDI_WEB_APP_URL')))
 DANDI_API_URL = urlunparse(cast('ParseResult', env.url('DJANGO_DANDI_API_URL')))
 DANDI_JUPYTERHUB_URL = urlunparse(cast('ParseResult', env.url('DJANGO_DANDI_JUPYTERHUB_URL')))
+
+# Make Django and Allauth redirects consistent, but both may be changed.
+LOGIN_REDIRECT_URL = '/'
+# After logging out of the API session, send the user back to the web app they came from.
+ACCOUNT_LOGOUT_REDIRECT_URL = DANDI_WEB_APP_URL
+# The web app logs out by navigating the browser to the logout URL (the API session lives in a
+# cookie on the API origin, which JavaScript on the web app origin cannot clear), so don't require
+# an intermediate confirmation page / POST.
+ACCOUNT_LOGOUT_ON_GET = True
 
 # These are not used by us directly, but are used by dandi-schema. Not including them would modify
 # the archive's behavior, so we require they be set.
