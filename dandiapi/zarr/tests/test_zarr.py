@@ -39,6 +39,7 @@ def test_zarr_rest_create(api_client):
         'checksum': None,
         'file_count': 0,
         'size': 0,
+        'published': False,
         'ingestion_deferred_until': None,
     }
     assert resp.status_code == 200
@@ -156,6 +157,7 @@ def test_zarr_rest_get(api_client, zarr_archive_factory, zarr_file_factory):
         'checksum': zarr_archive.checksum,
         'file_count': 1,
         'size': zarr_file.size,
+        'published': False,
         'ingestion_deferred_until': None,
     }
 
@@ -262,6 +264,7 @@ def test_zarr_rest_get_very_big(api_client, zarr_archive_factory):
         'checksum': zarr_archive.checksum,
         'file_count': ten_quadrillion,
         'size': ten_petabytes,
+        'published': False,
         'ingestion_deferred_until': None,
     }
 
@@ -279,6 +282,7 @@ def test_zarr_rest_get_empty(api_client):
         'checksum': zarr_archive.checksum,
         'file_count': 0,
         'size': 0,
+        'published': False,
         'ingestion_deferred_until': None,
     }
 

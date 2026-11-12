@@ -24,6 +24,8 @@ from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import DandisetIdentifierField
 from dandiapi.zarr.models import (
     ZarrArchive,
+    ZarrArchiveDandisetPublishingError,
+    ZarrArchivePublishedError,
     ZarrArchiveStatus,
     ZarrUploadURL,
     validate_base64_md5,
@@ -58,6 +60,7 @@ class ZarrArchiveSerializer(serializers.ModelSerializer):
             'checksum',
             'file_count',
             'size',
+            'published',
             'ingestion_deferred_until',
         ]
         fields = ['name', 'dandiset', *read_only_fields]
@@ -102,6 +105,7 @@ class ZarrListSerializer(serializers.ModelSerializer):
             'checksum',
             'file_count',
             'size',
+            'published',
             'ingestion_deferred_until',
         ]
         fields = ['name', 'dandiset', *read_only_fields]
@@ -133,6 +137,10 @@ class ZarrExploreOutputSerializer(serializers.Serializer):
 class ZarrListQuerySerializer(serializers.Serializer):
     dandiset = DandisetIdentifierField(required=False)
     name = serializers.CharField(required=False)
+    # Since multiple published zarrs may share a name, this allows finding the single unpublished
+    # zarr with a given name. The default is necessary, as an omitted boolean query parameter
+    # would otherwise be treated as false.
+    published = serializers.BooleanField(required=False, allow_null=True, default=None)
 
 
 class ZarrViewSet(ReadOnlyModelViewSet):
@@ -165,6 +173,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             queryset = queryset.filter(dandiset=data['dandiset'])
         if 'name' in data:
             queryset = queryset.filter(name=data['name'])
+        if data['published'] is not None:
+            queryset = queryset.filter(published=data['published'])
 
         # Final response
         queryset = self.paginate_queryset(queryset)
@@ -202,7 +212,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         responses={
             # Note: Having proper None results in no documentation in /swagger
             204: 'None - expected normal return without any content',
-            400: ZarrArchive.INGEST_ERROR_MSG,
+            400: f'{ZarrArchive.INGEST_ERROR_MSG}, or {ZarrArchivePublishedError.message}',
+            423: ZarrArchiveDandisetPublishingError.message,
         },
         operation_summary='Finalize a zarr archive, dispatching async checksum computation.',
         operation_description='',
@@ -216,6 +227,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
+
+            zarr_archive.ensure_modifiable()
 
             # Don't ingest if already ingested/ingesting
             if zarr_archive.status != ZarrArchiveStatus.PENDING:
@@ -306,7 +319,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         request_body=ZarrFileCreationSerializer(),
         responses={
             200: ZarrFileCreationSerializer,
-            400: ZarrArchive.INGEST_ERROR_MSG,
+            400: f'{ZarrArchive.INGEST_ERROR_MSG}, or {ZarrArchivePublishedError.message}',
+            423: ZarrArchiveDandisetPublishingError.message,
         },
         operation_summary='Request to upload files to a zarr archive.',
         operation_description='',
@@ -325,6 +339,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             # Deny if the user doesn't have ownership permission
             if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 raise PermissionDenied
+
+            zarr_archive.ensure_modifiable()
 
             serializer = ZarrFileCreationSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
@@ -380,14 +396,15 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         request_body=ZarrDeleteFileRequestSerializer(many=True),
         responses={
             200: ZarrArchiveSerializer(many=True),
-            400: ZarrArchive.INGEST_ERROR_MSG,
+            400: f'{ZarrArchive.INGEST_ERROR_MSG}, or {ZarrArchivePublishedError.message}',
+            423: ZarrArchiveDandisetPublishingError.message,
         },
         operation_summary='Delete files from a zarr archive.',
     )
     @files.mapping.delete
     def delete_files(self, request, zarr_id):
         """Delete files from a zarr archive."""
-        queryset = self.get_queryset().select_for_update()
+        queryset = self.get_queryset().select_for_update(of=['self'])
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
             # Changes are permitted while UPLOADED (e.g. if ingestion was deferred due to unused
@@ -398,6 +415,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
+
+            zarr_archive.ensure_modifiable()
+
             serializer = ZarrDeleteFileRequestSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
             paths = [file['path'] for file in serializer.validated_data]

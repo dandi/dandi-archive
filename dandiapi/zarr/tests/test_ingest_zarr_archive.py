@@ -148,8 +148,10 @@ def test_ingest_zarr_archive_modified(zarr_archive_factory, zarr_file_factory):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_sets_version_pending(zarr_archive_factory, zarr_file_factory):
-    """Ensure that when a zarr is ingested, it sets the version back to PENDING."""
+def test_ingest_zarr_archive_sets_version_pending(
+    zarr_archive_factory, zarr_file_factory, draft_asset_factory
+):
+    """Ensure that when a zarr is ingested, it sets the version containing it back to PENDING."""
     draft_version = DraftVersionFactory.create(status=Version.Status.VALID)
     assert draft_version.status == Version.Status.VALID
 
@@ -158,6 +160,7 @@ def test_ingest_zarr_archive_sets_version_pending(zarr_archive_factory, zarr_fil
         dandiset=draft_version.dandiset, status=ZarrArchiveStatus.UPLOADED
     )
     zarr_file_factory(zarr_archive=zarr_archive, size=100)
+    draft_version.assets.add(draft_asset_factory(zarr=zarr_archive, blob=None))
 
     # Kick off ingest
     ingest_zarr_archive(zarr_archive.zarr_id)
@@ -166,6 +169,51 @@ def test_ingest_zarr_archive_sets_version_pending(zarr_archive_factory, zarr_fil
 
     # Check that version is now `PENDING`, instead of VALID
     assert draft_version.status == Version.Status.PENDING
+
+
+@pytest.mark.django_db(transaction=True)
+def test_ingest_zarr_archive_not_in_version_publishing(zarr_archive_factory, zarr_file_factory):
+    """
+    Ensure an UPLOADED zarr is ingested while its dandiset is publishing, without interrupting it.
+
+    A finalized zarr which isn't in the draft version doesn't prevent that version from being
+    published, as the zarr isn't part of what's being published. Its ingestion must still run,
+    rather than leaving the zarr UPLOADED, and must not modify the version being published.
+    """
+    draft_version = DraftVersionFactory.create(status=Version.Status.PUBLISHING)
+    zarr_archive = zarr_archive_factory(
+        dandiset=draft_version.dandiset, status=ZarrArchiveStatus.UPLOADED
+    )
+    zarr_file_factory(zarr_archive=zarr_archive, size=100)
+
+    ingest_zarr_archive(zarr_archive.zarr_id)
+
+    zarr_archive.refresh_from_db()
+    draft_version.refresh_from_db()
+    assert zarr_archive.status == ZarrArchiveStatus.COMPLETE
+    assert draft_version.status == Version.Status.PUBLISHING
+
+
+@pytest.mark.django_db(transaction=True)
+def test_ingest_zarr_archive_force_skipped_while_publishing(
+    zarr_archive_factory, zarr_file_factory
+):
+    """Ensure forced ingestion can't reset a COMPLETE zarr while its dandiset is publishing."""
+    draft_version = DraftVersionFactory.create(status=Version.Status.PUBLISHING)
+    zarr_archive = zarr_archive_factory(
+        dandiset=draft_version.dandiset,
+        status=ZarrArchiveStatus.COMPLETE,
+        checksum=EMPTY_CHECKSUM,
+    )
+    zarr_file_factory(zarr_archive=zarr_archive, size=100)
+
+    ingest_zarr_archive(zarr_archive.zarr_id, force=True)
+
+    # Ingestion would have changed these values, had it run
+    zarr_archive.refresh_from_db()
+    assert zarr_archive.status == ZarrArchiveStatus.COMPLETE
+    assert zarr_archive.checksum == EMPTY_CHECKSUM
+    assert zarr_archive.file_count == 0
 
 
 @pytest.mark.django_db(transaction=True)

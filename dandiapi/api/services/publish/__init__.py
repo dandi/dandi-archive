@@ -23,8 +23,10 @@ from dandiapi.api.services.publish.exceptions import (
     DandisetInvalidMetadataError,
     DandisetNotLockedError,
     DandisetValidationPendingError,
+    DandisetZarrsNotCompleteError,
 )
 from dandiapi.api.tasks import write_manifest_files
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -46,6 +48,28 @@ def publish_asset(*, asset: Asset) -> None:
         locked_asset.save()
 
 
+def _lock_unpublished_draft_zarrs(dandiset_id: int) -> list[ZarrArchive]:
+    """
+    Lock and return all unpublished zarr archives referenced by the draft version of a dandiset.
+
+    This MUST be called before locking the draft version itself. Zarr ingestion and the zarr
+    modification endpoints lock the zarr archive before touching the version, so acquiring
+    locks in the same order here avoids deadlocks. Holding these locks also guarantees that no
+    zarr can be modified between checking its state and changing the draft version status.
+    """
+    draft_zarr_ids = Asset.objects.filter(
+        versions__dandiset_id=dandiset_id,
+        versions__version='draft',
+        zarr__isnull=False,
+    ).values('zarr_id')
+
+    return list(
+        ZarrArchive.objects.filter(id__in=draft_zarr_ids, published=False)
+        .order_by('id')
+        .select_for_update()
+    )
+
+
 def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  # noqa: C901
     """
     Prepare a dandiset to be published by locking it and setting its status to PUBLISHING.
@@ -59,10 +83,11 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  #
         raise NotAllowedError('Operation only allowed on OPEN dandisets', 400)
 
     with transaction.atomic():
+        # The zarrs MUST be locked before the draft version. Zarr ingestion locks a zarr and then
+        # updates (and therefore locks) the draft version, so acquiring these locks in the
+        # opposite order here could deadlock with a concurrent ingestion.
+        draft_zarrs = _lock_unpublished_draft_zarrs(dandiset.id)
         draft_version: Version = dandiset.versions.select_for_update().get(version='draft')
-
-        if draft_version.assets.filter(zarr__isnull=False).exists():
-            raise NotAllowedError('Cannot publish dandisets which contain zarrs', 400)
 
         if not draft_version.publishable:
             match draft_version.status:
@@ -83,6 +108,13 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  #
                         f'Draft version of dandiset {dandiset.identifier} '
                         f'has unknown status "{other}".'
                     )
+
+        # Any zarr archives which are to be published must be fully ingested. Since these zarrs
+        # are locked, and the zarr endpoints refuse modifications while the draft version is
+        # PUBLISHING, they cannot change between here and when they're marked as published.
+        # Ingestion also verifies that no outstanding upload URL can change a COMPLETE zarr.
+        if any(zarr.status != ZarrArchiveStatus.COMPLETE for zarr in draft_zarrs):
+            raise DandisetZarrsNotCompleteError
 
         draft_version.status = Version.Status.PUBLISHING
         draft_version.save()
@@ -122,6 +154,7 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
     Calling `_lock_dandiset_for_publishing()` is a precondition for calling this function.
     """
     with transaction.atomic():
+        draft_zarrs = _lock_unpublished_draft_zarrs(dandiset_id)
         old_version: Version = Version.objects.select_for_update().get(
             dandiset_id=dandiset_id,
             version='draft',
@@ -132,6 +165,13 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
                 'Dandiset must be in PUBLISHING state. Call `_lock_dandiset_for_publishing()` '
                 'before this function.'
             )
+
+        # This should already be guaranteed by `_lock_dandiset_for_publishing()`
+        if any(zarr.status != ZarrArchiveStatus.COMPLETE for zarr in draft_zarrs):
+            raise DandisetZarrsNotCompleteError
+
+        # Mark all zarrs contained in this version as published, preventing any future changes
+        ZarrArchive.objects.filter(id__in=[zarr.id for zarr in draft_zarrs]).update(published=True)
 
         new_version: Version = _build_publishable_version_from_draft(old_version)
         new_version.save()
