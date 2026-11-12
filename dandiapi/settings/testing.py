@@ -29,6 +29,9 @@ CELERY_TASK_ALWAYS_EAGER = True
 
 DANDI_ZARR_PREFIX_NAME = 'test-zarr'
 
+# MinIO ignores the role when issuing temporary credentials, but one must still be provided.
+DANDI_ZARR_UPLOAD_ROLE_ARN = 'arn:aws:iam::000000000000:role/minio-placeholder'
+
 DANDI_JUPYTERHUB_URL = 'https://hub.dandiarchive.org/'
 
 DANDI_DEV_EMAIL = 'test-dev@example.com'

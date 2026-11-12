@@ -57,6 +57,9 @@ STORAGES['default'] = {
     },
 }
 
+# MinIO ignores the role when issuing temporary credentials, but one must still be provided.
+DANDI_ZARR_UPLOAD_ROLE_ARN = 'arn:aws:iam::000000000000:role/minio-placeholder'
+
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 OAUTH2_PROVIDER['ALLOWED_REDIRECT_URI_SCHEMES'] = ['http', 'https']

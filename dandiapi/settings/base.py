@@ -191,6 +191,15 @@ _dandi_log_level: str = env.str('DJANGO_DANDI_LOG_LEVEL', default='INFO')
 logging.getLogger('dandiapi').setLevel(_dandi_log_level)
 
 DANDI_ZARR_PREFIX_NAME: str = env.str('DJANGO_DANDI_ZARR_PREFIX_NAME', default='zarr')
+# The IAM role that is assumed to issue temporary S3 credentials for uploading to a zarr.
+# If this is unset, the zarr upload credentials endpoint is unavailable.
+DANDI_ZARR_UPLOAD_ROLE_ARN: str | None = env.str('DJANGO_DANDI_ZARR_UPLOAD_ROLE_ARN', default=None)
+# The lifetime of those credentials, in seconds. This cannot exceed the role's maximum session
+# duration.
+DANDI_ZARR_UPLOAD_CREDENTIALS_DURATION: int = env.int(
+    'DJANGO_DANDI_ZARR_UPLOAD_CREDENTIALS_DURATION',
+    default=int(timedelta(hours=1).total_seconds()),
+)
 
 # Required environment variables
 DANDI_WEB_APP_URL = urlunparse(cast('ParseResult', env.url('DJANGO_DANDI_WEB_APP_URL')))

@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.http import HttpResponseRedirect
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -22,6 +23,7 @@ from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import DandisetIdentifierField
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, validate_zarr_path
 from dandiapi.zarr.tasks import ingest_zarr_archive
+from dandiapi.zarr.upload_credentials import issue_upload_credentials, required_object_tags
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AnonymousUser, User
@@ -37,6 +39,21 @@ class ZarrFileCreationSerializer(serializers.Serializer):
 
 class ZarrDeleteFileRequestSerializer(serializers.Serializer):
     path = serializers.CharField(validators=[validate_zarr_path])
+
+
+class ZarrUploadCredentialsSerializer(serializers.Serializer):
+    class CredentialsSerializer(serializers.Serializer):
+        access_key_id = serializers.CharField()
+        secret_access_key = serializers.CharField()
+        session_token = serializers.CharField()
+        expiration = serializers.DateTimeField()
+
+    credentials = CredentialsSerializer()
+    bucket = serializers.CharField()
+    prefix = serializers.CharField()
+    region = serializers.CharField()
+    endpoint_url = serializers.CharField(allow_null=True)
+    object_tags = serializers.DictField(child=serializers.CharField())
 
 
 class ZarrArchiveSerializer(serializers.ModelSerializer):
@@ -219,6 +236,76 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         # Dispatch task
         ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id)
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        method='POST',
+        request_body=no_body,
+        responses={
+            200: ZarrUploadCredentialsSerializer,
+            400: ZarrArchive.INGEST_ERROR_MSG,
+            501: ZarrArchive.UPLOAD_CREDENTIALS_UNAVAILABLE_MSG,
+        },
+        operation_summary='Issue temporary S3 credentials for uploading to a zarr archive.',
+        operation_description=(
+            'The credentials can only write and delete objects under the returned "prefix" of the '
+            'returned "bucket". Every object must be uploaded with exactly the returned '
+            '"object_tags". The credentials expire, and this may be called again to obtain new '
+            'ones.'
+        ),
+    )
+    @action(methods=['POST'], detail=True)
+    def credentials(self, request, zarr_id):
+        """Issue temporary S3 credentials for uploading to a zarr archive."""
+        if settings.DANDI_ZARR_UPLOAD_ROLE_ARN is None:
+            return Response(
+                ZarrArchive.UPLOAD_CREDENTIALS_UNAVAILABLE_MSG,
+                status=status.HTTP_501_NOT_IMPLEMENTED,
+            )
+
+        queryset = self.get_queryset().select_for_update(of=['self'])
+        with transaction.atomic():
+            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+            if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
+                # The user does not have ownership permission
+                raise PermissionDenied
+
+            if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
+                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+
+            # The credentials fix whether uploads must be tagged as embargoed, so they must not
+            # be issued while that is changing.
+            if zarr_archive.dandiset.unembargo_in_progress:
+                return Response(
+                    'Cannot upload to zarr archive during unembargo',
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # This is done within the transaction, so that a failure leaves the zarr unchanged
+            credentials = issue_upload_credentials(zarr_archive=zarr_archive, user=request.user)
+
+            # Set status back to pending, since with these credentials the zarr could be changed
+            zarr_archive.mark_pending()
+            zarr_archive.save()
+
+            audit.issue_zarr_credentials(
+                dandiset=zarr_archive.dandiset,
+                user=request.user,
+                zarr_archive=zarr_archive,
+                expiration=credentials.expiration,
+            )
+
+        logger.info('Issued upload credentials for zarr archive %s', zarr_archive.zarr_id)
+        serializer = ZarrUploadCredentialsSerializer(
+            instance={
+                'credentials': credentials,
+                'bucket': zarr_archive.storage.bucket_name,
+                'prefix': zarr_archive.s3_path(''),
+                'region': zarr_archive.storage.region_name,
+                'endpoint_url': zarr_archive.storage.client_endpoint_url,
+                'object_tags': required_object_tags(zarr_archive),
+            }
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         method='GET',

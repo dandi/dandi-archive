@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.utils.dateparse import parse_datetime
 import pytest
 
 from dandiapi.api.asset_paths import add_version_asset_paths
@@ -330,6 +331,28 @@ def test_audit_upload_zarr_chunks(api_client, zarr_archive_factory):
     verify_model_properties(rec, user)
     assert rec.details['zarr_id'] == zarr_archive.zarr_id
     assert rec.details['paths'] == paths
+
+
+@pytest.mark.django_db
+def test_audit_issue_zarr_credentials(api_client, zarr_archive_factory):
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset)
+
+    # Request upload credentials.
+    api_client.force_authenticate(user=user)
+    resp = api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/credentials/')
+    assert resp.status_code == 200
+
+    # Verify the issue_zarr_credentials audit record.
+    rec = get_latest_audit_record(
+        dandiset=draft_version.dandiset, record_type='issue_zarr_credentials'
+    )
+    verify_model_properties(rec, user)
+    assert rec.details['zarr_id'] == zarr_archive.zarr_id
+    assert parse_datetime(rec.details['expiration']) == parse_datetime(
+        resp.json()['credentials']['expiration']
+    )
 
 
 @pytest.mark.django_db

@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 from dandiapi.api.models import AuditRecord, Dandiset
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from django.contrib.auth.models import User
 
     from dandiapi.api.models.asset import Asset
@@ -248,6 +250,29 @@ def delete_zarr_chunks(
         dandiset=dandiset,
         user=user,
         record_type='delete_zarr_chunks',
+        details=details,
+        admin=admin,
+        description=description,
+    )
+
+
+def issue_zarr_credentials(
+    *,
+    dandiset: Dandiset,
+    user: User | None,
+    zarr_archive: ZarrArchive,
+    expiration: datetime,
+    admin: bool = False,
+    description: str = '',
+) -> AuditRecord:
+    details = {
+        'zarr_id': str(zarr_archive.zarr_id),
+        'expiration': expiration.isoformat(),
+    }
+    return _make_audit_record(
+        dandiset=dandiset,
+        user=user,
+        record_type='issue_zarr_credentials',
         details=details,
         admin=admin,
         description=description,

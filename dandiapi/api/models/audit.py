@@ -14,6 +14,7 @@ AuditRecordType = Literal[
     'create_zarr',
     'upload_zarr_chunks',
     'delete_zarr_chunks',
+    'issue_zarr_credentials',
     'finalize_zarr',
     'unembargo_dandiset',
     'publish_dandiset',

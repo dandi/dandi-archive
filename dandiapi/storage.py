@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 import hashlib
 import io
 import json
@@ -13,9 +14,21 @@ from storages.utils import clean_name
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+    from datetime import datetime
 
     from mypy_boto3_s3.client import S3Client
     from mypy_boto3_s3.service_resource import S3ServiceResource
+    from mypy_boto3_sts.client import STSClient
+
+
+@dataclass(frozen=True)
+class TemporaryCredentials:
+    """Short-lived AWS credentials, to be given to an end user."""
+
+    access_key_id: str
+    secret_access_key: str
+    session_token: str
+    expiration: datetime
 
 
 class _WritableSha256(io.RawIOBase):
@@ -46,6 +59,7 @@ class DandiS3Storage(S3Storage):
     * Provides an API to get the ETag of an object
     * Provides an API to tag objects
     * Provides an API to efficiently calculate the SHA256 checksums of an object
+    * Provides an API to issue temporary credentials with restricted permissions
     """
 
     # S3Storage provides this, but doesn't properly annotate it
@@ -73,6 +87,63 @@ class DandiS3Storage(S3Storage):
     @property
     def s3_client(self) -> S3Client:
         return self.connection.meta.client
+
+    @property
+    def sts_client(self) -> STSClient:
+        sts_client = getattr(self._connections, 'sts_client', None)
+        if sts_client is None:
+            session = self._create_session()
+            self._connections.sts_client = session.client(
+                'sts',
+                region_name=self.region_name,
+                use_ssl=self.use_ssl,
+                endpoint_url=self.endpoint_url,
+                # "client_config" can't be reused here, as its signature version is specific to S3
+                config=Config(
+                    connect_timeout=5,
+                    read_timeout=5,
+                    retries={'mode': 'standard'},
+                ),
+                verify=self.verify,
+            )
+        return self._connections.sts_client
+
+    @property
+    def client_endpoint_url(self) -> str | None:
+        """
+        Return the endpoint URL that an end user's S3 client must be configured with.
+
+        This is `None` when the client should use the default AWS endpoint.
+        """
+        return self.endpoint_url
+
+    def assume_role(
+        self,
+        role_arn: str,
+        *,
+        session_name: str,
+        policy: Mapping[str, Any],
+        duration: int,
+    ) -> TemporaryCredentials:
+        """
+        Issue temporary credentials for a role, restricted by a session policy.
+
+        The permissions of the credentials are the intersection of the role's own permissions and
+        `policy`, so `policy` can only narrow what the role is allowed to do.
+        """
+        response = self.sts_client.assume_role(
+            RoleArn=role_arn,
+            RoleSessionName=session_name,
+            Policy=json.dumps(policy),
+            DurationSeconds=duration,
+        )
+        credentials = response['Credentials']
+        return TemporaryCredentials(
+            access_key_id=credentials['AccessKeyId'],
+            secret_access_key=credentials['SecretAccessKey'],
+            session_token=credentials['SessionToken'],
+            expiration=credentials['Expiration'],
+        )
 
     # The basic S3Storage does not implement generate_filename or get_valid_name,
     # so upon FileField save, the following call stack normally occurs:
@@ -265,6 +336,12 @@ class MinioDandiS3Storage(DandiS3Storage):
                 verify=False,
             )
         return self._connections.media_connection
+
+    @property
+    def client_endpoint_url(self) -> str | None:
+        if self.media_url:
+            return f'{self.media_url.scheme}://{self.media_url.hostname}:{self.media_url.port}'
+        return super().client_endpoint_url
 
     def _url_unsigned(self, name: str) -> str:
         if self.media_url:
