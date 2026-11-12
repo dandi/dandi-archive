@@ -13,8 +13,12 @@ from zarr_checksum.generators import S3ClientOptions, yield_files_s3
 from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.version import Version
-from dandiapi.api.services.exceptions import DandiError
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadURL
+from dandiapi.zarr.models import (
+    ZarrArchive,
+    ZarrArchiveDandisetPublishingError,
+    ZarrArchiveStatus,
+    ZarrUploadURL,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -46,15 +50,25 @@ def _ingest_zarr_archive(zarr_id: str, *, force: bool = False):
         zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
 
         # Published zarrs are immutable, and must never be re-ingested (even if forced)
-        try:
-            zarr.ensure_modifiable()
-        except DandiError as e:
-            logger.info('Cannot ingest zarr %s: %s Exiting...', zarr_id, e.message)
+        if zarr.published:
+            logger.info('Zarr %s is published, and cannot be ingested. Exiting...', zarr_id)
             return
 
-        if not force and zarr.status != ZarrArchiveStatus.UPLOADED:
-            logger.info('Zarrs must be in an UPLOADED state to begin ingestion. Exiting...')
-            return
+        if zarr.status != ZarrArchiveStatus.UPLOADED:
+            if not force:
+                logger.info('Zarrs must be in an UPLOADED state to begin ingestion. Exiting...')
+                return
+
+            # Forced ingestion could reset a COMPLETE zarr that's part of a draft version which is
+            # being published, so it must wait until publishing has finished. This isn't a concern
+            # for an UPLOADED zarr, as a draft version containing one can't begin publishing.
+            # Skipping it would instead leave it stranded, as nothing would retry its ingestion
+            # until its upload URLs expire.
+            try:
+                zarr.ensure_modifiable()
+            except ZarrArchiveDandisetPublishingError as e:
+                logger.info('Cannot ingest zarr %s: %s Exiting...', zarr_id, e.message)
+                return
 
         # Set as ingesting
         previous_status = zarr.status
