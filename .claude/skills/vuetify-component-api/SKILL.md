@@ -49,6 +49,39 @@ Adding one is a signal to stop and look for the prop first.
    Write CSS only for something Vuetify genuinely has no answer for, and say in a
    comment what that something is.
 
+6. **A named route in a Vuetify `:to` must pass its own `params`.**
+   Given `{ name, query }` with no `params`, vue-router fills the params from the
+   *current* route. A plain `<router-link>` gets away with that, but a Vuetify
+   component with `:to` can resolve its link again while it is being unmounted,
+   after the route has already changed. `v-list-item` does: it uses its resolved
+   href as its id in the parent `v-list` and unregisters that id in
+   `onBeforeUnmount`. If the new route lacks a param the target's path needs,
+   vue-router throws `Missing required param "..."` in the middle of the page
+   change.
+
+   Here, `fileBrowser` is `/dandiset/:identifier/:version/files` but
+   `dandisetLanding` is `/dandiset/:identifier/:version?`. So browser Back from
+   the file browser to a versionless landing URL such as `/dandiset/000003` threw
+   `Missing required param "version"`
+   ([#3004](https://github.com/dandi/dandi-archive/issues/3004)). The fix
+   ([#3008](https://github.com/dandi/dandi-archive/pull/3008)) passes the params:
+
+   ```ts
+   // Breaks once the current route no longer has `version`:
+   return { name: 'fileBrowser', query: { location, page: '1' } };
+   // Works from any route:
+   return {
+     name: 'fileBrowser',
+     params: { identifier: props.identifier, version: props.version },
+     query: { location, page: '1' },
+   };
+   ```
+
+   This applies to helpers that build routes for Vuetify components too
+   (`locationRoute()`, `tableViewerRoute()`): take the params as arguments.
+   Moving an existing `<router-link>`'s `:to` onto a Vuetify component is
+   therefore not a markup-only change, even when the route object is untouched.
+
 ## Worked example
 
 From [PR #2926](https://github.com/dandi/dandi-archive/pull/2926), review commit
@@ -124,6 +157,30 @@ After — the props do all of it; the handler, the wrapper links, and the entire
 Note `:href` and `:to` are mutually exclusive per row — pass `undefined` for the
 one that doesn't apply rather than branching the whole element with `v-if`.
 
+**As merged, this "after" broke browser Back** (rule 6). `locationRoute()`
+returned `{ name: 'fileBrowser', query }` with no `params`. The `<router-link>`
+rows in the "before" tolerated that; the `v-list-item` rows did not, so
+landing page → Files → Back threw `Missing required param "version"`
+([#3004](https://github.com/dandi/dandi-archive/issues/3004)). The "before"
+already had one `v-list-item :to="locationRoute(...)"`, the `..` row, but it is
+only shown inside a subfolder, so its bug needed a jump of two or more history
+entries back to the landing page. The refactor put the same pattern on every
+row, which moved the bug onto the most common path. The fixed helper
+([#3008](https://github.com/dandi/dandi-archive/pull/3008)):
+
+```ts
+function locationRoute(newLocation: string): RouteLocationRaw {
+  return {
+    name: 'fileBrowser',
+    params: { identifier: props.identifier, version: props.version },
+    query: { location: newLocation, page: '1' },
+  } as RouteLocationRaw;
+}
+```
+
+Before spreading a pattern that already exists in the file, check that the
+existing use is actually correct.
+
 ## Before you commit
 
 - Any new `<style scoped>` rule: name the Vuetify prop or utility class you
@@ -132,6 +189,15 @@ one that doesn't apply rather than branching the whole element with `v-if`.
 - Any new `@click` that navigates: replace it with `:to` or `:href`.
 - Any new `position: absolute` / `z-index` used to enlarge a click target:
   the target component probably takes `to`/`href` itself.
+- Any named route (`name: '...'`) in a Vuetify `:to`, or in a helper that
+  builds one: does it pass `params` for every required segment of the target
+  path?
 - Linkified a component? Verify right-click, middle-click, and ctrl/cmd-click
   in the deploy preview, and that every button inside it still works and does
   *not* navigate.
+- Also leave the page with browser Back, to a URL whose route lacks one of those
+  params (for the file browser: a landing URL with no version, such as
+  `/dandiset/000003`). Try a single Back from the top level and a jump of two or
+  more history entries back from a nested state such as a subfolder, and check
+  the console for `Missing required param`. #3008 adds an e2e regression test
+  for the file browser in `e2e/tests/fileBrowserPage.spec.ts`.
