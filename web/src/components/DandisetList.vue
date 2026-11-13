@@ -4,13 +4,12 @@
     class="pb-8"
   >
     <v-list-item
-      v-for="(item, index) in dandisets"
+      v-for="item in dandisets"
       :key="item.dandiset.identifier"
       class="py-3"
       :to="{
         name: 'dandisetLanding',
         params: { identifier: item.dandiset.identifier },
-        state: { listing: { query: { ...$route.query }, pos: getPos(index) } },
       }"
       exact
     >
@@ -80,14 +79,12 @@
 
 <script setup lang="ts">
 import { computed, type PropType } from 'vue';
-import { useRoute } from 'vue-router';
 import moment from 'moment';
 import { filesize } from 'filesize';
 import StarButton from '@/components/StarButton.vue';
 import { useInstanceStore } from '@/stores/instance';
 
 import type { Version } from '@/types';
-import { DANDISETS_PER_PAGE } from '@/utils/constants';
 
 defineProps({
   dandisets: {
@@ -96,18 +93,10 @@ defineProps({
   },
 });
 
-const route = useRoute();
-
 const instanceStore = useInstanceStore();
 instanceStore.load();
 const archiveName = computed(() => instanceStore.instanceName ?? '');
 
-// current position in search result set = items on prev pages + position on current page.
-// It is passed to the DLP, along with this listing's query, in history.state rather than
-// in the URL, so that the DLP can page through these results while its URL stays clean.
-function getPos(index: number) {
-  return (Number(route.query.page || 1) - 1) * DANDISETS_PER_PAGE + (index + 1);
-}
 function formatDate(date: string) {
   return moment(date).format('LL');
 }

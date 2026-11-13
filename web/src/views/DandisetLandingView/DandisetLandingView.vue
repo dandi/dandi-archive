@@ -6,11 +6,6 @@
     />
     <v-toolbar class="px-4 bg-grey-darken-2 text-white">
       <DandisetSearchField />
-      <v-pagination
-        v-model="page"
-        :length="pages"
-        :total-visible="0"
-      />
     </v-toolbar>
     <v-container
       v-if="embargoedOrUnauthenticated"
@@ -118,18 +113,16 @@
 import {
   computed, watch, onMounted, ref,
 } from 'vue';
-import type { Ref } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
-import type { LocationQuery, RouteLocationRaw } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 import { useDisplay } from 'vuetify';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
 import { useDandisetStore } from '@/stores/dandiset';
-import type { Dandiset, Version } from '@/types';
-import { draftVersion, sortingOptions } from '@/utils/constants';
+import type { Version } from '@/types';
+import { draftVersion } from '@/utils/constants';
 import { editorInterface } from '@/components/Meditor/state';
-import { dandiRest } from '@/rest';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
 
@@ -234,59 +227,7 @@ watch([() => props.identifier, () => props.version], async () => {
   loading.value = false;
 });
 
-// The listing the user came here from (if any) and this dandiset's position in it, as passed
-// by DandisetList.vue. It is kept in history.state rather than in the URL so that the URL of
-// this page stays a clean, shareable identifier of the dandiset.
-const listing: { query: LocationQuery, pos: number } | undefined = window.history.state?.listing;
-const listingQuery = listing?.query ?? {};
-
-const page = ref(listing?.pos || 1);
-const pages = ref(1);
-const nextDandiset: Ref<Partial<Dandiset>[]> = ref([]);
-
-async function fetchNextPage() {
-  const sortOption = Number(listingQuery.sortOption) || 0;
-  const sortDir = Number(listingQuery.sortDir || -1);
-  const sortField = sortingOptions[sortOption].djangoField;
-  const ordering = ((sortDir === -1) ? '-' : '') + sortField;
-  const response = await dandiRest.dandisets({
-    page: page.value,
-    page_size: 1,
-    ordering,
-    search: listingQuery.search,
-    draft: listingQuery.showDrafts || true,
-    empty: listingQuery.showEmpty,
-  });
-
-  pages.value = (response.data?.count) ? response.data?.count : 1;
-  nextDandiset.value = response.data?.results.map((dandiset) => ({
-    ...(dandiset.most_recent_published_version || dandiset.draft_version),
-    contact_person: dandiset.contact_person,
-    identifier: dandiset.identifier,
-  }));
-}
-
-function navigateToPage() {
-  if (nextDandiset.value) {
-    const { identifier } = nextDandiset.value[0];
-    if (identifier !== props.identifier) { // to avoid redundant navigation
-      router.push({
-        name: route.name || undefined,
-        params: { identifier },
-        state: { listing: { query: listingQuery, pos: page.value } },
-      });
-    }
-  }
-}
-
-watch(page, async (newValue, oldValue) => {
-  if (oldValue !== newValue) {
-    await fetchNextPage();
-    navigateToPage();
-  }
-});
-
-onMounted(async () => {
+onMounted(() => {
   // This guards against "hard" page navigations, i.e. refreshing, closing tabs, or
   // clicking external links. The `beforeRouteLeave` function above handles "soft"
   // page navigations, such as using the back/forward buttons or clicking a link
@@ -299,6 +240,5 @@ onMounted(async () => {
       e.returnValue = 'You have unsaved changes, are you sure you want to leave?';
     }
   });
-  await fetchNextPage(); // get the current page and total count
 });
 </script>
