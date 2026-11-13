@@ -14,7 +14,7 @@
       }"
       exact
     >
-      <v-list-item-title class="wrap-text text-h6 text-grey-darken-3 font-weight-medium">
+      <v-list-item-title class="text-wrap text-h6 text-grey-darken-3 font-weight-medium">
         {{ item.name }}
         <StarButton
           :identifier="item.dandiset.identifier"
@@ -112,13 +112,6 @@ function formatDate(date: string) {
 </script>
 
 <style scoped>
-.wrap-text {
-  -webkit-line-clamp: unset !important;
-}
-.v-list-item__title {
-  white-space: normal;
-}
-
 .v-list-item {
   border-bottom: 1px solid #eee;
 }
