@@ -1,3 +1,21 @@
+# v1.2.3 (Fri Nov 13 2026)
+
+#### 🐛 Bug Fix
+
+- Remove prev/next dandiset navigation from the landing page [#3021](https://github.com/dandi/dandi-archive/pull/3021) ([@claude](https://github.com/claude) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+- Keep listing query params out of Dandiset landing page URLs [#2971](https://github.com/dandi/dandi-archive/pull/2971) ([@claude](https://github.com/claude) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### 📝 Documentation
+
+- Vuetify skill: record the route-params caveat behind #3004 [#3015](https://github.com/dandi/dandi-archive/pull/3015) ([@claude](https://github.com/claude) [@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+#### Authors: 2
+
+- Claude ([@claude](https://github.com/claude))
+- Cody Baker ([@CodyCBakerPhD](https://github.com/CodyCBakerPhD))
+
+---
+
 # v1.2.2 (Wed Nov 11 2026)
 
 :tada: This release contains work from a new contributor! :tada:
