@@ -168,6 +168,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "**/migrations/**" = [
+  "ICN001", # unconventional-import-alias
   "N806", # non-lowercase-variable-in-function
   "RUF012", # mutable-class-default
 ]
@@ -200,6 +201,10 @@ extend-immutable-calls = ["ninja.Query"]
 [tool.ruff.lint.flake8-self]
 extend-ignore-names = ["_base_manager", "_default_manager",  "_meta"]
 
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+runtime-evaluated-decorators = ["pydantic.validate_call"]
+
 [tool.ruff.lint.isort]
 # Sort by name, don't cluster "from" vs "import"
 force-sort-within-sections = true
@@ -220,10 +225,10 @@ files = [
 ]
 check_untyped_defs = true
 ignore_missing_imports = true
-show_error_codes = true
 warn_redundant_casts = true
 warn_unused_configs = true
 warn_unused_ignores = true
+enable_error_code = ["exhaustive-match"]
 plugins = [
   "mypy_django_plugin.main",
   "mypy_drf_plugin.main",
@@ -233,14 +238,12 @@ plugins = [
 django_settings_module = "dandiapi.settings.testing"
 
 [tool.pytest.ini_options]
+strict = true
 addopts = [
   # Test utilities should be imported absolutely from the pythonpath,
   # so use the Pytest-recommended "importlib" mode
   "--import-mode=importlib",
-  "--strict-config",
-  "--strict-markers",
   "--showlocals",
-  "--verbose",
   # Specifying as "--ds" will override any value in the environment
   "--ds=dandiapi.settings.testing",
 ]
@@ -248,9 +251,15 @@ filterwarnings = [
   "error",
   # pytest often causes unclosed socket warnings
   'ignore:unclosed <socket\.socket:ResourceWarning',
+<<<<<<< before updating
   # TODO: Remove this with pytest_factoryboy
   "ignore:Using a <class 'dict'> as model type:UserWarning:pytest_factoryboy.fixture",
 ]
 markers = [
   "ai_generated: test was authored (or substantially authored) by an AI assistant; review extra carefully",
+=======
+  # swagger-spec-validator, a dependency of drf-yasg, imports the deprecated `jsonschema.RefResolver`
+  # https://github.com/Yelp/swagger_spec_validator/issues/171
+  'ignore:jsonschema\.RefResolver is deprecated:DeprecationWarning:swagger_spec_validator',
+>>>>>>> after updating
 ]
