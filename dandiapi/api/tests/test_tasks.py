@@ -186,8 +186,12 @@ def test_validate_asset_metadata_requeues_draft_version(
 
     draft_version.refresh_from_db()
     draft_asset.refresh_from_db()
-    assert draft_version.status == Version.Status.PENDING
     assert draft_asset.status == (Asset.Status.INVALID if invalid_metadata else Asset.Status.VALID)
+    # assetsSummary only includes VALID assets, so an asset that failed validation cannot have
+    # changed it, and the version doesn't need to be requeued.
+    assert draft_version.status == (
+        Version.Status.VALID if invalid_metadata else Version.Status.PENDING
+    )
 
 
 @pytest.mark.django_db
