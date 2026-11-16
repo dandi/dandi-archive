@@ -203,4 +203,5 @@ def validate_version_metadata(*, version: Version) -> None:
         # Set to validating and continue
         version_qs.update(status=Version.Status.VALIDATING)
         status, errors = _get_version_validation_result(current_version)
-        version_qs.update(status=status, validation_errors=errors, modified=timezone.now())
+        now = timezone.now()
+        version_qs.update(status=status, validation_errors=errors, modified=now, last_validated=now)

@@ -253,6 +253,9 @@ def test_validate_version_metadata(asset: Asset):
     # Ensure modified field was updated
     assert draft_version.modified > old_modified
 
+    # Ensure the time of validation was recorded
+    assert draft_version.last_validated == draft_version.modified
+
 
 @pytest.mark.django_db
 def test_validate_version_metadata_non_pending_version(asset: Asset):
@@ -292,9 +295,10 @@ def test_validate_version_metadata_no_side_effects(asset: Asset):
     draft_version.refresh_from_db()
     new_data = model_to_dict(draft_version)
 
-    # Check that change is isolated to these two fields
+    # Check that change is isolated to these three fields
     assert old_data.pop('status') != new_data.pop('status')
     assert old_data.pop('validation_errors') != new_data.pop('validation_errors')
+    assert old_data.pop('last_validated') != new_data.pop('last_validated')
     assert old_data == new_data
 
 
