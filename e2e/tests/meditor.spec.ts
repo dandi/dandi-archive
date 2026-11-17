@@ -89,3 +89,55 @@ test.describe("Meditor read-only access", () => {
     await expect(page.getByRole("button", { name: "Add Item" })).toHaveCount(0);
   });
 });
+
+test("validates recursive standard extensions in Meditor", async ({ page }) => {
+  await page.route("**/api/schemas/?model=Dandiset", async (route) => {
+    const response = await route.fetch();
+    const schema = await response.json();
+    schema.$defs.StandardsType.properties.extensions = {
+      type: "array",
+      items: { $ref: "#/$defs/StandardsType" },
+    };
+    await route.fulfill({ response, json: schema });
+  });
+
+  const innermostExtension: { name: string; schemaKey?: string } = {
+    name: "Nested extension",
+    schemaKey: "StandardsType",
+  };
+  await page.route("**/api/dandisets/000003/versions/draft/info/", async (route) => {
+    const response = await route.fetch();
+    const draft = await response.json();
+    // The bundled fixture stores production identifiers.
+    const info = await route.fetch({ url: new URL("/api/info/", response.url()).href });
+    const { instance_config } = await info.json();
+    draft.metadata.identifier = `${instance_config.instance_name}:000003`;
+    draft.metadata.id = `${draft.metadata.identifier}/draft`;
+    draft.metadata.assetsSummary.dataStandard = [{
+      name: "Example standard",
+      schemaKey: "StandardsType",
+      extensions: [{
+        name: "First extension",
+        schemaKey: "StandardsType",
+        extensions: [innermostExtension],
+      }],
+    }];
+    await route.fulfill({ response, json: draft });
+  });
+
+  const openMeditor = async () => {
+    await page.getByText("Metadata", { exact: true }).click();
+    await expect(page.getByLabel("Dandiset title")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Dandiset contributors" })).toBeVisible();
+  };
+  const validationIcon = page.getByRole("dialog").locator(".v-card-actions > i").first();
+
+  await page.goto(`${clientUrl}/#/dandiset/000003/draft/`);
+  await openMeditor();
+  await expect(validationIcon).toHaveClass(/mdi-checkbox-marked-circle/);
+
+  delete innermostExtension.schemaKey;
+  await page.reload();
+  await openMeditor();
+  await expect(validationIcon).toHaveClass(/mdi-alert-circle/);
+});
