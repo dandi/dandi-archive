@@ -1,3 +1,16 @@
+# v1.2.5 (Tue Nov 17 2026)
+
+#### 🐛 Bug Fix
+
+- Show `Copied!` feedback for 2 seconds after clicking the Dandiset DOI and ID copy buttons [#3012](https://github.com/dandi/dandi-archive/pull/3012) ([@claude](https://github.com/claude) [@kabilar](https://github.com/kabilar))
+
+#### Authors: 2
+
+- Claude ([@claude](https://github.com/claude))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v1.2.4 (Tue Nov 17 2026)
 
 #### 🐛 Bug Fix
