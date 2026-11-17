@@ -10,12 +10,12 @@
       <span>{{ name }}</span>
     </template>
     <v-list
-      v-if="items && items.length"
+      v-if="displayItems && displayItems.length"
       :style="`column-count: ${columnCount};`"
       class="px-5"
     >
       <div
-        v-for="(item, i) in items"
+        v-for="(item, i) in displayItems"
         :key="i"
       >
         <div
@@ -35,8 +35,8 @@
                 cols="9"
                 class="text-grey-darken-3"
               >
-                <span v-if="item.name || item.identifier || item.id">
-                  {{ item.name || item.identifier || item.id }}
+                <span>
+                  {{ item.name || item.identifier || item.id || 'Unnamed Item' }}
                   <br>
                 </span>
                 <slot
@@ -93,6 +93,19 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  displayUnnamedItems: {
+    type: Boolean,
+    required: false,
+    default: false,
+  }
+});
+
+const displayItems = computed(() => {
+  if (!props.items) return []
+  if (props.displayUnnamedItems) {
+    return props.items;
+  }
+  return props.items.filter((item) => item.name || item.identifier || item.id)
 });
 
 const theme = useTheme();
@@ -104,6 +117,6 @@ const borderLeftColor = computed(() => theme.current.value.colors.primary);
 // When viewing on a smaller screen, force the number of columns to 1.
 const columnCount = computed(
   () => (display.mdAndDown.value
-    ? 1 : Math.min(Math.ceil(props.items.length / 2), MAX_COLUMNS)),
+    ? 1 : Math.min(Math.ceil(displayItems.value.length / 2), MAX_COLUMNS)),
 );
 </script>

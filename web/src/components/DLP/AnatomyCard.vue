@@ -99,6 +99,11 @@ const props = defineProps({
     type: Array as PropType<SubjectMatterOfTheDataset | undefined>,
     default: undefined,
   },
+  displayUnnamedItems: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
 });
 
 const theme = useTheme();
@@ -107,11 +112,16 @@ const display = useDisplay();
 const borderLeftColor = computed(() => theme.current.value.colors.primary);
 
 // Pull out only the Anatomy entries from the dataset's "about" field.
-const anatomy = computed<Anatomy[]>(
-  () => (props.about?.filter(
+const anatomy = computed<Anatomy[]>(() => {
+  if (!props.about) return [];
+  const anatomy = props.about.filter(
     (item): item is Anatomy => item.schemaKey === 'Anatomy',
-  ) ?? []),
-);
+  );
+  if (props.displayUnnamedItems) {
+    return anatomy;
+  }
+  return anatomy.filter((item) => item.name || item.identifier);
+});
 
 const hasAnatomy = computed(() => anatomy.value.length > 0);
 
