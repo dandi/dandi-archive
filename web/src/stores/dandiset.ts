@@ -135,7 +135,8 @@ export const useDandisetStore = defineStore('dandiset', {
         throw new Error('Could not retrieve Dandiset Schema!');
       }
 
-      const schema = await RefParser.dereference(res.data);
+      // Keep recursive $refs so validators can follow them without creating object cycles.
+      const schema = await RefParser.dereference(res.data, { dereference: { circular: 'ignore' } });
 
       this.schema = fixSchema(schema);
     },
