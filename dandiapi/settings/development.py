@@ -57,7 +57,15 @@ STORAGES['default'] = {
     },
 }
 
+<<<<<<< before updating
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+=======
+MAILERS: dict[str, dict[str, Any]] = {
+    "default": {
+        "BACKEND": "django.core.mail.backends.console.EmailBackend",
+    },
+}
+>>>>>>> after updating
 
 OAUTH2_PROVIDER['ALLOWED_REDIRECT_URI_SCHEMES'] = ['http', 'https']
 # In development, always present the approval dialog
