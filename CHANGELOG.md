@@ -1,3 +1,16 @@
+# v1.2.4 (Tue Nov 17 2026)
+
+#### 🐛 Bug Fix
+
+- Keep user menu open after copying the API key [#3001](https://github.com/dandi/dandi-archive/pull/3001) ([@claude](https://github.com/claude) [@kabilar](https://github.com/kabilar))
+
+#### Authors: 2
+
+- Claude ([@claude](https://github.com/claude))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v1.2.3 (Fri Nov 13 2026)
 
 #### 🐛 Bug Fix
