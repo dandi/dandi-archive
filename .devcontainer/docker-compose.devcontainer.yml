@@ -1,0 +1,14 @@
+services:
+  django:
+    # Don't expose ports, devcontainer forwarding is superior, since we can just bind to localhost.
+    ports: !reset []
+    # Don't auto-run the default command, launch.json or the terminal will be used.
+    command: !reset []
+    # Disable IPv6, as Node servers prefer it to IPv4, which breaks port forwarding.
+    # See: https://github.com/microsoft/vscode-remote-release/issues/7029
+    sysctls:
+      net.ipv6.conf.all.disable_ipv6: 1
+
+  celery:
+    # Celery will be started via launch.json or the terminal.
+    profiles: ["celery"]
