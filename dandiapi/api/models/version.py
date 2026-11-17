@@ -60,6 +60,12 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         choices=Status.choices,
     )
     validation_errors = models.JSONField(default=list, blank=True, null=True)
+    last_validated = models.DateTimeField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text='When the metadata of this version was last validated.',
+    )
 
     class Meta:
         ordering = ['version']

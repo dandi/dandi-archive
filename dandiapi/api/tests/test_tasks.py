@@ -24,7 +24,17 @@ from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.asset import _add_asset_to_version
 from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
 from dandiapi.api.services.publish import _lock_dandiset_for_publishing
-from dandiapi.api.tests.factories import AssetBlobFactory, DraftVersionFactory, UserFactory
+from dandiapi.api.tasks.scheduled import (
+    MAX_VERSION_VALIDATION_DEFERRAL,
+    aggregate_assets_summary_task,
+    validate_draft_version_metadata,
+)
+from dandiapi.api.tests.factories import (
+    AssetBlobFactory,
+    DraftVersionFactory,
+    PublishedVersionFactory,
+    UserFactory,
+)
 from dandiapi.zarr.models import ZarrArchiveStatus
 
 from .fuzzy import DEFAULT_WAS_ASSOCIATED_WITH, HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
@@ -165,6 +175,156 @@ def test_validate_asset_metadata_saves_version(draft_asset: Asset):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize('invalid_metadata', [False, True])
+def test_validate_asset_metadata_requeues_draft_version(
+    draft_asset: Asset, *, invalid_metadata: bool
+):
+    draft_version = DraftVersionFactory.create(status=Version.Status.VALID)
+    draft_version.assets.add(draft_asset)
+
+    if invalid_metadata:
+        del draft_asset.metadata['encodingFormat']
+        draft_asset.save()
+
+    tasks.validate_asset_metadata_task(draft_asset.id)
+
+    draft_version.refresh_from_db()
+    draft_asset.refresh_from_db()
+    assert draft_asset.status == (Asset.Status.INVALID if invalid_metadata else Asset.Status.VALID)
+    # assetsSummary only includes VALID assets, so an asset that failed validation cannot have
+    # changed it, and the version doesn't need to be requeued.
+    assert draft_version.status == (
+        Version.Status.VALID if invalid_metadata else Version.Status.PENDING
+    )
+
+
+@pytest.mark.django_db
+def test_validate_asset_metadata_requeues_version_after_replacement(draft_asset_factory):
+    draft_version = DraftVersionFactory.create(status=Version.Status.VALID)
+    original_asset = draft_asset_factory(status=Asset.Status.VALID)
+    replacement_asset = draft_asset_factory()
+    draft_version.assets.add(original_asset)
+
+    # Establish the summary for the original asset, then replace it while the replacement is
+    # still pending.  This is the state in which an early scheduled aggregation can go stale.
+    aggregate_assets_summary_task(draft_version.id)
+    draft_version.assets.remove(original_asset)
+    draft_version.assets.add(replacement_asset)
+    aggregate_assets_summary_task(draft_version.id)
+    draft_version.refresh_from_db()
+    assert draft_version.metadata['assetsSummary']['numberOfFiles'] == 0
+
+    # Model the version validator finishing before the replacement asset validator.
+    Version.objects.filter(id=draft_version.id).update(status=Version.Status.VALID)
+    tasks.validate_asset_metadata_task(replacement_asset.id)
+
+    draft_version.refresh_from_db()
+    assert draft_version.status == Version.Status.PENDING
+
+    # The scheduler can now see the pending version and recompute the replacement in its summary.
+    aggregate_assets_summary_task(draft_version.id)
+    draft_version.refresh_from_db()
+    assert draft_version.metadata['assetsSummary']['numberOfFiles'] == 1
+
+
+@pytest.mark.django_db
+def test_validate_asset_metadata_does_not_requeue_published_version(draft_asset: Asset):
+    published_version = PublishedVersionFactory.create()
+    published_version.assets.add(draft_asset)
+
+    tasks.validate_asset_metadata_task(draft_asset.id)
+
+    published_version.refresh_from_db()
+    assert published_version.status == Version.Status.PUBLISHED
+
+
+@pytest.fixture
+def version_sweep_tasks(mocker):
+    """Mock the tasks that `validate_draft_version_metadata` dispatches for each version."""
+    return [
+        mocker.patch(f'dandiapi.api.tasks.scheduled.{task}')
+        for task in (
+            'validate_version_metadata_task',
+            'aggregate_assets_summary_task',
+            'write_manifest_files',
+        )
+    ]
+
+
+@pytest.mark.django_db
+def test_validate_draft_version_metadata(version_sweep_tasks):
+    draft_version = DraftVersionFactory.create(last_validated=timezone.now())
+    # Only pending draft versions should be validated
+    DraftVersionFactory.create(status=Version.Status.VALID)
+    PublishedVersionFactory.create()
+
+    validate_draft_version_metadata()
+
+    for task in version_sweep_tasks:
+        task.delay.assert_called_once_with(draft_version.id)
+
+
+@pytest.mark.django_db
+def test_validate_draft_version_metadata_defers_while_assets_await_validation(
+    version_sweep_tasks, draft_asset_factory
+):
+    draft_version = DraftVersionFactory.create(last_validated=timezone.now())
+    pending_asset = draft_asset_factory(status=Asset.Status.PENDING)
+    draft_version.assets.add(pending_asset)
+
+    # The pending asset will set the version back to PENDING once it's valid, so validating the
+    # version now would only need to be repeated.
+    validate_draft_version_metadata()
+    for task in version_sweep_tasks:
+        task.delay.assert_not_called()
+
+    # Once the asset has been validated, the version is no longer deferred
+    tasks.validate_asset_metadata_task(pending_asset.id)
+    validate_draft_version_metadata()
+    for task in version_sweep_tasks:
+        task.delay.assert_called_once_with(draft_version.id)
+
+
+@pytest.mark.django_db
+def test_validate_draft_version_metadata_ignores_assets_that_cannot_be_validated(
+    version_sweep_tasks, draft_asset_factory
+):
+    draft_version = DraftVersionFactory.create(last_validated=timezone.now())
+    # This asset can't be validated until its sha256 is computed, which may take a long time
+    draft_version.assets.add(draft_asset_factory(status=Asset.Status.PENDING, blob__sha256=None))
+
+    validate_draft_version_metadata()
+
+    for task in version_sweep_tasks:
+        task.delay.assert_called_once_with(draft_version.id)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'time_since_last_validated',
+    [None, MAX_VERSION_VALIDATION_DEFERRAL + datetime.timedelta(minutes=1)],
+    ids=['never-validated', 'overdue'],
+)
+def test_validate_draft_version_metadata_does_not_defer_indefinitely(
+    version_sweep_tasks, draft_asset_factory, time_since_last_validated
+):
+    draft_version = DraftVersionFactory.create(
+        last_validated=(
+            None
+            if time_since_last_validated is None
+            else timezone.now() - time_since_last_validated
+        )
+    )
+    # An asset that stays pending (e.g. validation keeps failing) must not block the version
+    draft_version.assets.add(draft_asset_factory(status=Asset.Status.PENDING))
+
+    validate_draft_version_metadata()
+
+    for task in version_sweep_tasks:
+        task.delay.assert_called_once_with(draft_version.id)
+
+
+@pytest.mark.django_db
 def test_validate_version_metadata(asset: Asset):
     draft_version = DraftVersionFactory.create()
     draft_version.assets.add(asset)
@@ -182,6 +342,9 @@ def test_validate_version_metadata(asset: Asset):
 
     # Ensure modified field was updated
     assert draft_version.modified > old_modified
+
+    # Ensure the time of validation was recorded
+    assert draft_version.last_validated == draft_version.modified
 
 
 @pytest.mark.django_db
@@ -222,9 +385,10 @@ def test_validate_version_metadata_no_side_effects(asset: Asset):
     draft_version.refresh_from_db()
     new_data = model_to_dict(draft_version)
 
-    # Check that change is isolated to these two fields
+    # Check that change is isolated to these three fields
     assert old_data.pop('status') != new_data.pop('status')
     assert old_data.pop('validation_errors') != new_data.pop('validation_errors')
+    assert old_data.pop('last_validated') != new_data.pop('last_validated')
     assert old_data == new_data
 
 

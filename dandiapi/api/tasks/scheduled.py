@@ -17,7 +17,9 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import connection
+from django.db.models import Exists, OuterRef
 from django.db.models.query_utils import Q
+from django.utils import timezone
 
 from dandiapi.api.mail import send_pending_users_message
 from dandiapi.api.models import UserMetadata, Version
@@ -40,6 +42,17 @@ if TYPE_CHECKING:
     from celery.app.base import Celery
 
 logger = get_task_logger(__name__)
+
+# An asset can only be validated once the checksum of its blob or zarr has been computed.
+VALIDATABLE_ASSET_Q = (Q(blob__isnull=False) & Q(blob__sha256__isnull=False)) | (
+    Q(zarr__isnull=False)
+    & Q(zarr__checksum__isnull=False)
+    & Q(zarr__status=ZarrArchiveStatus.COMPLETE)
+)
+
+# The longest that validation of a pending draft version is deferred while it still has assets
+# awaiting validation.
+MAX_VERSION_VALIDATION_DEFERRAL = timedelta(hours=1)
 
 
 def throttled_iterator(iterable: Iterable, max_per_second: int = 100) -> Iterable:
@@ -68,14 +81,7 @@ def aggregate_assets_summary_task(version_id: int):
 def validate_pending_asset_metadata():
     validatable_assets = (
         Asset.objects.filter(status=Asset.Status.PENDING)
-        .filter(
-            (Q(blob__isnull=False) & Q(blob__sha256__isnull=False))
-            | (
-                Q(zarr__isnull=False)
-                & Q(zarr__checksum__isnull=False)
-                & Q(zarr__status=ZarrArchiveStatus.COMPLETE)
-            )
-        )
+        .filter(VALIDATABLE_ASSET_Q)
         .values_list('id', flat=True)
     )
     validatable_assets_count = validatable_assets.count()
@@ -89,10 +95,23 @@ def validate_pending_asset_metadata():
 
 @shared_task(soft_time_limit=20)
 def validate_draft_version_metadata():
+    # Each asset that becomes valid sets its draft version back to PENDING, so validating a
+    # version (which also re-aggregates its assetsSummary and rewrites its manifests) is wasted
+    # work while it still has assets that are about to be validated. Defer those versions until
+    # their assets have been validated.
+    assets_awaiting_validation = Asset.objects.filter(
+        VALIDATABLE_ASSET_Q, versions=OuterRef('pk'), status=Asset.Status.PENDING
+    )
+    # Don't defer indefinitely, so that an asset stuck in PENDING can't block its version. A
+    # version that has never been validated is not deferred at all.
+    validation_overdue = Q(last_validated__isnull=True) | Q(
+        last_validated__lt=timezone.now() - MAX_VERSION_VALIDATION_DEFERRAL
+    )
+
     # Select only the id of draft versions that have status PENDING
     pending_draft_versions = (
-        Version.objects.filter(status=Version.Status.PENDING)
-        .filter(version='draft')
+        Version.objects.filter(status=Version.Status.PENDING, version='draft')
+        .filter(~Exists(assets_awaiting_validation) | validation_overdue)
         .values_list('id', flat=True)
     )
     pending_draft_versions_count = pending_draft_versions.count()

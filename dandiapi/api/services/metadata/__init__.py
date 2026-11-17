@@ -82,8 +82,14 @@ def validate_asset_metadata(*, asset: Asset) -> bool:
             id=asset.id, status=asset_state, metadata=asset.metadata, published=False
         ).update(status=asset.status, validation_errors=asset.validation_errors)
         if updated_asset:
-            # Update modified timestamps on all draft versions this asset belongs to
-            asset.versions.filter(version='draft').update(modified=timezone.now())
+            draft_versions = asset.versions.filter(version='draft')
+            draft_versions.update(modified=timezone.now())
+
+            # If this asset is valid, requeue all draft versions it belongs to, ensuring it's
+            # included in assetsSummary. Since assetsSummary only includes VALID assets, requeuing
+            # the draft version otherwise would be pointless.
+            if asset.status == Asset.Status.VALID:
+                draft_versions.update(status=Version.Status.PENDING)
         else:
             logger.info('Asset %s was modified while validating', asset.id)
 
@@ -197,4 +203,5 @@ def validate_version_metadata(*, version: Version) -> None:
         # Set to validating and continue
         version_qs.update(status=Version.Status.VALIDATING)
         status, errors = _get_version_validation_result(current_version)
-        version_qs.update(status=status, validation_errors=errors, modified=timezone.now())
+        now = timezone.now()
+        version_qs.update(status=status, validation_errors=errors, modified=now, last_validated=now)
