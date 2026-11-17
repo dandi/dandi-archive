@@ -1085,6 +1085,32 @@ def test_version_rest_update_no_changed_metadata(api_client: APIClient):
 
 
 @pytest.mark.django_db
+def test_version_rest_update_strips_empty_records(api_client: APIClient):
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    api_client.force_authenticate(user=user)
+    ethics_approval = {'schemaKey': 'EthicsApproval', 'identifier': 'IRB-2026-001'}
+    url = f'/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/'
+    data = {
+        'name': draft_version.name,
+        'metadata': {
+            **draft_version.metadata,
+            'ethicsApproval': [{**ethics_approval, 'contactPoint': {'schemaKey': 'ContactPoint'}}],
+        },
+    }
+
+    assert api_client.put(url, data).status_code == 200
+    draft_version.refresh_from_db()
+    assert draft_version.metadata['ethicsApproval'] == [ethics_approval]
+
+    # Sending the same empty records again doesn't modify the version
+    modified = draft_version.modified
+    assert api_client.put(url, data).status_code == 200
+    draft_version.refresh_from_db()
+    assert draft_version.modified == modified
+
+
+@pytest.mark.django_db
 def test_version_rest_delete_published_not_admin(api_client):
     user = UserFactory.create()
     published_version = PublishedVersionFactory.create(dandiset__owners=[user])

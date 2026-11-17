@@ -670,6 +670,17 @@ def test_dandiset_rest_create_with_contributor(api_client):
 
 
 @pytest.mark.django_db
+def test_dandiset_rest_create_strips_empty_records(api_client):
+    api_client.force_authenticate(user=UserFactory.create())
+    metadata = {'about': [{'schemaKey': 'GenericType'}]}
+
+    response = api_client.post('/api/dandisets/', {'name': 'Test Dandiset', 'metadata': metadata})
+    assert response.status_code == 200
+    dandiset = Dandiset.objects.get(id=int(response.data['identifier']))
+    assert dandiset.draft_version.metadata['about'] == []
+
+
+@pytest.mark.django_db
 def test_dandiset_rest_create_embargoed(api_client):
     user = UserFactory.create(first_name='John', last_name='Doe')
     api_client.force_authenticate(user=user)
