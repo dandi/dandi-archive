@@ -124,6 +124,9 @@ def validate_version_metadata(*, version: Version) -> None:
         # validate against the PublishedDandiset schema even though we lack several things
         # at validation time: id, url, doi, and assetsSummary. this tricks the validator into
         # giving us the useful errors we need but ignoring the other errors we can't satisfy yet.
+        # NOTE: as of dandischema 0.13.0 (schema 0.8.0), `PublishedDandiset` is an alias of
+        # `Dandiset`, and the publication requirements are enforced only when `datePublished`
+        # is set, which `_build_publishable_version_from_draft` takes care of.
         publishable_version = _build_publishable_version_from_draft(version)
         metadata_for_validation = publishable_version.metadata
 

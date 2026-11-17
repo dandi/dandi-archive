@@ -13,7 +13,7 @@ dependencies = [
   "boto3==1.42.97",
   "celery==5.6.3",
   # Pin dandischema to exact version to make explicit which schema version is being used
-  "dandischema==0.12.1", # schema version 0.7.0
+  "dandischema==0.14.0", # schema version 0.8.0
   "django[argon2]==5.2.13",
   "django-allauth==65.16.1",
   "django-auth-style==0.15.0",
@@ -58,7 +58,7 @@ development = [
   "werkzeug==3.1.8",
 ]
 cli = [
-  "dandi[extras]==0.74.3",
+  "dandi[extras]==0.81.0",
 ]
 
 [dependency-groups]

@@ -85,8 +85,11 @@ def info_view(request):
             'schema_url': get_schema_url(),
             'allowed_schema_versions': ALLOWED_INPUT_SCHEMAS,
             'version': importlib.metadata.version('dandiapi'),
-            'cli-minimal-version': '0.74.0',
-            'cli-requires-python': '>=3.10',
+            # 0.77.0 is the first dandi-cli release that allows dandischema 0.14.x (schema
+            # 0.8.0) and that normalizes the `schemaKey` of uploaded asset metadata to "Asset"
+            # (dandischema >= 0.13 serializes `BareAsset` with `schemaKey: "BareAsset"`).
+            'cli-minimal-version': '0.77.0',
+            'cli-requires-python': '>=3.11',
             'cli-bad-versions': [],
             'services': {
                 'api': {'url': api_url},
