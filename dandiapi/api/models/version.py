@@ -86,9 +86,11 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             or 0
         )
 
+    # Only exists for legacy reasons. Any non-draft version cannot have active uploads.
+    # TODO: Remove use of this
     @property
     def active_uploads(self):
-        return self.dandiset.uploads.count() if self.version == 'draft' else 0
+        return self.dandiset.num_active_uploads() if self.version == 'draft' else 0
 
     @property
     def publishable(self) -> bool:

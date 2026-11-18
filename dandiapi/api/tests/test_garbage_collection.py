@@ -11,6 +11,7 @@ from dandiapi.api.models import (
     Upload,
 )
 from dandiapi.api.services import garbage_collection
+from dandiapi.zarr.models import ZarrUpload, ZarrUploadType
 
 
 @pytest.mark.django_db
@@ -29,6 +30,54 @@ def test_garbage_collect_uploads(upload_factory):
 
     assert Upload.objects.filter(id=non_expired_upload.id).exists()
     assert not Upload.objects.filter(id=expired_upload.id).exists()
+
+
+@pytest.mark.django_db
+def test_garbage_collect_uploads_aborts_multipart_upload(dandiset_factory):
+    """Garbage collecting an upload discards the parts it uploaded to the object store."""
+    upload, _ = Upload.initialize_multipart_upload('f' * 32, 100, dandiset_factory())
+    upload.save()
+    Upload.objects.filter(id=upload.id).update(
+        created=timezone.now() - garbage_collection.UPLOAD_EXPIRATION_TIME
+    )
+
+    storage = upload.blob.storage
+
+    def pending_multipart_upload_ids() -> list[str]:
+        listing = storage.s3_client.list_multipart_uploads(
+            Bucket=storage.bucket_name, Prefix=upload.blob.name
+        )
+        return [u['UploadId'] for u in listing.get('Uploads', [])]
+
+    assert upload.multipart_upload_id in pending_multipart_upload_ids()
+
+    # Perform garbage collection
+    num_uploads_collected = garbage_collection.upload.garbage_collect()
+    assert num_uploads_collected == 1
+
+    assert not Upload.objects.filter(id=upload.id).exists()
+    assert upload.multipart_upload_id not in pending_multipart_upload_ids()
+
+
+@pytest.mark.django_db
+def test_garbage_collect_zarr_uploads(zarr_upload_factory, zarr_archive_factory):
+    """Zarr uploads are collected, but their chunk objects are left in place."""
+    zarr = zarr_archive_factory(upload_type=ZarrUploadType.MULTIPART)
+
+    expired_upload: ZarrUpload = zarr_upload_factory(zarr=zarr)
+    expired_upload.created = timezone.now() - garbage_collection.UPLOAD_EXPIRATION_TIME
+    expired_upload.save()
+
+    non_expired_upload: ZarrUpload = zarr_upload_factory(zarr=zarr)
+
+    assert garbage_collection.upload.garbage_collect() == 1
+
+    assert not ZarrUpload.objects.filter(id=expired_upload.id).exists()
+    assert ZarrUpload.objects.filter(id=non_expired_upload.id).exists()
+
+    # The collected upload wrote to the chunk's live location in the zarr, so a later upload
+    # of the same chunk may be the one that's actually present. The object must survive.
+    assert zarr.storage.exists(zarr.s3_path(expired_upload.chunk_key))
 
 
 @pytest.mark.django_db

@@ -9,7 +9,7 @@ from dandiapi.api.models.version import Version
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
-from dandiapi.zarr.tasks import ingest_dandiset_zarrs, ingest_zarr_archive
+from dandiapi.zarr.tasks import compute_zarr_checksum, ingest_dandiset_zarrs, ingest_zarr_archive
 
 
 @pytest.mark.django_db(transaction=True)
@@ -39,6 +39,32 @@ def test_ingest_zarr_archive(zarr_archive_factory, zarr_file_factory):
     assert zarr.size == total_size
     assert zarr.file_count == 2
     assert zarr.status == ZarrArchiveStatus.COMPLETE
+
+
+@pytest.mark.django_db(transaction=True)
+def test_ingest_zarr_archive_marked_pending_during_ingest(
+    zarr_archive_factory, zarr_file_factory, mocker
+):
+    """A checksum computed before the zarr was marked pending must be discarded."""
+    zarr: ZarrArchive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
+    zarr_file_factory(zarr_archive=zarr, path='foo')
+
+    def mark_pending(*args, **kwargs):
+        # Mimic a chunk upload completing while the checksum is being computed
+        checksum = compute_zarr_checksum(*args, **kwargs)
+        ZarrArchive.objects.filter(pk=zarr.pk).update(status=ZarrArchiveStatus.PENDING)
+        return checksum
+
+    mocker.patch('dandiapi.zarr.tasks.compute_zarr_checksum', side_effect=mark_pending)
+
+    ingest_zarr_archive(str(zarr.zarr_id))
+
+    # The zarr stays pending, with no checksum, and must be finalized again
+    zarr.refresh_from_db()
+    assert zarr.status == ZarrArchiveStatus.PENDING
+    assert zarr.checksum is None
+    assert zarr.file_count == 0
+    assert zarr.size == 0
 
 
 @pytest.mark.django_db(transaction=True)
