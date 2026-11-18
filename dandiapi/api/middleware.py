@@ -66,3 +66,22 @@ class GunicornUsernameMiddleware(MiddlewareMixin):
         response['X-Request-Username'] = username
 
         return response
+
+
+class NoIndexApiMiddleware:
+    """
+    Middleware to keep API responses out of search engine results.
+
+    robots.txt allows Googlebot to fetch some API endpoints so it can render the
+    frontend, but crawlable URLs may also be indexed. Sending `X-Robots-Tag: noindex`
+    lets Googlebot keep fetching them while keeping raw JSON out of search results.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if request.path.startswith('/api/'):
+            response.headers.setdefault('X-Robots-Tag', 'noindex')
+        return response
