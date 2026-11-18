@@ -203,6 +203,11 @@ DANDI_ZARR_UPLOAD_URL_EXPIRATION: timedelta = timedelta(
     seconds=env.int('DJANGO_DANDI_ZARR_UPLOAD_URL_EXPIRATION', default=3600)
 )
 
+# How often to retry deferred zarr ingestion.
+DANDI_DEFERRED_INGESTION_RETRY_INTERVAL: timedelta = timedelta(
+    seconds=env.int('DJANGO_DANDI_DEFERRED_INGESTION_RETRY_INTERVAL', default=300)
+)
+
 
 # Required environment variables
 DANDI_WEB_APP_URL = urlunparse(cast('ParseResult', env.url('DJANGO_DANDI_WEB_APP_URL')))

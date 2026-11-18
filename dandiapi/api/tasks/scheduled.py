@@ -179,7 +179,7 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
 
     # Ingest any zarrs whose ingestion was deferred due to outstanding upload URLs
     sender.add_periodic_task(
-        timedelta(minutes=5),
+        settings.DANDI_DEFERRED_INGESTION_RETRY_INTERVAL,
         ingest_deferred_zarr_archives.s(),
         expires=timedelta(minutes=5).total_seconds(),
     )
