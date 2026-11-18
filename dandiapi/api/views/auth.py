@@ -3,10 +3,18 @@ from __future__ import annotations
 import json
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING
+import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db import transaction
-from django.http.response import Http404, HttpResponseBase, HttpResponseRedirect
+from django.http.response import (
+    Http404,
+    HttpResponseBadRequest,
+    HttpResponseBase,
+    HttpResponseRedirect,
+)
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
@@ -21,11 +29,13 @@ from dandiapi.api.mail import (
     send_approved_user_message,
     send_new_user_message_email,
     send_registered_notice_email,
+    send_verification_email,
 )
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.permissions import AuthenticatedRequest, IsApproved
 
 if TYPE_CHECKING:
+    from django.contrib.auth.models import User
     from django.http import HttpRequest, HttpResponse
 
 
@@ -60,6 +70,24 @@ NEW_USER_QUESTIONS = QUESTIONS
 
 # questions for existing users who have no first/last name
 COLLECT_USER_NAME_QUESTIONS = QUESTIONS[:2]
+
+# Email suffixes that qualify for auto-approval
+AUTO_APPROVE_EMAIL_SUFFIXES = [
+    '.edu',
+    '@nih.gov',
+    '@alleninstitute.org',
+    '@janelia.hhmi.org',
+    '@ccf.org',
+    '.ac.uk',
+    '.mcgill.ca',
+    '@epfl.ch',
+]
+
+
+def _has_auto_approve_email(email: str) -> bool:
+    """Check if an email address matches any auto-approve suffix."""
+    email = email.strip().lower()
+    return bool(email) and any(email.endswith(suffix) for suffix in AUTO_APPROVE_EMAIL_SUFFIXES)
 
 
 @require_http_methods(['GET'])
@@ -108,7 +136,19 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
             else None
             for question in QUESTIONS
         }
-        user_metadata.save(update_fields=['questionnaire_form'])
+
+        # Store the institutional email if one was provided. Whether it triggers a
+        # verification email is decided in _process_new_registration below.
+        institutional_email = req_body.get('institutional_email', '').strip()
+        if institutional_email:
+            try:
+                validate_email(institutional_email)
+            except ValidationError:
+                return HttpResponseBadRequest('Invalid institutional email address')
+            user_metadata.institutional_email = institutional_email
+            user_metadata.is_email_verified = False
+
+        user_metadata.save()
 
         # Save first and last name if applicable
         if req_body.get('First Name'):
@@ -126,35 +166,7 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
             not questionnaire_already_filled_out
             and user_metadata.status == UserMetadata.Status.INCOMPLETE
         ):
-            should_auto_approve: bool = any(
-                request.user.email.endswith(suffix)
-                for suffix in [
-                    '.edu',
-                    '@alleninstitute.org',
-                    '@nih.gov',
-                    '@janelia.hhmi.org',
-                    '@ccf.org',
-                    '.ac.uk',
-                    '.mcgill.ca',
-                    '@epfl.ch',
-                ]
-            )
-
-            # auto-approve users with edu emails, otherwise require manual approval
-            user_metadata.status = (
-                UserMetadata.Status.APPROVED if should_auto_approve else UserMetadata.Status.PENDING
-            )
-            user_metadata.save(update_fields=['status'])
-
-            # send email indicating the user has signed up
-            for socialaccount in request.user.socialaccount_set.all():
-                # Send approved email if they have been auto-approved
-                if user_metadata.status == UserMetadata.Status.APPROVED:
-                    send_approved_user_message(request.user, socialaccount)
-                # otherwise, send "awaiting approval" email
-                else:
-                    send_registered_notice_email(request.user, socialaccount)
-                    send_new_user_message_email(request.user, socialaccount)
+            _process_new_registration(request.user, user_metadata)
 
         # pass on OAuth query string params to auth endpoint
         return HttpResponseRedirect(
@@ -176,3 +188,37 @@ def user_questionnaire_form_view(request: AuthenticatedRequest) -> HttpResponse:
             'dandi_web_app_url': settings.DANDI_WEB_APP_URL,
         },
     )
+
+
+def _process_new_registration(user: User, user_metadata: UserMetadata) -> None:
+    """Handle status assignment and email sending for new user registrations."""
+    # Auto-approve users with eligible GitHub emails, otherwise set to pending
+    user_metadata.status = (
+        UserMetadata.Status.APPROVED
+        if _has_auto_approve_email(user.email)
+        else UserMetadata.Status.PENDING
+    )
+    user_metadata.save(update_fields=['status'])
+
+    # Pending users who provided a qualifying institutional email can approve
+    # themselves by verifying it, so issue them a verification token.
+    send_verification = (
+        user_metadata.status == UserMetadata.Status.PENDING
+        and _has_auto_approve_email(user_metadata.institutional_email)
+    )
+    if send_verification:
+        user_metadata.verification_token = uuid.uuid4()
+        user_metadata.save(update_fields=['verification_token'])
+
+    for socialaccount in user.socialaccount_set.all():
+        if user_metadata.status == UserMetadata.Status.APPROVED:
+            send_approved_user_message(user, socialaccount)
+            continue
+
+        if send_verification:
+            send_verification_email(user, socialaccount)
+        else:
+            send_registered_notice_email(user, socialaccount)
+        # Always notify the admins about a pending user, so that someone whose
+        # verification link expires unused still shows up in the approval queue.
+        send_new_user_message_email(user, socialaccount)
