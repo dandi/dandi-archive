@@ -1505,6 +1505,34 @@ def test_asset_rest_update_zarr(
 
 
 @pytest.mark.django_db
+def test_asset_rest_update_zarr_wrong_dandiset(api_client, draft_asset_factory):
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    api_client.force_authenticate(user=user)
+    asset = draft_asset_factory()
+    draft_version.assets.add(asset)
+    add_asset_paths(asset=asset, version=draft_version)
+
+    # A zarr archive belonging to some other dandiset
+    zarr_archive = ZarrArchiveFactory.create(dandiset=DandisetFactory.create())
+
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/'
+        f'versions/{draft_version.version}/assets/{asset.asset_id}/',
+        {
+            'metadata': {'encodingFormat': 'application/x-zarr', 'path': asset.path},
+            'zarr_id': zarr_archive.zarr_id,
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json() == 'The zarr archive belongs to a different dandiset'
+
+    # The original asset should be untouched, and the zarr not added to the version
+    assert list(draft_version.assets.all()) == [asset]
+    assert not Asset.objects.filter(zarr=zarr_archive).exists()
+
+
+@pytest.mark.django_db
 def test_asset_rest_update_unauthorized(api_client, asset):
     draft_version = DraftVersionFactory.create()
     draft_version.assets.add(asset)
