@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed, ref, Ref } from 'vue';
 import type { EditorInterface } from './editor';
 
 // NOTE: it would be better to use a single ref here instead of separate state/computed
@@ -31,8 +31,25 @@ const editorInterface = computed({
 });
 
 const open = ref(false); // whether or not the Meditor is open
+const tab: Ref<string | null> = ref(null); // the current tab of the meditor
+function setTab(tabKey?: string) {
+  if (!tabKey || !editorInterface.value?.fieldsToRender.includes(tabKey)) {
+    tab.value = `tab-0`;
+  } else {
+    tab.value = `tab-${tabKey}`;
+  }
+}
+
+const pendingNewItem: Ref<{ propKey: string; item: Record<string, unknown> } | null> = ref(null);
+function queueNewItem(propKey: string, item: Record<string, unknown>) {
+  pendingNewItem.value = { propKey, item };
+}
 
 export {
   editorInterface,
   open,
+  tab,
+  setTab,
+  pendingNewItem,
+  queueNewItem,
 };
