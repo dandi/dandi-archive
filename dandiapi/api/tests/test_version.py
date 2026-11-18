@@ -1085,60 +1085,17 @@ def test_version_rest_update_no_changed_metadata(api_client: APIClient):
 
 
 @pytest.mark.django_db
-def test_version_rest_delete_published_not_admin(api_client):
-    user = UserFactory.create()
-    published_version = PublishedVersionFactory.create(dandiset__owners=[user])
-    api_client.force_authenticate(user=user)
-
-    response = api_client.delete(
-        f'/api/dandisets/{published_version.dandiset.identifier}'
-        f'/versions/{published_version.version}/'
-    )
-    assert response.status_code == 403
-    assert response.data == 'Cannot delete published versions'
-    assert published_version in Version.objects.all()
-
-
-@pytest.mark.django_db
-def test_version_rest_delete_published_admin(api_client):
+@pytest.mark.parametrize('version_factory', [DraftVersionFactory, PublishedVersionFactory])
+def test_version_rest_delete_not_allowed(api_client, version_factory):
     user = UserFactory.create(is_superuser=True)
-    published_version = PublishedVersionFactory.create()
+    version = version_factory.create()
     api_client.force_authenticate(user=user)
 
     response = api_client.delete(
-        f'/api/dandisets/{published_version.dandiset.identifier}'
-        f'/versions/{published_version.version}/'
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/'
     )
-    assert response.status_code == 204
-    assert not Version.objects.all()
-
-
-@pytest.mark.django_db
-def test_version_rest_delete_draft_not_admin(api_client):
-    user = UserFactory.create()
-    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
-    api_client.force_authenticate(user=user)
-
-    response = api_client.delete(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/'
-    )
-    assert response.status_code == 403
-    assert response.data == 'Cannot delete draft versions'
-    assert draft_version in Version.objects.all()
-
-
-@pytest.mark.django_db
-def test_version_rest_delete_draft_admin(api_client):
-    user = UserFactory.create(is_superuser=True)
-    draft_version = DraftVersionFactory.create()
-    api_client.force_authenticate(user=user)
-
-    response = api_client.delete(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/'
-    )
-    assert response.status_code == 403
-    assert response.data == 'Cannot delete draft versions'
-    assert draft_version in Version.objects.all()
+    assert response.status_code == 405
+    assert version in Version.objects.all()
 
 
 # Release Notes Tests

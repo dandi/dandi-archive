@@ -21,7 +21,6 @@ from dandiapi.api.tests.factories import DandisetFactory, DraftVersionFactory, U
         ('get', '/api/dandisets/{dandiset.identifier}/versions/', False),
         ('get', '/api/dandisets/{dandiset.identifier}/versions/draft/', False),
         ('put', '/api/dandisets/{dandiset.identifier}/versions/draft/', True),
-        ('delete', '/api/dandisets/{dandiset.identifier}/versions/draft/', True),
         ('get', '/api/dandisets/{dandiset.identifier}/versions/draft/info/', False),
         ('post', '/api/dandisets/{dandiset.identifier}/versions/draft/publish/', True),
         # Assets
