@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from dandischema.conf import get_instance_config
 from dandischema.models import AccessType
@@ -25,6 +25,8 @@ class VersionAssetValidationError(TypedDict):
     field: str
     message: str
     path: str
+    # The value that failed validation, present only when it's a simple scalar
+    value: NotRequired[str]
 
 
 class Version(PublishableMetadataMixin, TimeStampedModel):
@@ -136,15 +138,19 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             .values('path', 'validation_errors')
         )[:50]
 
-        return list(pending_assets) + [
-            {
-                'field': error['field'],
-                'message': error['message'],
-                'path': asset['path'],
-            }
-            for asset in invalid_assets
-            for error in asset['validation_errors']
-        ]
+        invalid_asset_errors: list[VersionAssetValidationError] = []
+        for asset in invalid_assets:
+            for error in asset['validation_errors']:
+                asset_error: VersionAssetValidationError = {
+                    'field': error['field'],
+                    'message': error['message'],
+                    'path': asset['path'],
+                }
+                if 'value' in error:
+                    asset_error['value'] = error['value']
+                invalid_asset_errors.append(asset_error)
+
+        return list(pending_assets) + invalid_asset_errors
 
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:
