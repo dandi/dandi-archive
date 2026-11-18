@@ -25,19 +25,28 @@ def test_asset_full_metadata_access(
         'foo': 'bar',
         'schemaVersion': DANDI_SCHEMA_VERSION,
     }
+
+    # Embargoed
     embargoed_zarr_asset: Asset = draft_asset_factory(
         metadata=raw_metadata, blob=None, zarr=embargoed_zarr_archive_factory()
     )
-    open_zarr_asset: Asset = draft_asset_factory(
-        metadata=raw_metadata, blob=None, zarr=zarr_archive_factory()
-    )
-
     embargoed_blob_asset: Asset = draft_asset_factory(
         metadata=raw_metadata, blob=asset_blob_factory(embargoed=True), zarr=None
+    )
+    embargoed_draft_version = DraftVersionFactory.create(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
+    )
+    embargoed_draft_version.assets.add(embargoed_zarr_asset, embargoed_blob_asset)
+
+    # Open
+    open_zarr_asset: Asset = draft_asset_factory(
+        metadata=raw_metadata, blob=None, zarr=zarr_archive_factory()
     )
     open_blob_asset: Asset = draft_asset_factory(
         metadata=raw_metadata, blob=asset_blob_factory(embargoed=False), zarr=None
     )
+    open_draft_version = DraftVersionFactory.create()
+    open_draft_version.assets.add(open_zarr_asset, open_blob_asset)
 
     # Test that access is correctly inferred from embargo status
     for embargoed_asset in [embargoed_zarr_asset, embargoed_blob_asset]:
