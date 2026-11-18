@@ -209,11 +209,11 @@ const BROWSER_ZIP_MAX_FILES = 1000;
 type AssetWithStorage = Asset & { zarr: string | null; blob: string | null };
 
 function downloadCommand(identifier: string, version: string): string {
-  // Use the special 'DANDI:' url prefix if the dandiset lives on the production
-  // instance, since that is the instance the CLI resolves those IDs against.
+  // Use the special instance identifier url prefix if appropriate.
   const generalUrl = `${window.location.origin}/dandiset/${identifier}`;
-  const dandiUrl = `DANDI:${identifier}`;
-  const url = instanceStore.isProduction ? dandiUrl : generalUrl;
+  const dandiUrl = `${instanceStore.instanceName}:${identifier}`;
+  const instanceUrl = instanceStore.instanceUrl;
+  const url = instanceUrl && window.location.origin === instanceUrl ? dandiUrl : generalUrl;
 
   // Prepare a url suffix to specify a specific version (or not).
   const versionPath = version ? `/${version}` : '';

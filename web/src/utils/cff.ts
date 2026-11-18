@@ -85,7 +85,16 @@ function organizationToCFFAuthor(org: Organization): CFFAuthor {
 /**
  * Convert DANDI dandiset metadata to CFF format
  */
-export function dandisetToCFF(metadata: DandisetMetadata, doi?: string, isDraft?: boolean, draftModifiedDate?: string): CFF {
+export function dandisetToCFF(
+  metadata: DandisetMetadata,
+  doi?: string,
+  isDraft?: boolean,
+  draftModifiedDate?: string,
+  instanceName?: string,
+  instanceUrl?: string,
+): CFF {
+  const archiveName = instanceName || 'DANDI';
+  const archiveUrl = instanceUrl || 'https://dandiarchive.org';
   const cff: CFF = {
     'cff-version': '1.2.0',
     message: 'If you use this dataset, please cite it as below.',
@@ -125,8 +134,8 @@ export function dandisetToCFF(metadata: DandisetMetadata, doi?: string, isDraft?
   if (metadata.identifier) {
     cff.identifiers.push({
       type: 'url',
-      value: `https://dandiarchive.org/dandiset/${metadata.identifier}`,
-      description: 'DANDI Archive URL'
+      value: `${archiveUrl}/dandiset/${metadata.identifier}`,
+      description: `${archiveName} Archive URL`
     });
   }
 
@@ -136,7 +145,7 @@ export function dandisetToCFF(metadata: DandisetMetadata, doi?: string, isDraft?
   } else if (doi) {
     cff.url = `https://doi.org/${doi}`;
   } else if (metadata.identifier) {
-    cff.url = `https://dandiarchive.org/dandiset/${metadata.identifier}`;
+    cff.url = `${archiveUrl}/dandiset/${metadata.identifier}`;
   }
 
   // Add repository
@@ -212,9 +221,9 @@ function mapResourceTypeToCFF(resourceType?: string): string {
 /**
  * Convert CFF to BibTeX format
  */
-export function cffToBibTeX(cff: CFF, identifier: string): string {
+export function cffToBibTeX(cff: CFF, dandisetVersionIdentifier: string, instanceName: string): string {
   const type = '@dataset';
-  const key = `dandi:${identifier.replace('/', '_')}`;
+  const key = `${instanceName.toLowerCase()}:${dandisetVersionIdentifier.replace('/', '_')}`;
 
   const authors = cff.authors.map(author => {
     if (author.name) {
@@ -254,8 +263,8 @@ export function cffToBibTeX(cff: CFF, identifier: string): string {
     bibtex += `  year = {${year}},\n`;
   }
 
-  bibtex += `  publisher = {DANDI Archive},\n`;
-  bibtex += `  note = {DANDI:${identifier}}\n`;
+  bibtex += `  publisher = {${instanceName} Archive},\n`;
+  bibtex += `  note = {${instanceName}:${dandisetVersionIdentifier}}\n`;
   bibtex += '}';
 
   return bibtex;
@@ -264,14 +273,14 @@ export function cffToBibTeX(cff: CFF, identifier: string): string {
 /**
  * Convert CFF to APA format (7th edition)
  */
-export function cffToAPA(cff: CFF): string {
+export function cffToAPA(cff: CFF, instanceName: string): string {
   const year = cff['date-released'] ? ` (${cff['date-released'].split('-')[0]})` : '';
   const version = cff.version ? ` (Version ${cff.version})` : '';
   const doi = cff.doi ? ` https://doi.org/${cff.doi}` : '';
 
   // APA 7: when there is no author, the title moves into the author position.
   if (cff.authors.length === 0) {
-    return `${cff.title}${year}${version} [Data set]. DANDI Archive.${doi}`;
+    return `${cff.title}${year}${version} [Data set]. ${instanceName} Archive.${doi}`;
   }
 
   const authors = cff.authors.map((author) => {
@@ -296,19 +305,19 @@ export function cffToAPA(cff: CFF): string {
     authorString = authors.slice(0, -1).join(', ') + ', & ' + authors[authors.length - 1];
   }
 
-  return `${authorString}${year}. ${cff.title}${version} [Data set]. DANDI Archive.${doi}`;
+  return `${authorString}${year}. ${cff.title}${version} [Data set]. ${instanceName} Archive.${doi}`;
 }
 
 /**
  * Convert CFF to MLA format (9th edition)
  */
-export function cffToMLA(cff: CFF): string {
+export function cffToMLA(cff: CFF, instanceName: string): string {
   const year = cff['date-released'] ? cff['date-released'].split('-')[0] : 'n.d.';
   const doi = cff.doi ? ` doi:${cff.doi}` : '';
 
   // MLA 9: when there is no author, the entry begins with the title.
   if (cff.authors.length === 0) {
-    return `"${cff.title}." DANDI Archive, ${year}.${doi}`;
+    return `"${cff.title}." ${instanceName} Archive, ${year}.${doi}`;
   }
 
   const authors = cff.authors.map((author, index) => {
@@ -335,20 +344,20 @@ export function cffToMLA(cff: CFF): string {
     authorString = `${authors[0]}, et al`;
   }
 
-  return `${authorString}. "${cff.title}." DANDI Archive, ${year}.${doi}`;
+  return `${authorString}. "${cff.title}." ${instanceName} Archive, ${year}.${doi}`;
 }
 
 /**
  * Convert CFF to Chicago format (17th edition, Author-Date)
  */
-export function cffToChicago(cff: CFF): string {
+export function cffToChicago(cff: CFF, instanceName: string): string {
   const year = cff['date-released'] ? cff['date-released'].split('-')[0] : 'n.d.';
   const version = cff.version ? `, version ${cff.version}` : '';
   const doi = cff.doi ? ` https://doi.org/${cff.doi}` : '';
 
   // Chicago author-date: when there is no author, the title takes the author slot.
   if (cff.authors.length === 0) {
-    return `"${cff.title}." ${year}. Data set${version}. DANDI Archive.${doi}`;
+    return `"${cff.title}." ${year}. Data set${version}. ${instanceName} Archive.${doi}`;
   }
 
   const authors = cff.authors.map((author, index) => {
@@ -373,19 +382,19 @@ export function cffToChicago(cff: CFF): string {
     authorString = `${authors[0]} et al.`;
   }
 
-  return `${authorString}. ${year}. "${cff.title}." Data set${version}. DANDI Archive.${doi}`;
+  return `${authorString}. ${year}. "${cff.title}." Data set${version}. ${instanceName} Archive.${doi}`;
 }
 
 /**
  * Convert CFF to Harvard format
  */
-export function cffToHarvard(cff: CFF): string {
+export function cffToHarvard(cff: CFF, instanceName: string): string {
   const year = cff['date-released'] ? cff['date-released'].split('-')[0] : 'n.d.';
   const doi = cff.doi ? ` Available at: https://doi.org/${cff.doi}` : '';
 
   // Harvard: when there is no author, the title takes the author slot.
   if (cff.authors.length === 0) {
-    return `'${cff.title}' (${year}) DANDI Archive. Data set.${doi}`;
+    return `'${cff.title}' (${year}) ${instanceName} Archive. Data set.${doi}`;
   }
 
   const authors = cff.authors.map((author) => {
@@ -412,19 +421,19 @@ export function cffToHarvard(cff: CFF): string {
     authorString = `${authors[0]} et al.`;
   }
 
-  return `${authorString} (${year}) '${cff.title}', DANDI Archive. Data set.${doi}`;
+  return `${authorString} (${year}) '${cff.title}', ${instanceName} Archive. Data set.${doi}`;
 }
 
 /**
  * Convert CFF to Vancouver format (used in biomedical sciences)
  */
-export function cffToVancouver(cff: CFF): string {
+export function cffToVancouver(cff: CFF, instanceName: string): string {
   const year = cff['date-released'] ? cff['date-released'].split('-')[0] : '';
   const doi = cff.doi ? ` doi: ${cff.doi}` : '';
 
   // Vancouver: when there is no author, the entry begins with the title.
   if (cff.authors.length === 0) {
-    return `${cff.title} [Data set]. DANDI Archive; ${year}.${doi}`;
+    return `${cff.title} [Data set]. ${instanceName} Archive; ${year}.${doi}`;
   }
 
   const authors = cff.authors.map((author) => {
@@ -448,19 +457,19 @@ export function cffToVancouver(cff: CFF): string {
     authorString = authors.slice(0, 6).join(', ') + ', et al';
   }
 
-  return `${authorString}. ${cff.title} [Data set]. DANDI Archive; ${year}.${doi}`;
+  return `${authorString}. ${cff.title} [Data set]. ${instanceName} Archive; ${year}.${doi}`;
 }
 
 /**
  * Convert CFF to IEEE format
  */
-export function cffToIEEE(cff: CFF): string {
+export function cffToIEEE(cff: CFF, instanceName: string): string {
   const year = cff['date-released'] ? cff['date-released'].split('-')[0] : '';
   const doi = cff.doi ? ` doi: ${cff.doi}` : '';
 
   // IEEE: when there is no author, the entry begins with the title.
   if (cff.authors.length === 0) {
-    return `"${cff.title}," DANDI Archive, ${year}.${doi}`;
+    return `"${cff.title}," ${instanceName} Archive, ${year}.${doi}`;
   }
 
   const authors = cff.authors.map((author) => {
@@ -485,13 +494,13 @@ export function cffToIEEE(cff: CFF): string {
     authorString = authors.slice(0, -1).join(', ') + ', and ' + authors[authors.length - 1];
   }
 
-  return `${authorString}, "${cff.title}," DANDI Archive, ${year}.${doi}`;
+  return `${authorString}, "${cff.title}," ${instanceName} Archive, ${year}.${doi}`;
 }
 
 /**
  * Convert CFF to RIS format
  */
-export function cffToRIS(cff: CFF, identifier: string): string {
+export function cffToRIS(cff: CFF, dandisetVersionIdentifier: string, instanceName: string): string {
   let ris = 'TY  - DATA\n';
   ris += `TI  - ${cff.title}\n`;
 
@@ -527,8 +536,8 @@ export function cffToRIS(cff: CFF, identifier: string): string {
     if (dateParts[1]) ris += `Y2  - ${dateParts[0]}/${dateParts[1]}/${dateParts[2] || '01'}\n`;
   }
 
-  ris += 'PB  - DANDI Archive\n';
-  ris += `N1  - DANDI:${identifier}\n`;
+  ris += `PB  - ${instanceName} Archive\n`;
+  ris += `N1  - ${instanceName}:${dandisetVersionIdentifier}\n`;
 
   if (cff.version) {
     ris += `VL  - ${cff.version}\n`;
