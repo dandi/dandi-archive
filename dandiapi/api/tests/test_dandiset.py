@@ -1361,6 +1361,111 @@ def test_dandiset_rest_search_multiple_words_and_logic(api_client):
     assert len(results) == 0
 
 
+def _seed_text_dandiset(name: str, description: str = '') -> Dandiset:
+    version = DraftVersionFactory.create(name=name)
+    version.metadata = {**version.metadata, 'name': name, 'description': description}
+    version.save()
+    return version.dandiset
+
+
+def _search_ordered_ids(api_client, query: str, ordering: str) -> list[str]:
+    response = api_client.get(
+        '/api/dandisets/',
+        {'draft': 'true', 'empty': 'true', 'search': query, 'ordering': ordering},
+    )
+    assert response.status_code == 200
+    return [r['identifier'] for r in response.json()['results']]
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_dandiset_rest_search_free_text_matches_whole_words(api_client):
+    rat = _seed_text_dandiset('Rat hippocampus place cells')
+    _seed_text_dandiset('Mouse V1', 'A new generation of probes at a high sampling rate.')
+
+    # "rat" is inside "generation" and "rate", but those aren't the word "rat".
+    assert _search_ids(api_client, 'rat') == {rat.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_dandiset_rest_search_free_text_stems_words(api_client):
+    probes = _seed_text_dandiset('Visual cortex', 'Neuropixels recordings from awake mice.')
+
+    assert _search_ids(api_client, 'neuropixel') == {probes.identifier}
+    assert _search_ids(api_client, 'neuropixels') == {probes.identifier}
+    assert _search_ids(api_client, 'recording') == {probes.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_dandiset_rest_search_free_text_ignores_schema_boilerplate(api_client):
+    # Every version has `access: [{status: dandi:OpenAccess}]`, and keys like
+    # `schemaKey`, none of which are searched as words.
+    _seed_text_dandiset('Visual cortex', 'Recordings from awake mice.')
+
+    assert _search_ids(api_client, 'access') == set()
+    assert _search_ids(api_client, 'schemakey') == set()
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_dandiset_rest_search_free_text_quoted_phrase(api_client):
+    phrase = _seed_text_dandiset('Hippocampus', 'We recorded place cells during navigation.')
+    _seed_text_dandiset('Hippocampus', 'Cells in place for the whole session.')
+
+    assert _search_ids(api_client, '"place cells"') == {phrase.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_dandiset_rest_search_free_text_stop_words_do_not_constrain(api_client):
+    hippocampus = _seed_text_dandiset('Hippocampus', 'Recordings from awake mice.')
+    _seed_text_dandiset('Visual cortex', 'Recordings from awake mice.')
+
+    assert _search_ids(api_client, 'the hippocampus') == {hippocampus.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_dandiset_rest_search_identifier_like_terms_match_substrings(api_client):
+    version = DraftVersionFactory.create()
+    version.metadata['contributor'][0]['identifier'] = 'https://orcid.org/0000-0002-2990-9889'
+    version.save()
+    DraftVersionFactory.create()
+
+    assert _search_ids(api_client, '0000-0002-2990-9889') == {version.dandiset.identifier}
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_dandiset_rest_search_orders_by_relevance(api_client):
+    in_description = _seed_text_dandiset('Visual cortex', 'A control recording in hippocampus.')
+    in_title = _seed_text_dandiset('Hippocampus place cells', 'Recordings from awake mice.')
+
+    assert _search_ordered_ids(api_client, 'hippocampus', '-relevance') == [
+        in_title.identifier,
+        in_description.identifier,
+    ]
+    assert _search_ordered_ids(api_client, 'hippocampus', 'relevance') == [
+        in_description.identifier,
+        in_title.identifier,
+    ]
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_dandiset_rest_relevance_ordering_without_free_text(api_client):
+    # Without free text there is no rank, so the most recently modified come first.
+    first = _seed_text_dandiset('Hippocampus')
+    second = _seed_text_dandiset('Visual cortex')
+
+    assert _search_ordered_ids(api_client, '', '-relevance') == [
+        second.identifier,
+        first.identifier,
+    ]
+
+
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     'contributors',

@@ -7,14 +7,17 @@ from typing import TypedDict
 from dandischema.conf import get_instance_config
 from dandischema.models import AccessType
 from django.conf import settings
-from django.contrib.postgres.indexes import HashIndex
+from django.contrib.postgres.indexes import GinIndex, HashIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models.expressions import RawSQL
 from django.db.models.query_utils import Q
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.asset_paths import get_root_paths
 from dandiapi.api.models.metadata import PublishableMetadataMixin
+from dandiapi.api.services.search.vector import SEARCH_VECTOR_SQL
 
 from .dandiset import Dandiset
 
@@ -60,6 +63,13 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         choices=Status.choices,
     )
     validation_errors = models.JSONField(default=list, blank=True, null=True)
+    # Free-text search vector over chosen metadata fields, computed by Postgres.
+    # See dandiapi/api/services/search/vector.py.
+    search_vector = models.GeneratedField(
+        expression=RawSQL(SEARCH_VECTOR_SQL, []),  # noqa: S611  (a trusted constant)
+        output_field=SearchVectorField(),
+        db_persist=True,
+    )
 
     class Meta:
         ordering = ['version']
@@ -73,6 +83,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         indexes = [
             HashIndex(fields=['metadata']),
             HashIndex(fields=['name']),
+            GinIndex(fields=['search_vector']),
         ]
 
     @property

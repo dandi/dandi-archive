@@ -50,7 +50,16 @@ const sortingOptions = [
     name: 'Stars',
     djangoField: 'stars',
   },
+  // Only offered while searching; must stay last so the indices above,
+  // which are stored in the URL, don't change.
+  {
+    name: 'Relevance',
+    djangoField: 'relevance',
+    searchOnly: true,
+  },
 ];
+
+const RELEVANCE_SORT_OPTION = sortingOptions.length - 1;
 
 const DANDISETS_PER_PAGE = 8;
 
@@ -65,5 +74,6 @@ export {
   dandiStatsUrl,
   VALIDATION_ICONS,
   sortingOptions,
+  RELEVANCE_SORT_OPTION,
   DANDISETS_PER_PAGE,
 };
