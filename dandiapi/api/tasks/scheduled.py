@@ -181,7 +181,7 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     sender.add_periodic_task(
         settings.DANDI_DEFERRED_INGESTION_RETRY_INTERVAL,
         ingest_deferred_zarr_archives.s(),
-        expires=timedelta(minutes=5).total_seconds(),
+        expires=settings.DANDI_DEFERRED_INGESTION_RETRY_INTERVAL.total_seconds(),
     )
     # Delete records of zarr upload URLs which have expired
     sender.add_periodic_task(timedelta(hours=1), delete_expired_zarr_upload_urls.s())
