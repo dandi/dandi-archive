@@ -9,7 +9,7 @@
       <template #title>
         <span>Contributors</span>
       </template>
-      <v-list class="mx-5 mt-1 mb-4 pa-0">
+      <v-list class="d-flex flex-wrap ga-3 mx-5 mt-1 mb-4 pa-0">
         <v-chip
           v-for="(contributor, i) in contributors"
           :key="i"
