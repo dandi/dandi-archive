@@ -6,6 +6,7 @@ ignore = "false"
 # Staging
 [context.master.environment]
 NODE_VERSION = "20"
+VITE_APP_DANDI_BACKEND_ROOT = "https://api.sandbox.dandiarchive.org"
 VITE_APP_OAUTH_API_ROOT = "https://api.sandbox.dandiarchive.org/oauth/"
 VITE_APP_OAUTH_CLIENT_ID = "Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl"
 VITE_APP_DANDI_API_ROOT = "https://api.sandbox.dandiarchive.org/api/"
@@ -16,6 +17,7 @@ VITE_APP_SENTRY_ENVIRONMENT = "staging"
 # Deploy previews
 [context.deploy-preview.environment]
 NODE_VERSION = "20"
+VITE_APP_DANDI_BACKEND_ROOT = "https://api.sandbox.dandiarchive.org"
 VITE_APP_OAUTH_API_ROOT = "https://api.sandbox.dandiarchive.org/oauth/"
 VITE_APP_OAUTH_CLIENT_ID = "Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl"
 VITE_APP_DANDI_API_ROOT = "https://api.sandbox.dandiarchive.org/api/"
@@ -26,6 +28,7 @@ VITE_APP_SENTRY_ENVIRONMENT = "staging"
 # Branch deploys
 [context.branch-deploy.environment]
 NODE_VERSION = "20"
+VITE_APP_DANDI_BACKEND_ROOT = "https://api.sandbox.dandiarchive.org"
 VITE_APP_OAUTH_API_ROOT = "https://api.sandbox.dandiarchive.org/oauth/"
 VITE_APP_OAUTH_CLIENT_ID = "Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl"
 VITE_APP_DANDI_API_ROOT = "https://api.sandbox.dandiarchive.org/api/"
@@ -36,6 +39,7 @@ VITE_APP_SENTRY_ENVIRONMENT = "staging"
 # Production
 [context.release.environment]
 NODE_VERSION = "20"
+VITE_APP_DANDI_BACKEND_ROOT = "https://api.dandiarchive.org"
 VITE_APP_OAUTH_API_ROOT = "https://api.dandiarchive.org/oauth/"
 VITE_APP_OAUTH_CLIENT_ID = "Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl"
 VITE_APP_DANDI_API_ROOT = "https://api.dandiarchive.org/api/"
@@ -54,3 +58,6 @@ status = 200
 
 [[plugins]]
 package = "/netlify/plugins/server-info-build"
+
+[[plugins]]
+package = "/netlify/plugins/sitemap-xml-proxy"
