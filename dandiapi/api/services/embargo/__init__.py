@@ -15,7 +15,7 @@ from dandiapi.api.services.embargo.utils import remove_dandiset_embargo_tags
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.metadata import validate_version_metadata
 from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
-from dandiapi.api.tasks import unembargo_dandiset_task
+from dandiapi.api.tasks import unembargo_dandiset_task, write_manifest_files
 
 from .exceptions import (
     AssetBlobEmbargoedError,
@@ -76,6 +76,10 @@ def unembargo_dandiset(ds: Dandiset, user: User):
     # errors don't show up once un-embargo is finished
     validate_version_metadata(version=v)
     logger.info('Version metadata validated')
+
+    # Validation took the draft out of PENDING, so the beat won't rewrite its manifests, which
+    # still say it's embargoed.
+    transaction.on_commit(lambda: write_manifest_files.delay(v.id))
 
     # Notify owners of completed unembargo
     send_dandiset_unembargoed_message(ds)

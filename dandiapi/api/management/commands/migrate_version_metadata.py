@@ -10,6 +10,7 @@ import djclick as click
 from dandiapi.api.models import Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.metadata import validate_version_metadata
+from dandiapi.api.tasks import write_manifest_files
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +81,8 @@ def migrate_version_metadata(dandisets: tuple[int, ...], *, include_all: bool):
 
         # Validate outside of transaction, since this function uses `select_for_update` itself
         validate_version_metadata(version=version)
+        # Validation took the draft out of PENDING, so the beat won't rewrite its manifests.
+        write_manifest_files.delay(version.id)
 
     logger.info(
         '%d migrated, %d failed, %d left unchanged, out of %d total selected versions',
