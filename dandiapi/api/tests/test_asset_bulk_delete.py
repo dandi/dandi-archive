@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from dandiapi.api.asset_paths import add_asset_paths
+from dandiapi.api.asset_paths import add_asset_paths, get_path_entry
 from dandiapi.api.models import AuditRecord, Version
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
@@ -95,7 +95,8 @@ def test_asset_rest_bulk_delete_partial(api_client, version_with_assets):
     assert list(version.assets.all()) == [assets[2]]
 
     # The remaining asset's ancestors should account for exactly that asset
-    root = AssetPath.objects.get(version=version, path='foo')
+    root = get_path_entry(version, 'foo')
+    assert root is not None
     assert root.aggregate_files == 1
     assert root.aggregate_size == assets[2].size
 
@@ -228,4 +229,4 @@ def test_asset_rest_bulk_delete_failure_rolls_back(api_client, version_with_asse
 
     # No assets were removed, and their paths are intact
     assert version.assets.count() == 3
-    assert AssetPath.objects.filter(version=version, asset__isnull=False).count() == 3
+    assert AssetPath.objects.filter(version=version).count() == 3

@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
-from dandiapi.api.asset_paths import search_asset_paths
+from dandiapi.api.asset_paths import get_path_entries, search_asset_paths
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.models.asset import validate_asset_path
 from dandiapi.api.services.asset import (
@@ -547,10 +547,10 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         # Paginate and return
         page = self.paginate_queryset(children_paths)
         if page is not None:
-            serializer = AssetPathsSerializer(page, many=True)
+            serializer = AssetPathsSerializer(get_path_entries(page, version), many=True)
             return self.get_paginated_response(serializer.data)
 
-        serializer = AssetPathsSerializer(children_paths, many=True)
+        serializer = AssetPathsSerializer(get_path_entries(children_paths, version), many=True)
         return Response(serializer.data)
 
     # TODO: add create to forge an asset from a validation

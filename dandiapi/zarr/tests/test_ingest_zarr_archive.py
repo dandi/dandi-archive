@@ -133,8 +133,7 @@ def test_ingest_zarr_archive_modified(zarr_archive_factory, zarr_file_factory):
     assert asset.size == 100
     ap = AssetPath.objects.filter(version=draft_version, asset=asset).first()
     assert ap is not None
-    assert ap.aggregate_files == 1
-    assert ap.aggregate_size == 100
+    assert ap.size == 100
 
     # Simulate more data uploaded to the zarr
     zarr_archive.mark_pending()
@@ -142,9 +141,17 @@ def test_ingest_zarr_archive_modified(zarr_archive_factory, zarr_file_factory):
     zarr_archive.save()
     zarr_archive.refresh_from_db()
 
+    # Simulate that data being another file
+    zarr_file_factory(zarr_archive=zarr_archive, size=100)
+
     # Ingest zarr
     asset.refresh_from_db()
     ingest_zarr_archive(zarr_archive.zarr_id)
+
+    # The asset path has the new size of the zarr, as does anything derived from it
+    ap.refresh_from_db()
+    assert ap.size == 200
+    assert draft_version.size == 200
 
 
 @pytest.mark.django_db(transaction=True)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .asset import Asset, AssetBlob, AssetStatus
-from .asset_paths import AssetPath, AssetPathRelation
+from .asset_paths import AssetPath
 from .audit import AuditRecord
 from .dandiset import Dandiset, DandisetStar
 from .garbage_collection import GarbageCollectionEvent, GarbageCollectionEventRecord
@@ -15,7 +15,6 @@ __all__ = [
     'Asset',
     'AssetBlob',
     'AssetPath',
-    'AssetPathRelation',
     'AssetStatus',
     'AuditRecord',
     'Dandiset',

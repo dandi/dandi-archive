@@ -8,7 +8,7 @@ import psycopg.errors
 from zarr_checksum import compute_zarr_checksum
 from zarr_checksum.generators import S3ClientOptions, yield_files_s3
 
-from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
+from dandiapi.api.asset_paths import update_zarr_asset_paths
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.version import lock_version_for_asset_changes
@@ -77,9 +77,6 @@ def _ingest_zarr_archive(zarr_id: str, *, force: bool = False):
             .get(zarr_id=zarr_id, status=ZarrArchiveStatus.INGESTING)
         )
 
-        # Remove all asset paths associated with this zarr before ingest
-        delete_zarr_paths(zarr)
-
         # Set zarr fields
         zarr.checksum = checksum.digest
         zarr.file_count = checksum.count
@@ -87,8 +84,8 @@ def _ingest_zarr_archive(zarr_id: str, *, force: bool = False):
         zarr.status = ZarrArchiveStatus.COMPLETE
         zarr.save()
 
-        # Add asset paths after ingest is finished
-        add_zarr_paths(zarr)
+        # Update the size of all asset paths associated with this zarr
+        update_zarr_asset_paths(zarr)
 
         # Set version status back to PENDING, and update modified.
         Version.objects.filter(id=zarr.dandiset.draft_version.id).update(

@@ -170,6 +170,13 @@ def change_asset(  # noqa: PLR0913
             raise AssetAlreadyExistsError
 
         _remove_asset_from_version(asset=asset, version=version)
+
+        # Check if there are any assets that conflict with the path. This is done once the asset
+        # has been removed, as an asset can be moved to a path that's within its current path.
+        conflicts = get_conflicting_paths(path, version)
+        if conflicts:
+            raise AssetPathConflictError(new_path=path, existing_paths=conflicts)
+
         new_asset = _add_asset_to_version(
             version=version,
             asset_blob=new_asset_blob,

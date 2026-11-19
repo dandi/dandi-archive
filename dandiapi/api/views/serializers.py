@@ -12,7 +12,7 @@ from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
 
-from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Upload, Version
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
 from dandiapi.search.models import AssetSearch
 
 # The maximum number of assets that may be deleted in a single bulk delete request
@@ -541,16 +541,11 @@ class AssetFileSerializer(AssetSerializer):
     url = serializers.URLField(source='s3_url')
 
 
-class AssetPathsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AssetPath
-        fields = [
-            'path',
-            'version',
-            'aggregate_files',
-            'aggregate_size',
-            'asset',
-        ]
-        read_only_fields = ['created']
+class AssetPathsSerializer(serializers.Serializer):
+    """Serializes a `PathEntry`, which is a file or folder within a version."""
 
+    path = serializers.CharField()
+    version = serializers.IntegerField(source='version_id')
+    aggregate_files = serializers.IntegerField()
+    aggregate_size = serializers.IntegerField()
     asset = AssetFileSerializer()

@@ -10,10 +10,11 @@ def lock_version_for_asset_changes(version: Version) -> None:
     """
     Lock a version for the remainder of the current transaction.
 
-    Anything that adds or removes the assets of a version must call this before it modifies any
-    asset path or the version itself. Those changes all write to the same rows (the shared folders
-    of the version's asset path tree, and the version), so without a common lock to wait on first,
-    concurrent changes acquire those rows in conflicting orders and deadlock.
+    Anything that adds or removes the assets of a version must call this before it reads or
+    modifies any asset path, or the version itself. Whether a path can be used by an asset depends
+    on the paths of every other asset of the version, which nothing in the database enforces, so it
+    can only be checked while nothing else is able to change them. Those changes also all update
+    the version, so without a common lock to wait on first, they could deadlock on it.
 
     This must be called within a transaction, and it must be the first lock taken in it. Anything
     else that the transaction locks (assets, zarr archives, asset paths) is then only ever locked

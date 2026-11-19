@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 from dandischema.consts import DANDI_SCHEMA_VERSION
-from django.db.models import Q, QuerySet
 import pytest
 
 from dandiapi.api.asset_paths import (
     add_asset_paths,
     add_version_asset_paths,
     delete_asset_paths,
+    delete_asset_paths_many,
     extract_paths,
-    get_root_paths,
-    get_root_paths_many,
+    get_child_paths,
+    get_conflicting_paths,
+    get_path_entries,
+    get_path_entry,
     search_asset_paths,
-    update_asset_paths,
 )
 from dandiapi.api.models import Asset, AssetPath, Version
-from dandiapi.api.models.asset_paths import AssetPathRelation
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.asset.exceptions import AssetAlreadyExistsError
 from dandiapi.api.tasks import publish_dandiset_task
@@ -56,35 +56,26 @@ def test_asset_path_add_asset(asset_factory):
     # Add asset to paths
     add_asset_paths(asset, version)
 
-    # Get asset path
-    path: AssetPath = AssetPath.objects.get(asset=asset, version=version)
+    # Only the path of the asset itself is stored
+    path: AssetPath = AssetPath.objects.get(version=version)
+    assert path.asset == asset
+    assert path.path == asset.path
+    assert path.size == asset.size
 
-    # Get parent paths
-    parent_paths: QuerySet[AssetPath] = AssetPath.objects.filter(
-        version=version, child_links__child=path
-    )
+    # Every path leading to the asset contains only that asset
+    paths = extract_paths(asset.path)
+    for parent_path in paths[:-1]:
+        entry = get_path_entry(version, parent_path)
+        assert entry is not None
+        assert entry.asset is None
+        assert entry.aggregate_size == asset.size
+        assert entry.aggregate_files == 1
 
-    # Assert not empty
-    assert parent_paths.exists()
-
-    # Check parent paths and relations
-    for path in parent_paths:
-        assert path.aggregate_size == asset.size
-        assert path.aggregate_files == 1
-
-        # Assert self referencing link
-        assert AssetPathRelation.objects.filter(parent=path, child=path).exists()
-
-        # Get child paths
-        child_paths = AssetPath.objects.filter(version=version, path__startswith=path.path).exclude(
-            id=path.id
-        )
-
-        # Assert relation to all of these child paths exists
-        assert (
-            AssetPathRelation.objects.filter(parent=path, child__in=child_paths).count()
-            == child_paths.count()
-        )
+    entry = get_path_entry(version, asset.path)
+    assert entry is not None
+    assert entry.asset == asset
+    assert entry.aggregate_size == asset.size
+    assert entry.aggregate_files == 1
 
 
 @pytest.mark.django_db
@@ -100,8 +91,7 @@ def test_asset_path_add_asset_idempotent(asset_factory):
 
     # Get asset path
     path: AssetPath = AssetPath.objects.get(asset=asset, version=version)
-    assert path.aggregate_files == 1
-    assert path.aggregate_size == asset.size
+    assert path.size == asset.size
 
 
 @pytest.mark.django_db
@@ -115,14 +105,14 @@ def test_asset_path_add_asset_conflicting_path(asset_factory):
 
     # Add asset1 paths
     add_asset_paths(asset1, version)
-    assert version.asset_paths.filter(asset__isnull=False).count() == 1
+    assert version.asset_paths.count() == 1
 
     # Ensure that adding asset2 raises the correct exception
     with pytest.raises(AssetAlreadyExistsError):
         add_asset_paths(asset2, version)
 
     # Ensure that there no new asset paths created
-    assert version.asset_paths.filter(asset__isnull=False).count() == 1
+    assert version.asset_paths.count() == 1
 
 
 @pytest.mark.django_db
@@ -145,18 +135,15 @@ def test_asset_path_add_version_asset_paths(asset_factory):
         ('top.txt', 1, 100),
     ]
 
-    # Check parent paths and relations
     for path, count, size in paths:
-        asset_path = AssetPath.objects.get(version=version, path=path)
-        assert asset_path.aggregate_files == count
-        assert asset_path.aggregate_size == size
+        entry = get_path_entry(version, path)
+        assert entry is not None
+        assert entry.aggregate_files == count
+        assert entry.aggregate_size == size
 
-    # Assert no paths have size or file count of zero
-    assert (
-        not AssetPath.objects.filter(version=version)
-        .filter(Q(aggregate_size=0) | Q(aggregate_files=0))
-        .exists()
-    )
+    # Assert no asset paths have a size of zero
+    assert version.asset_paths.count() == 4
+    assert not AssetPath.objects.filter(version=version, size=0).exists()
 
 
 @pytest.mark.django_db
@@ -172,14 +159,11 @@ def test_asset_path_add_version_asset_paths_idempotent(asset_factory):
     add_version_asset_paths(version)
     add_version_asset_paths(version)
 
-    # Ensure no duplicate counts
-    leafpaths = AssetPath.objects.select_related('asset').filter(
-        version=version, asset__isnull=False
-    )
-    for path in leafpaths:
-        assert path.aggregate_files == 1
-        assert path.asset is not None
-        assert path.aggregate_size == path.asset.size
+    # Ensure no duplicate paths
+    asset_paths = AssetPath.objects.select_related('asset').filter(version=version)
+    assert asset_paths.count() == 4
+    for path in asset_paths:
+        assert path.size == path.asset.size
 
 
 @pytest.mark.django_db
@@ -196,7 +180,8 @@ def test_asset_path_add_asset_shared_paths(asset_factory):
     add_asset_paths(asset2, version)
 
     # Get path
-    path = AssetPath.objects.get(path='foo', version=version)
+    path = get_path_entry(version, 'foo')
+    assert path is not None
     assert asset1.blob is not None
     assert asset2.blob is not None
     assert path.aggregate_size == asset1.blob.size + asset2.blob.size
@@ -227,31 +212,31 @@ def test_asset_path_delete_asset_idempotent(ingested_asset):
 
 
 @pytest.mark.django_db
-def test_asset_path_update_asset(asset_factory):
-    # Create asset with version
+def test_asset_path_delete_asset_removes_empty_folders(asset_factory):
     version: Version = DraftVersionFactory.create()
-    old_asset: Asset = asset_factory(path='a/b.txt')
-    version.assets.add(old_asset)
-    add_asset_paths(old_asset, version)
+    assets = [asset_factory(path=path) for path in ['a/b/c.txt', 'a/d.txt']]
+    for asset in assets:
+        version.assets.add(asset)
+        add_asset_paths(asset, version)
 
-    # Create new asset
-    new_asset: Asset = asset_factory(path='c/d.txt')
-    version.assets.add(new_asset)
-    add_asset_paths(new_asset, version)
+    delete_asset_paths(assets[0], version)
 
-    # Update asset (call twice to ensure idempotence)
-    update_asset_paths(old_asset=old_asset, new_asset=new_asset, version=version)
-    update_asset_paths(old_asset=old_asset, new_asset=new_asset, version=version)
+    # A folder only exists for as long as it contains something
+    assert get_path_entry(version, 'a/b') is None
+    assert get_path_entry(version, 'a') is not None
 
-    # Assert none of old paths exist
-    old_paths = extract_paths(old_asset.path)
-    for path in old_paths:
-        assert not AssetPath.objects.filter(path=path, version=version).exists()
 
-    # Assert new paths exist
-    new_paths = extract_paths(new_asset.path)
-    for path in new_paths:
-        assert AssetPath.objects.filter(path=path, version=version).exists()
+@pytest.mark.django_db
+def test_asset_path_delete_asset_paths_many(asset_factory):
+    version: Version = DraftVersionFactory.create()
+    assets = [asset_factory(path=path) for path in ['a/b.txt', 'a/c.txt', 'd.txt']]
+    for asset in assets:
+        version.assets.add(asset)
+        add_asset_paths(asset, version)
+
+    delete_asset_paths_many(assets[:2], version)
+
+    assert list(version.asset_paths.values_list('path', flat=True)) == ['d.txt']
 
 
 @pytest.mark.django_db
@@ -271,7 +256,8 @@ def test_asset_path_delete_asset_shared_paths(asset_factory, asset_blob_factory)
     delete_asset_paths(asset1, version)
 
     # Get path
-    path = AssetPath.objects.get(path='foo', version=version)
+    path = get_path_entry(version, 'foo')
+    assert path is not None
     assert asset2.blob is not None
     assert path.aggregate_size == asset2.blob.size
     assert path.aggregate_files == 1
@@ -291,14 +277,28 @@ def test_asset_path_search_asset_paths(asset_factory):
     # Assert that there are two folders
     assert qs is not None
     assert qs.count() == 2
-    assert sorted([x.path for x in qs]) == ['bar', 'foo']
-    assert all(x.asset is None for x in qs)
+    entries = get_path_entries(qs, version)
+    assert [x.path for x in entries] == ['bar', 'foo']
+    assert [x.aggregate_files for x in entries] == [1, 2]
+    assert all(x.asset is None for x in entries)
 
-    # Search foo, assert there are two files
-    qs = search_asset_paths('foo', version)
+    # Search foo, assert there are two files. A trailing slash makes no difference.
+    for query in ['foo', 'foo/']:
+        qs = search_asset_paths(query, version)
+        assert qs is not None
+        assert qs.count() == 2
+        entries = get_path_entries(qs, version)
+        assert [x.path for x in entries] == ['foo/bar.txt', 'foo/baz.txt']
+        assert [x.asset for x in entries] == assets[:2]
+
+    # Search a file, which has no children
+    qs = search_asset_paths('foo/bar.txt', version)
     assert qs is not None
-    assert qs.count() == 2
-    assert all(x.asset is not None for x in qs)
+    assert qs.count() == 0
+
+    # Search paths that don't exist, including one that an existing path merely starts with
+    assert search_asset_paths('baz', version) is None
+    assert search_asset_paths('fo', version) is None
 
 
 @pytest.mark.django_db
@@ -334,37 +334,111 @@ def test_asset_path_publish_version(asset_factory):
 
 
 @pytest.mark.django_db
-def test_asset_path_get_root_paths(asset_factory):
+def test_asset_path_get_child_paths(asset_factory):
     version = DraftVersionFactory.create()
-    version.assets.add(asset_factory(path='a'))
-    version.assets.add(asset_factory(path='b/c'))
-    version.assets.add(asset_factory(path='d'))
-    version.assets.add(asset_factory(path='e/f/g'))
+    assets = {
+        path: asset_factory(path=path)
+        for path in ['a', 'b/c', 'b/d/e', 'b/d/f', 'b/g', 'd', 'e/f/g']
+    }
+    for asset in assets.values():
+        version.assets.add(asset)
     add_version_asset_paths(version)
 
-    assert get_root_paths(version).count() == 4
+    # The asset paths of another version aren't included
+    other_version = DraftVersionFactory.create()
+    other_version.assets.add(asset_factory(path='b/other'))
+    add_version_asset_paths(other_version)
+
+    def children(folder: str) -> list[tuple[str, int, int, Asset | None]]:
+        entries = get_path_entries(get_child_paths(version, folder), version)
+        assert all(entry.version_id == version.id for entry in entries)
+        return [(e.path, e.aggregate_files, e.aggregate_size, e.asset) for e in entries]
+
+    assert children('') == [
+        ('a', 1, 100, assets['a']),
+        ('b', 4, 400, None),
+        ('d', 1, 100, assets['d']),
+        ('e', 1, 100, None),
+    ]
+    assert children('b') == [
+        ('b/c', 1, 100, assets['b/c']),
+        ('b/d', 2, 200, None),
+        ('b/g', 1, 100, assets['b/g']),
+    ]
+    assert children('b/d') == [
+        ('b/d/e', 1, 100, assets['b/d/e']),
+        ('b/d/f', 1, 100, assets['b/d/f']),
+    ]
+
+    # Neither a file nor a path that doesn't exist has any children
+    assert children('a') == []
+    assert children('c') == []
 
 
 @pytest.mark.django_db
-def test_asset_path_get_root_paths_many(asset_factory):
+def test_asset_path_get_child_paths_special_characters(asset_factory):
+    """Test that the characters with a special meaning in a LIKE pattern are matched literally."""
     version = DraftVersionFactory.create()
-    version.assets.add(asset_factory(path='a'))
-    version.assets.add(asset_factory(path='b/c'))
-    version.assets.add(asset_factory(path='d'))
-    version.assets.add(asset_factory(path='e/f/g'))
+    for path in ['a_b/c', 'aXb/d', 'aXX/f', 'a\\b/g', 'a\\\\/h']:
+        version.assets.add(asset_factory(path=path))
     add_version_asset_paths(version)
 
-    version2 = DraftVersionFactory.create()
-    version2.assets.add(asset_factory(path='a'))
-    version2.assets.add(asset_factory(path='b/c'))
-    version2.assets.add(asset_factory(path='d'))
-    version2.assets.add(asset_factory(path='e/f/g'))
-    add_version_asset_paths(version2)
+    def children(folder: str) -> list[str]:
+        return [row['child_path'] for row in get_child_paths(version, folder)]
 
-    # assert that the 4 root paths from each version are found
-    assert (
-        get_root_paths_many(Version.objects.filter(id__in=[version.id, version2.id])).count() == 8
-    )
+    assert children('a_b') == ['a_b/c']
+    assert children('a\\b') == ['a\\b/g']
+
+    entry = get_path_entry(version, 'a_b')
+    assert entry is not None
+    assert entry.aggregate_files == 1
+    assert get_conflicting_paths('a_b', version) == ['a_b/c']
+
+
+@pytest.mark.django_db
+def test_asset_path_get_path_entry(asset_factory):
+    version = DraftVersionFactory.create()
+    asset = asset_factory(path='a/b/c.txt')
+    version.assets.add(asset)
+    version.assets.add(asset_factory(path='a/d.txt'))
+    add_version_asset_paths(version)
+
+    folder = get_path_entry(version, 'a')
+    assert folder is not None
+    assert (folder.path, folder.aggregate_files, folder.aggregate_size) == ('a', 2, 200)
+    assert folder.asset is None
+
+    file = get_path_entry(version, 'a/b/c.txt')
+    assert file is not None
+    assert (file.path, file.aggregate_files, file.aggregate_size) == ('a/b/c.txt', 1, 100)
+    assert file.asset == asset
+
+    # A path that existing paths merely start with isn't a folder
+    assert get_path_entry(version, 'a/b/c') is None
+    assert get_path_entry(version, 'a/') is None
+    assert get_path_entry(version, 'z') is None
+
+
+@pytest.mark.django_db
+def test_asset_path_get_conflicting_paths(asset_factory):
+    version = DraftVersionFactory.create()
+    for path in ['a/b/c.txt', 'a/b/d.txt', 'a/e.txt']:
+        version.assets.add(asset_factory(path=path))
+    add_version_asset_paths(version)
+
+    # A file can't be added where there's a folder
+    assert get_conflicting_paths('a', version) == ['a/b/c.txt', 'a/b/d.txt', 'a/e.txt']
+    assert get_conflicting_paths('a/b', version) == ['a/b/c.txt', 'a/b/d.txt']
+
+    # A file can't be added within what's already a file
+    assert get_conflicting_paths('a/e.txt/f.txt', version) == ['a/e.txt']
+    assert get_conflicting_paths('a/b/c.txt/f/g.txt', version) == ['a/b/c.txt']
+
+    # Anything else is fine, including a path that's already a file
+    assert get_conflicting_paths('a/b/f.txt', version) == []
+    assert get_conflicting_paths('a/bb', version) == []
+    assert get_conflicting_paths('a/e.txt', version) == []
+    assert get_conflicting_paths('g/h.txt', version) == []
 
 
 @pytest.mark.django_db
@@ -403,3 +477,15 @@ def test_asset_path_ordering(asset_blob):
     )
     assert paths[0].path == 'a/z'
     assert paths[1].path == 'aa/z'
+
+    # The same collation applies to the folders derived from those paths
+    add_asset_to_version(
+        user=user,
+        version=draft_version,
+        asset_blob=asset_blob,
+        metadata={
+            'path': 'B/z',
+            'schemaVersion': DANDI_SCHEMA_VERSION,
+        },
+    )
+    assert [row['child_path'] for row in get_child_paths(draft_version)] == ['B', 'a', 'aa']

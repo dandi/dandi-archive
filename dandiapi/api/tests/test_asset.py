@@ -11,11 +11,11 @@ from django.urls import reverse
 import pytest
 import requests
 
-from dandiapi.api.asset_paths import add_asset_paths, extract_paths
+from dandiapi.api.asset_paths import add_asset_paths, extract_paths, get_path_entry
 from dandiapi.api.models import Asset, Version
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.services.asset import add_asset_to_version
+from dandiapi.api.services.asset import add_asset_to_version, change_asset
 from dandiapi.api.services.asset.exceptions import AssetPathConflictError
 from dandiapi.api.services.publish import publish_asset
 from dandiapi.api.tasks.scheduled import validate_pending_asset_metadata
@@ -725,11 +725,12 @@ def test_asset_create(api_client, asset_blob):
 
     # Assert paths are properly ingested
     for subpath in extract_paths(path):
-        obj = AssetPath.objects.get(version=draft_version, path=subpath)
+        entry = get_path_entry(draft_version, subpath)
+        assert entry is not None
         if subpath == path:
-            assert obj.asset == new_asset
+            assert entry.asset == new_asset
         else:
-            assert obj.asset is None
+            assert entry.asset is None
 
     # The version modified date should be updated
     start_time = draft_version.modified
@@ -820,6 +821,53 @@ def test_asset_create_conflicting_path(api_client, asset_blob):
                 'schemaVersion': DANDI_SCHEMA_VERSION,
             },
         )
+
+
+@pytest.mark.django_db
+def test_asset_change_conflicting_path(asset_blob):
+    user = UserFactory.create()
+    draft_version = DraftVersionFactory.create(dandiset__owners=[user])
+    for path in ['foo/bar.txt', 'baz.txt']:
+        add_asset_to_version(
+            user=user,
+            version=draft_version,
+            asset_blob=asset_blob,
+            metadata={'path': path, 'schemaVersion': DANDI_SCHEMA_VERSION},
+        )
+    asset = draft_version.assets.get(path='baz.txt')
+
+    def move_asset(path: str):
+        return change_asset(
+            user=user,
+            asset=asset,
+            version=draft_version,
+            new_asset_blob=asset_blob,
+            new_metadata={'path': path, 'schemaVersion': DANDI_SCHEMA_VERSION},
+        )
+
+    # Move the asset to a path which fully contains that of another asset
+    with pytest.raises(AssetPathConflictError):
+        move_asset('foo/bar.txt/baz.txt')
+
+    # Move the asset to a path that's fully contained by another asset
+    with pytest.raises(AssetPathConflictError):
+        move_asset('foo')
+
+    # Neither of those changed anything
+    assert draft_version.assets.get(path='baz.txt') == asset
+    assert sorted(draft_version.asset_paths.values_list('path', flat=True)) == [
+        'baz.txt',
+        'foo/bar.txt',
+    ]
+
+    # The path of the asset itself is no conflict, so it can be moved to within that
+    new_asset, changed = move_asset('baz.txt/qux.txt')
+    assert changed
+    assert sorted(draft_version.asset_paths.values_list('path', flat=True)) == [
+        'baz.txt/qux.txt',
+        'foo/bar.txt',
+    ]
+    assert draft_version.asset_paths.get(path='baz.txt/qux.txt').asset == new_asset
 
 
 @pytest.mark.django_db
@@ -1691,8 +1739,7 @@ def test_asset_rest_delete_zarr_modified(
     assert asset.size == 100
     ap = AssetPath.objects.filter(version=draft_version, asset=asset).first()
     assert ap is not None
-    assert ap.aggregate_files == 1
-    assert ap.aggregate_size == 100
+    assert ap.size == 100
 
     # Pretend to upload more data to the zarr
     resp = api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/files/', ['foo/bar.txt'])

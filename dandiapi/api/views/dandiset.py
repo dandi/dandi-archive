@@ -22,7 +22,6 @@ from rest_framework.serializers import ValidationError
 from rest_framework.settings import api_settings as drf_settings
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.models.asset_paths import AssetPath
@@ -115,15 +114,9 @@ class DandisetOrderingFilter(filters.OrderingFilter):
             ]
             queryset = queryset.annotate(
                 size=Subquery(
-                    latest_version.annotate(
-                        size=Coalesce(
-                            Sum(
-                                'asset_paths__aggregate_size',
-                                filter=~Q(asset_paths__path__contains='/'),
-                            ),
-                            0,
-                        )
-                    ).values('size')
+                    latest_version.annotate(size=Coalesce(Sum('asset_paths__size'), 0)).values(
+                        'size'
+                    )
                 )
             ).order_by(ordering)
         elif ordering.endswith('stars'):
@@ -318,14 +311,14 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             .order_by('-version', '-modified')
         )
 
-        # This query sums the size and file count for root paths, and groups by the version_id,
+        # This query sums the size and file count of all asset paths, and groups by the version_id,
         # ensuring that the queryset is unique w.r.t the version_id. For some reason, the
         # `order_by` clause is necessary to ensure this grouping
         version_stats = {
             entry['version_id']: entry
-            for entry in get_root_paths_many(versions=relevant_versions)
+            for entry in AssetPath.objects.filter(version__in=relevant_versions)
             .values('version_id')
-            .annotate(total_size=Sum('aggregate_size'), num_assets=Sum('aggregate_files'))
+            .annotate(total_size=Sum('size'), num_assets=Count('id'))
             .order_by()
         }
 

@@ -1,17 +1,31 @@
+"""
+Maintain and query the paths of the assets of a version.
+
+Only the paths of assets are stored (see `AssetPath`). This means that changing the assets of a
+version never writes to a row that's shared with any of its other assets. Folders are derived when
+they're read, by grouping together the asset paths that are within them.
+
+Because folders aren't stored, nothing in the database prevents a path from being used as both an
+asset and a folder. Anything that adds an asset path must first check `get_conflicting_paths`,
+while holding the lock on the version (see `lock_version_for_asset_changes`).
+"""
+
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from django.db import IntegrityError, transaction
-from django.db.models import Count, F, OuterRef, QuerySet, Subquery, Sum
-from django.db.models.functions import Coalesce
-from tqdm import tqdm
+from django.db.models import CharField, Count, Func, Max, Q, QuerySet, Sum, Value
+from django.db.models.functions import Coalesce, Concat, StrIndex, Substr
 
 # Import only the asset paths models
-from dandiapi.api.models.asset_paths import AssetPath, AssetPathRelation
+from dandiapi.api.models.asset_paths import AssetPath
 
 # Import models for type checking only (prevent cyclic imports)
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from dandiapi.api.models import Asset, Version
     from dandiapi.zarr.models import ZarrArchive
 
@@ -22,6 +36,21 @@ if TYPE_CHECKING:
 ####################################################################
 
 
+@dataclass(frozen=True)
+class PathEntry:
+    """A file or folder within a version."""
+
+    path: str
+    version_id: int
+
+    # The number and total size of the assets at or within this path
+    aggregate_files: int
+    aggregate_size: int
+
+    # The asset at this path, which is only present if this is a file
+    asset: Asset | None
+
+
 def extract_paths(path: str) -> list[str]:
     nodepaths: list[str] = path.split('/')
     for i in range(len(nodepaths))[1:]:
@@ -30,84 +59,133 @@ def extract_paths(path: str) -> list[str]:
     return nodepaths
 
 
-def get_root_paths_many(versions: QuerySet[Version], *, join_assets=False) -> QuerySet[AssetPath]:
-    """Return all root paths for all provided versions."""
-    qs = AssetPath.objects.get_queryset()
-
-    # Use prefetch_related here instead of select_related,
-    # as otherwise the resulting join is very large
-    if join_assets:
-        qs = qs.prefetch_related('asset', 'asset__blob', 'asset__zarr')
-
-    return qs.filter(version__in=versions).exclude(path__contains='/').order_by('path')
-
-
-def get_root_paths(version: Version) -> QuerySet[AssetPath]:
-    """Return all root paths for a version."""
-    # Use prefetch_related here instead of select_related,
-    # as otherwise the resulting join is very large
-    qs = AssetPath.objects.prefetch_related('asset', 'asset__blob', 'asset__zarr')
-    return qs.filter(version=version).exclude(path__contains='/').order_by('path')
-
-
-def get_path_children(path: AssetPath, depth: int | None = 1) -> QuerySet[AssetPath]:
+def get_child_paths(version: Version, folder: str = '') -> QuerySet[AssetPath, dict]:
     """
-    Get all children from an existing path.
+    Return the files and folders directly within a folder, ordered by path.
 
-    By default, returns only the direct children.
-    If depth is `None`, all children will be returned, regardless of depth.
+    The folder must not have a trailing slash, with the empty string being the root folder. Each
+    row that's returned has the keys `child_path`, `aggregate_files`, `aggregate_size` and
+    `asset_id`. Use `get_path_entries` to convert them into `PathEntry` objects.
     """
-    relation_qs = AssetPathRelation.objects.filter(parent=path).exclude(child=path)
-    if depth is not None:
-        relation_qs = relation_qs.filter(depth=depth)
+    prefix = f'{folder}/' if folder else ''
+    asset_paths = AssetPath.objects.filter(version=version)
+    if prefix:
+        asset_paths = asset_paths.filter(path__startswith=prefix)
 
-    path_ids = relation_qs.values_list('child', flat=True).distinct()
-    return (
-        AssetPath.objects.select_related('asset', 'asset__blob', 'asset__zarr')
-        .filter(id__in=path_ids)
-        .order_by('path')
+    # What remains of each asset path after the folder. Everything up to the first slash of that
+    # is the name of the child that the asset path belongs to, and if there's no slash at all,
+    # then that child is the asset itself.
+    remainder = Substr('path', len(prefix) + 1)
+    child_name = Func(
+        remainder, Value('/'), Value(1), function='SPLIT_PART', output_field=CharField()
     )
+
+    return (
+        asset_paths.annotate(
+            child_path=Concat(Value(prefix), child_name),
+            remaining_slash=StrIndex(remainder, Value('/')),
+        )
+        .values('child_path')
+        .annotate(
+            aggregate_files=Count('id'),
+            aggregate_size=Sum('size'),
+            asset_id=Max('asset_id', filter=Q(remaining_slash=0)),
+        )
+        .order_by('child_path')
+    )
+
+
+def get_path_entries(rows: Iterable[dict], version: Version) -> list[PathEntry]:
+    """Convert rows from `get_child_paths` into path entries, fetching the asset of any files."""
+    # Imported here to prevent cyclic imports
+    from dandiapi.api.models import Asset
+
+    rows = list(rows)
+
+    # Use prefetch_related here instead of select_related,
+    # as otherwise the resulting join is very large
+    assets = Asset.objects.prefetch_related('blob', 'zarr').in_bulk(
+        [row['asset_id'] for row in rows if row['asset_id'] is not None]
+    )
+
+    return [
+        PathEntry(
+            path=row['child_path'],
+            version_id=version.id,
+            aggregate_files=row['aggregate_files'],
+            aggregate_size=row['aggregate_size'],
+            asset=assets.get(row['asset_id']),
+        )
+        for row in rows
+    ]
+
+
+def get_path_entry(version: Version, path: str) -> PathEntry | None:
+    """Return the file or folder at a path, if there is one."""
+    asset_path = (
+        AssetPath.objects.select_related('asset', 'asset__blob', 'asset__zarr')
+        .filter(version=version, path=path)
+        .first()
+    )
+    if asset_path is not None:
+        return PathEntry(
+            path=path,
+            version_id=version.id,
+            aggregate_files=1,
+            aggregate_size=asset_path.size,
+            asset=asset_path.asset,
+        )
+
+    folder = AssetPath.objects.filter(version=version, path__startswith=f'{path}/').aggregate(
+        aggregate_files=Count('id'), aggregate_size=Coalesce(Sum('size'), 0)
+    )
+    if folder['aggregate_files'] == 0:
+        return None
+
+    return PathEntry(path=path, version_id=version.id, asset=None, **folder)
 
 
 def get_conflicting_paths(path: str, version: Version) -> list[str]:
     """Return a list of existing paths that conflict with the given path."""
-    # Check that this path isn't already occupied by a "folder"
-    # Database constraints ensure this queryset could return at most 1 result
-    folder = AssetPath.objects.filter(version=version, path=path, asset__isnull=True).first()
-    if folder:
-        return list(get_path_children(folder, depth=None).values_list('path', flat=True))
+    # This path can't already be a "folder", which it is if any existing paths are within it
+    is_folder = Q(path__startswith=f'{path}/')
 
-    # Check that this path doesn't conflict with any existing "files"
-    nodepaths = extract_paths(path)[:-1]
+    # None of the "folders" that this path is within can already be a "file"
+    is_file = Q(path__in=extract_paths(path)[:-1])
+
     return list(
-        AssetPath.objects.filter(
-            version=version, path__in=nodepaths, asset__isnull=False
-        ).values_list('path', flat=True)
+        AssetPath.objects.filter(is_folder | is_file, version=version)
+        .order_by('path')
+        .values_list('path', flat=True)
     )
 
 
-def search_asset_paths(query: str, version: Version) -> QuerySet[AssetPath] | None:
+def search_asset_paths(query: str, version: Version) -> QuerySet[AssetPath, dict] | None:
     """Return all direct children of this path, if there are any."""
-    if not query:
-        return get_root_paths(version)
-
     # Ensure no trailing slash
     fixed_query = query.rstrip('/')
 
-    # Retrieve path
-    path = AssetPath.objects.filter(version=version, path=fixed_query).first()
-    if path is None:
+    children = get_child_paths(version, fixed_query)
+    if not fixed_query:
+        return children
+
+    # A folder only exists if there's something within it, so if there isn't,
+    # this is only a valid path if it's the path of a file, which has no children.
+    if (
+        not children.exists()
+        and not AssetPath.objects.filter(version=version, path=fixed_query).exists()
+    ):
         return None
 
-    return get_path_children(path)
+    return children
 
 
-def insert_asset_paths(asset: Asset, version: Version):
-    """Add all intermediate paths from an asset and link them together."""
+@transaction.atomic
+def add_asset_paths(asset: Asset, version: Version) -> AssetPath:
+    """Add the path of an asset to a version, if it hasn't been added already."""
     try:
-        # Get or create leaf path
-        leaf, created = AssetPath.objects.get_or_create(
-            path=asset.path, asset=asset, version=version
+        asset_path, _ = AssetPath.objects.get_or_create(
+            asset=asset, version=version, defaults={'path': asset.path, 'size': asset.size}
         )
     except IntegrityError as e:
         from dandiapi.api.services.asset.exceptions import AssetAlreadyExistsError
@@ -120,193 +198,39 @@ def insert_asset_paths(asset: Asset, version: Version):
         # Re-raise original exception otherwise
         raise
 
-    # If the asset was not created, return early, as the work is already done
-    if not created:
-        return leaf
+    return asset_path
 
-    # Create absolute paths (exclude leaf node)
-    nodepaths = extract_paths(asset.path)[:-1]
 
-    # Create nodes
+def delete_asset_paths(asset: Asset, version: Version) -> None:
+    """Remove the path of an asset from a version."""
+    AssetPath.objects.filter(asset=asset, version=version).delete()
+
+
+def delete_asset_paths_many(assets: list[Asset], version: Version) -> None:
+    """Remove the paths of many assets from a version."""
+    AssetPath.objects.filter(asset__in=assets, version=version).delete()
+
+
+@transaction.atomic
+def add_version_asset_paths(version: Version) -> None:
+    """Add the path of every asset of a version which doesn't already have one."""
+    assets = (
+        version.assets.exclude(leaf_paths__version=version)
+        .annotate(asset_size=Coalesce('blob__size', 'zarr__size'))
+        .values_list('id', 'path', 'asset_size')
+    )
     AssetPath.objects.bulk_create(
-        [AssetPath(path=path, version=version, asset=None) for path in nodepaths],
-        ignore_conflicts=True,
-    )
-
-    # Retrieve all paths
-    paths = [*AssetPath.objects.filter(version=version, path__in=nodepaths).order_by('path'), leaf]
-
-    # Create relations between paths
-    links = []
-    for i in range(len(paths)):
-        links.extend(
-            [
-                AssetPathRelation(parent=paths[i], child=paths[j], depth=j - i)
-                for j in range(len(paths))[i:]
-            ]
-        )
-
-    # Create objects
-    AssetPathRelation.objects.bulk_create(links, ignore_conflicts=True)
-
-    return leaf
-
-
-def _add_asset_paths(asset: Asset, version: Version):
-    leaf = insert_asset_paths(asset, version)
-
-    # Only increment if it hasn't been performed yet
-    if leaf.aggregate_files == 1:
-        return
-
-    # Increment the size and file count of all parent paths.
-    # Get all relations (including leaf node)
-    parent_ids = (
-        AssetPathRelation.objects.filter(child=leaf)
-        .distinct('parent')
-        .values_list('parent', flat=True)
-    )
-
-    # Update size + file count
-    AssetPath.objects.filter(id__in=parent_ids).update(
-        aggregate_size=F('aggregate_size') + leaf.asset.size,
-        aggregate_files=F('aggregate_files') + 1,
+        (
+            AssetPath(asset_id=asset_id, version=version, path=path, size=size)
+            for asset_id, path, size in assets.iterator()
+        ),
+        batch_size=5_000,
     )
 
 
-def _delete_asset_paths(asset: Asset, version: Version):
-    leaf: AssetPath | None = AssetPath.objects.filter(asset=asset, version=version).first()
-    if leaf is None:
-        return
-
-    # Fetch ancestors. Materialize the IDs now, as the relation rows backing this queryset are
-    # cascade-deleted below, and they're needed afterwards to scope the delete.
-    ancestor_ids = list(
-        AssetPathRelation.objects.filter(child=leaf)
-        .distinct('parent')
-        .values_list('parent', flat=True)
-    )
-
-    # Get the previously computed size of the leaf node, not the current asset size,
-    # in case the size of the AssetBlob/ZarrArchive that it points to has changed
-    leaf_size = leaf.aggregate_size
-
-    # Update parents.
-    AssetPath.objects.filter(id__in=ancestor_ids).update(
-        aggregate_size=F('aggregate_size') - leaf_size,
-        aggregate_files=F('aggregate_files') - 1,
-    )
-
-    # An asset path always links to itself, so the above update should have
-    # decremented the size and file number of the leaf asset path to zero.
-    leaf.refresh_from_db()
-    if leaf.aggregate_size != 0:
-        raise RuntimeError('Remaining non-zero aggregate_size')
-    if leaf.aggregate_files != 0:
-        raise RuntimeError('Remaining non-zero aggregate_files')
-
-    # Delete leaf node and any other now empty asset paths. Only the leaf and its
-    # ancestors can have reached zero, so restrict the delete to those rows.
-    AssetPath.objects.filter(id__in=ancestor_ids, aggregate_files=0).delete()
-
-
-@transaction.atomic
-def delete_asset_paths_many(assets: list[Asset], version: Version):
-    """Delete the paths of many assets from a version, in one atomic operation."""
-    leaf_ids = list(
-        AssetPath.objects.filter(asset__in=assets, version=version).values_list('id', flat=True)
-    )
-    if not leaf_ids:
-        return
-
-    # Construct a subquery that summarizes the aggregate_size and file_count of all descendant
-    # asset paths of the parent asset path, filtered to only include the provided assets.
-    # This subquery can then be directly inserted into the asset path update query.
-    deltas = (
-        AssetPathRelation.objects.filter(child_id__in=leaf_ids, parent_id=OuterRef('id'))
-        .order_by()
-        .values('parent_id')
-        .annotate(
-            size=Sum('child__aggregate_size'),
-            files=Count('child_id'),
-        )
-    )
-
-    # Subtract the aggregate size and file count of all relevant child paths from all relevant
-    # parent paths. This will also reduce all leaf asset paths to have a size and file count of
-    # zero, since all asset paths point to themselves exactly once.
-    ancestor_ids = AssetPathRelation.objects.filter(child_id__in=leaf_ids).values('parent_id')
-    AssetPath.objects.filter(id__in=ancestor_ids).update(
-        aggregate_size=F('aggregate_size') - Subquery(deltas.values('size')),
-        aggregate_files=F('aggregate_files') - Subquery(deltas.values('files')),
-    )
-
-    # Ensure that none of the leaf nodes have a remaining size or file count
-    if AssetPath.objects.filter(id__in=leaf_ids).exclude(aggregate_size=0).exists():
-        raise RuntimeError('Remaining non-zero aggregate_size')
-    if AssetPath.objects.filter(id__in=leaf_ids).exclude(aggregate_files=0).exists():
-        raise RuntimeError('Remaining non-zero aggregate_files')
-
-    # Delete leaf nodes and any other ancestor paths with no contained files
-    AssetPath.objects.filter(id__in=ancestor_ids, aggregate_files=0).delete()
-
-
-@transaction.atomic
-def add_asset_paths(asset: Asset, version: Version):
-    _add_asset_paths(asset, version)
-
-
-@transaction.atomic
-def delete_asset_paths(asset: Asset, version: Version):
-    _delete_asset_paths(asset, version)
-
-
-@transaction.atomic
-def update_asset_paths(old_asset: Asset, new_asset: Asset, version: Version):
-    _delete_asset_paths(old_asset, version)
-    _add_asset_paths(new_asset, version)
-
-
-@transaction.atomic
-def add_version_asset_paths(version: Version):
-    """Add every asset from a version."""
-    # Leaves
-    for asset in tqdm(version.assets.all()):
-        insert_asset_paths(asset, version)
-
-    # Compute aggregate file size + count for each asset path, instead of when each asset
-    # is added. This is done because updating the same row many times within a transaction is slow.
-    # https://stackoverflow.com/a/60221875
-
-    # Get all nodes which haven't been computed yet
-    nodes = AssetPath.objects.filter(version=version, aggregate_files=0)
-    for node in tqdm(nodes):
-        child_link_ids = node.child_links.distinct('child_id').values_list('child_id', flat=True)
-        child_leaves = AssetPath.objects.filter(id__in=child_link_ids, asset__isnull=False)
-
-        # Get all aggregates
-        sizes = child_leaves.aggregate(
-            size=Coalesce(Sum('asset__blob__size'), 0), zsize=Coalesce(Sum('asset__zarr__size'), 0)
-        )
-
-        node.aggregate_files += child_leaves.count()
-        node.aggregate_size += sizes['size'] + sizes['zsize']
-        node.save()
-
-
-@transaction.atomic
-def add_zarr_paths(zarr: ZarrArchive):
-    """Add all asset paths that are associated with a zarr."""
+def update_zarr_asset_paths(zarr: ZarrArchive) -> None:
+    """Update the size of all asset paths that are associated with a zarr."""
     # Only act on draft assets/versions
-    for asset in zarr.assets.filter(published=False).iterator():
-        for version in asset.versions.filter(version='draft').iterator():
-            _add_asset_paths(asset, version)
-
-
-@transaction.atomic
-def delete_zarr_paths(zarr: ZarrArchive):
-    """Remove all asset paths that are associated with a zarr."""
-    # Only act on draft assets/versions
-    for asset in zarr.assets.filter(published=False).iterator():
-        for version in asset.versions.filter(version='draft').iterator():
-            _delete_asset_paths(asset, version)
+    AssetPath.objects.filter(
+        asset__zarr=zarr, asset__published=False, version__version='draft'
+    ).update(size=zarr.size)

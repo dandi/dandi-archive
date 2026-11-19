@@ -9,8 +9,7 @@ from dandischema.consts import DANDI_SCHEMA_VERSION
 from django.db import connection
 import pytest
 
-from dandiapi.api import asset_paths
-from dandiapi.api.models.asset_paths import AssetPath
+from dandiapi.api.asset_paths import add_asset_paths, get_path_entry
 from dandiapi.api.services import asset as asset_service
 from dandiapi.api.services.asset import (
     add_asset_to_version,
@@ -123,7 +122,7 @@ def version_with_assets() -> tuple[User, Version, Asset, Asset]:
     existing = DraftAssetFactory.create(path='b/existing.nwb')
     for asset in [moved, existing]:
         version.assets.add(asset)
-        asset_paths.add_asset_paths(asset, version)
+        add_asset_paths(asset, version)
 
     return user, version, moved, existing
 
@@ -203,16 +202,15 @@ def test_asset_changes_during_asset_move_do_not_deadlock(
     Test that the assets of a version can be changed while one of them is being moved.
 
     Moving an asset removes it from its old folder, updates the version, and then adds it to its
-    new folder. Any other change to that new folder first modifies the folder and then updates the
-    version. If the version isn't locked before either of them starts, the move ends up holding the
-    version while waiting on the folder, and the other change the opposite, which is a deadlock.
+    new folder. Any other change to that new folder has to wait until all of that is finished, as
+    otherwise the two of them would be waiting on each other.
     """
     user, version, moved, existing = version_with_assets
     move_asset = _move_asset(user, version, moved)
     other_change = prepare_change(user, version, existing)
 
     # Pause the move once it has removed the asset from its old folder, which is the point at which
-    # it has updated the version, but hasn't yet touched the new folder.
+    # it has updated the version, but hasn't yet added the asset to the new folder.
     move_pause = _pause_after(
         mocker, asset_service, '_remove_asset_from_version', path='a/moved.nwb'
     )
@@ -235,67 +233,11 @@ def test_asset_changes_during_asset_move_do_not_deadlock(
 
     # Both changes were applied, leaving the asset paths in a consistent state
     assert version.assets.filter(path='b/moved.nwb').exists()
-    assert not AssetPath.objects.filter(version=version, path='a').exists()
-    assert AssetPath.objects.get(version=version, path='b').aggregate_files == expected_files
-
-
-@pytest.mark.parametrize(
-    ('module', 'function_name', 'path'),
-    [
-        # The move has updated the version, and next inserts the new folder
-        (asset_service, '_remove_asset_from_version', 'a/moved.nwb'),
-        # The move has also inserted the new folder, and next updates its size and file count
-        (asset_paths, 'insert_asset_paths', 'b/moved.nwb'),
-    ],
-    ids=['folder-insert', 'folder-size-update'],
-)
-@pytest.mark.django_db(transaction=True)
-def test_asset_move_blocked_by_asset_create_does_not_deadlock(
-    module, function_name, path, version_with_assets, mocker
-):
-    """
-    Test that an asset can be moved into a folder while another asset is being created in it.
-
-    This is the same deadlock as in the test above, but here the create is first to modify the
-    folder, so it's the move that is made to wait on the folder, at each of the two points where it
-    writes to it. Then the create waits on the version, which the move has already updated.
-    """
-    user, version, moved, existing = version_with_assets
-    move_asset = _move_asset(user, version, moved)
-    create_asset = _create_asset(user, version, existing)
-
-    move_pause = _pause_after(mocker, module, function_name, path=path)
-
-    # Pause the create once it has modified the folder, which is right before it updates the version
-    create_pause = _pause_after(mocker, asset_service, 'add_asset_paths', path='b/new.nwb')
-
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        try:
-            move = executor.submit(_in_thread(move_asset))
-            assert move_pause.reached.wait(timeout=TIMEOUT)
-
-            # Either the create modifies the folder and pauses, or it's stopped earlier by the move
-            create = executor.submit(_in_thread(create_asset))
-            _wait_until(lambda: create_pause.reached.is_set() or _transaction_is_blocked())
-
-            # Let the move run until it's waiting on the create, unless the create is the one
-            # waiting, in which case there's nothing stopping the move from finishing.
-            move_pause.resume()
-            _wait_until(lambda: move.done() or _transaction_is_blocked())
-        finally:
-            move_pause.resume()
-            create_pause.resume()
-
-        # If these deadlocked, one of them raises here, as it was aborted to resolve the deadlock
-        move.result(timeout=TIMEOUT)
-        create.result(timeout=TIMEOUT)
-
-    # Both changes were applied, with the size and file count of the folder accounting for both
-    new = version.assets.get(path='b/new.nwb')
-    folder = AssetPath.objects.get(version=version, path='b')
-    assert folder.aggregate_files == 3
-    assert folder.aggregate_size == existing.size + moved.size + new.size
-    assert not AssetPath.objects.filter(version=version, path='a').exists()
+    assert get_path_entry(version, 'a') is None
+    folder = get_path_entry(version, 'b')
+    assert folder is not None
+    assert folder.aggregate_files == expected_files
+    assert version.asset_count == expected_files
 
 
 @pytest.mark.parametrize(
@@ -406,9 +348,9 @@ def test_zarr_asset_changes_during_zarr_ingest_do_not_deadlock(
     zarr_asset = _create_uploaded_zarr_asset(user, version)
     other_change = prepare_change(user, version, zarr_asset)
 
-    # Pause the ingest once it has added the asset paths of the zarr, which is the point at which
-    # it has locked the version, but hasn't yet updated the assets of the zarr.
-    ingest_pause = _pause_after(mocker, zarr_tasks, 'add_zarr_paths')
+    # Pause the ingest once it has updated the asset paths of the zarr, which is the point at
+    # which it has locked the version, but hasn't yet updated the assets of the zarr.
+    ingest_pause = _pause_after(mocker, zarr_tasks, 'update_zarr_asset_paths')
 
     with ThreadPoolExecutor(max_workers=2) as executor:
         try:

@@ -13,7 +13,6 @@ from django.db import models
 from django.db.models.query_utils import Q
 from django_extensions.db.models import TimeStampedModel
 
-from dandiapi.api.asset_paths import get_root_paths
 from dandiapi.api.models.metadata import PublishableMetadataMixin
 
 from .dandiset import Dandiset
@@ -77,14 +76,11 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
     @property
     def asset_count(self):
-        return get_root_paths(self).aggregate(nfiles=models.Sum('aggregate_files'))['nfiles'] or 0
+        return self.asset_paths.count()
 
     @property
     def size(self):
-        return (
-            get_root_paths(self).aggregate(total_size=models.Sum('aggregate_size'))['total_size']
-            or 0
-        )
+        return self.asset_paths.aggregate(total_size=models.Sum('size'))['total_size'] or 0
 
     @property
     def active_uploads(self):

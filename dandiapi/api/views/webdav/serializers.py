@@ -1,20 +1,16 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from rest_framework import serializers
 
 from dandiapi.api.models.asset import Asset
-from dandiapi.api.models.asset_paths import AssetPath
+
+if TYPE_CHECKING:
+    from dandiapi.api.asset_paths import PathEntry
 
 
-class PathFolderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AssetPath
-        fields = [
-            'path',
-            'total_assets',
-            'total_size',
-        ]
-
+class PathFolderSerializer(serializers.Serializer):
     path = serializers.CharField()
     total_assets = serializers.IntegerField(source='aggregate_files')
     total_size = serializers.IntegerField(source='aggregate_size')
@@ -49,12 +45,12 @@ class PathResultSerializer(serializers.Serializer):
     type = serializers.SerializerMethodField()
     resource = serializers.SerializerMethodField()
 
-    def get_type(self, obj: AssetPath):
+    def get_type(self, obj: PathEntry):
         if obj.asset is not None:
             return 'asset'
         return 'folder'
 
-    def get_resource(self, obj: AssetPath):
+    def get_resource(self, obj: PathEntry):
         if obj.asset is not None:
             return PathAssetSerializer(obj.asset, include_metadata=self.context['metadata']).data
         return PathFolderSerializer(obj).data
