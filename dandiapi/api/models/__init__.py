@@ -8,7 +8,7 @@ from .garbage_collection import GarbageCollectionEvent, GarbageCollectionEventRe
 from .stats import ApplicationStats
 from .upload import Upload
 from .user import UserMetadata
-from .version import Version
+from .version import Version, VersionModification
 
 __all__ = [
     'ApplicationStats',
@@ -25,4 +25,5 @@ __all__ = [
     'Upload',
     'UserMetadata',
     'Version',
+    'VersionModification',
 ]

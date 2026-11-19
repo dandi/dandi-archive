@@ -279,3 +279,23 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
     def __str__(self) -> str:
         return f'{self.dandiset.identifier}/{self.version}'
+
+
+class VersionModification(models.Model):
+    """
+    A record that a version was modified by something which doesn't itself update the version.
+
+    These are created instead of updating the `modified` timestamp of a version, by anything that
+    doesn't hold the lock on that version. They're periodically applied to that timestamp, and
+    deleted. This way, nothing ever needs to wait on a version without having locked it first.
+    """
+
+    # This is intentionally not a constraint in the database, as inserting a row with a foreign
+    # key constraint locks the row it references, which is exactly what this model exists to avoid.
+    version = models.ForeignKey(
+        Version, related_name='modifications', on_delete=models.CASCADE, db_constraint=False
+    )
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f'{self.version_id} @ {self.created}'

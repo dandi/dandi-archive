@@ -15,6 +15,7 @@ from dandiapi.api.services.embargo.utils import remove_dandiset_embargo_tags
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.metadata import validate_version_metadata
 from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
+from dandiapi.api.services.version import lock_version_for_asset_changes
 from dandiapi.api.tasks import unembargo_dandiset_task
 
 from .exceptions import (
@@ -43,6 +44,10 @@ def unembargo_dandiset(ds: Dandiset, user: User):
         )
     if ds.uploads.all().exists():
         raise DandisetActiveUploadsError(http_status_code=500)
+
+    # This changes every asset of the dandiset, so as with any other change to the assets of a
+    # version, the version must be locked first.
+    lock_version_for_asset_changes(ds.draft_version)
 
     # Remove tags in S3
     logger.info('Removing tags...')

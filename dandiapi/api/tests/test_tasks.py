@@ -20,10 +20,11 @@ from zarr_checksum.generators import ZarrArchiveFile
 
 from dandiapi.api import tasks
 from dandiapi.api.manifests import _dandiset_jsonld_path
-from dandiapi.api.models import Asset, Version
+from dandiapi.api.models import Asset, Version, VersionModification
 from dandiapi.api.services.asset import _add_asset_to_version
 from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
 from dandiapi.api.services.publish import _lock_dandiset_for_publishing
+from dandiapi.api.services.version import apply_version_modifications
 from dandiapi.api.tests.factories import AssetBlobFactory, DraftVersionFactory, UserFactory
 from dandiapi.zarr.models import ZarrArchiveStatus
 
@@ -159,9 +160,28 @@ def test_validate_asset_metadata_saves_version(draft_asset: Asset):
     # Run task
     tasks.validate_asset_metadata_task(draft_asset.id)
 
-    # Test that version has new modified timestamp
+    # The version itself isn't updated, only recorded as having been modified
+    draft_version.refresh_from_db()
+    assert draft_version.modified == old_datetime
+    assert VersionModification.objects.filter(version=draft_version).count() == 1
+
+    # Test that version has new modified timestamp once that's been applied
+    apply_version_modifications()
     draft_version.refresh_from_db()
     assert draft_version.modified != old_datetime
+    assert not VersionModification.objects.exists()
+
+
+@pytest.mark.django_db
+def test_apply_version_modifications_deleted_version(draft_version: Version):
+    VersionModification.objects.create(version=draft_version)
+    draft_version.dandiset.delete()
+
+    # A modification could still be recorded while its version is being deleted
+    VersionModification.objects.create(version_id=draft_version.id)
+
+    apply_version_modifications()
+    assert not VersionModification.objects.exists()
 
 
 @pytest.mark.django_db

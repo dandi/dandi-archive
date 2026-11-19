@@ -36,10 +36,10 @@ if TYPE_CHECKING:
 
 
 # The functions in this module are the only place that the assets of a version are changed, and so
-# they're responsible for all of the locking that requires. Within a transaction, any existing
-# assets that are being changed are locked first, and the version second. Anything that depends on
-# the current assets of the version (such as whether a path is free) must only be checked once the
-# version is locked, as it's only from then on that they can't be changed by anything else.
+# they're responsible for all of the locking that requires. Within a transaction, the version is
+# always locked first, and then any existing assets that are being changed. Anything that depends
+# on the current assets of the version (such as whether a path is free) must only be checked once
+# the version is locked, as it's only from then on that they can't be changed by anything else.
 
 
 def _lock_asset(*, asset: Asset, version: Version) -> Asset:
@@ -154,8 +154,8 @@ def change_asset(  # noqa: PLR0913
     new_metadata_stripped = Asset.strip_metadata(new_metadata)
 
     with transaction.atomic():
-        asset = _lock_asset(asset=asset, version=version)
         lock_version_for_asset_changes(version)
+        asset = _lock_asset(asset=asset, version=version)
 
         if not asset.is_different_from(
             asset_blob=new_asset_blob,
@@ -238,8 +238,8 @@ def remove_asset_from_version(*, user, asset: Asset, version: Version) -> Versio
         raise DraftDandisetNotModifiableError
 
     with transaction.atomic():
-        asset = _lock_asset(asset=asset, version=version)
         lock_version_for_asset_changes(version)
+        asset = _lock_asset(asset=asset, version=version)
         _remove_asset_from_version(asset=asset, version=version)
         audit.remove_asset(dandiset=version.dandiset, user=user, asset=asset)
 
@@ -262,15 +262,12 @@ def bulk_remove_assets_from_version(
         raise DraftDandisetNotModifiableError
 
     with transaction.atomic():
-        # Lock the assets for the duration of the transaction. The ordering is required to
-        # ensure a consistent lock acquisition order between concurrent deletions.
+        lock_version_for_asset_changes(version)
         assets = list(
             version.assets.filter(asset_id__in=asset_ids).select_for_update().order_by('id')
         )
         if not assets:
             return []
-
-        lock_version_for_asset_changes(version)
 
         # Remove asset paths and the assets themselves from the version. Both of these are
         # performed for all assets at once, which is what makes this faster than deleting

@@ -27,6 +27,7 @@ from dandiapi.api.models.stats import ApplicationStats
 from dandiapi.api.services.garbage_collection import garbage_collect
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
+from dandiapi.api.services.version import apply_version_modifications
 from dandiapi.api.tasks import (
     validate_asset_metadata_task,
     validate_version_metadata_task,
@@ -110,6 +111,11 @@ def validate_draft_version_metadata():
 
 
 @shared_task(soft_time_limit=20)
+def apply_version_modifications_task() -> None:
+    apply_version_modifications()
+
+
+@shared_task(soft_time_limit=20)
 def send_pending_users_email() -> None:
     """Send an email to admins listing users with status set to PENDING."""
     pending_users = User.objects.filter(metadata__status=UserMetadata.Status.PENDING)
@@ -173,6 +179,13 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     sender.add_periodic_task(
         timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
         validate_pending_asset_metadata.s(),
+        expires=timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL).total_seconds(),
+    )
+
+    # Update the modified timestamp of any versions whose assets have been validated every minute
+    sender.add_periodic_task(
+        timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
+        apply_version_modifications_task.s(),
         expires=timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL).total_seconds(),
     )
 

@@ -67,8 +67,8 @@ def _ingest_zarr_archive(zarr_id: str, *, force: bool = False):
     )
     # Zarr is in correct state, lock until ingestion finishes
     with transaction.atomic():
-        # The asset paths of the draft version are modified below, so it must be locked,
-        # and that must happen before the zarr is locked.
+        # The asset paths and assets of the draft version are modified below, so it must be
+        # locked, and that must happen before anything else is locked.
         lock_version_for_asset_changes(zarr.dandiset.draft_version)
 
         zarr = (

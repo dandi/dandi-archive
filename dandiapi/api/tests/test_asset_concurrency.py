@@ -19,12 +19,14 @@ from dandiapi.api.services.asset import (
     remove_asset_from_version,
 )
 from dandiapi.api.services.asset.exceptions import AssetNotInVersionError, AssetPathConflictError
+from dandiapi.api.services.metadata import validate_asset_metadata
 from dandiapi.api.tests.factories import (
     AssetBlobFactory,
     DraftAssetFactory,
     DraftVersionFactory,
     UserFactory,
 )
+from dandiapi.zarr import tasks as zarr_tasks
 from dandiapi.zarr.models import ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 from dandiapi.zarr.tests.factories import ZarrArchiveFactory
@@ -57,16 +59,21 @@ class _Pause:
         self._resumed.set()
 
 
-def _pause_after(mocker: MockerFixture, module: ModuleType, function_name: str, path: str):
-    """Pause any thread that calls the given function for an asset at `path`, once it returns."""
+def _pause_after(
+    mocker: MockerFixture, module: ModuleType, function_name: str, path: str | None = None
+):
+    """
+    Pause any thread that calls the given function, once it returns.
+
+    If `path` is given, this only applies to calls made for an asset at that path.
+    """
     pause = _Pause()
     original = getattr(module, function_name)
 
     def call_then_pause(*args, **kwargs):
         result = original(*args, **kwargs)
 
-        asset: Asset = kwargs['asset'] if 'asset' in kwargs else args[0]
-        if asset.path == path:
+        if path is None or (kwargs['asset'] if 'asset' in kwargs else args[0]).path == path:
             pause.wait_here()
 
         return result
@@ -158,9 +165,10 @@ def _bulk_remove_assets(user: User, version: Version, existing: Asset) -> Callab
     )
 
 
-def _ingest_zarr(user: User, version: Version, existing: Asset) -> Callable[[], object]:
+def _create_uploaded_zarr_asset(user: User, version: Version) -> Asset:
+    """Create an asset at `b/new.zarr`, for a zarr archive that's ready to be ingested."""
     zarr_archive = ZarrArchiveFactory.create(dandiset=version.dandiset)
-    add_asset_to_version(
+    asset = add_asset_to_version(
         user=user,
         version=version,
         zarr_archive=zarr_archive,
@@ -169,7 +177,12 @@ def _ingest_zarr(user: User, version: Version, existing: Asset) -> Callable[[], 
     zarr_archive.status = ZarrArchiveStatus.UPLOADED
     zarr_archive.save()
 
-    return lambda: ingest_zarr_archive(str(zarr_archive.zarr_id))
+    return asset
+
+
+def _ingest_zarr(user: User, version: Version, existing: Asset) -> Callable[[], object]:
+    zarr_asset = _create_uploaded_zarr_asset(user, version)
+    return lambda: ingest_zarr_archive(str(zarr_asset.zarr.zarr_id))
 
 
 @pytest.mark.parametrize(
@@ -358,3 +371,61 @@ def test_asset_update_of_concurrently_removed_asset(version_with_assets, mocker)
             update.result(timeout=TIMEOUT)
 
     assert not version.assets.filter(path__startswith='b/').exists()
+
+
+def _update_asset(user: User, version: Version, asset: Asset) -> Callable[[], object]:
+    return lambda: change_asset(
+        user=user,
+        asset=asset,
+        version=version,
+        new_zarr_archive=asset.zarr,
+        new_metadata={**asset.metadata, 'path': asset.path, 'description': 'updated'},
+    )
+
+
+def _validate_asset(user: User, version: Version, asset: Asset) -> Callable[[], object]:
+    return lambda: validate_asset_metadata(asset=asset)
+
+
+@pytest.mark.parametrize(
+    'prepare_change',
+    [_validate_asset, _update_asset, _remove_asset, _bulk_remove_assets],
+    ids=['validate', 'update', 'remove', 'bulk-remove'],
+)
+@pytest.mark.django_db(transaction=True)
+def test_zarr_asset_changes_during_zarr_ingest_do_not_deadlock(
+    prepare_change, version_with_assets, mocker
+):
+    """
+    Test that the asset of a zarr can be changed while that zarr is being ingested.
+
+    Ingesting a zarr locks the version, and afterwards updates the assets of the zarr. Anything
+    that holds one of those assets while it waits on the version would deadlock with it.
+    """
+    user, version, _, _ = version_with_assets
+    zarr_asset = _create_uploaded_zarr_asset(user, version)
+    other_change = prepare_change(user, version, zarr_asset)
+
+    # Pause the ingest once it has added the asset paths of the zarr, which is the point at which
+    # it has locked the version, but hasn't yet updated the assets of the zarr.
+    ingest_pause = _pause_after(mocker, zarr_tasks, 'add_zarr_paths')
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        try:
+            ingest = executor.submit(
+                _in_thread(lambda: ingest_zarr_archive(str(zarr_asset.zarr.zarr_id)))
+            )
+            assert ingest_pause.reached.wait(timeout=TIMEOUT)
+
+            # Either the other change doesn't involve the version, or it has to wait on it
+            other = executor.submit(_in_thread(other_change))
+            _wait_until(lambda: other.done() or _transaction_is_blocked())
+        finally:
+            ingest_pause.resume()
+
+        # If these deadlocked, one of them raises here, as it was aborted to resolve the deadlock
+        ingest.result(timeout=TIMEOUT)
+        other.result(timeout=TIMEOUT)
+
+    zarr_asset.zarr.refresh_from_db()
+    assert zarr_asset.zarr.status == ZarrArchiveStatus.COMPLETE

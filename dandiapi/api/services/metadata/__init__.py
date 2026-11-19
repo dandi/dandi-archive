@@ -11,7 +11,7 @@ from django.db import transaction
 from django.db.models.query_utils import Q
 from django.utils import timezone
 
-from dandiapi.api.models import Asset, Version
+from dandiapi.api.models import Asset, Version, VersionModification
 from dandiapi.api.services.metadata.exceptions import (
     AssetHasBeenPublishedError,
     VersionHasBeenPublishedError,
@@ -59,31 +59,36 @@ def validate_asset_metadata(*, asset: Asset) -> bool:
     # track the state of the asset before to use optimistic locking
     asset_state = asset.status
 
+    try:
+        metadata = asset.published_metadata()
+        validate(metadata, schema_key='PublishedAsset', json_validation=True)
+        logger.info('Successfully validated asset %s', asset.id)
+        asset.status = Asset.Status.VALID
+        asset.validation_errors = []
+    except dandischema.exceptions.ValidationError as e:
+        logger.info('Error while validating asset %s', asset.id)
+        asset.status = Asset.Status.INVALID
+
+        validation_errors = _collect_validation_errors(e)
+        asset.validation_errors = validation_errors
+    except ValueError as e:
+        # A bare ValueError is thrown when dandischema generates its own exceptions, like a
+        # mismatched schemaVersion.
+        asset.status = Asset.Status.INVALID
+        asset.validation_errors = [{'field': '', 'message': str(e)}]
+
     with transaction.atomic():
-        try:
-            metadata = asset.published_metadata()
-            validate(metadata, schema_key='PublishedAsset', json_validation=True)
-            logger.info('Successfully validated asset %s', asset.id)
-            asset.status = Asset.Status.VALID
-            asset.validation_errors = []
-        except dandischema.exceptions.ValidationError as e:
-            logger.info('Error while validating asset %s', asset.id)
-            asset.status = Asset.Status.INVALID
-
-            validation_errors = _collect_validation_errors(e)
-            asset.validation_errors = validation_errors
-        except ValueError as e:
-            # A bare ValueError is thrown when dandischema generates its own exceptions, like a
-            # mismatched schemaVersion.
-            asset.status = Asset.Status.INVALID
-            asset.validation_errors = [{'field': '', 'message': str(e)}]
-
         updated_asset = Asset.objects.filter(
             id=asset.id, status=asset_state, metadata=asset.metadata, published=False
         ).update(status=asset.status, validation_errors=asset.validation_errors)
         if updated_asset:
-            # Update modified timestamps on all draft versions this asset belongs to
-            asset.versions.filter(version='draft').update(modified=timezone.now())
+            # Record that all draft versions this asset belongs to were modified. Those versions
+            # aren't updated here, as this would then have to wait on them while it holds the asset,
+            # which is the opposite order to anything that changes the assets of a version.
+            VersionModification.objects.bulk_create(
+                VersionModification(version=version)
+                for version in asset.versions.filter(version='draft')
+            )
         else:
             logger.info('Asset %s was modified while validating', asset.id)
 
