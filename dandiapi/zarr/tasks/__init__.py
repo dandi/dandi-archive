@@ -11,6 +11,7 @@ from zarr_checksum.generators import S3ClientOptions, yield_files_s3
 from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.version import Version
+from dandiapi.api.services.version import lock_version_for_asset_changes
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
@@ -66,6 +67,10 @@ def _ingest_zarr_archive(zarr_id: str, *, force: bool = False):
     )
     # Zarr is in correct state, lock until ingestion finishes
     with transaction.atomic():
+        # The asset paths of the draft version are modified below, so it must be locked,
+        # and that must happen before the zarr is locked.
+        lock_version_for_asset_changes(zarr.dandiset.draft_version)
+
         zarr = (
             ZarrArchive.objects.select_related('dandiset')
             .select_for_update(of=['self'])
