@@ -18,6 +18,7 @@ from dandiapi.api.services.asset import (
     change_asset,
     remove_asset_from_version,
 )
+from dandiapi.api.services.asset.exceptions import AssetNotInVersionError, AssetPathConflictError
 from dandiapi.api.tests.factories import (
     AssetBlobFactory,
     DraftAssetFactory,
@@ -135,13 +136,15 @@ def _move_asset(user: User, version: Version, moved: Asset) -> Callable[[], obje
 # that already contains `existing`. They perform any required setup, and return the change itself.
 
 
-def _create_asset(user: User, version: Version, existing: Asset) -> Callable[[], object]:
+def _create_asset(
+    user: User, version: Version, existing: Asset, path: str = 'b/new.nwb'
+) -> Callable[[], object]:
     asset_blob = AssetBlobFactory.create()
     return lambda: add_asset_to_version(
         user=user,
         version=version,
         asset_blob=asset_blob,
-        metadata={'path': 'b/new.nwb', 'schemaVersion': DANDI_SCHEMA_VERSION},
+        metadata={'path': path, 'schemaVersion': DANDI_SCHEMA_VERSION},
     )
 
 
@@ -280,3 +283,78 @@ def test_asset_move_blocked_by_asset_create_does_not_deadlock(
     assert folder.aggregate_files == 3
     assert folder.aggregate_size == existing.size + moved.size + new.size
     assert not AssetPath.objects.filter(version=version, path='a').exists()
+
+
+@pytest.mark.parametrize(
+    ('first_path', 'second_path'),
+    [
+        ('c/data', 'c/data/new.nwb'),
+        ('c/data/new.nwb', 'c/data'),
+    ],
+    ids=['file-then-folder', 'folder-then-file'],
+)
+@pytest.mark.django_db(transaction=True)
+def test_asset_create_conflicting_with_concurrent_asset_create(
+    first_path, second_path, version_with_assets, mocker
+):
+    """Test that a path can't be used as both a file and a folder by concurrently created assets."""
+    user, version, _, existing = version_with_assets
+    create_first = _create_asset(user, version, existing, path=first_path)
+    create_second = _create_asset(user, version, existing, path=second_path)
+
+    # Pause the first create once it has added its path, which the second hasn't been able to see
+    first_pause = _pause_after(mocker, asset_service, 'add_asset_paths', path=first_path)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        try:
+            first = executor.submit(_in_thread(create_first))
+            assert first_pause.reached.wait(timeout=TIMEOUT)
+
+            second = executor.submit(_in_thread(create_second))
+            _wait_until(_transaction_is_blocked)
+        finally:
+            first_pause.resume()
+
+        first.result(timeout=TIMEOUT)
+        with pytest.raises(AssetPathConflictError):
+            second.result(timeout=TIMEOUT)
+
+    assert version.assets.filter(path=first_path).exists()
+    assert not version.assets.filter(path=second_path).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_asset_update_of_concurrently_removed_asset(version_with_assets, mocker):
+    """Test that an asset can't be updated once a concurrent request has removed it."""
+    user, version, _, existing = version_with_assets
+    remove_asset = _remove_asset(user, version, existing)
+
+    def update_asset():
+        change_asset(
+            user=user,
+            asset=existing,
+            version=version,
+            new_asset_blob=existing.blob,
+            new_metadata={**existing.metadata, 'path': 'b/renamed.nwb'},
+        )
+
+    # Pause the removal once it has been performed, but before it's visible to the update
+    remove_pause = _pause_after(
+        mocker, asset_service, '_remove_asset_from_version', path='b/existing.nwb'
+    )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        try:
+            removal = executor.submit(_in_thread(remove_asset))
+            assert remove_pause.reached.wait(timeout=TIMEOUT)
+
+            update = executor.submit(_in_thread(update_asset))
+            _wait_until(_transaction_is_blocked)
+        finally:
+            remove_pause.resume()
+
+        removal.result(timeout=TIMEOUT)
+        with pytest.raises(AssetNotInVersionError):
+            update.result(timeout=TIMEOUT)
+
+    assert not version.assets.filter(path__startswith='b/').exists()

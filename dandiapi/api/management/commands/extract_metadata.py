@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 from dandischema.models import get_schema_version
 from django.contrib.auth.models import User
-from django.db import transaction
 import djclick as click
 from tqdm import tqdm
 
@@ -68,24 +67,16 @@ def extract_asset_metadata(asset: Asset, draft_version: Version):
         or User.objects.filter(is_superuser=True, is_staff=True).first()
     )
 
-    # Lock asset and version to ensure they don't change while performing this operation
-    with transaction.atomic():
-        locked_asset = Asset.objects.select_for_update().get(id=asset.id)
-        locked_version = Version.objects.select_for_update().get(id=draft_version.id)
-
-        # Ensure asset hasn't already been removed from the version
-        if not locked_version.assets.filter(id=locked_asset.id).exists():
-            raise Exception(f'Asset {locked_asset} no longer exists in version {locked_version}')  # noqa: TRY002
-
-        # Replace old asset with new asset containing updated metadata
-        change_asset(
-            user=user,
-            asset=locked_asset,
-            version=locked_version,
-            new_asset_blob=asset.blob,
-            new_zarr_archive=asset.zarr,
-            new_metadata=new_metadata,
-        )
+    # Replace old asset with new asset containing updated metadata.
+    # This fails if the asset has since been removed from the version.
+    change_asset(
+        user=user,
+        asset=asset,
+        version=draft_version,
+        new_asset_blob=asset.blob,
+        new_zarr_archive=asset.zarr,
+        new_metadata=new_metadata,
+    )
 
 
 def extract_dandiset_assets(dandiset: Dandiset):

@@ -15,6 +15,11 @@ class DraftDandisetNotModifiableError(DandiError):
     message = 'Only draft versions can be modified.'
 
 
+class AssetNotInVersionError(DandiError):
+    http_status_code = status.HTTP_404_NOT_FOUND
+    message = 'The asset does not exist in this version.'
+
+
 class AssetAlreadyExistsError(DandiError):
     http_status_code = status.HTTP_409_CONFLICT
     message = 'An asset with that path already exists'

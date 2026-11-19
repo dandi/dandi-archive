@@ -17,6 +17,7 @@ from dandiapi.api.models.version import Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.asset.exceptions import (
     AssetAlreadyExistsError,
+    AssetNotInVersionError,
     AssetPathConflictError,
     DandisetOwnerRequiredError,
     DraftDandisetNotModifiableError,
@@ -32,6 +33,22 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import User
 
     from dandiapi.zarr.models import ZarrArchive
+
+
+# The functions in this module are the only place that the assets of a version are changed, and so
+# they're responsible for all of the locking that requires. Within a transaction, any existing
+# assets that are being changed are locked first, and the version second. Anything that depends on
+# the current assets of the version (such as whether a path is free) must only be checked once the
+# version is locked, as it's only from then on that they can't be changed by anything else.
+
+
+def _lock_asset(*, asset: Asset, version: Version) -> Asset:
+    """Lock an asset of a version for the remainder of the current transaction, and return it."""
+    locked_asset = version.assets.select_for_update().filter(id=asset.id).first()
+    if locked_asset is None:
+        raise AssetNotInVersionError
+
+    return locked_asset
 
 
 def _create_asset(
@@ -136,20 +153,22 @@ def change_asset(  # noqa: PLR0913
     path = new_metadata['path']
     new_metadata_stripped = Asset.strip_metadata(new_metadata)
 
-    if not asset.is_different_from(
-        asset_blob=new_asset_blob,
-        zarr_archive=new_zarr_archive,
-        metadata=new_metadata_stripped,
-        path=path,
-    ):
-        return asset, False
-
-    # Verify we aren't changing path to the same value as an existing asset
-    if version.assets.filter(path=path).exclude(asset_id=asset.asset_id).exists():
-        raise AssetAlreadyExistsError
-
     with transaction.atomic():
+        asset = _lock_asset(asset=asset, version=version)
         lock_version_for_asset_changes(version)
+
+        if not asset.is_different_from(
+            asset_blob=new_asset_blob,
+            zarr_archive=new_zarr_archive,
+            metadata=new_metadata_stripped,
+            path=path,
+        ):
+            return asset, False
+
+        # Verify we aren't changing path to the same value as an existing asset
+        if version.assets.filter(path=path).exclude(asset_id=asset.asset_id).exists():
+            raise AssetAlreadyExistsError
+
         _remove_asset_from_version(asset=asset, version=version)
         new_asset = _add_asset_to_version(
             version=version,
@@ -184,22 +203,23 @@ def add_asset_to_version(
     if version.version != 'draft':
         raise DraftDandisetNotModifiableError
 
-    # Check if there are already any assets with the same path
-    path = metadata['path']
-    if version.assets.filter(path=path).exists():
-        raise AssetAlreadyExistsError
-
-    # Check if there are any assets that conflict with this path
-    conflicts = get_conflicting_paths(path, version)
-    if conflicts:
-        raise AssetPathConflictError(new_path=path, existing_paths=conflicts)
-
     # Ensure zarr archive doesn't already belong to a dandiset
     if zarr_archive and zarr_archive.dandiset != version.dandiset:
         raise ZarrArchiveBelongsToDifferentDandisetError
 
     with transaction.atomic():
         lock_version_for_asset_changes(version)
+
+        # Check if there are already any assets with the same path
+        path = metadata['path']
+        if version.assets.filter(path=path).exists():
+            raise AssetAlreadyExistsError
+
+        # Check if there are any assets that conflict with this path
+        conflicts = get_conflicting_paths(path, version)
+        if conflicts:
+            raise AssetPathConflictError(new_path=path, existing_paths=conflicts)
+
         asset = _add_asset_to_version(
             version=version,
             asset_blob=asset_blob,
@@ -218,6 +238,7 @@ def remove_asset_from_version(*, user, asset: Asset, version: Version) -> Versio
         raise DraftDandisetNotModifiableError
 
     with transaction.atomic():
+        asset = _lock_asset(asset=asset, version=version)
         lock_version_for_asset_changes(version)
         _remove_asset_from_version(asset=asset, version=version)
         audit.remove_asset(dandiset=version.dandiset, user=user, asset=asset)
@@ -249,8 +270,6 @@ def bulk_remove_assets_from_version(
         if not assets:
             return []
 
-        # Assets are locked before the version, the same order used when a single asset is
-        # updated or removed, as there the asset is already locked by the caller.
         lock_version_for_asset_changes(version)
 
         # Remove asset paths and the assets themselves from the version. Both of these are

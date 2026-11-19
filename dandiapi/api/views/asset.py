@@ -4,7 +4,6 @@ import re
 from typing import TYPE_CHECKING, cast
 
 from dandischema.consts import DANDI_SCHEMA_VERSION
-from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
@@ -371,19 +370,14 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         serializer = AssetRequestSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Lock asset for update
-        with transaction.atomic():
-            locked_asset = get_object_or_404(
-                version.assets.select_for_update(), id=self.get_object().id
-            )
-            asset, _ = change_asset(
-                user=request.user,
-                asset=locked_asset,
-                version=version,
-                new_asset_blob=serializer.get_blob(),
-                new_zarr_archive=serializer.get_zarr_archive(),
-                new_metadata=serializer.validated_data['metadata'],
-            )
+        asset, _ = change_asset(
+            user=request.user,
+            asset=self.get_object(),
+            version=version,
+            new_asset_blob=serializer.get_blob(),
+            new_zarr_archive=serializer.get_zarr_archive(),
+            new_metadata=serializer.validated_data['metadata'],
+        )
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -404,12 +398,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         if version.dandiset.unembargo_in_progress:
             raise DandisetUnembargoInProgressError
 
-        # Lock asset for delete
-        with transaction.atomic():
-            locked_asset = get_object_or_404(
-                version.assets.select_for_update(), id=self.get_object().id
-            )
-            remove_asset_from_version(user=request.user, asset=locked_asset, version=version)
+        remove_asset_from_version(user=request.user, asset=self.get_object(), version=version)
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
