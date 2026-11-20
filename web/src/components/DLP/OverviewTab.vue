@@ -15,7 +15,7 @@
           :key="i"
           variant="outlined"
         >
-          {{ contributor.name }}
+          {{ formatContributorName(contributor) }}
           <a
             v-if="contributor.identifier && contributor.schemaKey === 'Person'"
             :href="`https://orcid.org/${contributor.identifier}`"
@@ -257,6 +257,7 @@ import { useDisplay, useTheme } from 'vuetify';
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
 import AnatomyCard from '@/components/DLP/AnatomyCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
+import { formatContributorName } from '@/utils/contributors';
 
 import type { ComputedRef, PropType } from 'vue';
 import type { AssociatedProjects, DandisetMetadata, RelatedResource, Protocol } from '@/types';
@@ -304,6 +305,7 @@ const contributors = computed(
     (contributor) => !!(contributor.includeInCitation),
   ),
 );
+
 const fundingInformation = computed(
   () => props.meta.contributor?.filter(
     (contributor) => !!(contributor.schemaKey === 'Organization')
