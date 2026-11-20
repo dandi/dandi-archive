@@ -247,6 +247,7 @@ import { useDisplay, useTheme } from 'vuetify';
 
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
+import { formatContributorName } from '@/utils/contributors';
 
 import type { ComputedRef, PropType } from 'vue';
 import type { AssociatedProjects, DandisetMetadata, RelatedResource, Protocol } from '@/types';
@@ -294,20 +295,6 @@ const contributors = computed(
     (contributor) => !!(contributor.includeInCitation),
   ),
 );
-
-function formatContributorName(contributor: { name?: string; schemaKey?: string }): string {
-  const name = contributor.name ?? '';
-  if (contributor.schemaKey !== 'Person') {
-    return name;
-  }
-  const commaIndex = name.indexOf(',');
-  if (commaIndex === -1) {
-    return name;
-  }
-  const family = name.slice(0, commaIndex).trim();
-  const given = name.slice(commaIndex + 1).trim();
-  return [given, family].filter(Boolean).join(' ');
-}
 
 const fundingInformation = computed(
   () => props.meta.contributor?.filter(

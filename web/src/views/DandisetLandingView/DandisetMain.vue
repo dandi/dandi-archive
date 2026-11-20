@@ -113,7 +113,7 @@
               No contact information
             </template>
             <template v-else>
-              Contact <strong>{{ currentDandiset.contact_person }}</strong>
+              Contact <strong>{{ contactPersonName }}</strong>
             </template>
           </span>
         </v-col>
@@ -278,6 +278,7 @@ import DOMPurify from 'dompurify';
 import { useDisplay } from 'vuetify';
 
 import { useDandisetStore } from '@/stores/dandiset';
+import { formatContributorName } from '@/utils/contributors';
 import { getDoiMetadata } from '@/utils/doi';
 import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from '@/types';
 
@@ -350,6 +351,14 @@ const htmlDescription: ComputedRef<string> = computed(
   () => DOMPurify.sanitize(marked.parse(description.value) as string),
 );
 const meta = computed(() => currentDandiset.value?.metadata);
+
+// `contact_person` is a bare name string, so look up the matching contributor to
+// know whether it's a Person (stored as `Last, First`) or an Organization.
+const contactPersonName = computed(() => {
+  const name = currentDandiset.value?.contact_person ?? '';
+  const contributor = meta.value?.contributor?.find((c) => c.name === name);
+  return contributor ? formatContributorName(contributor) : name;
+});
 
 const accessInformation: ComputedRef<AccessInformation|undefined> = computed(
   () => meta.value?.access,
