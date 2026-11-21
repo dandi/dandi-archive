@@ -1,10 +1,10 @@
-# Trusted File and Dataset Validation: Details
+# Trusted Content Validation: Details
 
 Authors: Cody Baker
 
 Status: proposal
 
-This document specifies the changes proposed in [Trusted File and Dataset Validation](trusted-validation.md), which gives the goals, terminology, flow and trade-offs.
+This document specifies the changes proposed in [Trusted Content Validation](trusted-content-validation.md), which gives the goals, terminology, flow and trade-offs.
 
 # Contents
 
@@ -57,7 +57,7 @@ These are the parts of the archive this design builds on. Links point to dandi-a
 
 # Validator versions
 
-[Terminology](trusted-validation.md#terminology) defines validator versions and the version code.
+[Terminology](trusted-content-validation.md#terminology) defines validator versions and the version code.
 
 - **Keys:** plain distribution names, and all six are always present.
 - **Source:** all six versions are read from the validator image that produced the record (see [Validator image](#validator-image)). `dandischema` here is that image's dandischema, not the archive's own dandischema library or the metadata's `schemaVersion`.
@@ -248,7 +248,7 @@ Each validation attempt is a row in a new `VersionValidationSummary` table, whic
 | `queued` | The manifest hook or the reconciler queues the draft (see [Triggering](#triggering)). | A worker claims it (→ `running`), or the draft's fingerprint or required code changes first (→ `superseded`). |
 | `running` | A worker claims it. The worker sends heartbeats with its progress (files done of total). | The worker reports a summary (→ `complete`, or `superseded` if the draft changed during the run), or reports a failure, stops sending heartbeats, or passes the job's time limit (→ `failed`). |
 | `complete` | The worker reported a summary and the draft still has the job's fingerprint. | `revalidate_content --force` (→ `superseded`). |
-| `failed` | See `running`. `success` stays empty and Sentry is notified. | Never. The reconciler queues a new row for the key, up to a fixed number of attempts (see the "Retry thresholds" [open question](trusted-validation.md#open-questions)). After that, only `--force`, a file change, or a new target starts another, and the banner says "Could not complete — staff notified". |
+| `failed` | See `running`. `success` stays empty and Sentry is notified. | Never. The reconciler queues a new row for the key, up to a fixed number of attempts (see the "Retry thresholds" [open question](trusted-content-validation.md#open-questions)). After that, only `--force`, a file change, or a new target starts another, and the banner says "Could not complete — staff notified". |
 | `superseded` | The draft's content or required code changed before the result could be used, or `--force`. | Never. |
 
 <details>
@@ -355,7 +355,7 @@ The work is split between the archive and the worker app.
    - **`duct`** (con-duct) captures stdout, stderr and resource usage: peak memory, CPU and wall time (`info.json`, `usage.jsonl`).
 
    </details>
-4. **Process the results (worker).** Infrastructure failures are retried and, if they persist, the job is reported as failed rather than counted as content errors. A run is complete when every NWB and BIDS file has an outcome. Zarr-backed assets (NWB or BIDS stored as Zarr) are counted as "not checked" for now (see [Open questions](trusted-validation.md#open-questions)). In stream mode, dandi-cli also skips the checks that need a BIDS file's content, such as reading NIfTI headers, so those checks don't run.
+4. **Process the results (worker).** Infrastructure failures are retried and, if they persist, the job is reported as failed rather than counted as content errors. A run is complete when every NWB and BIDS file has an outcome. Zarr-backed assets (NWB or BIDS stored as Zarr) are counted as "not checked" for now (see [Open questions](trusted-content-validation.md#open-questions)). In stream mode, dandi-cli also skips the checks that need a BIDS file's content, such as reading NIfTI headers, so those checks don't run.
 
    <details>
    <summary>Implementation</summary>
@@ -395,7 +395,7 @@ The work is split between the archive and the worker app.
 - **Isolation.** The worker app holds no database, bucket or Django credentials: its config vars are only the archive's API URL, the worker token and a Sentry DSN. It reads files through URLs the archive hands out and writes records through presigned upload URLs (see [Record storage](#record-storage)). A crafted file that exploits a parser bug can therefore reach at most the worker token, which only opens the [job API](#job-api).
 - **Process.** One process per dyno loops: claim a job, run it, report it, repeat, sleeping briefly when nothing is queued. Capacity scales with the number of dynos.
 - **Restarts.** Heroku restarts dynos at least daily and on every release. An interrupted job stops sending heartbeats and fails (see the job states under [Summary table](#summary-table)).
-- **Time limit.** Each job has a time limit, after which it fails. The limit can't exceed 7 days, the longest a presigned URL for an embargoed file can last. How it relates to Heroku's daily restart is the "Large Dandisets" [open question](trusted-validation.md#open-questions).
+- **Time limit.** Each job has a time limit, after which it fails. The limit can't exceed 7 days, the longest a presigned URL for an embargoed file can last. How it relates to Heroku's daily restart is the "Large Dandisets" [open question](trusted-content-validation.md#open-questions).
 - **Elsewhere.** The same image runs outside Heroku, e.g. `apptainer run docker://ghcr.io/dandi/dandi-validation:<version code>` on HPC, either against the same job API or from a job file built from the public API. A job file reports to no archive and sets no target, which is how the pilot measures cost (see [Rollout details](#rollout-details)).
 
 <details>
@@ -580,7 +580,7 @@ A `revalidate_content` command does two things:
 
 ### Monitoring
 
-The archive monitors how long drafts wait for a result, so a stalled worker is noticed (see [Publication latency](trusted-validation.md#publication-latency-accepted-trade-off)).
+The archive monitors how long drafts wait for a result, so a stalled worker is noticed (see [Publication latency](trusted-content-validation.md#publication-latency-accepted-trade-off)).
 
 - **Daily check.** A daily task emails `DANDI_DEV_EMAIL` with each draft that has waited more than three days for a result, and how long it has waited. Embargoed drafts are listed in a separate section, since they don't block owners yet.
 
@@ -640,7 +640,7 @@ How a draft's `Version.status` changes. These assume gating is on.
 
 # Rollout details
 
-The specifics of each step of the [Proposed Rollout Order](trusted-validation.md#proposed-rollout-order), with the same numbering.
+The specifics of each step of the [Proposed Rollout Order](trusted-content-validation.md#proposed-rollout-order), with the same numbering.
 
 1. **dandi-schema:** release with the changes under [dandi-schema](#dandi-schema), including the schema version bump.
 2. **datalad-fuse:** release with the remfile backend, so the dandi-cli release can depend on it (see [dandi-cli](#dandi-cli)).

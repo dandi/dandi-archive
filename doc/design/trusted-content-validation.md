@@ -1,10 +1,10 @@
-# Trusted File and Dataset Validation
+# Trusted Content Validation
 
 Authors: Cody Baker
 
 Status: proposal
 
-This is the overview of the design. [Trusted File and Dataset Validation: Details](trusted-validation-details.md) specifies each change.
+This is the overview of the design. [Trusted Content Validation: Details](trusted-content-validation-details.md) specifies each change.
 
 # Contents
 
@@ -28,12 +28,12 @@ This is the overview of the design. [Trusted File and Dataset Validation: Detail
   {"dandi": "0.75.0", "dandischema": "0.12.0", "nwbinspector": "0.7.1", "pynwb": "3.1.0", "hdmf": "4.1.0", "bids-validator-deno": "2.1.0"}
   ```
 
-- **Version code:** a short, readable string form of validator versions: each package's one-letter code followed by its version, joined by `-`. For the map above: `d0.75.0-s0.12.0-n0.7.1-p3.1.0-h4.1.0-b2.1.0`. It is the validator image's tag and part of each record's path in the bucket (see [Validator versions](trusted-validation-details.md#validator-versions) for the exact format).
+- **Version code:** a short, readable string form of validator versions: each package's one-letter code followed by its version, joined by `-`. For the map above: `d0.75.0-s0.12.0-n0.7.1-p3.1.0-h4.1.0-b2.1.0`. It is the validator image's tag and part of each record's path in the bucket (see [Validator versions](trusted-content-validation-details.md#validator-versions) for the exact format).
 - **Worker:** a separate Heroku app that runs the validator image, claims validation jobs from the archive, and reports their results.
 - **Record:** the full output of one validation run, listing every error, warning and hint, stored in the archive bucket with its provenance. A summary of it goes in the database.
-- **Validation target:** the version code of the newest validator image a worker has reported (see [Version updates](trusted-validation-details.md#version-updates)).
-- **Required versions:** the version code a draft must be validated with: the validation target at the draft's last file change (see [Required versions](trusted-validation-details.md#required-versions)).
-- **Content fingerprint:** a hash of the files a version contains, updated in constant time whenever an asset is added, removed or replaced (see [Content fingerprint](trusted-validation-details.md#content-fingerprint)).
+- **Validation target:** the version code of the newest validator image a worker has reported (see [Version updates](trusted-content-validation-details.md#version-updates)).
+- **Required versions:** the version code a draft must be validated with: the validation target at the draft's last file change (see [Required versions](trusted-content-validation-details.md#required-versions)).
+- **Content fingerprint:** a hash of the files a version contains, updated in constant time whenever an asset is added, removed or replaced (see [Content fingerprint](trusted-content-validation-details.md#content-fingerprint)).
 - **Gating and shadow mode:** with gating on, the archive blocks publication unless the result passed. With a worker running and gating off (shadow mode), results and the banner appear, but publication is not gated.
 
 # Flow
@@ -79,11 +79,11 @@ flowchart TD
 - The record must come from an exact, known set of validator versions:
   - **Drafts:** the validation target at the draft's last file change (an asset added, removed or replaced). Metadata-only changes, including to Dandisets already published, don't move it.
   - **Published versions:** the set frozen at publication, which is only possible if the version was valid then, so later validator releases never make them invalid.
-- Errors and warnings are shown to everyone in a banner on the Dandiset landing page ([#1486](https://github.com/dandi/dandi-archive/issues/1486)). Warnings do not block publication but reflect overall quality. Only `ERROR` and `CRITICAL` results block (see [Validation job](trusted-validation-details.md#validation-job)).
+- Errors and warnings are shown to everyone in a banner on the Dandiset landing page ([#1486](https://github.com/dandi/dandi-archive/issues/1486)). Warnings do not block publication but reflect overall quality. Only `ERROR` and `CRITICAL` results block (see [Validation job](trusted-content-validation-details.md#validation-job)).
 
 ## Summary
 
-Today the archive only validates simple asset-level metadata: each Asset's metadata is compared against the `PublishedAsset` schema, and the draft Version's metadata against the `PublishedDandiset` schema (see [Current state](trusted-validation-details.md#current-state)).
+Today the archive only validates simple asset-level metadata: each Asset's metadata is compared against the `PublishedAsset` schema, and the draft Version's metadata against the `PublishedDandiset` schema (see [Current state](trusted-content-validation-details.md#current-state)).
 
 Neither the archive backend nor any external service runs the validators that check the *contents* of files nor the *layout* of datasets: NWB Inspector, PyNWB validation, BIDS validator, or even the ad-hoc DANDI layout enforced by CLI command `dandi validate`. As a result, Dandisets with invalid NWB files or BIDS/DANDI layouts can be published (e.g. [#2412](https://github.com/dandi/dandi-archive/issues/2412)).
 
@@ -96,23 +96,23 @@ The changes in each repository can be summarized as:
 
 | Repository | Change |
 |---|---|
-| [dandi-schema](trusted-validation-details.md#dandi-schema) | A `ValidatorType` enum, two read-only `Dandiset` fields, one publication rule, one schema version bump |
-| [dandi-archive](trusted-validation-details.md#dandi-archive) | One table, a small job API for the worker, a reconciler task, new `Version` columns with a one-off backfill, a daily image-build workflow, the worker's container image, a few lines in draft validation and publishing, `/versions/{version}/info/` fields, a banner, a daily check |
-| [dandi-infrastructure](trusted-validation-details.md#dandi-infrastructure) | A new Heroku container app for the worker, and config vars on both apps |
-| [dandi-cli](trusted-validation-details.md#dandi-cli) | A release with the streaming stack and small fixes |
-| [datalad-fuse](trusted-validation-details.md#dandi-cli) | A release with the remfile backend, so dandi-cli can depend on it |
+| [dandi-schema](trusted-content-validation-details.md#dandi-schema) | A `ValidatorType` enum, two read-only `Dandiset` fields, one publication rule, one schema version bump |
+| [dandi-archive](trusted-content-validation-details.md#dandi-archive) | One table, a small job API for the worker, a reconciler task, new `Version` columns with a one-off backfill, a daily image-build workflow, the worker's container image, a few lines in draft validation and publishing, `/versions/{version}/info/` fields, a banner, a daily check |
+| [dandi-infrastructure](trusted-content-validation-details.md#dandi-infrastructure) | A new Heroku container app for the worker, and config vars on both apps |
+| [dandi-cli](trusted-content-validation-details.md#dandi-cli) | A release with the streaming stack and small fixes |
+| [datalad-fuse](trusted-content-validation-details.md#dandi-cli) | A release with the remfile backend, so dandi-cli can depend on it |
 
 # Proposed solution
 
 The main decisions are:
 
-- **Gating through the schema.** dandischema gains two read-only `Dandiset` fields: `validatedRequiredVersions` and `validatedBy` (`null` when not run yet, `false` when failed, `true` when passed). Its publication check requires `validatedBy: true` whenever `validatedRequiredVersions` is set, so the archive's existing publish gating blocks publication without a new check in the publish service (see [dandi-schema](trusted-validation-details.md#dandi-schema) and [Stamping](trusted-validation-details.md#stamping)).
-- **An isolated worker.** The worker holds no database, bucket or Django credentials: it claims jobs through a small job API, reads files through URLs the archive hands out, and uploads records through presigned URLs (see [Validation worker app](trusted-validation-details.md#validation-worker-app) and [Job API](trusted-validation-details.md#job-api)).
-- **Automatic validator updates.** No validator version or image is committed anywhere. A daily scan builds and releases an image for each new set of PyPI releases, failing with an alert on any version that isn't a plain `MAJOR.MINOR.PATCH` release, and the archive targets the newest image its workers report (see [Version updates](trusted-validation-details.md#version-updates)).
-- **Whole-Dandiset runs.** A file's result can depend on other files, so results aren't cached from one job to the next, and every run validates the whole Dandiset (see [No caching across jobs](trusted-validation-details.md#no-caching-across-jobs)).
-- **Results tied to content.** Each result is stored with the content fingerprint and version code it was produced for, so a draft is validated again only when its files change (see [Content fingerprint](trusted-validation-details.md#content-fingerprint) and [Required versions](trusted-validation-details.md#required-versions)).
-- **Everything kept.** Summary rows and bucket records are never deleted, and each run keeps its own record (see [Summary table](trusted-validation-details.md#summary-table) and [Record storage](trusted-validation-details.md#record-storage)).
-- **What owners see.** After a file change, the landing page shows that validation is queued or running, with its progress. Once gating is on, publishing waits for the result: a pass enables it, and errors block it. Errors and warnings are counted in a banner and listed in the existing validation dialog, and fixing the files starts a new run. Metadata-only edits keep the existing result and start no run. If a run cannot complete, staff are notified and can re-run it, or override a result they judge a false positive, which updates the draft's status (see [Frontend](trusted-validation-details.md#frontend) and [Management commands](trusted-validation-details.md#management-commands)).
+- **Gating through the schema.** dandischema gains two read-only `Dandiset` fields: `validatedRequiredVersions` and `validatedBy` (`null` when not run yet, `false` when failed, `true` when passed). Its publication check requires `validatedBy: true` whenever `validatedRequiredVersions` is set, so the archive's existing publish gating blocks publication without a new check in the publish service (see [dandi-schema](trusted-content-validation-details.md#dandi-schema) and [Stamping](trusted-content-validation-details.md#stamping)).
+- **An isolated worker.** The worker holds no database, bucket or Django credentials: it claims jobs through a small job API, reads files through URLs the archive hands out, and uploads records through presigned URLs (see [Validation worker app](trusted-content-validation-details.md#validation-worker-app) and [Job API](trusted-content-validation-details.md#job-api)).
+- **Automatic validator updates.** No validator version or image is committed anywhere. A daily scan builds and releases an image for each new set of PyPI releases, failing with an alert on any version that isn't a plain `MAJOR.MINOR.PATCH` release, and the archive targets the newest image its workers report (see [Version updates](trusted-content-validation-details.md#version-updates)).
+- **Whole-Dandiset runs.** A file's result can depend on other files, so results aren't cached from one job to the next, and every run validates the whole Dandiset (see [No caching across jobs](trusted-content-validation-details.md#no-caching-across-jobs)).
+- **Results tied to content.** Each result is stored with the content fingerprint and version code it was produced for, so a draft is validated again only when its files change (see [Content fingerprint](trusted-content-validation-details.md#content-fingerprint) and [Required versions](trusted-content-validation-details.md#required-versions)).
+- **Everything kept.** Summary rows and bucket records are never deleted, and each run keeps its own record (see [Summary table](trusted-content-validation-details.md#summary-table) and [Record storage](trusted-content-validation-details.md#record-storage)).
+- **What owners see.** After a file change, the landing page shows that validation is queued or running, with its progress. Once gating is on, publishing waits for the result: a pass enables it, and errors block it. Errors and warnings are counted in a banner and listed in the existing validation dialog, and fixing the files starts a new run. Metadata-only edits keep the existing result and start no run. If a run cannot complete, staff are notified and can re-run it, or override a result they judge a false positive, which updates the draft's status (see [Frontend](trusted-content-validation-details.md#frontend) and [Management commands](trusted-content-validation-details.md#management-commands)).
 
 ## Publication latency (accepted trade-off)
 
@@ -120,15 +120,15 @@ After a content change, the owner can publish only once the worker has validated
 
 Because every run validates the whole Dandiset, adding one file to a very large Dandiset means re-validating all of it, and a run longer than a day cannot finish on Heroku, whose dynos restart daily. The pilot measures this (see the "Large Dandisets" [open question](#open-questions)).
 
-To notice a stalled worker, a daily email tells developers about every draft that has waited more than three days for a result (see [Monitoring](trusted-validation-details.md#monitoring)).
+To notice a stalled worker, a daily email tells developers about every draft that has waited more than three days for a result (see [Monitoring](trusted-content-validation-details.md#monitoring)).
 
 ## Old files vs. new checks (accepted trade-off)
 
-Once a draft's files change, the whole Dandiset is validated with the latest validation target, so files carried over from earlier releases are re-checked with the latest validators. A small content change, such as adding one file, could therefore be blocked by a check that did not exist when the other files were published. This is accepted, because it means content and structure enhancements go hand-in-hand. Metadata-only changes are unaffected (see [Required versions](trusted-validation-details.md#required-versions)).
+Once a draft's files change, the whole Dandiset is validated with the latest validation target, so files carried over from earlier releases are re-checked with the latest validators. A small content change, such as adding one file, could therefore be blocked by a check that did not exist when the other files were published. This is accepted, because it means content and structure enhancements go hand-in-hand. Metadata-only changes are unaffected (see [Required versions](trusted-content-validation-details.md#required-versions)).
 
 # Proposed Rollout Order
 
-[Rollout details](trusted-validation-details.md#rollout-details) gives the specifics of each step.
+[Rollout details](trusted-content-validation-details.md#rollout-details) gives the specifics of each step.
 
 1. **dandi-schema:** release the schema changes.
 2. **datalad-fuse:** release the remfile backend.
