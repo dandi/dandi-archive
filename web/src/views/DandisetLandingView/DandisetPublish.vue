@@ -161,6 +161,16 @@
                         hint="Optional: Describe the changes, improvements, or fixes in this release"
                         persistent-hint
                       />
+                      <v-alert
+                        v-if="containsZarr"
+                        type="warning"
+                        variant="tonal"
+                        density="compact"
+                        class="mt-4 text-body-2"
+                      >
+                        This dandiset contains Zarr archives. Once published, they can no longer
+                        be modified. Any later changes must be uploaded as a new Zarr archive.
+                      </v-alert>
                     </v-card-text>
 
                     <v-divider />
@@ -302,8 +312,11 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-snackbar :model-value="!!alreadyBeingPublishedError">
-      This dandiset is already being published. Please wait for publishing to complete.
+    <v-snackbar
+      :model-value="!!publishError"
+      @update:model-value="publishError = ''"
+    >
+      {{ publishError }}
     </v-snackbar>
     <v-snackbar :model-value="!!newlyPublishedVersion">
       Publish complete.
@@ -394,8 +407,10 @@ const isPublishing = ref(false);
 // The version that resulted from the recent publish, if applicable
 const newlyPublishedVersion = ref('');
 
-const alreadyBeingPublishedError = ref(false);
+// The reason the most recent publish request was rejected, if applicable
+const publishError = ref('');
 
+// Publishing makes any zarr archives in the dandiset immutable, so the user is warned beforehand
 const containsZarr = ref(false);
 watchEffect(async () => {
   if (currentDandiset.value) {
@@ -435,9 +450,6 @@ const publishDisabledMessage: ComputedRef<string> = computed(() => {
   }
   if (isPublishing.value) {
     return 'This dandiset is being published, please wait.';
-  }
-  if (containsZarr.value) {
-    return 'Dandisets containing Zarr archives cannot currently be published.';
   }
   return '';
 });
@@ -562,10 +574,18 @@ async function publish() {
       newlyPublishedVersion.value = version;
       releaseNotes.value = ''; // Clear release notes after successful publish
     } catch (e) {
-      // A 423: Locked error means that the dandiset is currently undergoing publishing.
-      // If that happens, display an error.
+      // A 423: Locked error means that the dandiset is currently undergoing publishing, so
+      // keep waiting for that publish to complete.
       if (axios.isAxiosError(e) && e.response?.status === 423) {
-        alreadyBeingPublishedError.value = true;
+        publishError.value = 'This dandiset is already being published. Please wait for publishing to complete.';
+        return;
+      }
+
+      isPublishing.value = false;
+      // Any other rejection (e.g. a 409 if the dandiset contains zarr archives which haven't
+      // finished ingesting) is explained by the message the server responds with.
+      if (axios.isAxiosError(e) && typeof e.response?.data === 'string' && e.response.status < 500) {
+        publishError.value = e.response.data;
       } else {
         throw e;
       }

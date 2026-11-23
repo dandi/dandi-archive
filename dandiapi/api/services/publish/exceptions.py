@@ -32,3 +32,11 @@ class DandisetValidationPendingError(DandiError):
 
 class DandisetNotLockedError(DandiError):
     http_status_code = status.HTTP_409_CONFLICT
+
+
+class DandisetZarrsNotCompleteError(DandiError):
+    http_status_code = status.HTTP_409_CONFLICT
+    message = (
+        'Dandiset contains zarr archives which have not finished ingesting. Please finalize all '
+        'zarr archives and wait for ingestion to complete before publishing.'
+    )

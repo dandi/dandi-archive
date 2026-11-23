@@ -11,10 +11,12 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
+from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from storages.utils import clean_name
 
-from dandiapi.api.models import Dandiset
+from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.services.exceptions import DandiError
 
 if TYPE_CHECKING:
     from dandiapi.storage import DandiS3Storage
@@ -60,6 +62,22 @@ def validate_base64_md5(value: str) -> str:
     return value
 
 
+class ZarrArchivePublishedError(DandiError):
+    http_status_code = status.HTTP_400_BAD_REQUEST
+    message = (
+        'This zarr archive has been published and can no longer be modified. '
+        'To make changes, re-upload the data as a new zarr archive.'
+    )
+
+
+class ZarrArchiveDandisetPublishingError(DandiError):
+    http_status_code = status.HTTP_423_LOCKED
+    message = (
+        'The dandiset containing this zarr archive is currently being published. '
+        'Please try again once publishing has completed.'
+    )
+
+
 # The status of the zarr ingestion (checksums, size, file count)
 class ZarrArchiveStatus(models.TextChoices):
     PENDING = 'Pending'
@@ -77,9 +95,18 @@ class ZarrArchive(TimeStampedModel):
         ordering = ['created']
         get_latest_by = 'modified'
         constraints = [
+            # With this constraint in place, each version is guaranteed to contain uniquely named
+            # zarrs, but the same name can exist across multiple versions. This makes sense in the
+            # case where a zarr needs to be modified after publish, and thus must be re-uploaded to
+            # the same dandiset again, since published zarrs are immutable.
             models.UniqueConstraint(
-                name='%(app_label)s-%(class)s-unique-name',
+                name='%(app_label)s-%(class)s-unique-unpublished-name',
                 fields=['dandiset', 'name'],
+                condition=models.Q(published=False),
+            ),
+            models.CheckConstraint(
+                name='%(app_label)s-%(class)s-published-is-complete',
+                condition=models.Q(published=False) | models.Q(status=ZarrArchiveStatus.COMPLETE),
             ),
             models.CheckConstraint(
                 name='%(app_label)s-%(class)s-consistent-checksum-status',
@@ -106,6 +133,8 @@ class ZarrArchive(TimeStampedModel):
         choices=ZarrArchiveStatus,
         default=ZarrArchiveStatus.PENDING,
     )
+    # Once set (during dandiset publish), the contents of this zarr archive may never change.
+    published = models.BooleanField(default=False)
     # If ingestion was deferred due to upload URLs which could still modify this zarr, the time at
     # which they expire, and ingestion will be retried. Uploading the content those URLs were
     # issued for allows ingestion to proceed immediately instead.
@@ -137,7 +166,26 @@ class ZarrArchive(TimeStampedModel):
         """
         return str(PurePosixPath(clean_name(self.s3_path(zarr_path))).relative_to(self.s3_path('')))
 
+    def ensure_modifiable(self) -> None:
+        """
+        Raise an error if this zarr archive may not be modified.
+
+        The caller should hold a row lock on this zarr archive (``select_for_update``), so that
+        the check can't race with the dandiset publish process, which locks zarr archives
+        before checking or changing the draft version status.
+        """
+        if self.published:
+            raise ZarrArchivePublishedError
+        if Version.objects.filter(
+            dandiset_id=self.dandiset_id,
+            version='draft',
+            status=Version.Status.PUBLISHING,
+        ).exists():
+            raise ZarrArchiveDandisetPublishingError
+
     def mark_pending(self):
+        if self.published:
+            raise ZarrArchivePublishedError
         self.checksum = None
         self.status = ZarrArchiveStatus.PENDING
         self.ingestion_deferred_until = None
