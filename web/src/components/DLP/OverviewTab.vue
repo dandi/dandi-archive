@@ -279,11 +279,6 @@ function isURL(str: string): boolean {
   return url.protocol === 'http:' || url.protocol === 'https:';
 }
 
-/**
- * Title shown for a related resource. Falls back to the URL itself, since the
- * schema allows a resource with only a `url` (no name or identifier), and its
- * link would otherwise not be shown at all.
- */
 function resourceTitle(resource: Resource): string | undefined {
   return resource.name || resource.identifier || resource.id || resource.url;
 }
