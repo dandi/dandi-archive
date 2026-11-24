@@ -351,9 +351,9 @@ const disableRedo = computed(
 );
 const vjsfListener = () => {
   // Since the vjsf form will be re-rendered, retrieve the active element, and store its properties
-  const el = document.activeElement as HTMLInputElement;
+  const el = document.activeElement as HTMLInputElement | HTMLTextAreaElement;
   const curosrPos = el.selectionStart as number;
-  const scrollPos = el.scrollLeft;
+  const { scrollLeft, scrollTop } = el;
 
   const oldTransactionLength = transactionTracker.getTransactions().length;
 
@@ -388,17 +388,21 @@ const vjsfListener = () => {
 
   // A double render may occur, so use a timeout to wait until that's done and retrieve the settled element
   setTimeout(() => {
+    // Vue mirrors `value` into an attribute on both <input> and <textarea>, so both can be matched.
     const newElement = document.evaluate(
-      `//input[@value=${xpathValue}]`,
+      `//*[self::input or self::textarea][@value=${xpathValue}]`,
       document,
       null,
       XPathResult.FIRST_ORDERED_NODE_TYPE,
       null
-    ).singleNodeValue as HTMLInputElement;
+    ).singleNodeValue as HTMLInputElement | HTMLTextAreaElement | null;
+    if (!newElement) {
+      return;
+    }
 
     newElement.focus()
     newElement.setSelectionRange(curosrPos, curosrPos, 'forward');
-    newElement.scroll({ left: scrollPos });
+    newElement.scroll({ left: scrollLeft, top: scrollTop });
   }, 10);
 };
 const modified = computed(() => transactionTracker.isModified());
