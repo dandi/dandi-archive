@@ -89,18 +89,18 @@
       icon="mdi-book"
     >
       <template #itemTitle="slotProps">
-        <span v-if="slotProps.item.name || slotProps.item.identifier || slotProps.item.id">
+        <span v-if="resourceTitle(slotProps.item)">
           <a
             v-if="slotProps.item.url"
-            class="related-resource-link"
+            class="related-resource-link text-break"
             :href="slotProps.item.url"
             target="_blank"
             rel="noopener"
           >
-            {{ slotProps.item.name || slotProps.item.identifier || slotProps.item.id }}
+            {{ resourceTitle(slotProps.item) }}
           </a>
           <template v-else>
-            {{ slotProps.item.name || slotProps.item.identifier || slotProps.item.id }}
+            {{ resourceTitle(slotProps.item) }}
           </template>
           <br>
         </span>
@@ -254,7 +254,9 @@ import MetadataCard from '@/components/DLP/MetadataCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
 
 import type { ComputedRef, PropType } from 'vue';
-import type { AssociatedProjects, DandisetMetadata, RelatedResource, Protocol } from '@/types';
+import type {
+  AssociatedProjects, DandisetMetadata, RelatedResource, Protocol, Resource,
+} from '@/types';
 
 // Asset summary fields to hide
 const ASSET_SUMMARY_BLACKLIST = new Set([
@@ -275,6 +277,15 @@ function isURL(str: string): boolean {
   }
 
   return url.protocol === 'http:' || url.protocol === 'https:';
+}
+
+/**
+ * Title shown for a related resource. Falls back to the URL itself, since the
+ * schema allows a resource with only a `url` (no name or identifier), and its
+ * link would otherwise not be shown at all.
+ */
+function resourceTitle(resource: Resource): string | undefined {
+  return resource.name || resource.identifier || resource.id || resource.url;
 }
 
 const props = defineProps({
