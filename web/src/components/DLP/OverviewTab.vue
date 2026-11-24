@@ -97,6 +97,23 @@
       name="Related resources"
       icon="mdi-book"
     >
+      <template #itemTitle="slotProps">
+        <span v-if="resourceTitle(slotProps.item)">
+          <a
+            v-if="slotProps.item.url"
+            class="related-resource-link text-break"
+            :href="slotProps.item.url"
+            target="_blank"
+            rel="noopener"
+          >
+            {{ resourceTitle(slotProps.item) }}
+          </a>
+          <template v-else>
+            {{ resourceTitle(slotProps.item) }}
+          </template>
+          <br>
+        </span>
+      </template>
       <template #content="slotProps">
         <span
           v-if="slotProps.item.identifier"
@@ -125,18 +142,6 @@
         >
           <strong>Relation: </strong>{{ slotProps.item.relation }}
         </span>
-      </template>
-      <template #links="slotProps">
-        <v-btn
-          v-if="slotProps.item.url"
-          icon
-          variant="text"
-          :href="slotProps.item.url"
-          target="_blank"
-          rel="noopener"
-        >
-          <v-icon>mdi-link</v-icon>
-        </v-btn>
       </template>
     </MetadataCard>
 
@@ -259,7 +264,9 @@ import AnatomyCard from '@/components/DLP/AnatomyCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
 
 import type { ComputedRef, PropType } from 'vue';
-import type { AssociatedProjects, DandisetMetadata, RelatedResource, Protocol } from '@/types';
+import type {
+  AssociatedProjects, DandisetMetadata, RelatedResource, Protocol, Resource,
+} from '@/types';
 
 // Asset summary fields to hide
 const ASSET_SUMMARY_BLACKLIST = new Set([
@@ -280,6 +287,10 @@ function isURL(str: string): boolean {
   }
 
   return url.protocol === 'http:' || url.protocol === 'https:';
+}
+
+function resourceTitle(resource: Resource): string | undefined {
+  return resource.name || resource.identifier || resource.id || resource.url;
 }
 
 const props = defineProps({
@@ -372,3 +383,16 @@ onUnmounted(() => {
 });
 
 </script>
+
+<style scoped>
+.related-resource-link {
+  color: #4051b5;
+  text-decoration: none;
+  transition: color 125ms;
+}
+
+.related-resource-link:hover,
+.related-resource-link:focus {
+  color: #0091eb;
+}
+</style>
