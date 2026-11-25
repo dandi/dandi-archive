@@ -258,7 +258,10 @@
     </v-tabs>
 
     <!-- Dynamically render component based on current tab -->
-    <v-row class="justify-center">
+    <v-row
+      class="justify-center"
+      no-gutters
+    >
       <v-col cols="12">
         <component
           :is="tabs[currentTab].component"
