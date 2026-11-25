@@ -91,7 +91,10 @@
           />
         </v-col>
       </v-row>
-      <v-row v-if="isSmDisplay">
+      <v-row
+        v-if="isSmDisplay"
+        no-gutters
+      >
         <v-col cols="12">
           <v-sheet
             v-if="!currentDandiset || loading"
