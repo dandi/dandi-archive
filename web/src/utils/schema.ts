@@ -1,7 +1,5 @@
 import type { JSONSchema } from "@apidevtools/json-schema-ref-parser";
 
-const TEXTAREA_FIELDS = ['description', 'acknowledgement'];
-
 /**
  * Applies various miscellaneous fixes/massages the Dandiset metadata JSON Schema
  * to make it compatible with VJSF.
@@ -32,7 +30,7 @@ export function fixSchema(schema: JSONSchema) {
       )
   );
 
-  for (const field of TEXTAREA_FIELDS) {
+  for (const field of ['description', 'acknowledgement']) {
     const fieldSchema = deepCopySchema.properties?.[field];
     if (fieldSchema?.type === 'string' && fieldSchema.layout === undefined) {
       fieldSchema.layout = { comp: 'textarea', props: { autoGrow: true, rows: 5 } };
