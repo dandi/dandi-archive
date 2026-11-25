@@ -63,10 +63,12 @@
         </v-col>
       </v-row>
       <v-row>
-        <v-col :cols="isXsDisplay ? 12 : 3">
+        <v-col
+          cols="12"
+          lg="3"
+        >
           <v-chip
-            class="text-wrap py-1 pl-1"
-            style="text-align: center;"
+            class="py-1 pl-1"
             variant="outlined"
           >
             <v-tooltip
@@ -77,6 +79,7 @@
                   v-if="currentDandiset !== null"
                   icon
                   size="small"
+                  density="comfortable"
                   variant="plain"
                   v-bind="props"
                   @click="copy('dandiID')"
@@ -91,7 +94,7 @@
               </template>
               <span>{{ copied === 'dandiID' ? 'Copied!' : 'Copy ID to clipboard' }}</span>
             </v-tooltip>
-            <span>
+            <span class="text-no-wrap">
               ID: <span class="font-weight-bold">{{ currentDandiset.dandiset.identifier }}</span>
             </span>
 
@@ -101,7 +104,7 @@
             />
             <span
               :class="`
-                font-weight-bold
+                font-weight-bold text-no-wrap
                 ${currentDandiset.version === 'draft' ? 'orange' : 'blue'}--text text--darken-4
               `"
             >
@@ -109,7 +112,11 @@
             </span>
           </v-chip>
         </v-col>
-        <v-col :cols="isXsDisplay ? 12 : 3">
+        <v-col
+          cols="12"
+          sm="4"
+          lg="3"
+        >
           <span>
             <v-icon class="text-grey-lighten-1">mdi-account</v-icon>
             <template
@@ -122,13 +129,21 @@
             </template>
           </span>
         </v-col>
-        <v-col :cols="isXsDisplay ? 12 : 3">
+        <v-col
+          cols="12"
+          sm="4"
+          lg="3"
+        >
           <span>
             <v-icon class="text-grey-lighten-1">mdi-file</v-icon>
             File Count <strong>{{ stats.asset_count }}</strong>
           </span>
         </v-col>
-        <v-col :cols="isXsDisplay ? 12 : 3">
+        <v-col
+          cols="12"
+          sm="4"
+          lg="3"
+        >
           <span>
             <v-icon class="text-grey-lighten-1">mdi-server</v-icon>
             Size <strong>{{ transformFilesize(stats.size) }}</strong>
