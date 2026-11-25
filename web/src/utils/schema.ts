@@ -1,6 +1,5 @@
 import type { JSONSchema } from "@apidevtools/json-schema-ref-parser";
 
-// Top-level Dandiset metadata fields that hold multi-line free text
 const TEXTAREA_FIELDS = ['description', 'acknowledgement'];
 
 /**
@@ -33,10 +32,6 @@ export function fixSchema(schema: JSONSchema) {
       )
   );
 
-  // vjsf renders every plain string field as a single-line text field, so long
-  // free-text fields can only be scrolled horizontally and can't contain newlines
-  // (and so can't hold Markdown paragraphs). Render them as textareas that grow
-  // with their content instead.
   for (const field of TEXTAREA_FIELDS) {
     const fieldSchema = deepCopySchema.properties?.[field];
     if (fieldSchema?.type === 'string' && fieldSchema.layout === undefined) {

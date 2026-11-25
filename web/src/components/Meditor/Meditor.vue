@@ -388,7 +388,6 @@ const vjsfListener = () => {
 
   // A double render may occur, so use a timeout to wait until that's done and retrieve the settled element
   setTimeout(() => {
-    // Vue mirrors `value` into an attribute on both <input> and <textarea>, so both can be matched.
     const newElement = document.evaluate(
       `//*[self::input or self::textarea][@value=${xpathValue}]`,
       document,
