@@ -48,11 +48,8 @@
         <div
           class="text-caption text-grey-darken-1"
         >
-          <span
-            v-if="slotProps.item.awardNumber"
-            class="pl-2"
-          >
-            <strong>- Award Number: </strong>{{ slotProps.item.awardNumber }}
+          <span v-if="slotProps.item.awardNumber">
+            <strong>Award Number: </strong>{{ slotProps.item.awardNumber }}
           </span>
         </div>
       </template>
