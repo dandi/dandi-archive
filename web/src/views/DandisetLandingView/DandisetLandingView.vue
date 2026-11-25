@@ -102,6 +102,7 @@
           <DandisetSidebar
             v-else
             :user-can-modify-dandiset="userCanModifyDandiset"
+            hide-actions
           />
         </v-col>
       </v-row>

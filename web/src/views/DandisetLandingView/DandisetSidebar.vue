@@ -3,8 +3,10 @@
     v-if="currentDandiset"
     class="border-s"
   >
-    <DandisetActions />
-    <v-divider />
+    <template v-if="!hideActions">
+      <DandisetActions />
+      <v-divider />
+    </template>
     <DandisetOwners
       :user-can-modify-dandiset="userCanModifyDandiset"
     />
@@ -34,6 +36,11 @@ defineProps({
   userCanModifyDandiset: {
     type: Boolean,
     required: true,
+  },
+  // On small screens the actions are shown above the tabs instead (see DandisetMain).
+  hideActions: {
+    type: Boolean,
+    default: false,
   },
 })
 
