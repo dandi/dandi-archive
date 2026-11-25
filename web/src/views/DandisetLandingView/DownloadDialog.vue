@@ -10,20 +10,22 @@
         class="justify-space-between border border-b-0 rounded-t"
         v-bind="props"
       >
-        <template #prepend>
+        <div class="d-flex align-center">
           <v-icon
             color="primary"
             start
+            style="opacity: var(--v-medium-emphasis-opacity)"
           >
             mdi-download
           </v-icon>
           <v-list-item-title>Download</v-list-item-title>
-        </template>
-        <template #append>
-          <v-icon end>
+          <v-icon
+            class="ms-auto"
+            style="opacity: var(--v-medium-emphasis-opacity)"
+          >
             mdi-chevron-down
           </v-icon>
-        </template>
+        </div>
       </v-list-item>
     </template>
     <v-card>
