@@ -30,5 +30,12 @@ export function fixSchema(schema: JSONSchema) {
       )
   );
 
+  for (const field of ['description', 'acknowledgement']) {
+    const fieldSchema = deepCopySchema.properties?.[field];
+    if (fieldSchema?.type === 'string' && fieldSchema.layout === undefined) {
+      fieldSchema.layout = { comp: 'textarea', props: { autoGrow: true, rows: 5 } };
+    }
+  }
+
   return deepCopySchema;
 }
