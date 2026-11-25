@@ -3,7 +3,11 @@
     <v-container>
       <CookieBanner />
       <v-row>
-        <v-col offset="2">
+        <v-col
+          cols="12"
+          sm
+          offset-sm="2"
+        >
           &copy; 2019 - {{ currentYear }} The DANDI Team<br>
           <a
             target="_blank"
@@ -36,7 +40,10 @@
             rel="noopener"
           >{{ version }}</a>
         </v-col>
-        <v-col>
+        <v-col
+          cols="12"
+          sm
+        >
           Funding / In-Kind Support:<br>
           - <a
             target="_blank"
@@ -72,7 +79,10 @@
             mdi-open-in-new
           </v-icon>
         </v-col>
-        <v-col>
+        <v-col
+          cols="12"
+          sm
+        >
           Support:<br>
           - <a
             target="_blank"
