@@ -238,6 +238,12 @@
       </v-row>
     </v-card>
 
+    <!-- On small screens the sidebar moves below the page, so show the actions here, where they can be found -->
+    <DandisetActions
+      v-if="isSmDisplay"
+      class="border-b"
+    />
+
     <!-- Tab navigation -->
     <v-tabs
       v-model="currentTab"
@@ -295,6 +301,7 @@ import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from
 import HowToCiteTab from '@/components/DLP/HowToCiteTab.vue';
 import NotebooksTab from '@/components/DLP/NotebooksTab.vue';
 import OverviewTab from '@/components/DLP/OverviewTab.vue';
+import DandisetActions from './DandisetActions.vue';
 import ShareDialog from './ShareDialog.vue';
 import StarButton from '@/components/StarButton.vue';
 
@@ -323,6 +330,7 @@ defineProps({
 
 const store = useDandisetStore();
 const display = useDisplay();
+const isSmDisplay = computed(() => display.smAndDown.value);
 
 const currentDandiset = computed(() => store.dandiset);
 const isXsDisplay = computed(() => display.xs.value);
