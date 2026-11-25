@@ -91,8 +91,9 @@
       </v-dialog>
     </v-card-text>
 
-    <!-- Manage Owners dialog -->
+    <!-- Manage Owners dialog, shown only to owners and admins -->
     <v-card-actions
+      v-if="!manageOwnersDisabled"
       class="justify-center px-4"
       no-gutters
     >
@@ -102,36 +103,17 @@
         persistent
       >
         <template #activator="{ props: dialogProps }">
-          <v-tooltip
-            :disabled="!manageOwnersDisabled"
-            location="left"
+          <v-btn
+            id="manage"
+            variant="tonal"
+            color="primary"
+            class="justify-start"
+            block
+            prepend-icon="mdi-account-plus"
+            v-bind="dialogProps"
           >
-            <template #activator="{ props: tooltipProps }">
-              <div
-                style="width: 100%;"
-                v-bind="tooltipProps"
-              >
-                <v-btn
-                  id="manage"
-                  variant="tonal"
-                  :disabled="manageOwnersDisabled"
-                  color="primary"
-                  class="justify-start"
-                  block
-                  prepend-icon="mdi-account-plus"
-                  v-bind="dialogProps"
-                >
-                  Manage Owners
-                </v-btn>
-              </div>
-            </template>
-            <template v-if="loggedIn()">
-              You must be an owner to manage ownership.
-            </template>
-            <template v-else>
-              You must be logged in to manage ownership.
-            </template>
-          </v-tooltip>
+            Manage Owners
+          </v-btn>
         </template>
         <DandisetOwnersDialog
           v-if="owners"
@@ -145,7 +127,7 @@
 
 <script setup lang="ts">
 import { chunk } from 'lodash';
-import { loggedIn, user } from '@/rest';
+import { user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import DandisetOwnersDialog from '@/components/DLP/DandisetOwnersDialog.vue';
 import { computed, ref } from 'vue';
