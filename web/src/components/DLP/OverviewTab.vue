@@ -200,12 +200,10 @@
                   class="align-center py-0"
                   style="min-height: 2em;"
                 >
-                  <v-col
-                    cols="10"
-                  >
+                  <v-col style="min-width: 0;">
                     <span>{{ item.name || item.identifier || item.id || item }}</span>
                   </v-col>
-                  <v-col>
+                  <v-col cols="auto">
                     <v-btn
                       v-if="isURL(item.identifier)"
                       icon
