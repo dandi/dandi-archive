@@ -324,16 +324,23 @@ const associatedProjects: ComputedRef<AssociatedProjects|undefined> = computed(
   () => props.meta.wasGeneratedBy,
 );
 
+// Label for an assetsSummary field: its title in the schema (e.g. "Number of Subjects"),
+// or, if the schema has none, the field name split at capitals ("dataStandard" -> "Data Standard").
+function assetSummaryLabel(key: string): string {
+  const title = props.schema.$defs?.AssetsSummary?.properties?.[key]?.title;
+  if (typeof title === 'string' && title) {
+    return title;
+  }
+  const spaced = key.replace(/[A-Z]/g, (letter) => ` ${letter.toUpperCase()}`);
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
 const assetSummary = computed<Record<string, any>>(
   () => Object.fromEntries(Object.entries(props.meta.assetsSummary).filter(
     // filter out assetSummary fields we don't want to display
     ([key, value]) => !!value && !ASSET_SUMMARY_BLACKLIST.has(key),
   ).map(
-    // convert from camelCase to space-delimited string (i.e. "dataStandard" to "data Standard")
-    ([key, value]) => [key.replace(/[A-Z]/g, (letter) => ` ${letter.toUpperCase()}`), value],
-  ).map(
-    // capitalize the first letter in the string
-    ([key, value]: any) => [key.charAt(0).toUpperCase() + key.slice(1), value],
+    ([key, value]) => [assetSummaryLabel(key), value],
   )
   // convert primitive types to single-element arrays so they can be more easily rendered
     .map(([key, value]: any) => (typeof value === 'object' ? [key, value] : [key, [value]]))),
