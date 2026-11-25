@@ -136,19 +136,31 @@
         </v-col>
       </v-row>
       <v-row>
-        <v-col :cols="isXsDisplay ? 12 : 3">
+        <v-col
+          cols="12"
+          sm="6"
+          lg="3"
+        >
           <span>
             <v-icon class="text-grey-lighten-1">mdi-calendar-range</v-icon>
-            Created <strong>{{ formatDate(currentDandiset.created) }}</strong>
+            Created <strong class="text-no-wrap">{{ formatDate(currentDandiset.created) }}</strong>
           </span>
         </v-col>
-        <v-col :cols="isXsDisplay ? 12 : 3">
+        <v-col
+          cols="12"
+          sm="6"
+          lg="3"
+        >
           <span>
             <v-icon class="text-grey-lighten-1">mdi-history</v-icon>
-            Last update <strong>{{ formatDate(currentDandiset.modified) }}</strong>
+            Last update <strong class="text-no-wrap">{{ formatDate(currentDandiset.modified) }}</strong>
           </span>
         </v-col>
-        <v-col :cols="isXsDisplay ? 12 : 3">
+        <v-col
+          cols="12"
+          sm="6"
+          lg="3"
+        >
           <span v-if="meta && meta.license">
             <v-icon class="text-grey-lighten-1">mdi-gavel</v-icon>
             Licenses:
@@ -157,12 +169,16 @@
               v-for="(license, i) in meta.license"
               :key="i"
             >
-              <strong>{{ license }}</strong>
+              <strong class="text-no-wrap">{{ license }}</strong>
               <span v-text="meta && i === meta.license.length - 1 ? '' : ', '" />
             </span>
           </span>
         </v-col>
-        <v-col :cols="isXsDisplay ? 12 : 3">
+        <v-col
+          cols="12"
+          sm="6"
+          lg="3"
+        >
           <span v-if="accessInformation && accessInformation.length">
             <v-icon class="text-grey-lighten-1">mdi-account-question</v-icon>
             Access Information:
@@ -170,9 +186,9 @@
               v-for="(item, i) in accessInformation"
               :key="i"
             >
-              <strong>{{ item.status }}</strong>
+              <strong class="text-no-wrap">{{ item.status }}</strong>
               <span v-if="item.embargoedUntil">
-                (embargoed until <strong>{{ formatDate(item.embargoedUntil) }}</strong>)
+                (embargoed until <strong class="text-no-wrap">{{ formatDate(item.embargoedUntil) }}</strong>)
               </span>
               <span v-text="accessInformation && i === accessInformation.length - 1 ? '' : ', '" />
             </span>
@@ -398,7 +414,7 @@ watch(
 );
 
 function formatDate(date: string): string {
-  return moment(date).format('LL');
+  return moment(date).format('ll');
 }
 
 // The copy button ('DOI' or 'dandiID') that was just clicked. While set, that
