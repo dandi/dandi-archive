@@ -7,17 +7,17 @@ import re
 from typing import TYPE_CHECKING
 
 from django.contrib.auth.models import User
+from django.db import connection
 from django.db.models import OuterRef, Q, Subquery, Value
 from django.db.models.functions import Concat
 
-from dandiapi.api.models import Version
+from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.models.dandiset import DandisetUserObjectPermission
 from dandiapi.api.services.search.parser import SearchSyntaxError
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
 
-    from dandiapi.api.models import Dandiset
     from dandiapi.api.services.search.parser import ParsedSearch
 
 _DATE_OPS = frozenset(
@@ -62,6 +62,37 @@ _SUMMARY_PATH_OPS = {
     'standard': '$.assetsSummary.dataStandard[*].name',
     'variable': '$.assetsSummary.variableMeasured[*]',
 }
+
+
+# The operators whose values come from assetsSummary, and so can be listed.
+SUMMARY_OPERATORS = frozenset(_SUMMARY_PATH_OPS)
+
+
+def summary_operator_values(operator: str) -> list[dict[str, str | int]]:
+    """List the values an assetsSummary operator can match, most common first.
+
+    Each entry is ``{'value': ..., 'dandisets': n}``, where ``n`` counts the
+    dandisets with that value in any version's assetsSummary: the same versions
+    and paths the operator searches. Only open dandisets are counted, so the
+    list never reveals metadata of embargoed ones.
+    """
+    path = _SUMMARY_PATH_OPS[operator]
+    # Table names come from the models, not from user input; the jsonpath and
+    # the embargo status are bound as parameters.
+    sql = f"""
+        SELECT value #>> '{{}}' AS value, COUNT(DISTINCT version.dandiset_id) AS dandisets
+        FROM {Version._meta.db_table} AS version
+        JOIN {Dandiset._meta.db_table} AS dandiset ON dandiset.id = version.dandiset_id
+        CROSS JOIN LATERAL jsonb_path_query(version.metadata, %s::jsonpath) AS value
+        WHERE dandiset.embargo_status = %s
+          AND jsonb_typeof(value) = 'string'
+          AND value #>> '{{}}' <> ''
+        GROUP BY 1
+        ORDER BY dandisets DESC, value
+    """  # noqa: S608
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [path, Dandiset.EmbargoStatus.OPEN])
+        return [{'value': value, 'dandisets': count} for value, count in cursor.fetchall()]
 
 
 def _jsonpath_match(path: str, value: str) -> tuple[str, list[str]]:

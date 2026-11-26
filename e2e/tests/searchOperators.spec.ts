@@ -134,4 +134,73 @@ test.describe("search operator autocomplete", async () => {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/search=hippocampus/);
   });
+
+  test.describe("values of categorical operators", () => {
+    const SPECIES = [
+      { value: "Mus musculus - House mouse", dandisets: 3 },
+      { value: "Rattus norvegicus - Norway rat", dandisets: 1 },
+    ];
+
+    test.beforeEach(async ({ page }) => {
+      // Serve the value list here: the fixture dandisets have no assets summary.
+      await page.route(/\/api\/search\/operator-values\//, (route) => {
+        const operator = new URL(route.request().url()).searchParams.get("operator");
+        return route.fulfill({ json: operator === "species" ? SPECIES : [] });
+      });
+    });
+
+    test("lists an operator's values after its colon, filtered as you type", async ({ page }) => {
+      await page.goto(clientUrl);
+      await dismissCookieBanner(page);
+
+      const search = page.getByPlaceholder(SEARCH_PLACEHOLDER);
+      const listbox = page.locator(".operator-suggestions");
+      await search.click();
+      await search.fill("species:");
+
+      await expect(listbox.getByText("Species", { exact: true })).toBeVisible();
+      await expect(listbox.getByRole("option")).toHaveCount(2);
+      await expect(listbox.getByRole("option").first()).toContainText("Mus musculus - House mouse");
+      await expect(listbox.getByRole("option").first()).toContainText("3");
+
+      await search.fill("species:rat");
+      await expect(listbox.getByRole("option")).toHaveCount(1);
+      await expect(listbox.getByRole("option")).toContainText("Norway rat");
+    });
+
+    test("inserts a chosen value, quoted, and searches for it", async ({ page }) => {
+      await page.goto(clientUrl);
+      await dismissCookieBanner(page);
+
+      const search = page.getByPlaceholder(SEARCH_PLACEHOLDER);
+      await search.click();
+      await search.fill("neuropixels species:rat");
+      // Wait for the value list to arrive before moving into it.
+      await expect(page.locator(".operator-suggestions").getByRole("option")).toHaveCount(1);
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+      await expect(search).toHaveValue('neuropixels species:"Rattus norvegicus - Norway rat" ');
+
+      // The menu now offers operators for the next term; close it and search.
+      await page.keyboard.press("Escape");
+      await page.keyboard.press("Enter");
+      // The router may leave ":" and '"' unencoded in the query string.
+      await expect(page).toHaveURL(/search=neuropixels(\+|%20)species(:|%3A)("|%22)Rattus(\+|%20)norvegicus/);
+      // The trailing space after the chosen value isn't searched.
+      await expect(page).not.toHaveURL(/rat("|%22)(\+|%20)(&|$)/);
+    });
+
+    test("searches for a typed value on Enter without choosing one", async ({ page }) => {
+      await page.goto(clientUrl);
+      await dismissCookieBanner(page);
+
+      const search = page.getByPlaceholder(SEARCH_PLACEHOLDER);
+      await search.click();
+      await search.fill("species:mouse");
+      await expect(page.locator(".operator-suggestions").getByRole("option")).toHaveCount(1);
+      await page.keyboard.press("Enter");
+
+      await expect(page).toHaveURL(/search=species(:|%3A)mouse(&|$)/);
+    });
+  });
 });

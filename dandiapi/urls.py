@@ -37,7 +37,7 @@ from dandiapi.api.views import (
     users_search_view,
     webdav,
 )
-from dandiapi.search.views import search_genotypes, search_species
+from dandiapi.search.views import search_genotypes, search_operator_values, search_species
 from dandiapi.zarr.views import ZarrViewSet
 
 router = ExtendedSimpleRouter()
@@ -88,6 +88,7 @@ api_urlpatterns = [
     path('api/users/questionnaire-form/', user_questionnaire_form_view, name='user-questionnaire'),
     path('api/search/genotypes/', search_genotypes),
     path('api/search/species/', search_species),
+    path('api/search/operator-values/', search_operator_values),
 ]
 schema_view = get_schema_view(
     openapi.Info(
