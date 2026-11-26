@@ -17,8 +17,6 @@ test.describe("search operator autocomplete", async () => {
 
     const listbox = page.locator(".operator-suggestions");
     await expect(listbox).toBeVisible();
-    // A heading marks the list as options to narrow the search, not history.
-    await expect(listbox.getByText("Narrow your search")).toBeVisible();
     // Every operator from the help table should be offered.
     await expect(listbox.getByRole("option")).toHaveCount(12);
     await expect(listbox.getByText("species:", { exact: true })).toBeVisible();
@@ -124,6 +122,8 @@ test.describe("search operator autocomplete", async () => {
 
     const listbox = page.locator(".operator-suggestions");
     await expect(listbox).toBeVisible();
+    // A heading marks the list as options to narrow the search, not history.
+    await expect(listbox.getByText("Narrow your search")).toBeVisible();
 
     await page.keyboard.press("Escape");
     await expect(listbox).toBeHidden();
