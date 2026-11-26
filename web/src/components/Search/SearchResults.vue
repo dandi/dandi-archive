@@ -32,7 +32,7 @@ const dandisets = computed(
 <template>
   <v-container>
     <span class="text-h4">Results ({{ searchResults?.count || 0 }})</span>
-    <v-sheet class="ma-2 pa-2">
+    <v-sheet class="ma-0 pa-0 ma-sm-2 pa-sm-2">
       <v-sheet
         v-if="loading"
         height="100%"
@@ -46,7 +46,7 @@ const dandisets = computed(
       </v-sheet>
       <DandisetList
         v-else-if="dandisets"
-        class="mx-4 mx-md-8 my-8"
+        class="mx-0 mx-sm-4 mx-md-8 my-8"
         :dandisets="dandisets"
       >
         <template

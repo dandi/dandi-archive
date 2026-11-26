@@ -114,6 +114,12 @@ function formatDate(date: string) {
   border-bottom: 1px solid #eee;
 }
 
+/* The three-line list cuts the stats line off after three lines; on narrow screens it needs more. */
+.v-list-item-subtitle {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
 .v-list--three-line .v-list-item .v-list-item__content,
 .v-list-item--three-line .v-list-item__content {
   align-self: center;
