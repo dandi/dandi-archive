@@ -38,6 +38,7 @@
     <v-row no-gutters>
       <v-col class="bg-grey-darken-2 pa-12">
         <DandisetSearchField :dense="false" />
+        <AppTiles />
       </v-col>
     </v-row>
     <StatsBar />
@@ -49,6 +50,7 @@ import { computed, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDisplay } from 'vuetify';
 import StatsBar from '@/views/HomeView/StatsBar.vue';
+import AppTiles from '@/views/HomeView/AppTiles.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import logo from '@/assets/logo.svg';
 
