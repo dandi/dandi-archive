@@ -17,6 +17,8 @@ test.describe("search operator autocomplete", async () => {
 
     const listbox = page.locator(".operator-suggestions");
     await expect(listbox).toBeVisible();
+    // A heading marks the list as options to narrow the search, not history.
+    await expect(listbox.getByText("Narrow your search")).toBeVisible();
     // Every operator from the help table should be offered.
     await expect(listbox.getByRole("option")).toHaveCount(12);
     await expect(listbox.getByText("species:", { exact: true })).toBeVisible();
@@ -37,15 +39,48 @@ test.describe("search operator autocomplete", async () => {
     await expect(listbox.getByText("approach:", { exact: true })).toHaveCount(0);
   });
 
-  test("inserts the highlighted operator on Enter", async ({ page }) => {
+  test("matches the start of an operator's words, not any substring", async ({ page }) => {
+    await page.goto(clientUrl);
+    await dismissCookieBanner(page);
+
+    const search = page.getByPlaceholder(SEARCH_PLACEHOLDER);
+    const listbox = page.locator(".operator-suggestions");
+    await search.click();
+
+    // "after" starts a word of created_after, modified_after and published_after.
+    await search.fill("after");
+    await expect(listbox.getByRole("option")).toHaveCount(3);
+
+    // "ate" is inside "created", but doesn't start any operator word.
+    await search.fill("ate");
+    await expect(listbox).toBeHidden();
+  });
+
+  test("searches for a typed word on Enter, even if it names an operator", async ({ page }) => {
+    await page.goto(clientUrl);
+    await dismissCookieBanner(page);
+
+    const search = page.getByPlaceholder(SEARCH_PLACEHOLDER);
+    await search.click();
+    await search.fill("species");
+    // The dropdown still offers species:, but nothing is highlighted until the
+    // user arrows into the list, so Enter searches for the word itself.
+    await expect(page.locator(".operator-suggestions").getByRole("option")).toHaveCount(1);
+    await page.keyboard.press("Enter");
+
+    await expect(page).toHaveURL(/search=species(&|$)/);
+    await expect(search).toHaveValue("species");
+  });
+
+  test("inserts the operator chosen with the arrow keys on Enter", async ({ page }) => {
     await page.goto(clientUrl);
     await dismissCookieBanner(page);
 
     const search = page.getByPlaceholder(SEARCH_PLACEHOLDER);
     await search.click();
     await search.fill("spe");
-    // The first match auto-highlights while typing a prefix, so Enter inserts
-    // it (rather than submitting the search).
+    await page.keyboard.press("ArrowDown");
+    await expect(page.locator(".operator-suggestions").getByRole("option", { selected: true })).toHaveCount(1);
     await page.keyboard.press("Enter");
 
     await expect(search).toHaveValue("species:");
@@ -53,14 +88,15 @@ test.describe("search operator autocomplete", async () => {
     await expect(search).toBeFocused();
   });
 
-  test("inserts an operator mid-query on the token under the cursor", async ({ page }) => {
+  test("completes an operator mid-query on Tab", async ({ page }) => {
     await page.goto(clientUrl);
     await dismissCookieBanner(page);
 
     const search = page.getByPlaceholder(SEARCH_PLACEHOLDER);
     await search.click();
     await search.fill("neuropixels appr");
-    await page.keyboard.press("Enter");
+    // Tab completes the top match for the word under the cursor.
+    await page.keyboard.press("Tab");
 
     await expect(search).toHaveValue("neuropixels approach:");
   });
