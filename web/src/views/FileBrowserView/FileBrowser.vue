@@ -151,10 +151,11 @@
                     </template>
                   </v-icon>
                 </template>
+                <!-- Wrap long names: they share a subject/session prefix, so the end is what tells them apart. -->
                 <v-list-item-title
                   :title="item.name"
-                  :class="{ 'text-wrap text-break': isXsDisplay }"
-                  :style="isXsDisplay ? 'hyphens: none' : undefined"
+                  class="text-wrap text-break"
+                  style="hyphens: none;"
                 >
                   {{ item.name }}
                 </v-list-item-title>
