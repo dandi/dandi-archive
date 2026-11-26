@@ -226,7 +226,8 @@
                     </v-tooltip>
                   </v-list-item-action>
 
-                  <v-list-item-action v-if="item.asset">
+                  <!-- Files, and folders with somewhere to open them (subjects in DANDI Atlas) -->
+                  <v-list-item-action v-if="item.asset || (item.services && item.services.length)">
                     <v-menu
                       location="bottom left"
                     >
@@ -295,7 +296,7 @@
 <script setup lang="ts">
 import type { Ref } from 'vue';
 import {
-  computed, onMounted, ref, watch,
+  computed, onMounted, ref, toRaw, watch,
 } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import { useRouter, useRoute } from 'vue-router';
@@ -304,8 +305,13 @@ import axios from 'axios';
 
 import { dandiRest, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
+import { useInstanceStore } from '@/stores/instance';
 import type { AssetPath } from '@/types';
 import { getExternalServices } from '@/utils/externalServices';
+import type { Atlas, AtlasLookup } from '@/utils/atlas';
+import {
+  atlasSessionURL, atlasSubjectURL, getAtlasForDandiset, getAtlasLookup,
+} from '@/utils/atlas';
 import FileBrowserPagination from '@/components/FileBrowser/FileBrowserPagination.vue';
 import FileUploadInstructions from '@/components/FileBrowser/FileUploadInstructions.vue';
 import TableViewer from '@/components/FileBrowser/TableViewer.vue';
@@ -460,6 +466,45 @@ async function getItems() {
   // Assign values
   items.value = extendedItems;
   updating.value = false;
+
+  addAtlasServices(extendedItems);
+}
+
+// "DANDI Atlas" in Open With for the subjects (top-level folders) and sessions
+// (files) that the DANDI Atlas viewer has indexed for this Dandiset.
+const instanceStore = useInstanceStore();
+
+function atlasService(item: ExtendedAssetPath, atlas: Atlas, lookup: AtlasLookup): AssetService | undefined {
+  if (item.asset) {
+    const subject = lookup.sessions.get(item.asset.asset_id);
+    return subject === undefined ? undefined : {
+      name: 'DANDI Atlas',
+      url: atlasSessionURL(atlas.key, props.identifier, subject, item.asset.asset_id),
+    };
+  }
+  if (!item.path.includes('/') && lookup.subjects.has(item.path)) {
+    return { name: 'DANDI Atlas', url: atlasSubjectURL(atlas.key, props.identifier, item.path) };
+  }
+  return undefined;
+}
+
+async function addAtlasServices(listed: ExtendedAssetPath[]) {
+  // The viewer only indexes Dandisets on the production instance; identifiers on
+  // other deployments would resolve to unrelated data.
+  await instanceStore.load();
+  if (!instanceStore.isProduction) {
+    return;
+  }
+  const atlas = await getAtlasForDandiset(props.identifier);
+  const lookup = atlas && await getAtlasLookup(atlas.key, props.identifier);
+  // Skip if there's nothing to add, or the user has moved to another folder or page.
+  if (!atlas || !lookup || toRaw(items.value) !== listed) {
+    return;
+  }
+  items.value = listed.map((item) => {
+    const service = atlasService(item, atlas, lookup);
+    return service ? { ...item, services: [...(item.services ?? []), service] } : item;
+  });
 }
 
 function setItemToDelete(item: AssetPath) {
