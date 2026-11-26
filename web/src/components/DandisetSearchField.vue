@@ -15,6 +15,8 @@
       role="combobox"
       aria-autocomplete="list"
       :aria-expanded="showSuggestions"
+      aria-controls="operator-suggestions"
+      :aria-activedescendant="highlightedIndex >= 0 ? `operator-option-${highlightedIndex}` : undefined"
       @focus="onFocus"
       @blur="onBlur"
       @keydown="onKeydown"
@@ -72,41 +74,54 @@
       </template>
     </v-text-field>
 
-    <!-- Operator suggestions, GitHub-style. Teleported to the body so the
-         toolbar's `overflow: hidden` doesn't clip it, and positioned manually
-         beneath the input. Focus stays in the input (mousedown is prevented on
-         the list) so the user can keep typing and use the keyboard to select. -->
+    <!-- Operator suggestions, styled after GitHub's search filter menu: a
+         compact menu with a heading and one-line rows, so it reads as a set of
+         options, not a history. Teleported to the body so the toolbar's
+         `overflow: hidden` doesn't clip it, and positioned by hand beneath the
+         input. Focus stays in the input (mousedown is prevented on the menu)
+         so the user can keep typing; nothing is selected until they use the
+         arrow keys or click, so Enter always searches for what was typed. -->
     <Teleport to="body">
       <v-card
         v-if="showSuggestions"
-        class="operator-suggestions py-1"
+        class="operator-suggestions"
         :style="dropdownStyle"
-        elevation="6"
-        role="listbox"
+        elevation="4"
+        rounded="lg"
+        border
+        @mousedown.prevent
       >
+        <div class="operator-suggestions-heading">
+          Narrow your search
+        </div>
         <v-list
+          id="operator-suggestions"
           density="compact"
-          class="py-0"
+          class="py-1"
+          role="listbox"
         >
           <v-list-item
             v-for="(op, i) in suggestions"
+            :id="`operator-option-${i}`"
             :key="op.key"
             :active="i === highlightedIndex"
             role="option"
             :aria-selected="i === highlightedIndex"
-            @mousedown.prevent
-            @mouseenter="highlightedIndex = i"
+            min-height="32"
+            class="operator-option"
             @click="applyOperator(op)"
           >
-            <template #title>
-              <code class="operator-key">{{ op.key }}:</code><code
-                v-if="op.example"
-                class="operator-example"
-              >{{ op.example }}</code>
-            </template>
-            <template #subtitle>
-              {{ op.description }}
-            </template>
+            <!-- A plain title attribute: v-list-item's own `title` prop would render it as text. -->
+            <div
+              class="d-flex align-center ga-3"
+              :title="op.description"
+            >
+              <v-icon size="small">
+                {{ OPERATOR_ICONS[op.key] || 'mdi-filter-variant' }}
+              </v-icon>
+              <span class="operator-key">{{ op.key }}:</span>
+              <span class="operator-example ml-auto">{{ op.example }}</span>
+            </div>
           </v-list-item>
         </v-list>
       </v-card>
@@ -166,6 +181,23 @@ const searchOperators = operatorHelp.map((op) => {
   };
 });
 
+// An icon per operator in the suggestions menu. Operators without one get a
+// generic filter icon.
+const OPERATOR_ICONS: Record<string, string> = {
+  created_after: 'mdi-calendar-start',
+  created_before: 'mdi-calendar-end',
+  modified_after: 'mdi-calendar-edit',
+  modified_before: 'mdi-calendar-edit',
+  published_after: 'mdi-calendar-check',
+  published_before: 'mdi-calendar-check',
+  species: 'mdi-paw',
+  approach: 'mdi-flask-outline',
+  technique: 'mdi-tools',
+  standard: 'mdi-file-certificate-outline',
+  variable: 'mdi-chart-line',
+  owner: 'mdi-account-outline',
+};
+
 // --- Autocomplete state ---------------------------------------------------
 
 const inputEl = ref<HTMLInputElement | null>(null);
@@ -205,14 +237,17 @@ const suggestions = computed(() => {
   if (!q) {
     return searchOperators;
   }
-  return searchOperators.filter((op) => op.key.toLowerCase().includes(q));
+  // Match the start of the operator or of one of its words ("pub" or "after"
+  // for published_after), not any substring: "ate" shouldn't offer created_*.
+  return searchOperators.filter((op) => op.key.toLowerCase().split('_').concat(op.key.toLowerCase())
+    .some((word) => word.startsWith(q)));
 });
 
-// Auto-highlight the first match while the user is actively typing an operator
-// prefix, but highlight nothing when simply browsing the full list (empty
-// token) so that Enter submits the search instead of inserting an operator.
-watch(suggestions, (list) => {
-  highlightedIndex.value = currentToken.value && list.length ? 0 : -1;
+// Nothing is highlighted until the user moves into the list with the arrow
+// keys, so Enter searches for what was typed (e.g. a free-text "species")
+// instead of turning it into an operator.
+watch(suggestions, () => {
+  highlightedIndex.value = -1;
 });
 
 const showSuggestions = computed(
@@ -230,11 +265,15 @@ const dropdownStyle = computed(() => {
   if (!rect.value) {
     return {};
   }
+  // A compact menu like GitHub's: up to 360px wide whatever the input's width
+  // (the input is narrow on phones), kept inside the window.
+  const width = Math.min(360, window.innerWidth - 16);
+  const left = Math.max(8, Math.min(rect.value.left, window.innerWidth - width - 8));
   return {
     position: 'fixed' as const,
     top: `${rect.value.bottom + 2}px`,
-    left: `${rect.value.left}px`,
-    width: `${rect.value.width}px`,
+    left: `${left}px`,
+    width: `${width}px`,
     zIndex: 2400,
   };
 });
@@ -296,11 +335,16 @@ function onKeydown(evt: KeyboardEvent) {
   } else if (evt.key === 'ArrowUp') {
     evt.preventDefault();
     highlightedIndex.value = (highlightedIndex.value <= 0 ? count : highlightedIndex.value) - 1;
-  } else if ((evt.key === 'Enter' || evt.key === 'Tab') && highlightedIndex.value >= 0) {
-    // Select the highlighted operator. Preventing default stops the form from
-    // submitting (Enter) or moving focus away (Tab) so typing can continue.
+  } else if (evt.key === 'Enter' && highlightedIndex.value >= 0) {
+    // Insert the operator the user arrowed to. Preventing default stops the
+    // form from submitting so typing can continue.
     evt.preventDefault();
     applyOperator(suggestions.value[highlightedIndex.value]);
+  } else if (evt.key === 'Tab' && (highlightedIndex.value >= 0 || currentToken.value)) {
+    // Tab completes the highlighted operator, or the top match while typing
+    // one. It never submits, so it can't get in the way of a search.
+    evt.preventDefault();
+    applyOperator(suggestions.value[Math.max(highlightedIndex.value, 0)]);
   } else if (evt.key === 'Escape') {
     evt.preventDefault();
     dismissed.value = true;
@@ -360,14 +404,28 @@ function performSearch(evt: Event) {
 /* Unscoped: the suggestions card is teleported to <body>, outside this
  * component's scoped-style boundary. */
 .operator-suggestions {
-  max-height: 320px;
+  max-height: 360px;
   overflow-y: auto;
 }
-.operator-suggestions .operator-key {
+.operator-suggestions .operator-suggestions-heading {
+  padding: 8px 16px 4px;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: #4051b5;
+  color: rgba(0, 0, 0, 0.6);
+}
+.operator-suggestions .operator-option .v-icon {
+  opacity: 0.7;
+}
+.operator-suggestions .operator-key {
+  font-size: 0.875rem;
+  white-space: nowrap;
 }
 .operator-suggestions .operator-example {
+  font-size: 0.75rem;
   color: rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 </style>
