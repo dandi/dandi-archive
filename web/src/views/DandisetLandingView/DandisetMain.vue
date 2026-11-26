@@ -238,7 +238,8 @@
       </v-row>
     </v-card>
 
-    <!-- Tab navigation -->
+    <!-- Tab navigation. The empty div marks where the tabs start, for scrolling to them. -->
+    <div ref="tabsTop" />
     <v-tabs
       v-model="currentTab"
       bg-color="grey-lighten-5"
@@ -274,6 +275,7 @@
 <script setup lang="ts">
 import {
   computed,
+  nextTick,
   ref,
   watch,
   watchEffect,
@@ -295,6 +297,7 @@ import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from
 import HowToCiteTab from '@/components/DLP/HowToCiteTab.vue';
 import NotebooksTab from '@/components/DLP/NotebooksTab.vue';
 import OverviewTab from '@/components/DLP/OverviewTab.vue';
+import { tabAnchor, useLandingAnchor } from '@/utils/landingAnchor';
 import ShareDialog from './ShareDialog.vue';
 import StarButton from '@/components/StarButton.vue';
 
@@ -396,6 +399,49 @@ watch(
   },
   { immediate: true },
 );
+
+// The URL anchor names the open tab (#how-to-cite, #notebooks); Overview has none.
+// The anchor's tab is selected once it exists: Notebooks appears only after its list
+// loads. Choosing a tab updates the anchor.
+const { anchor, setAnchor } = useLandingAnchor();
+const isTabAnchor = (key: string) => tabs.value.some((tab) => tabAnchor(tab.name) === key);
+
+// Like any anchor, a tab named in the URL the page opened with is scrolled into view
+// (once): the tabs are usually below the fold. Clicking a tab doesn't scroll.
+const tabsTop = ref<HTMLElement | null>(null);
+let scrollToAnchoredTab = !!anchor.value.key;
+const APP_BAR_HEIGHT = 64;
+
+watch([() => anchor.value.key, tabs], ([key]) => {
+  const index = tabs.value.findIndex((tab) => tabAnchor(tab.name) === key);
+  if (index >= 0) {
+    currentTab.value = index;
+    if (scrollToAnchoredTab && index > 0) {
+      scrollToAnchoredTab = false;
+      nextTick(() => {
+        const top = tabsTop.value?.getBoundingClientRect().top;
+        if (top !== undefined) {
+          window.scrollTo({ top: window.scrollY + top - APP_BAR_HEIGHT });
+        }
+      });
+    }
+  }
+}, { immediate: true });
+
+watch(currentTab, (index) => {
+  const tab = tabs.value[index];
+  if (!tab) {
+    return;
+  }
+  if (index === 0) {
+    // Only clear a tab's anchor, not one for a dialog that is open over the page.
+    if (isTabAnchor(anchor.value.key)) {
+      setAnchor(null);
+    }
+  } else if (anchor.value.key !== tabAnchor(tab.name)) {
+    setAnchor(tabAnchor(tab.name));
+  }
+});
 
 function formatDate(date: string): string {
   return moment(date).format('LL');

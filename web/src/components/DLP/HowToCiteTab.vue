@@ -236,9 +236,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type PropType, ref } from 'vue';
+import {
+  computed, type PropType, ref, watch,
+} from 'vue';
 
 import { useDandisetStore } from '@/stores/dandiset';
+import { useLandingAnchor } from '@/utils/landingAnchor';
 import type { DandisetMetadata } from '@/types';
 import { dandisetToCFF, cffToBibTeX, cffToAPA, cffToMLA, cffToChicago, cffToHarvard, cffToVancouver, cffToIEEE, cffToRIS, cffToYAML } from '@/utils/cff';
 
@@ -331,6 +334,20 @@ const citationFormats: Array<{ value: CitationFormat; text: string; icon: string
   { value: 'ris', text: 'RIS', icon: 'mdi-file-export' },
   { value: 'cff', text: 'CFF (YAML)', icon: 'mdi-file-code' },
 ];
+
+// The citation style is part of the tab's URL anchor (#how-to-cite=mla), so a link
+// can open a given style. APA, the default, needs no value.
+const CITE_ANCHOR = 'how-to-cite';
+const { anchor, setAnchor } = useLandingAnchor();
+watch(anchor, ({ key, value }) => {
+  const format = citationFormats.find((f) => f.value === value);
+  if (key === CITE_ANCHOR && format) {
+    selectedCitationFormat.value = format.value;
+  }
+}, { immediate: true });
+watch(selectedCitationFormat, (format) => {
+  setAnchor(CITE_ANCHOR, format === 'apa' ? undefined : format);
+});
 
 const citation = computed(() => props.meta?.citation);
 const doi = computed(() => props.meta?.doi);
