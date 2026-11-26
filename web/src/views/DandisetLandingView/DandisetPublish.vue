@@ -341,6 +341,7 @@ import { useDandisetStore } from '@/stores/dandiset';
 import router from '@/router';
 import type { User, Version } from '@/types';
 import { draftVersion as draftVersionName } from '@/utils/constants';
+import { useLandingAnchor } from '@/utils/landingAnchor';
 import DandisetValidationErrors from './DandisetValidationErrors.vue';
 
 
@@ -504,6 +505,21 @@ const showReleaseNotesDialogVisible = ref(false);
 const releaseNotes = ref('');
 const showReleaseNotesViewDialog = ref(false);
 const selectedVersionForNotes = ref<Version | null>(null);
+
+// #release-notes=<version> shows that version's release notes, and opening or closing
+// them updates the URL. The anchor waits for the version list to load.
+const { syncDialog } = useLandingAnchor();
+syncDialog(showReleaseNotesViewDialog, 'release-notes', {
+  value: () => selectedVersionForNotes.value?.version,
+  accept: (version) => {
+    const match = allVersions.value?.find((v) => v.version === version && v.release_notes);
+    if (match) {
+      selectedVersionForNotes.value = match;
+    }
+    return !!match;
+  },
+  ready: () => allVersions.value,
+});
 
 function formatDate(date: string): string {
   return moment(date).format('ll');

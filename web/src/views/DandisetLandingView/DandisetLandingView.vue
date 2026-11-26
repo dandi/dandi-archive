@@ -122,7 +122,8 @@ import Meditor from '@/components/Meditor/Meditor.vue';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
-import { editorInterface } from '@/components/Meditor/state';
+import { editorInterface, open as meditorOpen } from '@/components/Meditor/state';
+import { useLandingAnchor } from '@/utils/landingAnchor';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
 
@@ -171,6 +172,10 @@ const schema = computed(() => store.schema);
 const userCanModifyDandiset = computed(() => store.userCanModifyDandiset);
 
 const meta = computed(() => (currentDandiset.value ? currentDandiset.value.metadata : {}));
+
+// #metadata opens the metadata editor, and opening or closing it updates the URL.
+const { syncDialog } = useLandingAnchor();
+syncDialog(meditorOpen, 'metadata');
 
 function navigateToVersion(versionToNavigateTo: string) {
   if (route.params.version === versionToNavigateTo) return;
