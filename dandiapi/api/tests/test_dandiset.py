@@ -2074,6 +2074,90 @@ def test_advanced_search_species_respects_embargo_visibility(api_client):
     assert _search_ids(api_client, 'species:mouse') == {open_ds.identifier}
 
 
+# --- Operator value suggestions -----------------------------------------------------------------
+
+
+def _operator_values(api_client, operator: str) -> list[dict]:
+    response = api_client.get('/api/search/operator-values/', {'operator': operator})
+    assert response.status_code == 200
+    return response.json()
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_operator_values_lists_species_most_common_first(api_client):
+    _seed_dandiset_with_summary(assets_summary={'species': [{'name': 'House mouse'}]})
+    _seed_dandiset_with_summary(
+        assets_summary={'species': [{'name': 'House mouse'}, {'name': 'Norway rat'}]},
+    )
+    _seed_dandiset_with_summary(assets_summary={'species': [{'name': 'Human'}]})
+
+    assert _operator_values(api_client, 'species') == [
+        {'value': 'House mouse', 'dandisets': 2},
+        {'value': 'Human', 'dandisets': 1},
+        {'value': 'Norway rat', 'dandisets': 1},
+    ]
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_operator_values_omit_embargoed_dandisets(api_client):
+    _seed_dandiset_with_summary(assets_summary={'species': [{'name': 'House mouse'}]})
+    _seed_dandiset_with_summary(
+        assets_summary={'species': [{'name': 'House mouse'}, {'name': 'Secret species'}]},
+        embargoed=True,
+    )
+
+    # The embargoed dandiset adds neither a value nor a count.
+    assert _operator_values(api_client, 'species') == [{'value': 'House mouse', 'dandisets': 1}]
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_operator_values_cover_each_summary_operator(api_client):
+    _seed_dandiset_with_summary(
+        assets_summary={
+            'approach': [{'name': 'electrophysiological approach'}],
+            'measurementTechnique': [{'name': 'spike sorting technique'}],
+            'dataStandard': [{'name': 'Neurodata Without Borders (NWB)'}],
+            # variableMeasured holds bare strings, not objects with a name.
+            'variableMeasured': ['LFP', 'Units', ''],
+        },
+    )
+
+    assert _operator_values(api_client, 'approach') == [
+        {'value': 'electrophysiological approach', 'dandisets': 1},
+    ]
+    assert _operator_values(api_client, 'technique') == [
+        {'value': 'spike sorting technique', 'dandisets': 1},
+    ]
+    assert _operator_values(api_client, 'standard') == [
+        {'value': 'Neurodata Without Borders (NWB)', 'dandisets': 1},
+    ]
+    # Empty strings are dropped.
+    assert _operator_values(api_client, 'variable') == [
+        {'value': 'LFP', 'dandisets': 1},
+        {'value': 'Units', 'dandisets': 1},
+    ]
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+def test_operator_values_are_cacheable(api_client):
+    response = api_client.get('/api/search/operator-values/', {'operator': 'species'})
+    assert response.status_code == 200
+    assert response.json() == []
+    assert response['Cache-Control'] == 'public, max-age=600'
+
+
+@pytest.mark.ai_generated
+@pytest.mark.django_db
+@pytest.mark.parametrize('operator', ['', 'owner', 'created_after', 'nonsense'])
+def test_operator_values_reject_operators_without_listable_values(api_client, operator):
+    response = api_client.get('/api/search/operator-values/', {'operator': operator})
+    assert response.status_code == 400
+
+
 # --- owner: operator -----------------------------------------------------------------------------
 
 

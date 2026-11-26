@@ -15,6 +15,8 @@
       role="combobox"
       aria-autocomplete="list"
       :aria-expanded="showSuggestions"
+      aria-controls="operator-suggestions"
+      :aria-activedescendant="highlightedIndex >= 0 ? `operator-option-${highlightedIndex}` : undefined"
       @focus="onFocus"
       @blur="onBlur"
       @keydown="onKeydown"
@@ -72,41 +74,67 @@
       </template>
     </v-text-field>
 
-    <!-- Operator suggestions, GitHub-style. Teleported to the body so the
-         toolbar's `overflow: hidden` doesn't clip it, and positioned manually
-         beneath the input. Focus stays in the input (mousedown is prevented on
-         the list) so the user can keep typing and use the keyboard to select. -->
+    <!-- Operator suggestions, styled after GitHub's search filter menu: a
+         compact menu with a heading and one-line rows, so it reads as a set of
+         options, not a history. Teleported to the body so the toolbar's
+         `overflow: hidden` doesn't clip it, and positioned by hand beneath the
+         input. Focus stays in the input (mousedown is prevented on the menu)
+         so the user can keep typing; nothing is selected until they use the
+         arrow keys or click, so Enter always searches for what was typed. -->
     <Teleport to="body">
       <v-card
         v-if="showSuggestions"
-        class="operator-suggestions py-1"
+        class="operator-suggestions"
         :style="dropdownStyle"
-        elevation="6"
-        role="listbox"
+        elevation="4"
+        rounded="lg"
+        border
+        @mousedown.prevent
       >
+        <div class="operator-suggestions-heading d-flex">
+          {{ menu.heading }}
+          <span
+            v-if="menu.detailHeading"
+            class="ml-auto"
+          >{{ menu.detailHeading }}</span>
+        </div>
+        <div
+          v-if="menu.loading"
+          class="operator-suggestions-status"
+        >
+          Loading values…
+        </div>
         <v-list
+          id="operator-suggestions"
           density="compact"
-          class="py-0"
+          class="py-1"
+          role="listbox"
         >
           <v-list-item
-            v-for="(op, i) in suggestions"
-            :key="op.key"
+            v-for="(item, i) in menu.items"
+            :id="`operator-option-${i}`"
+            :key="item.id"
             :active="i === highlightedIndex"
             role="option"
             :aria-selected="i === highlightedIndex"
-            @mousedown.prevent
-            @mouseenter="highlightedIndex = i"
-            @click="applyOperator(op)"
+            min-height="32"
+            class="operator-option"
+            @click="item.apply()"
           >
-            <template #title>
-              <code class="operator-key">{{ op.key }}:</code><code
-                v-if="op.example"
-                class="operator-example"
-              >{{ op.example }}</code>
-            </template>
-            <template #subtitle>
-              {{ op.description }}
-            </template>
+            <!-- A plain title attribute: v-list-item's own `title` prop would render it as text. -->
+            <div
+              class="d-flex align-center ga-3"
+              :title="item.tooltip"
+            >
+              <v-icon
+                v-if="item.icon"
+                size="small"
+              >
+                {{ item.icon }}
+              </v-icon>
+              <span class="operator-key">{{ item.label }}</span>
+              <span class="operator-example ml-auto">{{ item.detail }}</span>
+            </div>
           </v-list-item>
         </v-list>
       </v-card>
@@ -121,6 +149,7 @@ import {
 import type { RouteLocationRaw } from 'vue-router';
 import { useRoute } from 'vue-router';
 import router from '@/router';
+import { client } from '@/rest';
 
 defineProps({
   dense: {
@@ -166,6 +195,23 @@ const searchOperators = operatorHelp.map((op) => {
   };
 });
 
+// An icon per operator in the suggestions menu. Operators without one get a
+// generic filter icon.
+const OPERATOR_ICONS: Record<string, string> = {
+  created_after: 'mdi-calendar-start',
+  created_before: 'mdi-calendar-end',
+  modified_after: 'mdi-calendar-edit',
+  modified_before: 'mdi-calendar-edit',
+  published_after: 'mdi-calendar-check',
+  published_before: 'mdi-calendar-check',
+  species: 'mdi-paw',
+  approach: 'mdi-flask-outline',
+  technique: 'mdi-tools',
+  standard: 'mdi-file-certificate-outline',
+  variable: 'mdi-chart-line',
+  owner: 'mdi-account-outline',
+};
+
 // --- Autocomplete state ---------------------------------------------------
 
 const inputEl = ref<HTMLInputElement | null>(null);
@@ -176,9 +222,19 @@ const highlightedIndex = ref(-1);
 // The whitespace-delimited token currently under the cursor.
 const currentToken = ref('');
 
+// The token under the cursor runs back to the last space that isn't inside
+// double quotes, so `species:"house mo` is one token.
 function getCurrentToken(text: string, cursor: number): { start: number; token: string } {
   const before = text.slice(0, cursor);
-  const start = before.lastIndexOf(' ') + 1;
+  let start = 0;
+  let inQuotes = false;
+  for (let i = 0; i < before.length; i += 1) {
+    if (before[i] === '"') {
+      inQuotes = !inQuotes;
+    } else if (before[i] === ' ' && !inQuotes) {
+      start = i + 1;
+    }
+  }
   return { start, token: before.slice(start) };
 }
 
@@ -194,10 +250,10 @@ watch(searchText, () => {
   updateToken();
 });
 
-const suggestions = computed(() => {
+const operatorSuggestions = computed(() => {
   const token = currentToken.value;
   // Once the user has typed the colon, they're entering a value, not picking
-  // an operator — stop suggesting.
+  // an operator.
   if (token.includes(':')) {
     return [];
   }
@@ -205,18 +261,131 @@ const suggestions = computed(() => {
   if (!q) {
     return searchOperators;
   }
-  return searchOperators.filter((op) => op.key.toLowerCase().includes(q));
+  // Match the start of the operator or of one of its words ("pub" or "after"
+  // for published_after), not any substring: "ate" shouldn't offer created_*.
+  return searchOperators.filter((op) => op.key.toLowerCase().split('_').concat(op.key.toLowerCase())
+    .some((word) => word.startsWith(q)));
 });
 
-// Auto-highlight the first match while the user is actively typing an operator
-// prefix, but highlight nothing when simply browsing the full list (empty
-// token) so that Enter submits the search instead of inserting an operator.
-watch(suggestions, (list) => {
-  highlightedIndex.value = currentToken.value && list.length ? 0 : -1;
+// --- Value suggestions for categorical operators ---------------------------
+
+// Operators whose values come from the dandisets' assets summaries. After
+// `species:` and the like, the menu lists the values found on DANDI, most
+// common first. Headings name what the counts on the right are.
+const VALUE_OPERATOR_HEADINGS: Record<string, string> = {
+  species: 'Species',
+  approach: 'Approaches',
+  technique: 'Measurement techniques',
+  standard: 'Data standards',
+  variable: 'Variables measured',
+};
+// Long lists (e.g. variables) are cut to this many matches; typing narrows them.
+const MAX_VALUE_SUGGESTIONS = 50;
+
+interface OperatorValue {
+  value: string;
+  dandisets: number;
+}
+
+// Each operator's values, fetched once per page when first needed.
+const operatorValues = ref<Record<string, OperatorValue[]>>({});
+const loadingValuesFor = ref<string | null>(null);
+
+// `species:"house mo` -> { key: 'species', partial: 'house mo' }; null when
+// the token isn't a categorical operator followed by its colon.
+const valueToken = computed(() => {
+  const match = /^([a-z_]+):(.*)$/.exec(currentToken.value);
+  if (!match || !(match[1] in VALUE_OPERATOR_HEADINGS)) {
+    return null;
+  }
+  return { key: match[1], partial: match[2].replace(/^"/, '').replace(/"$/, '') };
+});
+
+async function loadOperatorValues(key: string) {
+  if (operatorValues.value[key] || loadingValuesFor.value === key) {
+    return;
+  }
+  loadingValuesFor.value = key;
+  try {
+    const { data } = await client.get<OperatorValue[]>('search/operator-values/', { params: { operator: key } });
+    operatorValues.value = { ...operatorValues.value, [key]: data };
+  } catch {
+    // Without a list the field still works: the user types the value.
+    operatorValues.value = { ...operatorValues.value, [key]: [] };
+  } finally {
+    if (loadingValuesFor.value === key) {
+      loadingValuesFor.value = null;
+    }
+  }
+}
+
+watch(() => valueToken.value?.key, (key) => {
+  if (key) {
+    loadOperatorValues(key);
+  }
+});
+
+// Values with spaces (most of them) are quoted so the parser keeps them whole.
+function formatValue(value: string): string {
+  const plain = value.replaceAll('"', '');
+  return /\s/.test(plain) ? `"${plain}"` : plain;
+}
+
+// --- The menu: operators, or one operator's values -------------------------
+
+interface MenuItem {
+  id: string;
+  label: string;
+  detail: string;
+  tooltip?: string;
+  icon?: string;
+  apply: () => void;
+}
+
+const menu = computed<{ heading: string; detailHeading?: string; items: MenuItem[]; loading: boolean }>(() => {
+  const vt = valueToken.value;
+  if (vt) {
+    const all = operatorValues.value[vt.key];
+    const partial = vt.partial.toLowerCase();
+    const matches = (all ?? [])
+      .filter((v) => v.value.toLowerCase().includes(partial))
+      .slice(0, MAX_VALUE_SUGGESTIONS);
+    return {
+      heading: VALUE_OPERATOR_HEADINGS[vt.key],
+      detailHeading: matches.length ? 'Dandisets' : undefined,
+      loading: !all,
+      items: matches.map((v) => ({
+        id: `${vt.key}:${v.value}`,
+        label: v.value,
+        detail: String(v.dandisets),
+        tooltip: `${v.value} (${v.dandisets} dandiset${v.dandisets === 1 ? '' : 's'})`,
+        apply: () => applyValue(vt.key, v.value),
+      })),
+    };
+  }
+  return {
+    heading: 'Narrow your search',
+    loading: false,
+    items: operatorSuggestions.value.map((op) => ({
+      id: op.key,
+      label: `${op.key}:`,
+      detail: op.example,
+      tooltip: op.description,
+      icon: OPERATOR_ICONS[op.key] || 'mdi-filter-variant',
+      apply: () => applyOperator(op),
+    })),
+  };
+});
+
+// Nothing is highlighted until the user moves into the list with the arrow
+// keys, so Enter searches for what was typed (e.g. a free-text "species")
+// instead of turning it into an operator or value.
+watch(() => menu.value.items.map((item) => item.id).join('\n'), () => {
+  highlightedIndex.value = -1;
 });
 
 const showSuggestions = computed(
-  () => focused.value && !dismissed.value && suggestions.value.length > 0,
+  () => focused.value && !dismissed.value && (menu.value.items.length > 0 || menu.value.loading),
 );
 
 // --- Dropdown positioning (teleported, so we place it by hand) -------------
@@ -230,11 +399,15 @@ const dropdownStyle = computed(() => {
   if (!rect.value) {
     return {};
   }
+  // A compact menu like GitHub's: up to 360px wide whatever the input's width
+  // (the input is narrow on phones), kept inside the window.
+  const width = Math.min(360, window.innerWidth - 16);
+  const left = Math.max(8, Math.min(rect.value.left, window.innerWidth - width - 8));
   return {
     position: 'fixed' as const,
     top: `${rect.value.bottom + 2}px`,
-    left: `${rect.value.left}px`,
-    width: `${rect.value.width}px`,
+    left: `${left}px`,
+    width: `${width}px`,
     zIndex: 2400,
   };
 });
@@ -264,13 +437,13 @@ function onBlur() {
   focused.value = false;
 }
 
-function applyOperator(op: { key: string }) {
+// Replace the token under the cursor with `insert`, leaving the cursor after it.
+function replaceToken(insert: string) {
   const el = inputEl.value;
   const cursor = el ? (el.selectionStart ?? searchText.value.length) : searchText.value.length;
   const { start } = getCurrentToken(searchText.value, cursor);
   const before = searchText.value.slice(0, start);
   const after = searchText.value.slice(cursor);
-  const insert = `${op.key}:`;
   searchText.value = `${before}${insert}${after}`;
   const newCursor = before.length + insert.length;
   nextTick(() => {
@@ -282,6 +455,15 @@ function applyOperator(op: { key: string }) {
   });
 }
 
+function applyOperator(op: { key: string }) {
+  replaceToken(`${op.key}:`);
+}
+
+// A chosen value ends the term, so a space follows it, ready for the next one.
+function applyValue(key: string, value: string) {
+  replaceToken(`${key}:${formatValue(value)} `);
+}
+
 function onKeydown(evt: KeyboardEvent) {
   if (evt.target instanceof HTMLInputElement) {
     inputEl.value = evt.target;
@@ -289,18 +471,28 @@ function onKeydown(evt: KeyboardEvent) {
   if (!showSuggestions.value) {
     return;
   }
-  const count = suggestions.value.length;
+  const { items } = menu.value;
+  const count = items.length;
+  // While values are loading the menu has no rows to move through.
+  if ((evt.key === 'ArrowDown' || evt.key === 'ArrowUp') && !count) {
+    return;
+  }
   if (evt.key === 'ArrowDown') {
     evt.preventDefault();
     highlightedIndex.value = (Math.max(highlightedIndex.value, -1) + 1) % count;
   } else if (evt.key === 'ArrowUp') {
     evt.preventDefault();
     highlightedIndex.value = (highlightedIndex.value <= 0 ? count : highlightedIndex.value) - 1;
-  } else if ((evt.key === 'Enter' || evt.key === 'Tab') && highlightedIndex.value >= 0) {
-    // Select the highlighted operator. Preventing default stops the form from
-    // submitting (Enter) or moving focus away (Tab) so typing can continue.
+  } else if (evt.key === 'Enter' && highlightedIndex.value >= 0) {
+    // Insert the operator the user arrowed to. Preventing default stops the
+    // form from submitting so typing can continue.
     evt.preventDefault();
-    applyOperator(suggestions.value[highlightedIndex.value]);
+    items[highlightedIndex.value].apply();
+  } else if (evt.key === 'Tab' && count && (highlightedIndex.value >= 0 || currentToken.value)) {
+    // Tab completes the highlighted operator, or the top match while typing
+    // one. It never submits, so it can't get in the way of a search.
+    evt.preventDefault();
+    items[Math.max(highlightedIndex.value, 0)].apply();
   } else if (evt.key === 'Escape') {
     evt.preventDefault();
     dismissed.value = true;
@@ -309,20 +501,22 @@ function onKeydown(evt: KeyboardEvent) {
 
 function performSearch(evt: Event) {
   evt.preventDefault(); // prevent form submission from refreshing page
+  // A chosen value leaves a trailing space for the next term; don't search on it.
+  const query = searchText.value.trim();
 
   if (route.name === 'searchDandisets' || route.name === 'myDandisets') {
     // Already on a search page: only re-run the search if the query actually
     // changed, so pressing Enter on an unchanged field is a no-op. Staying on
     // the current page keeps its context — on "My Dandisets" this scopes the
     // search to the user's own dandisets (including embargoed).
-    if (searchText.value === (route.query.search || '')) {
+    if (query === (route.query.search || '')) {
       return;
     }
     router.replace({
       ...route,
       query: {
         ...route.query,
-        search: searchText.value,
+        search: query,
       },
     } as RouteLocationRaw);
     return;
@@ -334,7 +528,7 @@ function performSearch(evt: Event) {
   router.push({
     name: 'searchDandisets',
     query: {
-      search: searchText.value,
+      search: query,
     },
   });
 }
@@ -360,14 +554,39 @@ function performSearch(evt: Event) {
 /* Unscoped: the suggestions card is teleported to <body>, outside this
  * component's scoped-style boundary. */
 .operator-suggestions {
-  max-height: 320px;
+  max-height: 360px;
   overflow-y: auto;
 }
-.operator-suggestions .operator-key {
+.operator-suggestions .operator-suggestions-heading {
+  padding: 8px 16px 4px;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: #4051b5;
+  color: rgba(0, 0, 0, 0.6);
+}
+.operator-suggestions .operator-option .v-icon {
+  opacity: 0.7;
+}
+.operator-suggestions .operator-suggestions-status {
+  padding: 4px 16px 8px;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.6);
+}
+/* Long values (e.g. measurement techniques) end in an ellipsis; the full
+ * value is in the row's tooltip. */
+.operator-suggestions .operator-key {
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 .operator-suggestions .operator-example {
+  font-size: 0.75rem;
   color: rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 0;
 }
 </style>

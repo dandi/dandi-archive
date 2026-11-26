@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 import sentry_sdk
 
+from dandiapi.api.services.search.values import SUMMARY_OPERATORS, summary_operator_values
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.search.models import AssetSearch
 
@@ -89,4 +90,26 @@ def search_species(request):
             level='warning',
         )
 
+    return response
+
+
+@swagger_auto_schema(methods=['GET'], auto_schema=None)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def search_operator_values(request):
+    """List the values of a search operator such as ``species:``, for autocompletion.
+
+    Takes ``?operator=species`` (or approach, technique, standard, variable) and
+    returns ``[{"value": ..., "dandisets": n}, ...]``, most common first.
+    """
+    operator = request.query_params.get('operator', '')
+    if operator not in SUMMARY_OPERATORS:
+        return JsonResponse(
+            {'detail': f'operator must be one of: {", ".join(sorted(SUMMARY_OPERATORS))}'},
+            status=400,
+        )
+    response = JsonResponse(summary_operator_values(operator), safe=False)
+    # The same for every user (only open dandisets are counted), and only
+    # changes as assets are added, so browsers may reuse it for a while.
+    response['Cache-Control'] = 'public, max-age=600'
     return response
