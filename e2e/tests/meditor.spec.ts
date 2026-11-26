@@ -60,7 +60,12 @@ test.describe("Test meditor validation errors", async () => {
       await page.keyboard.press("End");
       await page.keyboard.press("Backspace");
       await page.keyboard.press("Tab");
-      await page.locator(".v-card-actions > button").first().click();
+      // The metadata editor's Save button. Find it by its icon: a page-wide
+      // ".v-card-actions > button" also matches buttons in the sidebar behind the dialog.
+      await page
+        .locator(".v-card-actions > button")
+        .filter({ has: page.locator(".mdi-content-save, .mdi-content-save-alert") })
+        .click();
       await page.waitForTimeout(3000);
       await page.waitForLoadState("networkidle");
 
