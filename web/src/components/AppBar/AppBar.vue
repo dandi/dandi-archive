@@ -98,9 +98,26 @@
 
     <v-spacer />
 
-    <div v-if="!insideIFrame">
+    <div
+      v-if="!insideIFrame"
+      class="d-flex align-center"
+    >
       <template v-if="loggedIn">
+        <!-- On phones a full-width label pushes the user menu out of the bar. -->
         <v-btn
+          v-if="isXsDisplay"
+          :disabled="!user?.approved"
+          :to="{ name: 'createDandiset' }"
+          class="mx-2"
+          color="primary"
+          variant="elevated"
+          size="small"
+          icon="mdi-plus"
+          aria-label="New Dandiset"
+          title="New Dandiset"
+        />
+        <v-btn
+          v-else
           :disabled="!user?.approved"
           :to="{ name: 'createDandiset' }"
           class="mx-3"
@@ -165,6 +182,7 @@ interface NavigationItem {
 
 const display = useDisplay();
 const isMobile = computed(() => display.mobile.value);
+const isXsDisplay = computed(() => display.xs.value);
 
 const cookiesEnabled = computed(cookiesEnabledFunc);
 const loggedIn = computed(loggedInFunc);
