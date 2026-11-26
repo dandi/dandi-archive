@@ -3,7 +3,10 @@
     class="bg-grey-darken-3 pa-0"
     fluid
   >
-    <v-row class="py-6">
+    <v-row
+      class="py-6"
+      no-gutters
+    >
       <template
         v-for="stat in stats"
         :key="stat.name"
