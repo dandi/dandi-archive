@@ -3,7 +3,7 @@
     fluid
     class="pa-0"
   >
-    <v-row>
+    <v-row no-gutters>
       <v-img
         :src="logo"
         class="bg-grey-lighten-5"
