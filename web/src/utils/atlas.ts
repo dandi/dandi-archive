@@ -53,3 +53,56 @@ export async function getAtlasForDandiset(identifier: string): Promise<Atlas | u
 export function atlasDandisetURL(atlasKey: string, identifier: string): string {
   return `${ATLAS_URL}/?atlas=${atlasKey}#dandiset=${identifier}`;
 }
+
+/**
+ * The subjects and sessions of one Dandiset that the DANDI Atlas viewer can show.
+ * `sessions` maps each indexed asset ID to its subject.
+ */
+export interface AtlasLookup {
+  subjects: Set<string>;
+  sessions: Map<string, string>;
+}
+
+const atlasLookups = new Map<string, Promise<AtlasLookup | undefined>>();
+
+async function fetchAtlasLookup(atlasKey: string, identifier: string): Promise<AtlasLookup | undefined> {
+  const url = `${ATLAS_URL}/data/atlases/${atlasKey}/dandisets/${identifier}.json`;
+  try {
+    const { data } = await axios.get<{ subjects?: string[]; sessions?: Record<string, string> }>(url);
+    return {
+      subjects: new Set(data.subjects ?? []),
+      sessions: new Map(Object.entries(data.sessions ?? {})),
+    };
+  } catch (error) {
+    // The file browser works without these links, so fail safe by omitting them.
+    console.error('Error fetching the DANDI Atlas subjects and sessions:', error);
+    return undefined;
+  }
+}
+
+/**
+ * Return the subjects and sessions of this Dandiset that the given atlas indexes, or
+ * `undefined` if the viewer publishes none. Fetched once per Dandiset and atlas.
+ */
+export function getAtlasLookup(atlasKey: string, identifier: string): Promise<AtlasLookup | undefined> {
+  const key = `${atlasKey}/${identifier}`;
+  let lookup = atlasLookups.get(key);
+  if (lookup === undefined) {
+    lookup = fetchAtlasLookup(atlasKey, identifier);
+    atlasLookups.set(key, lookup);
+  }
+  return lookup;
+}
+
+export function atlasSubjectURL(atlasKey: string, identifier: string, subject: string): string {
+  return `${atlasDandisetURL(atlasKey, identifier)}&subject=${encodeURIComponent(subject)}`;
+}
+
+export function atlasSessionURL(
+  atlasKey: string,
+  identifier: string,
+  subject: string,
+  assetId: string,
+): string {
+  return `${atlasSubjectURL(atlasKey, identifier, subject)}&session=${encodeURIComponent(assetId)}`;
+}
