@@ -69,7 +69,7 @@
                 :to="{ name: 'fileBrowser', query: { location: rootDirectory } }"
                 exact
                 style="text-decoration: none;"
-                class="mx-2"
+                class="mx-2 text-primary"
               >
                 {{ identifier }}
               </router-link>
@@ -82,7 +82,7 @@
                     :to="{ name: 'fileBrowser', query: { location: locationSlice(i) } }"
                     exact
                     style="text-decoration: none;"
-                    class="mx-2"
+                    class="mx-2 text-primary"
                   >
                     {{ part }}
                   </router-link>
