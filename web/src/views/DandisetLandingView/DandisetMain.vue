@@ -238,7 +238,8 @@
       </v-row>
     </v-card>
 
-    <!-- Tab navigation. The empty div marks where the tabs start, for scrolling to them. -->
+    <!-- Tab navigation -->
+    <!-- The empty div marks where the tabs start, for scrolling an anchored tab into view. -->
     <div ref="tabsTop" />
     <v-tabs
       v-model="currentTab"
@@ -289,6 +290,7 @@ import DOMPurify from 'dompurify';
 import { useDisplay } from 'vuetify';
 
 import { useDandisetStore } from '@/stores/dandiset';
+import { tabAnchor, useLandingAnchor } from '@/utils/landingAnchor';
 import { getDoiMetadata } from '@/utils/doi';
 import { getExampleNotebooks } from '@/utils/notebooks';
 import type { DandisetNotebooks } from '@/utils/notebooks';
@@ -297,7 +299,6 @@ import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from
 import HowToCiteTab from '@/components/DLP/HowToCiteTab.vue';
 import NotebooksTab from '@/components/DLP/NotebooksTab.vue';
 import OverviewTab from '@/components/DLP/OverviewTab.vue';
-import { tabAnchor, useLandingAnchor } from '@/utils/landingAnchor';
 import ShareDialog from './ShareDialog.vue';
 import StarButton from '@/components/StarButton.vue';
 
