@@ -19,9 +19,11 @@
         class="pa-0"
         data-id="name"
       >
+        <!-- Take the row's color like the other stat names; the underline marks it as a link. -->
         <a
           v-if="href"
           :href="href"
+          style="color: inherit;"
         >
           {{ name }}</a>
         <span v-else>
