@@ -1,10 +1,7 @@
 <template>
   <div v-if="notebooks">
-    <v-card
-      variant="outlined"
-      class="pa-6"
-    >
-      <v-card-title class="d-flex align-center px-0 pt-0">
+    <v-card variant="outlined">
+      <v-card-title class="d-flex align-center pt-4 px-4">
         <v-icon
           color="primary"
           class="mr-2"
@@ -13,174 +10,160 @@
         </v-icon>
         Notebooks
       </v-card-title>
+      <v-card-subtitle class="px-4 pb-3 notebooks-intro">
+        Jupyter notebooks that load and analyze this Dandiset, from
+        <a
+          :href="notebooks.siteUrl"
+          target="_blank"
+          rel="noopener"
+          class="text-primary"
+        >DANDI Notebooks<v-icon
+          size="x-small"
+          class="ml-1"
+        >mdi-open-in-new</v-icon></a>
+      </v-card-subtitle>
+      <v-divider />
 
-      <v-card-text class="px-0">
-        <p class="text-body-1 mb-4">
-          Step-by-step Jupyter notebooks showing how to load and analyze this
-          dandiset, organized by the folders they live in on
-          <a
-            :href="notebooks.siteUrl"
-            target="_blank"
-            rel="noopener"
-          >DANDI Notebooks</a>.
-          Open one directly in Google Colab, or run it on your own machine with
-          its Docker image where one is available; see the site's
-          <a
-            :href="notebooks.dockerHelpUrl"
-            target="_blank"
-            rel="noopener"
-          >instructions for running the Docker images</a>.
-        </p>
-
-        <template
-          v-for="(group, groupIndex) in groupedNotebooks"
-          :key="group.key"
+      <template
+        v-for="group in groupedNotebooks"
+        :key="group.key"
+      >
+        <!-- The folder the notebooks are in on DANDI Notebooks -->
+        <div
+          v-if="group.segments.length"
+          class="notebook-group px-4 pt-4 pb-1"
         >
-          <v-divider
-            v-if="groupIndex > 0"
-            class="my-4"
-          />
+          {{ group.segments.join(' › ') }}
+        </div>
 
-          <h3
-            v-if="group.segments.length"
-            class="text-h6 d-flex align-center flex-wrap ga-1 mb-2"
+        <ul class="notebook-list">
+          <li
+            v-for="notebook in group.notebooks"
+            :key="notebook.path"
+            class="notebook-row"
           >
-            <v-icon
-              color="primary"
-              size="20"
-              class="mr-1"
-            >
-              mdi-folder-outline
-            </v-icon>
-            <template
-              v-for="(segment, i) in group.segments"
-              :key="i"
-            >
-              <v-icon
-                v-if="i > 0"
-                size="16"
-                class="text-medium-emphasis"
+            <!-- Name on the left, actions on the right; below sm the actions
+                 go under the name. -->
+            <div class="d-flex flex-column flex-sm-row align-sm-center ga-2 ga-sm-4 px-4 py-3">
+              <div
+                class="d-flex align-center ga-3 flex-grow-1"
+                style="min-width: 0;"
               >
-                mdi-chevron-right
-              </v-icon>
-              <span class="text-no-wrap">{{ segment }}</span>
-            </template>
-          </h3>
+                <v-icon
+                  color="primary"
+                  class="flex-shrink-0"
+                >
+                  mdi-notebook-outline
+                </v-icon>
+                <div style="min-width: 0;">
+                  <div class="text-body-1 font-weight-medium">
+                    {{ notebookTitle(notebook.path) }}
+                  </div>
+                  <div
+                    class="text-caption text-medium-emphasis notebook-filename text-truncate"
+                    :title="notebook.path"
+                  >
+                    {{ notebookFilename(notebook.path) }}
+                  </div>
+                </div>
+              </div>
 
-          <!-- Every row uses the same column widths, so the controls line up
-               down the list and across folder groups. Below the sm breakpoint
-               the columns stack. -->
-          <ul class="d-flex flex-column ga-2 ga-sm-0">
-            <v-row
-              v-for="notebook in group.notebooks"
-              :key="notebook.path"
-              tag="li"
-              align="center"
-              dense
-            >
-              <v-col
-                cols="12"
-                sm="5"
-                lg="4"
-                class="d-flex text-subtitle-1 font-weight-medium"
-              >
-                <span
-                  class="text-medium-emphasis mr-2 flex-shrink-0"
-                  aria-hidden="true"
-                >&bull;</span>
-                <span :title="notebook.path">{{ notebookTitle(notebook.path) }}</span>
-              </v-col>
-
-              <v-col
-                cols="12"
-                sm="7"
-                lg="8"
-                class="d-flex align-center flex-wrap ga-2"
-              >
-                <a
+              <div class="d-flex align-center flex-wrap ga-2 flex-shrink-0 notebook-actions">
+                <v-btn
                   v-if="notebook.colab_url"
                   :href="notebook.colab_url"
                   target="_blank"
                   rel="noopener"
-                  aria-label="Open in Colab"
+                  size="small"
+                  variant="tonal"
+                  color="primary"
+                  class="text-none notebook-action"
                 >
-                  <img
-                    src="https://colab.research.google.com/assets/colab-badge.svg"
-                    alt="Open In Colab"
-                  >
-                </a>
+                  <template #prepend>
+                    <img
+                      :src="COLAB_ICON"
+                      alt=""
+                      width="16"
+                      height="16"
+                    >
+                  </template>
+                  <!-- Shorter on phones, so all three actions fit on one row. -->
+                  {{ isXsDisplay ? 'Colab' : 'Open in Colab' }}
+                </v-btn>
                 <v-btn
                   :href="notebook.github_url"
                   target="_blank"
                   rel="noopener"
-                  variant="text"
                   size="small"
-                  aria-label="View notebook source on GitHub"
+                  variant="outlined"
+                  prepend-icon="mdi-github"
+                  class="text-none notebook-action"
                 >
-                  <v-icon>mdi-github</v-icon>
-                  <v-tooltip
-                    activator="parent"
-                    location="top"
-                  >
-                    View source on GitHub
-                  </v-tooltip>
+                  GitHub
                 </v-btn>
                 <v-btn
                   v-if="notebook.docker_command"
-                  variant="text"
                   size="small"
+                  variant="outlined"
                   prepend-icon="mdi-docker"
                   :append-icon="expanded === notebook.path ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                  :aria-expanded="expanded === notebook.path"
+                  class="text-none notebook-action"
                   @click="toggleDocker(notebook.path)"
                 >
                   Docker
-                  <v-tooltip
-                    activator="parent"
-                    location="top"
-                  >
-                    Run locally with Docker
-                  </v-tooltip>
                 </v-btn>
-              </v-col>
+              </div>
+            </div>
 
-              <v-expand-transition>
-                <v-col
-                  v-show="expanded === notebook.path"
-                  cols="12"
-                >
-                  <!-- pl-4 lines the command up with the notebook names, past their bullets. -->
-                  <div class="d-flex align-center ga-2 mt-1 mb-2 pl-4">
-                    <span class="flex-1-1-0 text-mono text-body-2 text-pre-wrap text-break">{{ notebook.docker_command }}</span>
-                    <v-btn
-                      icon
-                      size="small"
-                      variant="text"
-                      class="flex-shrink-0"
-                      @click="copyDockerCommand(notebook)"
+            <v-expand-transition>
+              <!-- pl-13 lines the panel up with the notebook name, past its icon. -->
+              <div
+                v-show="expanded === notebook.path"
+                class="pl-4 pl-sm-13 pr-4 pb-3"
+              >
+                <div class="docker-command d-flex align-center ga-2 rounded">
+                  <code class="flex-1-1-0">{{ notebook.docker_command }}</code>
+                  <v-btn
+                    icon
+                    size="small"
+                    variant="text"
+                    class="flex-shrink-0"
+                    :aria-label="copied === notebook.path ? 'Copied' : 'Copy the Docker command'"
+                    @click="copyDockerCommand(notebook)"
+                  >
+                    <v-icon size="small">
+                      {{ copied === notebook.path ? 'mdi-check' : 'mdi-content-copy' }}
+                    </v-icon>
+                    <v-tooltip
+                      activator="parent"
+                      location="top"
                     >
-                      <v-icon size="small">
-                        {{ copied === notebook.path ? 'mdi-check' : 'mdi-content-copy' }}
-                      </v-icon>
-                      <v-tooltip
-                        activator="parent"
-                        location="top"
-                      >
-                        Copy the Docker run command to the clipboard
-                      </v-tooltip>
-                    </v-btn>
-                  </div>
-                </v-col>
-              </v-expand-transition>
-            </v-row>
-          </ul>
-        </template>
-      </v-card-text>
+                      {{ copied === notebook.path ? 'Copied!' : 'Copy the Docker command' }}
+                    </v-tooltip>
+                  </v-btn>
+                </div>
+                <a
+                  :href="notebooks.dockerHelpUrl"
+                  target="_blank"
+                  rel="noopener"
+                  class="text-caption text-primary d-inline-block mt-1"
+                >How to run DANDI Notebooks with Docker<v-icon
+                  size="x-small"
+                  class="ml-1"
+                >mdi-open-in-new</v-icon></a>
+              </div>
+            </v-expand-transition>
+          </li>
+        </ul>
+      </template>
     </v-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import { useDisplay } from 'vuetify';
 
 import { useDandisetStore } from '@/stores/dandiset';
 import { getExampleNotebooks } from '@/utils/notebooks';
@@ -204,6 +187,12 @@ interface NotebookGroup {
   segments: string[];
   notebooks: ExampleNotebook[];
 }
+
+// Colab's own icon, so the button is recognizable at a glance.
+const COLAB_ICON = 'https://colab.research.google.com/img/colab_favicon_256px.png';
+
+const display = useDisplay();
+const isXsDisplay = computed(() => display.xs.value);
 
 const store = useDandisetStore();
 const currentDandiset = computed(() => store.dandiset);
@@ -288,3 +277,43 @@ function notebookFilename(path: string): string {
   return path.split('/').pop() ?? path;
 }
 </script>
+
+<style scoped>
+.notebooks-intro {
+  white-space: normal;
+  opacity: 1;
+  color: rgba(0, 0, 0, 0.6);
+}
+.notebook-group {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(0, 0, 0, 0.6);
+}
+.notebook-list {
+  list-style: none;
+}
+.notebook-row + .notebook-row {
+  border-top: thin solid rgba(0, 0, 0, 0.08);
+}
+.notebook-row:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+.notebook-filename {
+  font-family: monospace;
+}
+.docker-command {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 4px 4px 4px 12px;
+}
+.docker-command code {
+  background: none;
+  font-size: 0.8125rem;
+  /* Wrap on narrow screens; the copy button copies it whole. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.notebook-action {
+  letter-spacing: normal;
+}
+</style>
