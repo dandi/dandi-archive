@@ -4,29 +4,24 @@ import { searchParameters } from '../store';
 </script>
 
 <template>
-  <v-row>
-    <v-spacer />
-    <v-col>
-      <span>Min</span>
-      <v-text-field
-        v-model="searchParameters.file_size_min"
-        density="compact"
-        type="number"
-        variant="outlined"
-        style="min-width: 4ch;"
-      />
-    </v-col>
-    <v-spacer />
-    <v-col>
-      <span>Max</span>
-      <v-text-field
-        v-model="searchParameters.file_size_max"
-        density="compact"
-        type="number"
-        variant="outlined"
-        style="min-width: 4ch;"
-      />
-    </v-col>
-    <v-spacer />
-  </v-row>
+  <!-- Stacked at full width: a byte count such as 1000000000 needs the room. -->
+  <v-text-field
+    v-model="searchParameters.file_size_min"
+    label="Min"
+    density="compact"
+    type="number"
+    min="0"
+    variant="outlined"
+    hide-details
+    class="mb-3"
+  />
+  <v-text-field
+    v-model="searchParameters.file_size_max"
+    label="Max"
+    density="compact"
+    type="number"
+    min="0"
+    variant="outlined"
+    hide-details
+  />
 </template>
