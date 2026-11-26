@@ -9,7 +9,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 import sentry_sdk
 
-from dandiapi.api.services.search.filters import SUMMARY_OPERATORS, summary_operator_values
+from dandiapi.api.services.search.values import SUMMARY_OPERATORS, summary_operator_values
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.search.models import AssetSearch
 
